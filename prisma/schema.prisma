@@ -1,0 +1,810 @@
+// CareerToDo & Venture Platform - Complete Database Schema
+// This schema supports multi-stakeholder collaboration with governance,
+// reputation systems, lifelong records, and investment workflows
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ==================== CORE USER & IDENTITY ====================
+
+enum UserRole {
+  STUDENT
+  UNIVERSITY_ADMIN
+  EMPLOYER
+  INVESTOR
+  PLATFORM_ADMIN
+  MENTOR
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model User {
+  id                String             @id @default(cuid())
+  email             String             @unique
+  name              String
+  role              UserRole
+  verificationStatus VerificationStatus @default(PENDING)
+
+  // Profile & Personal Info
+  avatar            String?
+  bio               String?
+  location          String?
+  phone             String?
+  linkedinUrl       String?
+  portfolioUrl      String?
+
+  // Security & Authentication
+  password          String?
+  lastPasswordChange DateTime?
+  loginAttempts     Int                @default(0)
+  lockedAt          DateTime?
+  emailVerified     Boolean            @default(false)
+  emailVerifiedAt   DateTime?
+
+  // Student Specific
+  universityId      String?
+  major             String?
+  graduationYear    Int?
+  // Employer Specific
+    companyName      String?
+    position         String?
+    companyWebsite  String?
+  // Investor Specific
+    firmName         String?
+    investmentFocus String?
+  // Reputation Scores (multi-dimensional)
+  // Reputation Scores (multi-dimensional)
+  executionScore    Float              @default(0)
+  collaborationScore Float             @default(0)
+  leadershipScore   Float              @default(0)
+  ethicsScore       Float              @default(0)
+  reliabilityScore  Float              @default(0)
+
+  // Progression Level
+  progressionLevel  ProgressionLevel   @default(CONTRIBUTOR)
+
+  // Timestamps
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  // Relations
+  university        University?        @relation(fields: [universityId], references: [id])
+  projectMemberships ProjectMember[]
+  projectLeads      Project[]          @relation("ProjectLead")
+  hrLeads           Project[]          @relation("HRLead")
+  departmentHeads   Department[]
+  assignedTasks     Task[]            @relation("TaskAssignee")
+  createdTasks      Task[]            @relation("TaskCreator")
+  givenRatings      Rating[]          @relation("RatingGiven")
+  receivedRatings   Rating[]          @relation("RatingReceived")
+  records           ProfessionalRecord[]
+  verificationRequests VerificationRequest[]
+  verificationSubjectRequests VerificationRequest[] @relation("VerificationSubject")
+  investments       Investment[]
+  investmentProjects Project[]         @relation("ProjectInvestor")
+  auditLogs         AuditLog[]
+  suppliers         Supplier[]
+
+  @@index([role])
+  @@index([universityId])
+  @@index([verificationStatus])
+}
+
+model University {
+  id                String             @id @default(cuid())
+  name              String             @unique
+  code              String             @unique
+  description       String?
+  logo              String?
+  website           String?
+  location          String?
+
+  // University Metrics
+  totalStudents     Int                @default(0)
+  totalProjects     Int                @default(0)
+  rankingScore      Float              @default(0)
+  rankingPosition   Int?
+
+  // Verification
+  verificationStatus VerificationStatus @default(PENDING)
+  verifiedDocuments String?
+
+  // Timestamps
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  // Relations
+  students          User[]
+  projects          Project[]
+
+  @@index([verificationStatus])
+  @@index([rankingPosition])
+}
+
+// ==================== PROGRESSION & LEVELS ====================
+
+enum ProgressionLevel {
+  CONTRIBUTOR
+  SENIOR_CONTRIBUTOR
+  TEAM_LEAD
+  DEPARTMENT_HEAD
+  PROJECT_LEAD
+}
+
+// ==================== PROJECTS & ORGANIZATIONS ====================
+
+enum ProjectStatus {
+  PROPOSED
+  APPROVED
+  RECRUITING
+  ACTIVE
+  PAUSED
+  COMPLETED
+  TERMINATED
+}
+
+enum ProjectCategory {
+  NEWS_MEDIA
+  E_COMMERCE
+  STARTUP
+  CONSULTING
+  MARKETING
+  RESEARCH
+  TAX_CONSULTING
+  OTHER
+}
+
+model Project {
+  id                String         @id @default(cuid())
+  title             String
+  description       String
+  category          ProjectCategory
+
+  // Leadership
+  projectLeadId     String
+  hrLeadId          String?
+
+  // University Connection
+  universityId      String?
+
+  // Governance
+  status            ProjectStatus   @default(PROPOSED)
+  approvalDate      DateTime?
+  terminationReason String?
+  terminationDate   DateTime?
+
+  // Metrics
+  completionRate    Float          @default(0)
+  teamSize          Int           @default(0)
+
+  // Investment
+  seekingInvestment Boolean        @default(false)
+  investmentGoal   Float?
+  investmentRaised Float?         @default(0)
+
+  // Timestamps
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  startDate         DateTime?
+  endDate           DateTime?
+
+  // Relations
+  projectLead       User           @relation("ProjectLead", fields: [projectLeadId], references: [id])
+  hrLead            User?          @relation("HRLead", fields: [hrLeadId], references: [id])
+  university        University?    @relation(fields: [universityId], references: [id])
+  members           ProjectMember[]
+  departments       Department[]
+  tasks             Task[]
+  investments       Investment[]
+  agreements        Agreement[]
+  milestones        Milestone[]
+  investors         User[]          @relation("ProjectInvestor")
+
+  @@index([status])
+  @@index([universityId])
+  @@index([projectLeadId])
+  @@index([seekingInvestment])
+}
+
+// ==================== ORGANIZATIONAL STRUCTURE ====================
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  projectId   String
+
+  headId      String?
+
+  // Metrics
+  memberCount Int      @default(0)
+  taskCount   Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  head        User?    @relation(fields: [headId], references: [id])
+  members     ProjectMember[]
+  tasks       Task[]
+
+  @@index([projectId])
+  @@index([headId])
+}
+
+enum ProjectRole {
+  PROJECT_LEAD
+  HR_LEAD
+  DEPARTMENT_HEAD
+  TEAM_LEAD
+  CONTRIBUTOR
+  MENTOR
+}
+
+model ProjectMember {
+  id          String     @id @default(cuid())
+  projectId   String
+  userId      String
+  role        ProjectRole
+  departmentId String?
+
+  // Assignment Details
+  assignedAt  DateTime   @default(now())
+  startDate   DateTime
+  endDate     DateTime?
+
+  // Performance
+  contributionScore Float @default(0)
+
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+  @@index([role])
+}
+
+// ==================== TASKS & EXECUTION ====================
+
+enum TaskStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  UNDER_REVIEW
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+
+  // Assignment
+  projectId   String
+  departmentId String?
+  assigneeId  String?
+  creatorId   String
+
+  // Task Details
+  status      TaskStatus   @default(PENDING)
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?
+  completedAt DateTime?
+
+  // Dependencies
+  dependsOn   String?      // Task ID
+
+  // Output
+  deliverable String?
+  outputUrl   String?
+
+  // Evaluation
+  qualityScore Float?
+  feedback    String?
+
+  // Timestamps
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relations
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  department   Department?  @relation(fields: [departmentId], references: [id])
+  assignee    User?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creator     User         @relation("TaskCreator", fields: [creatorId], references: [id])
+  subtasks    SubTask[]
+
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model SubTask {
+  id          String       @id @default(cuid())
+  taskId      String
+  title       String
+  description String?
+  status      TaskStatus   @default(PENDING)
+  completedAt DateTime?
+  order       Int          @default(0)
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  task        Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([status])
+}
+
+// ==================== MILESTONES & GOALS ====================
+
+enum MilestoneStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  ACHIEVED
+  DELAYED
+  CANCELLED
+}
+
+model Milestone {
+  id          String         @id @default(cuid())
+  projectId   String
+  title       String
+  description String?
+  status      MilestoneStatus @default(NOT_STARTED)
+
+  targetDate  DateTime
+  achievedAt  DateTime?
+
+  metrics     String? // JSON string for key metrics
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
+  @@index([targetDate])
+}
+
+// ==================== REPUTATION & RATING SYSTEM ====================
+
+enum RatingDimension {
+  EXECUTION
+  COLLABORATION
+  LEADERSHIP
+  ETHICS
+  RELIABILITY
+}
+
+enum RatingSource {
+  PEER
+  LEAD
+  MENTOR
+  EMPLOYER
+  UNIVERSITY
+}
+
+model Rating {
+  id          String        @id @default(cuid())
+  raterId     String
+  ratedId     String
+  dimension   RatingDimension
+  source      RatingSource
+
+  // Context
+  projectId   String?
+  taskId      String?
+
+  // Rating
+  score       Float         // 1-5 scale
+  comment     String?
+
+  // Abuse Prevention
+  isReported  Boolean       @default(false)
+  reportReason String?
+
+  // Timestamps
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  rater       User          @relation("RatingGiven", fields: [raterId], references: [id], onDelete: Cascade)
+  rated       User          @relation("RatingReceived", fields: [ratedId], references: [id], onDelete: Cascade)
+
+  @@unique([raterId, ratedId, dimension, projectId])
+  @@index([ratedId])
+  @@index([dimension])
+  @@index([projectId])
+}
+
+// ==================== LIFELONG PROFESSIONAL RECORDS ====================
+
+enum RecordType {
+  PROJECT_ROLE
+  LEADERSHIP_POSITION
+  TASK_COMPLETION
+  SKILL_ACQUIRED
+  CERTIFICATION
+  ACHIEVEMENT
+  EMPLOYMENT
+}
+
+model ProfessionalRecord {
+  id          String     @id @default(cuid())
+  userId      String
+
+  // Record Details
+  type        RecordType
+  title       String
+  description String?
+
+  // Context
+  projectId   String?
+  roleName    String?
+  department  String?
+
+  // Dates
+  startDate   DateTime
+  endDate     DateTime?
+
+  // Verification
+  isVerified  Boolean    @default(false)
+  verifiedBy  String?
+  verifiedAt  DateTime?
+
+  // Metadata (stored as JSON string for flexibility)
+  metadata    String?
+
+  // Immutability
+  hash        String     // Content hash for immutability verification
+  createdAt   DateTime   @default(now())
+
+  // Relations
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([isVerified])
+}
+
+// ==================== INVESTMENT & VENTURES ====================
+
+enum InvestmentStatus {
+  INTERESTED
+  UNDER_REVIEW
+  AGREEMENT_PENDING
+  AGREED
+  FUNDED
+  REJECTED
+  WITHDRAWN
+}
+
+enum InvestmentType {
+  EQUITY
+  REVENUE_SHARE
+  CONVERTIBLE_NOTE
+  GRANT
+  PARTNERSHIP
+}
+
+model Investment {
+  id              String           @id @default(cuid())
+  projectId       String
+  investorId      String
+
+  // Investment Details
+  type            InvestmentType
+  status          InvestmentStatus  @default(INTERESTED)
+  amount          Float?
+  equity          Float?            // Percentage
+
+  // Terms
+  terms           String?           // JSON string for detailed terms
+
+  // Documents
+  agreementId     String?
+
+  // Timestamps
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  fundedAt        DateTime?
+  expiresAt       DateTime?
+
+  // Relations
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  investor        User             @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  agreement       Agreement?       @relation(fields: [agreementId], references: [id])
+
+  @@index([projectId])
+  @@index([investorId])
+  @@index([status])
+}
+
+model Agreement {
+  id              String       @id @default(cuid())
+  projectId       String
+  type            String       // PARTNERSHIP, INVESTMENT, IP_RIGHTS, etc.
+
+  // Parties
+  parties         String       // JSON string array of party details
+
+  // Terms
+  terms           String       // JSON string for detailed terms
+  ipOwnership     String?      // JSON string for IP rights
+  revenueSplit    String?      // JSON string for revenue/equity split
+  platformShare   Float        @default(0) // Platform's percentage
+
+  // Status
+  status          String       @default("DRAFT")
+
+  // Documents
+  documentUrl     String?
+
+  // Signatures
+  signedBy        String?      // JSON string of signatories
+  signedAt        DateTime?
+
+  // Timestamps
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  // Relations
+  project         Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  investments     Investment[]
+
+  @@index([projectId])
+  @@index([status])
+}
+
+// ==================== VERIFICATION & EMPLOYER ACCESS ====================
+
+enum VerificationRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+model VerificationRequest {
+  id              String                    @id @default(cuid())
+  requesterId     String                     // Employer
+  subjectId       String                     // Student/User
+
+  // Request Details
+  purpose         String                     // Employment, Background Check, etc.
+  status          VerificationRequestStatus  @default(PENDING)
+  accessDuration  Int?                       // Days of access
+
+  // Approval
+  approvedBy      String?                    // User or Platform
+  approvedAt      DateTime?
+  rejectionReason String?
+
+  // Access Tracking
+  accessedAt      DateTime?
+  expiresAt       DateTime?
+  accessCount     Int                        @default(0)
+
+  // Employer Feedback
+  employerRating  Float?
+  employerComment String?
+  ratedAt         DateTime?
+
+  // Timestamps
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+
+  // Relations
+  requester       User                       @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+  subject         User                       @relation("VerificationSubject", fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@index([requesterId])
+  @@index([subjectId])
+  @@index([status])
+}
+
+// ==================== LEADERBOARDS & RANKINGS ====================
+
+enum LeaderboardType {
+  STUDENT
+  UNIVERSITY
+  PROJECT
+  TEAM
+  DEPARTMENT
+}
+
+enum RankingPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  ALL_TIME
+}
+
+model Leaderboard {
+  id              String         @id @default(cuid())
+  type            LeaderboardType
+  period          RankingPeriod
+
+  // Entity being ranked
+  entityId        String
+  entityName      String
+  entityType      String         // User, University, Project, etc.
+
+  // Rankings
+  position        Int
+  score           Float
+
+  // Metrics breakdown
+  executionScore  Float?
+  collaborationScore Float?
+  leadershipScore Float?
+  innovationScore Float?
+  impactScore     Float?
+
+  // Time period
+  periodStart     DateTime
+  periodEnd       DateTime
+
+  // Timestamps
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@unique([type, period, entityId, periodStart, periodEnd])
+  @@index([type])
+  @@index([period])
+  @@index([position])
+  @@index([periodStart])
+  @@index([periodEnd])
+}
+
+// ==================== AUDIT & COMPLIANCE ====================
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  APPROVE
+  REJECT
+  LOGIN
+  LOGOUT
+  VERIFICATION
+  ROLE_CHANGE
+  PROJECT_STATUS_CHANGE
+  DATA_EXPORT
+}
+
+model AuditLog {
+  id          String     @id @default(cuid())
+  userId      String?
+
+  action      AuditAction
+  entity      String     // Table/Model name
+  entityId    String     // ID of the entity affected
+
+  // Details
+  changes     String?    // JSON string of changes made
+  ipAddress   String?
+  userAgent   String?
+
+  // Context
+  projectId   String?
+
+  // Timestamps
+  createdAt   DateTime   @default(now())
+
+  // Relations
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([entityId])
+  @@index([createdAt])
+}
+
+// ==================== NOTIFICATIONS & MESSAGES ====================
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_DUE_REMINDER
+  PROJECT_UPDATE
+  RATING_RECEIVED
+  INVESTMENT_REQUEST
+  VERIFICATION_REQUEST
+  RANKING_CHANGE
+  SYSTEM_ANNOUNCEMENT
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String
+
+  type        NotificationType
+  title       String
+  message     String?
+
+  // Link
+  link        String?
+
+  // Status
+  isRead      Boolean          @default(false)
+  readAt      DateTime?
+
+  // Timestamps
+  createdAt   DateTime         @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// ==================== SUPPLIERS ====================
+
+model Supplier {
+  id                String   @id @default(cuid())
+  userId            String?  // User who owns this supplier profile
+
+  // Basic Info
+  name              String   @unique
+  description       String
+  category          String
+
+  // Contact Info
+  contactEmail      String
+  contactPhone      String?
+  location          String?
+  website           String?
+
+  // Pricing & Metrics
+  hourlyRate        Float?
+  rating            Float    @default(0)
+  projectsCompleted  Int       @default(0)
+  verified          Boolean   @default(false)
+
+  // Additional Info
+  skills            String?   // JSON string array
+  services          String?   // JSON string array
+  certifications   String?   // JSON string array
+  portfolioLinks    String?   // JSON string array
+  companySize       String?
+  yearsInBusiness   String?
+
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  owner             User?     @relation(fields: [userId], references: [id])
+
+  @@index([category])
+  @@index([rating])
+  @@index([verified])
+}
+
+

@@ -1,0 +1,498 @@
+'use client'
+
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  X,
+  Plus,
+  ArrowRight,
+  Loader2,
+  Building2,
+  Mail,
+  Phone,
+  MapPin,
+} from 'lucide-react'
+import PublicHeader from '@/components/public-header'
+import PublicFooter from '@/components/public-footer'
+import { toast } from '@/hooks/use-toast'
+import Link from 'next/link'
+
+export default function SupplierCreatePage() {
+  const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    businessName: '',
+    description: '',
+    category: 'Technology',
+    expertise: '',
+    hourlyRate: '',
+    location: '',
+    website: '',
+    contactEmail: '',
+    contactPhone: '',
+  })
+
+  const categories = ['Technology', 'Design', 'Marketing', 'Data & Analytics', 'Content', 'Business', 'Consulting']
+
+  // Handle form input changes
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  // Validate form
+  const validateForm = () => {
+    if (!formData.businessName.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please enter your business name',
+        variant: 'destructive'
+      })
+      return false
+    }
+    if (!formData.description.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please enter a business description',
+        variant: 'destructive'
+      })
+      return false
+    }
+    if (!formData.contactEmail.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please enter a contact email',
+        variant: 'destructive'
+      })
+      return false
+    }
+    if (!formData.expertise.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please enter your area of expertise',
+        variant: 'destructive'
+      })
+      return false
+    }
+    return true
+  }
+
+  // Submit form
+  const handleSubmit = async () => {
+    if (!validateForm()) return
+
+    try {
+      setLoading(true)
+      const response = await fetch('/api/suppliers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.businessName,
+          businessName: formData.businessName,
+          description: formData.description,
+          category: formData.category,
+          expertise: [formData.expertise],
+          hourlyRate: formData.hourlyRate ? Number(formData.hourlyRate) : null,
+          location: formData.location,
+          website: formData.website,
+          contactEmail: formData.contactEmail,
+          contactPhone: formData.contactPhone,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast({
+          title: 'Success',
+          description: 'Your business has been listed successfully',
+        })
+        setTimeout(() => {
+          window.location.href = '/suppliers'
+        }, 1500)
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to list business',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      console.error('List business error:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to list business. Please try again.',
+        variant: 'destructive'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-background">
+        <div className="container mx-auto px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+              <h1 className="text-xl sm:text-2xl font-bold truncate">List Your Business</h1>
+            </div>
+            <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/suppliers">
+                  <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
+                  <span className="hidden sm:inline">Back to Suppliers</span>
+                  <span className="sm:hidden">Back</span>
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto space-y-6">
+          {/* Basic Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Basic Information</CardTitle>
+              <CardDescription>Tell us about your business</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="businessName">Business Name *</Label>
+                <Input
+                  id="businessName"
+                  placeholder="E.g., Tech Solutions Inc."
+                  value={formData.businessName}
+                  onChange={(e) => handleInputChange('businessName', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Business Description *</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Describe your business, what you do, and what makes you unique..."
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  rows={5}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="category">Primary Category *</Label>
+                  <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
+                    <SelectTrigger id="category">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="companySize">Company Size</Label>
+                  <Select value={formData.companySize} onValueChange={(value) => handleInputChange('companySize', value)}>
+                    <SelectTrigger id="companySize">
+                      <SelectValue placeholder="Select company size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companySizes.map((size) => (
+                        <SelectItem key={size} value={size}>
+                          {size} employees
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="yearsInBusiness">Years in Business</Label>
+                  <Select value={formData.yearsInBusiness} onValueChange={(value) => handleInputChange('yearsInBusiness', value)}>
+                    <SelectTrigger id="yearsInBusiness">
+                      <SelectValue placeholder="Select experience" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {yearsOptions.map((years) => (
+                        <SelectItem key={years} value={years}>
+                          {years}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="location">Location *</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="location"
+                      placeholder="E.g., San Francisco, CA"
+                      value={formData.location}
+                      onChange={(e) => handleInputChange('location', e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Expertise & Services */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Expertise & Services</CardTitle>
+              <CardDescription>Define your areas of specialization</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="expertise">Areas of Expertise *</Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Add an expertise and press Enter or click Add"
+                    value={currentExpertise}
+                    onChange={(e) => setCurrentExpertise(e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, handleAddExpertise)}
+                  />
+                  <Button type="button" onClick={handleAddExpertise}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {formData.expertise.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.expertise.map((exp, index) => (
+                      <Badge key={index} variant="secondary" className="gap-1">
+                        {exp}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem('expertise', exp)}
+                          className="hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="services">Services Offered *</Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Add a service and press Enter or click Add"
+                    value={currentService}
+                    onChange={(e) => setCurrentService(e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, handleAddService)}
+                  />
+                  <Button type="button" onClick={handleAddService}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {formData.services.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.services.map((service, index) => (
+                      <Badge key={index} variant="secondary" className="gap-1">
+                        {service}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem('services', service)}
+                          className="hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="certifications">Certifications (Optional)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Add a certification and press Enter or click Add"
+                    value={currentCertification}
+                    onChange={(e) => setCurrentCertification(e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, handleAddCertification)}
+                  />
+                  <Button type="button" onClick={handleAddCertification}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {formData.certifications.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.certifications.map((cert, index) => (
+                      <Badge key={index} variant="secondary" className="gap-1">
+                        {cert}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem('certifications', cert)}
+                          className="hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pricing & Contact */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Pricing & Contact Information</CardTitle>
+              <CardDescription>How clients can reach you and your pricing</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="hourlyRate">Hourly Rate (USD)</Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="hourlyRate"
+                    type="number"
+                    placeholder="E.g., 75"
+                    value={formData.hourlyRate}
+                    onChange={(e) => handleInputChange('hourlyRate', e.target.value)}
+                    className="pl-10"
+                    min="1"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contactEmail">Contact Email *</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="contactEmail"
+                      type="email"
+                      placeholder="E.g., contact@yourbusiness.com"
+                      value={formData.contactEmail}
+                      onChange={(e) => handleInputChange('contactEmail', e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactPhone">Contact Phone</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="contactPhone"
+                      placeholder="E.g., +1 (555) 123-4567"
+                      value={formData.contactPhone}
+                      onChange={(e) => handleInputChange('contactPhone', e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="website">Website</Label>
+                <div className="relative">
+                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="website"
+                    placeholder="https://yourbusiness.com"
+                    value={formData.website}
+                    onChange={(e) => handleInputChange('website', e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Portfolio */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Portfolio & Work Samples</CardTitle>
+              <CardDescription>Share links to your best work</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add a portfolio/work link and press Enter or click Add"
+                  value={currentPortfolioLink}
+                  onChange={(e) => setCurrentPortfolioLink(e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, handleAddPortfolioLink)}
+                />
+                <Button type="button" onClick={handleAddPortfolioLink}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {formData.portfolioLinks.length > 0 && (
+                <div className="space-y-2">
+                  {formData.portfolioLinks.map((link, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="text-sm truncate">{link}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveItem('portfolioLinks', link)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Submit Actions */}
+          <div className="flex gap-4">
+            <Button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="flex-1 sm:flex-none"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Building2 className="h-4 w-4 mr-2" />
+                  List Business
+                </>
+              )}
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/suppliers">
+                Cancel
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}

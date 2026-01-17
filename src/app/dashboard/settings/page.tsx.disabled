@@ -1,0 +1,154 @@
+'use client'
+
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Link } from 'next/link'
+import { User, LogOut, ArrowLeft, CheckCircle2, Bell, Lock, Globe } from 'lucide-react'
+
+export default function SettingsPage() {
+  const [loading, setLoading] = useState(false)
+
+  const handleLogout = () => {
+    setLoading(true)
+    window.location.href = '/auth'
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-background">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <ArrowLeft className="h-5 w-5" />
+              <span className="font-bold text-xl">Settings</span>
+            </Link>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm">Help</Button>
+              <Button variant="ghost" asChild size="sm">
+                <Link href="/">Home</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <h1 className="text-2xl font-bold">Settings</h1>
+          <p className="text-muted-foreground">Manage your account preferences</p>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  <CardTitle>Profile</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                    <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center">
+                      <User className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <div className="font-semibold">Student User</div>
+                      <div className="text-sm text-muted-foreground">student@university.edu</div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1">Edit Profile</Button>
+                    <Button variant="outline">Change Password</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Bell className="h-5 w-5 text-primary" />
+                  <CardTitle>Notifications</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between py-2">
+                    <span>Email Notifications</span>
+                    <div className="h-6 w-12 bg-primary rounded-full flex items-center justify-center">
+                      <div className="text-xs font-bold text-primary-foreground">ON</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span>Push Notifications</span>
+                    <div className="h-6 w-12 bg-primary rounded-full flex items-center justify-center">
+                      <div className="text-xs font-bold text-primary-foreground">ON</div>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="w-full">Manage Notification Preferences</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Lock className="h-5 w-5 text-primary" />
+                  <CardTitle>Privacy & Security</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between py-2">
+                    <span>Two-Factor Authentication</span>
+                    <div className="text-sm text-muted-foreground">Not enabled</div>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span>Profile Visibility</span>
+                    <div className="text-sm text-muted-foreground">Public</div>
+                  </div>
+                  <Button variant="outline" className="w-full">Manage Privacy Settings</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-primary" />
+                  <CardTitle>Data Management</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Button variant="outline" className="w-full mb-2">
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Export Your Data
+                  </Button>
+                  <Button variant="outline" className="w-full">
+                    Export Professional Records
+                  </Button>
+                  <Button variant="destructive" className="w-full">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Delete Account
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="flex justify-center pt-8">
+            <Button
+              variant="destructive"
+              onClick={handleLogout}
+              disabled={loading}
+            >
+              {loading ? 'Logging out...' : 'Log Out'}
+            </Button>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}

@@ -1,0 +1,58 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-background: 150 18% 96%;
+  --color-foreground: 142 16% 12%;
+  --color-card: 150 18% 96%;
+  --color-card-foreground: 142 16% 12%;
+  --color-popover: 150 18% 96%;
+  --color-popover-foreground: 142 16% 12%;
+  --color-primary: 142 21% 35%;
+  --color-primary-foreground: 150 18% 96%;
+  --color-secondary: 140 20% 30%;
+  --color-secondary-foreground: 142 16% 12%;
+  --color-muted: 145 20% 35%;
+  --color-muted-foreground: 140 22% 25%;
+  --color-accent: 140 20% 30%;
+  --color-accent-foreground: 142 16% 12%;
+  --color-destructive: 0 72% 51%;
+  --color-destructive-foreground: 150 18% 96%;
+  --color-border: 140 20% 30%;
+  --color-input: 140 20% 30%;
+  --color-ring: 142 21% 35%;
+  --radius: 0.625rem;
+}
+
+.dark {
+  --color-background: 142 18% 25%;
+  --color-foreground: 145 20% 88%;
+  --color-card: 140 20% 30%;
+  --color-card-foreground: 145 20% 88%;
+  --color-popover: 140 20% 30%;
+  --color-popover-foreground: 145 20% 88%;
+  --color-primary: 145 21% 50%;
+  --color-primary-foreground: 142 18% 96%;
+  --color-secondary: 142 22% 40%;
+  --color-secondary-foreground: 145 20% 88%;
+  --color-muted: 145 25% 35%;
+  --color-muted-foreground: 140 22% 65%;
+  --color-accent: 142 22% 40%;
+  --color-accent-foreground: 145 20% 88%;
+  --color-destructive: 0 65% 60%;
+  --color-destructive-foreground: 142 18% 96%;
+  --color-border: 142 22% 40%;
+  --color-input: 142 22% 40%;
+  --color-ring: 145 21% 50%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}

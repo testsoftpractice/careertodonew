@@ -70,6 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.removeItem('user')
       localStorage.removeItem('token')
+      // Clear session cookie
+      document.cookie = 'session=; path=/; max-age=0; samesite=lax'
     } catch (error) {
       console.error('Error clearing auth state:', error)
     }

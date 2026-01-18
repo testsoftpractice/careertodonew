@@ -68,9 +68,13 @@ export default function AuthPage() {
       console.log('[AUTH] Signup response:', { status: response.status, success: data.success, user: data.user, error: data.error })
 
       if (data.success) {
+        // Store user data in localStorage
         login(data.user, data.token)
         setMessage('Account created successfully! Redirecting...')
         console.log('[AUTH] User logged in, redirecting to dashboard...')
+
+        // Set session cookie for middleware
+        document.cookie = `session=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
 
         setTimeout(() => {
           // Reset form
@@ -150,9 +154,13 @@ export default function AuthPage() {
       console.log('[AUTH] Login response:', { status: response.status, success: data.success, error: data.error })
 
       if (data.success) {
+        // Store user data in localStorage
         login(data.user, data.token)
         setMessage('Login successful! Redirecting...')
         console.log('[AUTH] User logged in, redirecting to dashboard...')
+
+        // Set session cookie for middleware
+        document.cookie = `session=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
 
         setTimeout(() => {
           // Reset form

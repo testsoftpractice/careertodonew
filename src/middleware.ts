@@ -14,6 +14,7 @@ const publicPaths = [
   '/auth',
   '/forgot-password',
   '/reset-password',
+  '/admin/login', // Admin login page
 ]
 
 // API paths that are public (for browsing data)
@@ -23,15 +24,18 @@ const publicApiPaths = [
   '/api/auth/forgot-password',
   '/api/auth/reset-password',
   '/api/auth/reset-password/validate-token',
-  '/api/users',
-  '/api/projects',
-  '/api/leaderboards',
-  '/api/universities',
-  '/api/jobs',
-  '/api/suppliers',
-  '/api/needs',
-  '/api/marketplace',
-  '/api/marketplace/search',
+  '/api/admin/login', // Admin login API
+  '/api/admin/verify', // Admin verify API
+  // Removed: Sensitive endpoints that now require authentication
+  // '/api/users', - Now protected
+  // '/api/projects', - Now protected
+  // '/api/leaderboards', - Now protected
+  // '/api/universities', - Now protected
+  // '/api/jobs', - Now protected
+  // '/api/suppliers', - Now protected
+  // '/api/needs', - Now protected
+  // '/api/marketplace', - Now protected
+  // '/api/marketplace/search', - Now protected
 ]
 
 export function middleware(request: NextRequest) {
@@ -91,7 +95,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Verify the session token
+  // Verify session token
   const decoded = verifyToken(sessionToken)
   if (!decoded) {
     // Invalid session, redirect to auth page
@@ -101,7 +105,16 @@ export function middleware(request: NextRequest) {
   }
 
   // Session is valid, proceed to protected route
-  return NextResponse.next()
+  // Set secure cookie for the response
+  const response = NextResponse.next()
+  response.cookies.set('session', sessionToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+    path: '/'
+  })
+  return response
 }
 
 export const config = {

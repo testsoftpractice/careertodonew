@@ -9,7 +9,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+ directUrl = env("DIRECT_URL")
 }
 
 // ==================== CORE USER & IDENTITY ====================
@@ -56,6 +56,8 @@ model User {
   universityId      String?
   major             String?
   graduationYear    Int?
+
+  university        University?       @relation("UniversityStudents", fields: [universityId], references: [id])
   // Employer Specific
     companyName      String?
     position         String?
@@ -79,7 +81,6 @@ model User {
   updatedAt         DateTime           @updatedAt
 
   // Relations
-  university        University?        @relation(fields: [universityId], references: [id])
   projectMemberships ProjectMember[]
   projectLeads      Project[]          @relation("ProjectLead")
   hrLeads           Project[]          @relation("HRLead")
@@ -96,9 +97,13 @@ model User {
   auditLogs         AuditLog[]
   suppliers         Supplier[]
 
+  foundedBusinesses Business[]          @relation("BusinessFounder")
+  businessApplications BusinessApplication[] @relation("BusinessApplicant")
+  businessEmployees BusinessEmployee[]  @relation("BusinessEmployee")
   @@index([role])
   @@index([universityId])
   @@index([verificationStatus])
+  @@index([role, verificationStatus]) // Dashboard query optimization
 }
 
 model University {
@@ -125,8 +130,9 @@ model University {
   updatedAt         DateTime           @updatedAt
 
   // Relations
-  students          User[]
+  students          User[]             @relation("UniversityStudents")
   projects          Project[]
+  businesses        Business[]         @relation("UniversityBusinesses")
 
   @@index([verificationStatus])
   @@index([rankingPosition])
@@ -337,6 +343,7 @@ model Task {
 
   @@index([projectId])
   @@index([assigneeId])
+  @@index([assigneeId, status]) // Dashboard query optimization
   @@index([status])
   @@index([dueDate])
 }
@@ -480,13 +487,14 @@ model ProfessionalRecord {
   metadata    String?
 
   // Immutability
-  hash        String     // Content hash for immutability verification
+  hash        String?    // Content hash for immutability verification (optional for system records)
   createdAt   DateTime   @default(now())
 
   // Relations
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, type]) // Dashboard query optimization
   @@index([type])
   @@index([isVerified])
 }
@@ -672,6 +680,8 @@ model Leaderboard {
   periodEnd       DateTime
 
   // Timestamps
+  approvedBy        String?          // University admin who approved
+  // Rejection
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
@@ -757,6 +767,8 @@ model Notification {
   readAt      DateTime?
 
   // Timestamps
+  approvedBy        String?          // University admin who approved
+  // Rejection
   createdAt   DateTime         @default(now())
 
   @@index([userId])
@@ -807,4 +819,188 @@ model Supplier {
   @@index([verified])
 }
 
+
+
+// ==================== STUDENT BUSINESS ====================
+
+enum BusinessStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  REVISION_REQUIRED
+  APPROVED
+  REJECTED
+  ACTIVE
+  PAUSED
+  CLOSED
+}
+
+enum BusinessCategory {
+  TECH_STARTUP
+  SERVICE_BUSINESS
+  PRODUCT_BUSINESS
+  CONSULTING
+  E_COMMERCE
+  MANUFACTURING
+  HEALTHCARE
+  EDTECH
+  FINTECH
+  OTHER
+}
+
+model Business {
+  id                String           @id @default(cuid())
+  
+  // Basic Info
+  title             String
+  description       String?
+  category          BusinessCategory
+  status            BusinessStatus   @default(DRAFT)
+  
+  // Student Founder
+  founderId         String
+  universityId      String
+  
+  // Business Plan Details
+  missionStatement  String?
+  targetMarket      String?
+  valueProposition  String?
+  revenueModel      String?
+  fundingGoal       Float?
+  currentFunding   Float?          @default(0)
+  
+  // Team & Operations
+  teamSizeGoal     Int?
+  teamSizeCurrent   Int?            @default(0)
+  
+  // Timeline
+  launchDateGoal   DateTime?
+  launchDateCurrent DateTime?
+  
+  // Approval
+  submittedAt       DateTime?
+  reviewedAt        DateTime?
+  approvedAt         DateTime?
+  approvedBy        String?          // University admin who approved
+
+  // Rejection
+  rejectionReason   String?
+
+  // Documents
+  businessPlanUrl   String?
+  pitchDeckUrl      String?
+  otherDocuments   String?         // JSON string array
+
+  // Metrics
+  employeesRecruited Int             @default(0)
+  revenueGenerated    Float?          @default(0)
+
+  // Timestamps
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  // Relations
+  founder           User             @relation("BusinessFounder", fields: [founderId], references: [id])
+  university        University?       @relation("UniversityBusinesses", fields: [universityId], references: [id])
+  businessPlan      BusinessPlan?
+  employees         BusinessEmployee[]
+  applications      BusinessApplication[]
+  
+  @@index([founderId])
+  @@index([universityId])
+  @@index([status])
+  @@index([category])
+}
+
+model BusinessPlan {
+  id              String     @id @default(cuid())
+  businessId       String     @unique
+
+  // Plan Sections
+  executiveSummary String?
+  marketAnalysis   String?
+  productService   String?
+  marketingStrategy String?
+  operationalPlan String?
+  financialProjections String?
+  
+  // Status
+  isApproved      Boolean    @default(false)
+  approvedBy      String?
+  approvedAt      DateTime?
+
+  // Feedback
+  reviewComments   String?
+
+  // Timestamps
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Relations
+  business        Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model BusinessEmployee {
+  id              String       @id @default(cuid())
+  businessId       String
+  employeeId       String
+  
+  // Role Details
+  role            String
+  position        String?
+  salary          Float?
+  
+  // Onboarding
+  joinedAt        DateTime   @default(now())
+  onboardingCompleted Boolean   @default(false)
+  
+  // Status
+  isActive        Boolean     @default(true)
+
+  // Timestamps
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Relations
+  business        Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  employee        User       @relation("BusinessEmployee", fields: [employeeId], references: [id])
+  
+  @@unique([businessId, employeeId])
+  @@index([employeeId])
+  @@index([isActive])
+}
+
+model BusinessApplication {
+  id              String     @id @default(cuid())
+  businessId       String
+  studentId       String
+  
+  // Application Details
+  coverLetter      String?
+  resumeUrl        String?
+  portfolioUrl     String?
+  
+  // Status
+  status          String     @default("PENDING") // PENDING, UNDER_REVIEW, ACCEPTED, REJECTED, WITHDRAWN
+
+  // Timestamps
+  appliedAt       DateTime   @default(now())
+  reviewedAt      DateTime?
+
+  // Feedback
+  reviewComments  String?
+  rejectionReason String?
+
+  // Timestamps
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Relations
+  business        Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  applicant       User       @relation("BusinessApplicant", fields: [studentId], references: [id])
+  
+  @@unique([businessId, studentId])
+  @@index([studentId])
+  @@index([status])
+}
 

@@ -8,6 +8,23 @@ import { z } from 'zod'
 // POST /api/auth/signup - User registration with password hashing
 export async function POST(request: NextRequest) {
   try {
+    // Debug: Check environment variables
+    if (!process.env.DATABASE_URL) {
+      console.error('[SIGNUP ERROR] DATABASE_URL is not set!')
+      return NextResponse.json(
+        { success: false, error: 'Server configuration error: Database not configured' },
+        { status: 500 }
+      )
+    }
+
+    if (!process.env.JWT_SECRET) {
+      console.error('[SIGNUP ERROR] JWT_SECRET is not set!')
+      return NextResponse.json(
+        { success: false, error: 'Server configuration error: JWT secret not configured' },
+        { status: 500 }
+      )
+    }
+
     const body = await request.json()
 
     // Validate input
@@ -45,6 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash password
+    console.log('[SIGNUP] Hashing password for user:', email)
     const hashedPassword = await hashPassword(password)
 
     // For university registration, create or find university
@@ -71,39 +89,50 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create user
-    const user = await db.user.create({
-      data: {
-        email,
-        name: `${firstName} ${lastName}`,
-        role: role as UserRole,
-        bio,
-        verificationStatus: VerificationStatus.PENDING,
-        password: hashedPassword,
-        universityId: university?.id,
-        major: role === 'STUDENT' ? major : null,
-        graduationYear: role === 'STUDENT' && graduationYear ? parseInt(graduationYear) : null,
-      },
-    })
+    // Convert role to match database enum
+    let finalRole: UserRole = role as UserRole
+    if (role === 'UNIVERSITY') {
+      finalRole = 'UNIVERSITY_ADMIN'
+    }
 
-    // Create professional record for user registration
-    await db.professionalRecord.create({
-      data: {
-        userId: user.id,
-        type: 'SKILL_ACQUIRED',
-        title: 'Platform Registration',
-        description: `Registered as ${role} on CareerToDo Platform`,
-        startDate: new Date(),
-        metadata: JSON.stringify({ role, email }),
-      },
+    console.log('[SIGNUP] Creating user in database:', email, 'with role:', finalRole)
+    const result = await db.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email,
+          name: `${firstName} ${lastName}`,
+          role: finalRole,
+          bio,
+          verificationStatus: VerificationStatus.PENDING,
+          password: hashedPassword,
+          universityId: university?.id,
+          major: finalRole === 'STUDENT' ? major : null,
+          graduationYear: finalRole === 'STUDENT' && graduationYear ? parseInt(graduationYear) : null,
+        },
+      })
+
+      // Create professional record for user registration
+      await tx.professionalRecord.create({
+        data: {
+          userId: user.id,
+          type: 'SKILL_ACQUIRED',
+          title: 'Platform Registration',
+          description: `Registered as ${role} on CareerToDo Platform`,
+          startDate: new Date(),
+          metadata: JSON.stringify({ role, email }),
+          hash: `reg-${user.id}-${Date.now()}`, // Generate a simple hash for system records
+        },
+      })
+
+      return user
     })
 
     // Generate JWT token
     const token = generateToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      verificationStatus: user.verificationStatus,
+      userId: result.id,
+      email: result.email,
+      role: result.role,
+      verificationStatus: result.verificationStatus,
     })
 
     return NextResponse.json(
@@ -111,30 +140,47 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'User created successfully',
         user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          verificationStatus: user.verificationStatus,
+          id: result.id,
+          email: result.email,
+          name: result.name,
+          role: result.role,
+          verificationStatus: result.verificationStatus,
         },
         token,
       },
       { status: 201 }
     )
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const formattedErrors = error.errors.map(err => ({
-        field: err.path.join('.'),
-        message: err.message,
-      }))
+  } catch (error: any) {
+    console.error('[SIGNUP ERROR] Detailed error:', {
+      message: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : undefined,
+      fullError: JSON.stringify(error, Object.getOwnPropertyNames(error))
+    })
+
+    // Handle Zod validation errors
+    if (error && error.name === 'ZodError') {
+      const formattedErrors = error.issues?.map((err: any) => ({
+        field: err.path?.join('.') || 'unknown',
+        message: err.message || 'Validation failed',
+      })) || []
       return NextResponse.json(
         { success: false, error: 'Validation error', errors: formattedErrors },
         { status: 400 }
       )
     }
-    console.error('Signup error:', error)
+
+    // Handle Prisma errors
+    if (error && error.code && error.code.startsWith('P')) {
+      return NextResponse.json(
+        { success: false, error: 'Database error. Please try again.' },
+        { status: 500 }
+      )
+    }
+
+    // Handle other errors
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }

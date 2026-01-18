@@ -7,6 +7,23 @@ import { z } from 'zod'
 // POST /api/auth/login - User authentication with password verification
 export async function POST(request: NextRequest) {
   try {
+    // Debug: Check environment variables
+    if (!process.env.DATABASE_URL) {
+      console.error('[LOGIN ERROR] DATABASE_URL is not set!')
+      return NextResponse.json(
+        { success: false, error: 'Server configuration error: Database not configured' },
+        { status: 500 }
+      )
+    }
+
+    if (!process.env.JWT_SECRET) {
+      console.error('[LOGIN ERROR] JWT_SECRET is not set!')
+      return NextResponse.json(
+        { success: false, error: 'Server configuration error: JWT secret not configured' },
+        { status: 500 }
+      )
+    }
+
     const body = await request.json()
 
     // Validate input
@@ -139,6 +156,7 @@ export async function POST(request: NextRequest) {
     const avgReliability = ratings.filter(r => r.dimension === 'RELIABILITY').reduce((sum, r) => sum + r.score, 0) / (ratings.filter(r => r.dimension === 'RELIABILITY').length || 1)
 
     return NextResponse.json({
+      success: true,
       message: 'Login successful',
       user: {
         id: user.id,
@@ -172,9 +190,16 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    console.error('Login error:', error)
+
+    console.error('[LOGIN ERROR] Detailed error:', {
+      message: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : undefined,
+      fullError: JSON.stringify(error, Object.getOwnPropertyNames(error))
+    })
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }

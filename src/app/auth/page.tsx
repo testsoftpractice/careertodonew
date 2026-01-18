@@ -55,6 +55,7 @@ export default function AuthPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
+    console.log('[AUTH] Starting signup with data:', { email: signupData.email, role: signupData.role, firstName: signupData.firstName })
 
     try {
       const response = await fetch('/api/auth/signup', {
@@ -64,23 +65,61 @@ export default function AuthPage() {
       })
 
       const data = await response.json()
+      console.log('[AUTH] Signup response:', { status: response.status, success: data.success, user: data.user, error: data.error })
 
       if (data.success) {
         login(data.user, data.token)
         setMessage('Account created successfully! Redirecting...')
+        console.log('[AUTH] User logged in, redirecting to dashboard...')
 
         setTimeout(() => {
-          if (selectedRole === 'STUDENT') {
+          // Reset form
+          setSignupData({
+            firstName: '',
+            lastName: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+            role: '',
+            bio: '',
+            agreeTerms: false,
+            university: '',
+            universityId: '',
+            major: '',
+            graduationYear: '',
+            universityName: '',
+            universityCode: '',
+            website: '',
+            companyName: '',
+            companyWebsite: '',
+            position: '',
+            firmName: '',
+            investmentFocus: '',
+          })
+
+          // Use the user's role from the response for redirect (more reliable)
+          const userRole = data.user.role
+          console.log('[AUTH] Redirecting user with role:', userRole)
+          if (userRole === 'STUDENT') {
             router.push('/dashboard/student')
-          } else if (selectedRole === 'UNIVERSITY') {
+          } else if (userRole === 'UNIVERSITY' || userRole === 'UNIVERSITY_ADMIN') {
             router.push('/dashboard/university')
-          } else if (selectedRole === 'EMPLOYER') {
+          } else if (userRole === 'EMPLOYER') {
             router.push('/marketplace')
-          } else if (selectedRole === 'INVESTOR') {
+          } else if (userRole === 'INVESTOR') {
             router.push('/marketplace')
+          } else if (userRole === 'MENTOR') {
+            router.push('/marketplace')
+          } else if (userRole === 'PLATFORM_ADMIN') {
+            router.push('/admin/governance')
+          } else {
+            // Default fallback
+            console.log('[AUTH] Unknown role, using default student dashboard')
+            router.push('/dashboard/student')
           }
         }, 1000)
       } else {
+        console.log('[AUTH] Signup failed:', data.error)
         setError(data.error || 'Failed to create account')
       }
     } catch (err: any) {
@@ -95,6 +134,7 @@ export default function AuthPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
+    console.log('[AUTH] Starting login with email:', loginEmail)
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -107,25 +147,41 @@ export default function AuthPage() {
       })
 
       const data = await response.json()
+      console.log('[AUTH] Login response:', { status: response.status, success: data.success, error: data.error })
 
       if (data.success) {
         login(data.user, data.token)
         setMessage('Login successful! Redirecting...')
+        console.log('[AUTH] User logged in, redirecting to dashboard...')
 
         setTimeout(() => {
-          if (data.user.role === 'STUDENT') {
+          // Reset form
+          setLoginEmail('')
+          setLoginPassword('')
+          setError('')
+
+          const userRole = data.user.role
+          console.log('[AUTH] Redirecting user with role:', userRole)
+          if (userRole === 'STUDENT') {
             router.push('/dashboard/student')
-          } else if (data.user.role === 'UNIVERSITY') {
+          } else if (userRole === 'UNIVERSITY' || userRole === 'UNIVERSITY_ADMIN') {
             router.push('/dashboard/university')
-          } else if (data.user.role === 'EMPLOYER') {
+          } else if (userRole === 'EMPLOYER') {
             router.push('/marketplace')
-          } else if (data.user.role === 'INVESTOR') {
+          } else if (userRole === 'INVESTOR') {
             router.push('/marketplace')
-          } else if (data.user.role === 'ADMIN') {
+          } else if (userRole === 'MENTOR') {
+            router.push('/marketplace')
+          } else if (userRole === 'PLATFORM_ADMIN') {
             router.push('/admin/governance')
+          } else {
+            // Default fallback
+            console.log('[AUTH] Unknown role, using default student dashboard')
+            router.push('/dashboard/student')
           }
         }, 1000)
       } else {
+        console.log('[AUTH] Login failed:', data.error)
         setError(data.error || 'Invalid email or password')
       }
     } catch (err: any) {

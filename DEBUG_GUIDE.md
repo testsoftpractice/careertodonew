@@ -1,291 +1,249 @@
-# 🔍 DEBUGGING 500 ERRORS - Step by Step
+# Debug Guide - Auth Redirect Issues
 
-## The Issue:
+## 🎯 Current State
 
-You're getting 500 errors because the **environment variables in `.env` are placeholders**, not real values.
+I've made several improvements to fix the redirect issue:
 
----
+1. ✅ **Session cookie setting** - Cookie is now set on login/signup
+2. ✅ **Changed redirect method** - Now using `window.location.href` instead of `router.push()`
+3. ✅ **Added extensive logging** - Every step is logged to console
+4. ✅ **Added role verification** - Shows which role values match/don't match
+5. ✅ **Fixed seed database** - Now uses upsert instead of create
 
-## ✅ QUICK FIX - 2 STEPS:
+## 🧪 What to Do Now
 
-### Step 1: Visit This Debug Endpoint
+### Step 1: Refresh Your Browser
+- Press `Ctrl + Shift + R` (Windows) or `Cmd + Shift + R` (Mac) to hard refresh
+- This ensures you get the latest JavaScript code
 
-Open your browser and go to:
-**http://localhost:3000/api/debug/env**
+### Step 2: Open DevTools
+- Press `F12` to open Developer Tools
+- Go to the **Console** tab
+- Clear the console (click the 🚫 icon or press `Ctrl + L`)
 
-This will show you:
-- Which environment variables are set
-- If database connection is working
-- Exact error if database connection fails
+### Step 3: Try Login/Signup
+- Go to http://localhost:3000/auth
+- Fill in your credentials
+- Submit the form
 
-### Step 2: Fill in Your Real .env Values
+### Step 4: Watch the Console
 
-Edit `/home/z/my-project/.env` and replace the placeholders:
+**You should see these messages in order:**
 
-```bash
-# Replace this:
-DATABASE_URL="your-supabase-pooled-connection-url-here"
-
-# With your ACTUAL Supabase URL like:
-DATABASE_URL="postgresql://postgres.abc123:your-password@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
-
-# Same for others:
-DIRECT_URL="postgresql://postgres.abc123:your-password@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
-JWT_SECRET="your-real-secret"
-NEXTAUTH_SECRET="your-real-nextauth-secret"
 ```
-
----
-
-## 📋 HOW TO GET YOUR SUPABASE CREDENTIALS:
-
-### 1. Go to Supabase Dashboard
-
-Visit: https://supabase.com/dashboard
-
-### 2. Select Your Project
-
-Click on your project
-
-### 3. Go to API Settings
-
-Click: **⚙️ Settings** → **API**
-
-### 4. Copy Connection Strings
-
-You'll see two sections:
-
-#### For DATABASE_URL (Connection Pooling):
-- Look for: **"Connection String"** section
-- Subsection: **"Connection Pooling"**
-- Copy the URL
-- It looks like:
-  ```
-  postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres?pgbouncer=true
-  ```
-
-#### For DIRECT_URL (Direct Connection):
-- Same section
-- Subsection: **"Direct Connection"**
-- Copy the URL
-- It looks like:
-  ```
-  postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres
-  ```
-
-### 5. Get JWT Secret (if using Supabase)
-
-In the same API section, look for:
-- **"JWT Secret"** or **"anon key"**
-- Copy and use as `JWT_SECRET`
-
-### 6. Your NextAuth Secret
-
-If you used a NextAuth secret generator, use that as `NEXTAUTH_SECRET`.
-Otherwise, generate a random one:
-```bash
-openssl rand -base64 32
-```
-
----
-
-## 🧪 TESTING YOUR SETUP:
-
-### Test 1: Check Debug Endpoint
-
-Visit: http://localhost:3000/api/debug/env
-
-**Expected Response (if working):**
-```json
-{
-  "message": "Environment and Database Debug",
-  "environment": {
-    "DATABASE_URL": "SET ✓",
-    "DIRECT_URL": "SET ✓",
-    "JWT_SECRET": "SET ✓",
-    "NEXTAUTH_SECRET": "SET ✓",
-    "NEXTAUTH_URL": "SET ✓",
-    "NODE_ENV": "development"
-  },
-  "database": {
-    "status": "Connected ✓",
-    "error": null
-  }
+[AUTH] Starting login with email: your@email.com
+[AUTH] Login response: { status: 200, success: true, error: undefined }
+[AUTH] User logged in, redirecting to dashboard...
+[AUTH] Setting cookie: session=eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp...
+[AUTH] Cookie set successfully: true  ← IMPORTANT!
+[AUTH] User role: STUDENT  ← IMPORTANT!
+[AUTH] Full user data: {"id":"...","email":"...","role":"STUDENT",...}
+[AUTH] Checking role against values: {
+  userRole: "STUDENT",
+  isStudent: true,  ← SHOULD BE TRUE!
+  isUniversityAdmin: false,
+  isEmployer: false,
+  isInvestor: false,
+  isMentor: false,
+  isPlatformAdmin: false
 }
+[AUTH] Determined redirect path: /dashboard/student
+[AUTH] Waiting 1.5 seconds before redirect...
+[AUTH] Redirecting NOW to: /dashboard/student
 ```
 
-**If you see "NOT SET ✗":**
-- That environment variable is missing from your .env file
-- You need to add it
+## 🔍 Troubleshooting
 
-**If you see "Failed ✗" in database:**
-- Your DATABASE_URL is incorrect
-- Wrong password
-- Supabase project doesn't exist
+### Issue 1: You see `[AUTH] Cookie set successfully: false`
 
-### Test 2: Run Database Push
+**What it means:** Browser is blocking cookies
 
-```bash
-cd /home/z/my-project
-bun run db:push
-```
+**Solutions:**
+1. Check browser settings:
+   - Chrome: Settings → Privacy → Cookies → Allow localhost
+   - Firefox: Settings → Privacy → Cookies → Allow localhost
+   - Edge: Settings → Cookies → Allow localhost
+2. Try in an Incognito/Private window
+3. Disable ad blockers temporarily
+4. Check if you're using a browser extension that blocks cookies
 
-**Expected Output:**
-```
-✔ Database URL is valid
-✔ Applying migrations...
-✔ Done!
-```
+### Issue 2: You see `[AUTH] Cookie set successfully: true` but no redirect
 
-**If it fails:**
-- DATABASE_URL is wrong
-- Check password in URL
-- Make sure Supabase project is active
+**What it means:** Cookie is working but redirect isn't happening
 
-### Test 3: Try Signup
-
-Visit: http://localhost:3000/auth
-
-Try to create a user. Check browser console (F12) for errors.
-
-### Test 4: Try Login
-
-Use the credentials you just created.
-
----
-
-## 🔍 COMMON PROBLEMS & SOLUTIONS:
-
-### Problem 1: "DATABASE_URL not set"
-
-**Cause**: `.env` file has placeholder: `DATABASE_URL="your-supabase-pooled-connection-url-here"`
-
-**Solution**: Replace with actual Supabase URL
-
-### Problem 2: "JWT_SECRET not set"
-
-**Cause**: `.env` has placeholder: `JWT_SECRET="your-jwt-secret-here"`
-
-**Solution**: Replace with actual secret
-
-### Problem 3: "Database connection failed"
-
-**Cause**: Wrong password or incorrect URL format
-
-**Solution**:
-1. Check Supabase Dashboard → Settings → Database
-2. Reset password if needed
-3. Copy fresh connection string
-4. Make sure no extra spaces or quotes
-
-### Problem 4: "Table doesn't exist"
-
-**Cause**: Database tables haven't been created
-
-**Solution**: Run `bun run db:push`
-
----
-
-## 📝 EXAMPLE OF CORRECTLY FILLED .env:
-
-```bash
-# ==========================================
-# Database Configuration (Supabase)
-# ==========================================
-DATABASE_URL="postgresql://postgres.abcd12345:super-secret-password@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
-DIRECT_URL="postgresql://postgres.abcd12345:super-secret-password@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
-
-# ==========================================
-# Authentication Secrets
-# ==========================================
-JWT_SECRET="abc123def456ghi789jkl012mno345pqr"
-NEXTAUTH_SECRET="xyz789abc456def123ghi789jkl012"
-
-# ==========================================
-# App Configuration
-# ==========================================
-NEXTAUTH_URL="http://localhost:3000"
-NODE_ENV="development"
-```
-
----
-
-## 🎯 CHECKLIST:
-
-Before trying signup/login again:
-
-- [ ] I've visited Supabase Dashboard
-- [ ] I've copied the Connection Pooling URL
-- [ ] I've copied the Direct Connection URL
-- [ ] I've gotten my JWT secret
-- [ ] I've filled in DATABASE_URL in .env (no placeholders)
-- [ ] I've filled in DIRECT_URL in .env (no placeholders)
-- [ ] I've filled in JWT_SECRET in .env (no placeholders)
-- [ ] I've filled in NEXTAUTH_SECRET in .env (no placeholders)
-- [ ] I've visited /api/debug/env and all show "SET ✓"
-- [ ] I've run `bun run db:push` successfully
-- [ ] I've restarted the dev server or it auto-restarted
-
----
-
-## 🚀 ONCE EVERYTHING IS WORKING:
-
-1. **Commit to Git** (without .env file!):
-   ```bash
-   git add .
-   git commit -m "fix: update database credentials"
+**Solutions:**
+1. Check if you see the last message: `[AUTH] Redirecting NOW to: /dashboard/student`
+2. If you DON'T see this message, the setTimeout callback isn't firing
+3. Try manually typing this in the console:
+   ```javascript
+   window.location.href = '/dashboard/student'
    ```
+4. If that works, the issue is with the setTimeout
+5. Check if there are any popup blockers or similar extensions
 
-2. **Push to GitHub**
+### Issue 3: Redirect happens but goes back to `/auth`
 
-3. **Vercel will auto-deploy**
-   - Vercel uses its own environment variables (which you've already set)
-   - Local .env won't affect production
+**What it means:** Middleware is rejecting the cookie
 
----
+**Solutions:**
+1. After login, check the cookie value:
+   - Go to DevTools → Application → Cookies
+   - Look for the `session` cookie
+   - Copy the token value
+2. In console, type:
+   ```javascript
+   console.log(document.cookie)
+   ```
+   - Should show the session cookie
+3. Check the server logs for any middleware errors
+4. Verify the token isn't expired
 
-## ❓ STILL HAVING ISSUES?
+### Issue 4: Console shows `isStudent: false` when role is `STUDENT`
 
-### Check Server Logs:
+**What it means:** There's a mismatch in role values
 
-```bash
-# Watch logs in real-time
-tail -f /home/z/my-project/dev.log
+**What to do:**
+1. Look at the `userRole` value
+2. Check all the boolean values
+3. Tell me what you see:
+   - What is the userRole value?
+   - Are any of the isX values true?
+   - What is the determined redirect path?
 
-# Or check recent logs
-bun run dev 2>&1 | tee server.log
+### Issue 5: No console messages appear at all
+
+**What it means:** JavaScript error is preventing code from running
+
+**Solutions:**
+1. Check for red error messages in console
+2. Look for any errors about:
+   - "document is not defined"
+   - "window is not defined"
+   - "Cannot read property of undefined"
+3. Take a screenshot of the console
+4. Send me the error messages
+
+## 📊 Expected Console Output Examples
+
+### Example 1: Successful Student Login
+```javascript
+[AUTH] Starting login with email: student@example.com
+[AUTH] Login response: { status: 200, success: true, error: undefined }
+[AUTH] User logged in, redirecting to dashboard...
+[AUTH] Setting cookie: session=eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp...
+[AUTH] Cookie set successfully: true
+[AUTH] User role: STUDENT
+[AUTH] Full user data: {"id":"...","email":"student@example.com","name":"...","role":"STUDENT",...}
+[AUTH] Checking role against values: {
+  userRole: "STUDENT",
+  isStudent: true,
+  isUniversityAdmin: false,
+  isEmployer: false,
+  isInvestor: false,
+  isMentor: false,
+  isPlatformAdmin: false
+}
+[AUTH] Determined redirect path: /dashboard/student
+[AUTH] Waiting 1.5 seconds before redirect...
+[AUTH] Redirecting NOW to: /dashboard/student
 ```
 
-### Check Browser Console:
+### Example 2: Successful Employer Login
+```javascript
+[AUTH] Starting login with email: employer@example.com
+[AUTH] Login response: { status: 200, success: true, error: undefined }
+[AUTH] User logged in, redirecting to dashboard...
+[AUTH] Setting cookie: session=eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp...
+[AUTH] Cookie set successfully: true
+[AUTH] User role: EMPLOYER
+[AUTH] Full user data: {"id":"...","email":"employer@example.com","name":"...","role":"EMPLOYER",...}
+[AUTH] Checking role against values: {
+  userRole: "EMPLOYER",
+  isStudent: false,
+  isUniversityAdmin: false,
+  isEmployer: true,  ← THIS ONE!
+  isInvestor: false,
+  isMentor: false,
+  isPlatformAdmin: false
+}
+[AUTH] Determined redirect path: /marketplace
+[AUTH] Waiting 1.5 seconds before redirect...
+[AUTH] Redirecting NOW to: /marketplace
+```
 
-1. Open DevTools (F12)
-2. Go to Console tab
-3. Look for red errors
-4. Go to Network tab
-5. Click on failing request
-6. Check Response tab for actual error message
+## 🧪 Manual Testing
 
-### Test Database in Supabase SQL Editor:
+### Test 1: Manual Redirect
+After seeing the console messages, try typing this in the console:
+```javascript
+window.location.href = '/dashboard/student'
+```
+If this works, the redirect mechanism is the issue.
 
-1. Go to Supabase Dashboard
-2. Click on "SQL Editor"
-3. Run: `SELECT NOW();`
-4. If it works, your connection is good
+### Test 2: Check Cookie Value
+In console, type:
+```javascript
+console.log(document.cookie)
+```
+You should see: `session=eyJhbGci...`
 
----
+### Test 3: Check User Object
+In console, type:
+```javascript
+JSON.parse(localStorage.getItem('user'))
+```
+You should see your user object.
 
-## 📁 What Files Were Changed:
+## 📝 Information to Collect If Still Not Working
 
-- ✅ `.env` - Template created (YOU NEED TO FILL IN)
-- ✅ `/api/debug/env/route.ts` - Debug endpoint to test connection
-- ✅ `src/middleware.ts` - Added debug endpoint to public paths
-- ✅ `/api/auth/signup/route.ts` - Added better error logging
-- ✅ `/api/auth/login/route.ts` - Added better error logging
+Please provide:
+1. **Full console output** - Copy all [AUTH] messages
+2. **Browser** - Which browser are you using? (Chrome, Firefox, Edge, Safari)
+3. **Console errors** - Any red error messages?
+4. **Cookie value** - Screenshot of Application → Cookies tab
+5. **Network tab** - Screenshot of the request to /dashboard/student
 
----
+## 🎯 What Should Happen
 
-## 🎯 CRITICAL REMINDER:
+1. You submit login form
+2. After ~1.5 seconds, console shows `[AUTH] Redirecting NOW to: ...`
+3. Browser navigates to dashboard page
+4. You see the dashboard content
+5. You're not redirected back to auth page
 
-**The .env file I created has PLACEHOLDERS. You MUST replace them with your actual Supabase credentials or nothing will work!**
+## 🔧 Last Resort: Manual Navigation
 
-Do NOT commit .env to version control!
+If nothing works, you can:
+1. Login (which should work based on logs)
+2. After seeing success message, manually type this in address bar:
+   ```
+   http://localhost:3000/dashboard/student
+   ```
+3. This will bypass the redirect mechanism
+4. If you can access the dashboard this way, the issue is specifically with the redirect
+
+## 📞 What to Send Me
+
+If it still doesn't work after trying everything, please send:
+
+1. **Screenshot of console** - All the [AUTH] messages
+2. **Screenshot of Application → Cookies** - Showing the session cookie
+3. **Browser version** - Chrome 120, Firefox 121, etc.
+4. **Any error messages** - Red text in console
+5. **What happens after 1.5 seconds** - Does anything change on the page?
+
+With this information, I can pinpoint the exact issue!
+
+## 🚀 Quick Test
+
+**Do this right now:**
+1. Refresh browser (Ctrl+Shift+R)
+2. Open DevTools (F12) → Console
+3. Clear console (Ctrl+L)
+4. Go to http://localhost:3000/auth
+5. Login with your credentials
+6. Copy everything from the console
+7. Wait 1.5 seconds
+8. Tell me what you see!
+
+The console output will tell us exactly what's happening.

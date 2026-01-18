@@ -10,8 +10,10 @@ async function main() {
     console.log('🏫 Seeding universities...')
     const universities = []
     for (let i = 1; i <= 5; i++) {
-      const university = await prisma.university.create({
-        data: {
+      const university = await prisma.university.upsert({
+        where: { code: `UNIV${String(i).padStart(3, '0')}` },
+        update: {},
+        create: {
           name: `University ${i}`,
           code: `UNIV${String(i).padStart(3, '0')}`,
           description: `Description for University ${i}`,
@@ -19,7 +21,7 @@ async function main() {
         },
       })
       universities.push(university)
-      console.log(`   ✓ Created ${university.name}`)
+      console.log(`   ✓ Created/Updated ${university.name}`)
     }
 
     // Create Users

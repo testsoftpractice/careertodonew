@@ -74,54 +74,52 @@ export default function AuthPage() {
         console.log('[AUTH] User logged in, redirecting to dashboard...')
 
         // Set session cookie for middleware
-        document.cookie = `session=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
+        const cookieValue = `session=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
+        console.log('[AUTH] Setting cookie:', cookieValue.substring(0, 50) + '...')
+        document.cookie = cookieValue
 
+        // Verify cookie was set
+        const cookieCheck = document.cookie.includes('session=')
+        console.log('[AUTH] Cookie set successfully:', cookieCheck)
+        console.log('[AUTH] User role:', data.user.role)
+        console.log('[AUTH] Full user data:', JSON.stringify(data.user))
+
+        // Determine redirect path based on role
+        const userRole = data.user.role
+        let redirectPath = '/dashboard/student' // default
+
+        console.log('[AUTH] Checking role against values:', {
+          userRole,
+          isStudent: userRole === 'STUDENT',
+          isUniversityAdmin: userRole === 'UNIVERSITY_ADMIN',
+          isEmployer: userRole === 'EMPLOYER',
+          isInvestor: userRole === 'INVESTOR',
+          isMentor: userRole === 'MENTOR',
+          isPlatformAdmin: userRole === 'PLATFORM_ADMIN'
+        })
+
+        if (userRole === 'STUDENT') {
+          redirectPath = '/dashboard/student'
+        } else if (userRole === 'UNIVERSITY_ADMIN') {
+          redirectPath = '/dashboard/university'
+        } else if (userRole === 'EMPLOYER') {
+          redirectPath = '/marketplace'
+        } else if (userRole === 'INVESTOR') {
+          redirectPath = '/marketplace'
+        } else if (userRole === 'MENTOR') {
+          redirectPath = '/marketplace'
+        } else if (userRole === 'PLATFORM_ADMIN') {
+          redirectPath = '/admin/governance'
+        }
+
+        console.log('[AUTH] Determined redirect path:', redirectPath)
+        console.log('[AUTH] Waiting 1.5 seconds before redirect...')
+
+        // Use window.location for more reliable redirect
         setTimeout(() => {
-          // Reset form
-          setSignupData({
-            firstName: '',
-            lastName: '',
-            email: '',
-            password: '',
-            confirmPassword: '',
-            role: '',
-            bio: '',
-            agreeTerms: false,
-            university: '',
-            universityId: '',
-            major: '',
-            graduationYear: '',
-            universityName: '',
-            universityCode: '',
-            website: '',
-            companyName: '',
-            companyWebsite: '',
-            position: '',
-            firmName: '',
-            investmentFocus: '',
-          })
-
-          // Use the user's role from the response for redirect (more reliable)
-          const userRole = data.user.role
-          console.log('[AUTH] Redirecting user with role:', userRole)
-          if (userRole === 'STUDENT') {
-            router.push('/dashboard/student')
-          } else if (userRole === 'UNIVERSITY' || userRole === 'UNIVERSITY_ADMIN') {
-            router.push('/dashboard/university')
-          } else if (userRole === 'EMPLOYER') {
-            router.push('/marketplace')
-          } else if (userRole === 'INVESTOR') {
-            router.push('/marketplace')
-          } else if (userRole === 'MENTOR') {
-            router.push('/marketplace')
-          } else if (userRole === 'PLATFORM_ADMIN') {
-            router.push('/admin/governance')
-          } else {
-            // Default fallback
-            console.log('[AUTH] Unknown role, using default student dashboard')
-            router.push('/dashboard/student')
-          }
-        }, 1000)
+          console.log('[AUTH] Redirecting NOW to:', redirectPath)
+          window.location.href = redirectPath
+        }, 1500) // 1.5 seconds
       } else {
         console.log('[AUTH] Signup failed:', data.error)
         setError(data.error || 'Failed to create account')
@@ -160,34 +158,52 @@ export default function AuthPage() {
         console.log('[AUTH] User logged in, redirecting to dashboard...')
 
         // Set session cookie for middleware
-        document.cookie = `session=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
+        const cookieValue = `session=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
+        console.log('[AUTH] Setting cookie:', cookieValue.substring(0, 50) + '...')
+        document.cookie = cookieValue
 
+        // Verify cookie was set
+        const cookieCheck = document.cookie.includes('session=')
+        console.log('[AUTH] Cookie set successfully:', cookieCheck)
+        console.log('[AUTH] User role:', data.user.role)
+        console.log('[AUTH] Full user data:', JSON.stringify(data.user))
+
+        // Determine redirect path based on role
+        const userRole = data.user.role
+        let redirectPath = '/dashboard/student' // default
+
+        console.log('[AUTH] Checking role against values:', {
+          userRole,
+          isStudent: userRole === 'STUDENT',
+          isUniversityAdmin: userRole === 'UNIVERSITY_ADMIN',
+          isEmployer: userRole === 'EMPLOYER',
+          isInvestor: userRole === 'INVESTOR',
+          isMentor: userRole === 'MENTOR',
+          isPlatformAdmin: userRole === 'PLATFORM_ADMIN'
+        })
+
+        if (userRole === 'STUDENT') {
+          redirectPath = '/dashboard/student'
+        } else if (userRole === 'UNIVERSITY_ADMIN') {
+          redirectPath = '/dashboard/university'
+        } else if (userRole === 'EMPLOYER') {
+          redirectPath = '/marketplace'
+        } else if (userRole === 'INVESTOR') {
+          redirectPath = '/marketplace'
+        } else if (userRole === 'MENTOR') {
+          redirectPath = '/marketplace'
+        } else if (userRole === 'PLATFORM_ADMIN') {
+          redirectPath = '/admin/governance'
+        }
+
+        console.log('[AUTH] Determined redirect path:', redirectPath)
+        console.log('[AUTH] Waiting 1.5 seconds before redirect...')
+
+        // Use window.location for more reliable redirect
         setTimeout(() => {
-          // Reset form
-          setLoginEmail('')
-          setLoginPassword('')
-          setError('')
-
-          const userRole = data.user.role
-          console.log('[AUTH] Redirecting user with role:', userRole)
-          if (userRole === 'STUDENT') {
-            router.push('/dashboard/student')
-          } else if (userRole === 'UNIVERSITY' || userRole === 'UNIVERSITY_ADMIN') {
-            router.push('/dashboard/university')
-          } else if (userRole === 'EMPLOYER') {
-            router.push('/marketplace')
-          } else if (userRole === 'INVESTOR') {
-            router.push('/marketplace')
-          } else if (userRole === 'MENTOR') {
-            router.push('/marketplace')
-          } else if (userRole === 'PLATFORM_ADMIN') {
-            router.push('/admin/governance')
-          } else {
-            // Default fallback
-            console.log('[AUTH] Unknown role, using default student dashboard')
-            router.push('/dashboard/student')
-          }
-        }, 1000)
+          console.log('[AUTH] Redirecting NOW to:', redirectPath)
+          window.location.href = redirectPath
+        }, 1500) // 1.5 seconds
       } else {
         console.log('[AUTH] Login failed:', data.error)
         setError(data.error || 'Invalid email or password')

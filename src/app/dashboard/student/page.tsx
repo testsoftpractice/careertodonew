@@ -40,10 +40,14 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
+import { useRoleAccess } from '@/hooks/use-role-access'
 import { toast } from '@/hooks/use-toast'
 
 export default function StudentDashboard() {
   const { user } = useAuth()
+
+  // Role-based access control - only students and mentors can access this page
+  useRoleAccess(['STUDENT', 'MENTOR', 'PLATFORM_ADMIN'])
   const [activeTab, setActiveTab] = useState('overview')
 
   // Data states (fetched from API)

@@ -190,39 +190,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(JSON.parse(storedUser))
         setToken(storedToken)
       } else {
-        // No authentication - load demo user based on path
-        console.log('[Auth] No user in localStorage, loading demo user...')
-
-        const path = window.location.pathname
-
-        let demoUser = demoStudent
-
-        if (path.startsWith('/dashboard/university')) {
-          console.log('[Auth] Loading demo university admin user')
-          demoUser = demoUniversityAdmin
-        } else if (path.startsWith('/dashboard/student')) {
-          console.log('[Auth] Loading demo student user')
-          demoUser = demoStudent
-        } else if (path.startsWith('/dashboard/employer')) {
-          console.log('[Auth] Loading demo employer user')
-          demoUser = demoEmployer
-        } else if (path.startsWith('/dashboard/investor')) {
-          console.log('[Auth] Loading demo investor user')
-          demoUser = demoInvestor
-        } else if (path.startsWith('/admin')) {
-          console.log('[Auth] Loading demo platform admin user')
-          demoUser = demoPlatformAdmin
-        } else {
-          console.log('[Auth] Loading demo student user as default')
-          demoUser = demoStudent
-        }
-
-        setUser(demoUser)
-        setToken('demo-token')
-
-        // Save to localStorage so it persists
-        localStorage.setItem('user', JSON.stringify(demoUser))
-        localStorage.setItem('token', 'demo-token')
+        // No authentication - user must log in
+        console.log('[Auth] No user in localStorage, user needs to authenticate')
       }
     } catch (error) {
       console.error('[Auth] Error loading auth state:', error)

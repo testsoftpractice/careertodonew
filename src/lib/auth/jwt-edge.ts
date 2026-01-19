@@ -6,12 +6,15 @@ const JWT_EXPIRES_IN = '7d' // 7 days
 export function generateToken(payload: any): string {
   return jwt.sign(payload, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN,
+    algorithm: 'HS256', // Explicitly specify algorithm for consistency
   })
 }
 
 export function verifyToken(token: string): any {
   try {
-    return jwt.verify(token, JWT_SECRET)
+    return jwt.verify(token, JWT_SECRET, {
+      algorithms: ['HS256'], // Only accept HS256
+    })
   } catch (error) {
     return null
   }

@@ -30,10 +30,14 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
+import { useRoleAccess } from '@/hooks/use-role-access'
 import { toast } from '@/hooks/use-toast'
 
 export default function InvestorProposalsPage() {
   const { user } = useAuth()
+
+  // Role-based access control - only investors and platform admins can access this page
+  useRoleAccess(['INVESTOR', 'PLATFORM_ADMIN'])
   const [activeTab, setActiveTab] = useState('list')
   const [proposals, setProposals] = useState<any[]>([])
   const [loading, setLoading] = useState(false)

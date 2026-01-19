@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
+import { useRoleAccess } from '@/hooks/use-role-access'
 import { toast } from '@/hooks/use-toast'
 
 interface DashboardStats {
@@ -31,6 +32,9 @@ interface DashboardStats {
 
 export default function UniversityDashboard() {
   const { user } = useAuth()
+
+  // Role-based access control - only university admins and platform admins can access this page
+  useRoleAccess(['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
   const [activeTab, setActiveTab] = useState('overview')
   const [stats, setStats] = useState<DashboardStats>({
     totalStudents: 0,

@@ -73,20 +73,24 @@ export default function AuthPage() {
         setMessage('Account created successfully! Redirecting...')
         console.log('[AUTH] User logged in, redirecting to dashboard...')
 
-        // Set session cookie for middleware
-        const cookieValue = `session=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
-        console.log('[AUTH] Setting cookie:', cookieValue.substring(0, 50) + '...')
+        // Set session cookie for middleware - using encodeURIComponent for safety
+        const cookieValue = `session=${encodeURIComponent(data.token)}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
+        console.log('[AUTH] Setting cookie (first 60 chars):', cookieValue.substring(0, 60))
         document.cookie = cookieValue
 
         // Verify cookie was set
-        const cookieCheck = document.cookie.includes('session=')
-        console.log('[AUTH] Cookie set successfully:', cookieCheck)
-        console.log('[AUTH] User role:', data.user.role)
-        console.log('[AUTH] Full user data:', JSON.stringify(data.user))
+        setTimeout(() => {
+          const cookieCheck = document.cookie.includes('session=')
+          console.log('[AUTH] Cookie check after delay:', cookieCheck)
+          console.log('[AUTH] Current cookies:', document.cookie.substring(0, 100) + '...')
+        }, 100)
 
         // Determine redirect path based on role
         const userRole = data.user.role
         let redirectPath = '/dashboard/student' // default
+
+        console.log('[AUTH] User role:', userRole)
+        console.log('[AUTH] Full user data:', JSON.stringify(data.user))
 
         console.log('[AUTH] Checking role against values:', {
           userRole,
@@ -118,6 +122,7 @@ export default function AuthPage() {
         // Use window.location for more reliable redirect
         setTimeout(() => {
           console.log('[AUTH] Redirecting NOW to:', redirectPath)
+          console.log('[AUTH] Final cookie check:', document.cookie.includes('session='))
           window.location.href = redirectPath
         }, 1500) // 1.5 seconds
       } else {
@@ -157,20 +162,24 @@ export default function AuthPage() {
         setMessage('Login successful! Redirecting...')
         console.log('[AUTH] User logged in, redirecting to dashboard...')
 
-        // Set session cookie for middleware
-        const cookieValue = `session=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
-        console.log('[AUTH] Setting cookie:', cookieValue.substring(0, 50) + '...')
+        // Set session cookie for middleware - using encodeURIComponent for safety
+        const cookieValue = `session=${encodeURIComponent(data.token)}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
+        console.log('[AUTH] Setting cookie (first 60 chars):', cookieValue.substring(0, 60))
         document.cookie = cookieValue
 
         // Verify cookie was set
-        const cookieCheck = document.cookie.includes('session=')
-        console.log('[AUTH] Cookie set successfully:', cookieCheck)
-        console.log('[AUTH] User role:', data.user.role)
-        console.log('[AUTH] Full user data:', JSON.stringify(data.user))
+        setTimeout(() => {
+          const cookieCheck = document.cookie.includes('session=')
+          console.log('[AUTH] Cookie check after delay:', cookieCheck)
+          console.log('[AUTH] Current cookies:', document.cookie.substring(0, 100) + '...')
+        }, 100)
 
         // Determine redirect path based on role
         const userRole = data.user.role
         let redirectPath = '/dashboard/student' // default
+
+        console.log('[AUTH] User role:', userRole)
+        console.log('[AUTH] Full user data:', JSON.stringify(data.user))
 
         console.log('[AUTH] Checking role against values:', {
           userRole,
@@ -202,6 +211,7 @@ export default function AuthPage() {
         // Use window.location for more reliable redirect
         setTimeout(() => {
           console.log('[AUTH] Redirecting NOW to:', redirectPath)
+          console.log('[AUTH] Final cookie check:', document.cookie.includes('session='))
           window.location.href = redirectPath
         }, 1500) // 1.5 seconds
       } else {

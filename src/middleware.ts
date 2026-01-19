@@ -88,7 +88,12 @@ export function middleware(request: NextRequest) {
 
   // For protected page routes, check for session cookie
   const sessionToken = request.cookies.get('session')?.value
+  console.log('[MIDDLEWARE] Checking authentication for pathname:', pathname)
+  console.log('[MIDDLEWARE] Session cookie present:', !!sessionToken)
+  console.log('[MIDDLEWARE] Session token (first 50 chars):', sessionToken?.substring(0, 50) || 'none')
+
   if (!sessionToken) {
+    console.log('[MIDDLEWARE] No session cookie, redirecting to auth')
     // No session, redirect to auth page
     const redirectUrl = new URL('/auth', request.url)
     redirectUrl.searchParams.set('redirect', pathname)
@@ -96,22 +101,30 @@ export function middleware(request: NextRequest) {
   }
 
   // Verify session token
+  console.log('[MIDDLEWARE] Verifying session token...')
   const decoded = verifyToken(sessionToken)
+  console.log('[MIDDLEWARE] Token verification result:', !!decoded)
+  if (decoded) {
+    console.log('[MIDDLEWARE] Decoded user:', { userId: decoded.userId, email: decoded.email, role: decoded.role })
+  }
+
   if (!decoded) {
+    console.log('[MIDDLEWARE] Invalid session token, redirecting to auth')
     // Invalid session, redirect to auth page
     const redirectUrl = new URL('/auth', request.url)
     redirectUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
+  console.log('[MIDDLEWARE] Session valid, allowing access to:', pathname)
   // Session is valid, proceed to protected route
-  // Set secure cookie for the response
+  // Set secure cookie for response
   const response = NextResponse.next()
   response.cookies.set('session', sessionToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: 60 * 60 * 24 * 7, //7 days
     path: '/'
   })
   return response

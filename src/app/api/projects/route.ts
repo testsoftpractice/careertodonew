@@ -1,43 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { ProjectCategory, ProjectStatus, UserRole } from '@prisma/client'
 
-// GET /api/projects - List all projects with filters
+// ==================== PROJECTS API ====================
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const status = searchParams.get('status')
-    const category = searchParams.get('category')
-    const universityId = searchParams.get('universityId')
-    const userId = searchParams.get('userId')
-    const seekingInvestment = searchParams.get('seekingInvestment')
-
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const status = searchParams.status as string | undefined
+    const universityId = searchParams.universityId as string | undefined
+    const userId = searchParams.userId as string | undefined
+    const seekingInvestment = searchParams.seekingInvestment as string | undefined
 
     const where: any = {}
 
-    if (status && status !== 'all') {
-      where.status = status as ProjectStatus
-    }
-
-    if (category && category !== 'all') {
-      where.category = category as ProjectCategory
+    if (status) {
+      where.status = status as any
     }
 
     if (universityId) {
       where.universityId = universityId
     }
 
-    if (seekingInvestment === 'true') {
-      where.seekingInvestment = true
-    }
-
-    if (userId) {
-      where.OR = [
-        { projectLeadId: userId },
-        { members: { some: { userId } } },
-      ]
+    if (seekingInvestment) {
+      where.seekingInvestment = seekingInvestment === 'true'
     }
 
     const projects = await db.project.findMany({
@@ -47,15 +32,25 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             name: true,
+            email: true,
             avatar: true,
-          },
+            role: true,
+          }
+        },
+        hrLead: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          }
         },
         university: {
           select: {
             id: true,
             name: true,
-            logo: true,
-          },
+            code: true,
+            location: true,
+          }
         },
         members: {
           include: {
@@ -63,137 +58,70 @@ export async function GET(request: NextRequest) {
               select: {
                 id: true,
                 name: true,
+                email: true,
                 avatar: true,
-              },
-            },
+                role: true,
+                major: true,
+              }
+            }
           },
+          take: 10
         },
-        departments: true,
+        tasks: {
+          take: 5,
+          orderBy: { dueDate: 'asc' }
+        },
         _count: {
-          select: {
-            members: true,
-            tasks: true,
-          },
-        },
+          members: true,
+          tasks: true,
+        }
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: limit,
-      skip: (page - 1) * limit,
+      orderBy: { createdAt: 'desc' }
     })
-
-    // Get total count for pagination
-    const totalCount = await db.project.count({ where })
 
     return NextResponse.json({
-      projects: projects.map(project => ({
-        id: project.id,
-        title: project.title,
-        description: project.description,
-        category: project.category,
-        status: project.status,
-        projectLead: project.projectLead,
-        university: project.university,
-        teamSize: project._count.members,
-        taskCount: project._count.tasks,
-        completionRate: project.completionRate,
-        seekingInvestment: project.seekingInvestment,
-        investmentGoal: project.investmentGoal,
-        investmentRaised: project.investmentRaised,
-        startDate: project.startDate,
-        endDate: project.endDate,
-        createdAt: project.createdAt,
-      })),
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(totalCount / limit),
-        totalItems: totalCount,
-        itemsPerPage: limit,
-      },
+      success: true,
+      data: projects,
+      count: projects.length
     })
   } catch (error) {
-    console.error('Get projects error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('Projects API error:', error)
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to fetch projects'
+    }, { status: 500 })
   }
 }
 
-// POST /api/projects - Create a new project
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const {
-      title,
-      description,
-      category,
-      projectLeadId,
-      universityId,
-      seekingInvestment,
-      investmentGoal,
-      startDate,
-    } = body
 
-    // Create project
     const project = await db.project.create({
       data: {
-        title,
-        description,
-        category: category as ProjectCategory,
-        projectLeadId,
-        universityId,
-        status: ProjectStatus.PROPOSED,
-        seekingInvestment: seekingInvestment || false,
-        investmentGoal: investmentGoal ? parseFloat(investmentGoal) : null,
-        startDate: startDate ? new Date(startDate) : null,
-        teamSize: 1,
-      },
-      include: {
-        projectLead: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
-        university: true,
-      },
+        title: body.title,
+        description: body.description,
+        category: body.category,
+        projectLeadId: body.projectLeadId,
+        hrLeadId: body.hrLeadId,
+        universityId: body.universityId,
+        status: body.status || 'PROPOSED',
+        seekingInvestment: body.seekingInvestment || false,
+        investmentGoal: body.investmentGoal ? parseFloat(body.investmentGoal) : null,
+        startDate: body.startDate ? new Date(body.startDate) : null,
+        endDate: body.endDate ? new Date(body.endDate) : null,
+      }
     })
 
-    // Add project lead as a member
-    await db.projectMember.create({
-      data: {
-        projectId: project.id,
-        userId: projectLeadId,
-        role: 'PROJECT_LEAD',
-        startDate: new Date(),
-      },
-    })
-
-    return NextResponse.json(
-      {
-        message: 'Project created successfully',
-        project: {
-          id: project.id,
-          title: project.title,
-          description: project.description,
-          category: project.category,
-          status: project.status,
-          projectLead: project.projectLead,
-          university: project.university,
-          seekingInvestment: project.seekingInvestment,
-          investmentGoal: project.investmentGoal,
-        },
-      },
-      { status: 201 }
-    )
+    return NextResponse.json({
+      success: true,
+      data: project
+    }, { status: 201 })
   } catch (error) {
-    console.error('Create project error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('Project creation error:', error)
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to create project'
+    }, { status: 500 })
   }
 }

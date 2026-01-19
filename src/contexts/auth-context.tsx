@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface User {
@@ -19,6 +19,8 @@ interface User {
   linkedinUrl?: string
   portfolioUrl?: string
   reputationScores?: any
+  createdAt?: Date
+  updatedAt?: Date
 }
 
 interface AuthContextType {
@@ -31,7 +33,148 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+// Demo users for different roles when auth is disabled
+const demoStudent: User = {
+  id: 'demo-student',
+  email: 'student@careertodo.com',
+  name: 'Alex Johnson',
+  role: 'STUDENT',
+  universityId: 'demo-university',
+  university: {
+    id: 'demo-university',
+    name: 'Demo University',
+    code: 'DEMO-UNI',
+    description: 'Demo university for testing',
+    location: 'Berkeley, CA',
+  },
+  verificationStatus: 'VERIFIED',
+  bio: 'Computer Science student passionate about building innovative projects',
+  avatar: 'https://api.dicebear.com/7.x/alex-johnson/svg',
+  location: 'San Francisco, CA',
+  progressionLevel: 'CONTRIBUTOR',
+  executionScore: 4.2,
+  collaborationScore: 4.5,
+  leadershipScore: 3.8,
+  ethicsScore: 4.7,
+  reliabilityScore: 4.3,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}
+
+const demoUniversityAdmin: User = {
+  id: 'demo-university-admin',
+  email: 'university@careertodo.com',
+  name: 'Dr. Sarah Martinez',
+  role: 'UNIVERSITY_ADMIN',
+  universityId: 'demo-university',
+  university: {
+    id: 'demo-university',
+    name: 'Demo University',
+    code: 'DEMO-UNI',
+    description: 'Demo university for testing',
+    location: 'Berkeley, CA',
+  },
+  verificationStatus: 'VERIFIED',
+  bio: 'University administrator for testing',
+  avatar: 'https://api.dicebear.com/7.x/sarah-martinez/svg',
+  location: 'Berkeley, CA',
+  progressionLevel: 'DEPARTMENT_HEAD',
+  executionScore: 4.8,
+  collaborationScore: 4.9,
+  leadershipScore: 5.0,
+  ethicsScore: 5.0,
+  reliabilityScore: 4.8,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}
+
+const demoEmployer: User = {
+  id: 'demo-employer',
+  email: 'employer@careertodo.com',
+  name: 'Tech Ventures Inc.',
+  role: 'EMPLOYER',
+  companyName: 'Tech Ventures Inc.',
+  companyWebsite: 'https://techventures.com',
+  position: 'Talent Acquisition Manager',
+  avatar: 'https://api.dicebear.com/7.x/techventures/svg',
+  location: 'San Jose, CA',
+  linkedinUrl: 'https://linkedin.com/company/techventures',
+  portfolioUrl: 'https://techventures.com',
+  verificationStatus: 'VERIFIED',
+  bio: 'Innovation-focused company looking for talented students to join our team',
+  progressionLevel: 'TEAM_LEAD',
+  executionScore: 4.5,
+  collaborationScore: 4.2,
+  leadershipScore: 4.4,
+  ethicsScore: 4.6,
+  reliabilityScore: 4.3,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}
+
+const demoInvestor: User = {
+  id: 'demo-investor',
+  email: 'investor@careertodo.com',
+  name: 'Apex Ventures',
+  role: 'INVESTOR',
+  firmName: 'Apex Ventures',
+  investmentFocus: 'Technology, SaaS, EdTech',
+  avatar: 'https://api.dicebear.com/7.x/apexventures/svg',
+  location: 'Palo Alto, CA',
+  linkedinUrl: 'https://linkedin.com/company/apexventures',
+  verificationStatus: 'VERIFIED',
+  bio: 'Early-stage venture capital firm investing in student-led startups',
+  progressionLevel: 'PROJECT_LEAD',
+  executionScore: 4.7,
+  collaborationScore: 4.8,
+  leadershipScore: 5.0,
+  ethicsScore: 4.9,
+  reliabilityScore: 4.6,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}
+
+const demoMentor: User = {
+  id: 'demo-mentor',
+  email: 'mentor@careertodo.com',
+  name: 'James Chen',
+  role: 'MENTOR',
+  bio: 'Tech industry veteran with 15+ years of experience mentoring young entrepreneurs',
+  avatar: 'https://api.dicebear.com/7.x/jameschen/svg',
+  location: 'San Francisco, CA',
+  linkedinUrl: 'https://linkedin.com/in/jameschen',
+  portfolioUrl: 'https://jameschen.dev',
+  verificationStatus: 'VERIFIED',
+  progressionLevel: 'TEAM_LEAD',
+  executionScore: 5.0,
+  collaborationScore: 4.8,
+  leadershipScore: 5.0,
+  ethicsScore: 5.0,
+  reliabilityScore: 4.9,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}
+
+const demoPlatformAdmin: User = {
+  id: 'demo-platform-admin',
+  email: 'admin@careertodo.com',
+  name: 'Platform Administrator',
+  role: 'PLATFORM_ADMIN',
+  verificationStatus: 'VERIFIED',
+  bio: 'Platform administrator with full access to all features',
+  avatar: 'https://api.dicebear.com/7.x/platform-admin/svg',
+  location: 'San Francisco, CA',
+  progressionLevel: 'PROJECT_LEAD',
+  executionScore: 5.0,
+  collaborationScore: 5.0,
+  leadershipScore: 5.0,
+  ethicsScore: 5.0,
+  reliabilityScore: 5.0,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -42,37 +185,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const storedUser = localStorage.getItem('user')
       const storedToken = localStorage.getItem('token')
-      console.log('[AUTH-CONTEXT] Loading auth state from localStorage')
-      console.log('[AUTH-CONTEXT] storedUser:', storedUser ? 'Found' : 'Not found')
-      console.log('[AUTH-CONTEXT] storedToken:', storedToken ? 'Found' : 'Not found')
 
       if (storedUser && storedToken) {
-        const parsedUser = JSON.parse(storedUser)
-        setUser(parsedUser)
+        setUser(JSON.parse(storedUser))
         setToken(storedToken)
-        console.log('[AUTH-CONTEXT] Auth state loaded successfully')
-        console.log('[AUTH-CONTEXT] User:', parsedUser.email)
-        console.log('[AUTH-CONTEXT] Role:', parsedUser.role)
       } else {
-        console.log('[AUTH-CONTEXT] No auth state in localStorage')
+        // No authentication - load demo user based on path
+        console.log('[Auth] No user in localStorage, loading demo user...')
+
+        const path = window.location.pathname
+
+        let demoUser = demoStudent
+
+        if (path.startsWith('/dashboard/university')) {
+          console.log('[Auth] Loading demo university admin user')
+          demoUser = demoUniversityAdmin
+        } else if (path.startsWith('/dashboard/student')) {
+          console.log('[Auth] Loading demo student user')
+          demoUser = demoStudent
+        } else if (path.startsWith('/dashboard/employer')) {
+          console.log('[Auth] Loading demo employer user')
+          demoUser = demoEmployer
+        } else if (path.startsWith('/dashboard/investor')) {
+          console.log('[Auth] Loading demo investor user')
+          demoUser = demoInvestor
+        } else if (path.startsWith('/admin')) {
+          console.log('[Auth] Loading demo platform admin user')
+          demoUser = demoPlatformAdmin
+        } else {
+          console.log('[Auth] Loading demo student user as default')
+          demoUser = demoStudent
+        }
+
+        setUser(demoUser)
+        setToken('demo-token')
+
+        // Save to localStorage so it persists
+        localStorage.setItem('user', JSON.stringify(demoUser))
+        localStorage.setItem('token', 'demo-token')
       }
     } catch (error) {
-      console.error('[AUTH-CONTEXT] Error loading auth state:', error)
+      console.error('[Auth] Error loading auth state:', error)
     } finally {
       setLoading(false)
     }
   }, [])
 
   const login = (userData: User, authToken: string) => {
-    console.log('[AUTH-CONTEXT] Login called with user:', userData.email, 'role:', userData.role)
     setUser(userData)
     setToken(authToken)
     try {
       localStorage.setItem('user', JSON.stringify(userData))
       localStorage.setItem('token', authToken)
-      console.log('[AUTH-CONTEXT] Auth state saved to localStorage')
     } catch (error) {
-      console.error('[AUTH-CONTEXT] Error saving auth state:', error)
+      console.error('[Auth] Error saving auth state:', error)
     }
   }
 
@@ -82,12 +248,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.removeItem('user')
       localStorage.removeItem('token')
-      // Clear session cookie
-      document.cookie = 'session=; path=/; max-age=0; samesite=lax'
     } catch (error) {
-      console.error('Error clearing auth state:', error)
+      console.error('[Auth] Error clearing auth state:', error)
     }
-    router.push('/auth')
+    router.push('/')
   }
 
   return (

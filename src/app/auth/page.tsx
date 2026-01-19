@@ -55,7 +55,6 @@ export default function AuthPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    console.log('[AUTH] Starting signup with data:', { email: signupData.email, role: signupData.role, firstName: signupData.firstName })
 
     try {
       const response = await fetch('/api/auth/signup', {
@@ -65,68 +64,23 @@ export default function AuthPage() {
       })
 
       const data = await response.json()
-      console.log('[AUTH] Signup response:', { status: response.status, success: data.success, user: data.user, error: data.error })
 
       if (data.success) {
-        // Store user data in localStorage
         login(data.user, data.token)
         setMessage('Account created successfully! Redirecting...')
-        console.log('[AUTH] User logged in, redirecting to dashboard...')
 
-        // Set session cookie for middleware - using encodeURIComponent for safety
-        const cookieValue = `session=${encodeURIComponent(data.token)}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
-        console.log('[AUTH] Setting cookie (first 60 chars):', cookieValue.substring(0, 60))
-        document.cookie = cookieValue
-
-        // Verify cookie was set
         setTimeout(() => {
-          const cookieCheck = document.cookie.includes('session=')
-          console.log('[AUTH] Cookie check after delay:', cookieCheck)
-          console.log('[AUTH] Current cookies:', document.cookie.substring(0, 100) + '...')
-        }, 100)
-
-        // Determine redirect path based on role
-        const userRole = data.user.role
-        let redirectPath = '/dashboard/student' // default
-
-        console.log('[AUTH] User role:', userRole)
-        console.log('[AUTH] Full user data:', JSON.stringify(data.user))
-
-        console.log('[AUTH] Checking role against values:', {
-          userRole,
-          isStudent: userRole === 'STUDENT',
-          isUniversityAdmin: userRole === 'UNIVERSITY_ADMIN',
-          isEmployer: userRole === 'EMPLOYER',
-          isInvestor: userRole === 'INVESTOR',
-          isMentor: userRole === 'MENTOR',
-          isPlatformAdmin: userRole === 'PLATFORM_ADMIN'
-        })
-
-        if (userRole === 'STUDENT') {
-          redirectPath = '/dashboard/student'
-        } else if (userRole === 'UNIVERSITY_ADMIN') {
-          redirectPath = '/dashboard/university'
-        } else if (userRole === 'EMPLOYER') {
-          redirectPath = '/marketplace'
-        } else if (userRole === 'INVESTOR') {
-          redirectPath = '/marketplace'
-        } else if (userRole === 'MENTOR') {
-          redirectPath = '/marketplace'
-        } else if (userRole === 'PLATFORM_ADMIN') {
-          redirectPath = '/admin/governance'
-        }
-
-        console.log('[AUTH] Determined redirect path:', redirectPath)
-        console.log('[AUTH] Waiting 1.5 seconds before redirect...')
-
-        // Use window.location for more reliable redirect
-        setTimeout(() => {
-          console.log('[AUTH] Redirecting NOW to:', redirectPath)
-          console.log('[AUTH] Final cookie check:', document.cookie.includes('session='))
-          window.location.href = redirectPath
-        }, 1500) // 1.5 seconds
+          if (selectedRole === 'STUDENT') {
+            router.push('/dashboard/student')
+          } else if (selectedRole === 'UNIVERSITY') {
+            router.push('/dashboard/university')
+          } else if (selectedRole === 'EMPLOYER') {
+            router.push('/marketplace')
+          } else if (selectedRole === 'INVESTOR') {
+            router.push('/marketplace')
+          }
+        }, 1000)
       } else {
-        console.log('[AUTH] Signup failed:', data.error)
         setError(data.error || 'Failed to create account')
       }
     } catch (err: any) {
@@ -141,7 +95,6 @@ export default function AuthPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    console.log('[AUTH] Starting login with email:', loginEmail)
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -154,68 +107,25 @@ export default function AuthPage() {
       })
 
       const data = await response.json()
-      console.log('[AUTH] Login response:', { status: response.status, success: data.success, error: data.error })
 
       if (data.success) {
-        // Store user data in localStorage
         login(data.user, data.token)
         setMessage('Login successful! Redirecting...')
-        console.log('[AUTH] User logged in, redirecting to dashboard...')
 
-        // Set session cookie for middleware - using encodeURIComponent for safety
-        const cookieValue = `session=${encodeURIComponent(data.token)}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
-        console.log('[AUTH] Setting cookie (first 60 chars):', cookieValue.substring(0, 60))
-        document.cookie = cookieValue
-
-        // Verify cookie was set
         setTimeout(() => {
-          const cookieCheck = document.cookie.includes('session=')
-          console.log('[AUTH] Cookie check after delay:', cookieCheck)
-          console.log('[AUTH] Current cookies:', document.cookie.substring(0, 100) + '...')
-        }, 100)
-
-        // Determine redirect path based on role
-        const userRole = data.user.role
-        let redirectPath = '/dashboard/student' // default
-
-        console.log('[AUTH] User role:', userRole)
-        console.log('[AUTH] Full user data:', JSON.stringify(data.user))
-
-        console.log('[AUTH] Checking role against values:', {
-          userRole,
-          isStudent: userRole === 'STUDENT',
-          isUniversityAdmin: userRole === 'UNIVERSITY_ADMIN',
-          isEmployer: userRole === 'EMPLOYER',
-          isInvestor: userRole === 'INVESTOR',
-          isMentor: userRole === 'MENTOR',
-          isPlatformAdmin: userRole === 'PLATFORM_ADMIN'
-        })
-
-        if (userRole === 'STUDENT') {
-          redirectPath = '/dashboard/student'
-        } else if (userRole === 'UNIVERSITY_ADMIN') {
-          redirectPath = '/dashboard/university'
-        } else if (userRole === 'EMPLOYER') {
-          redirectPath = '/marketplace'
-        } else if (userRole === 'INVESTOR') {
-          redirectPath = '/marketplace'
-        } else if (userRole === 'MENTOR') {
-          redirectPath = '/marketplace'
-        } else if (userRole === 'PLATFORM_ADMIN') {
-          redirectPath = '/admin/governance'
-        }
-
-        console.log('[AUTH] Determined redirect path:', redirectPath)
-        console.log('[AUTH] Waiting 1.5 seconds before redirect...')
-
-        // Use window.location for more reliable redirect
-        setTimeout(() => {
-          console.log('[AUTH] Redirecting NOW to:', redirectPath)
-          console.log('[AUTH] Final cookie check:', document.cookie.includes('session='))
-          window.location.href = redirectPath
-        }, 1500) // 1.5 seconds
+          if (data.user.role === 'STUDENT') {
+            router.push('/dashboard/student')
+          } else if (data.user.role === 'UNIVERSITY') {
+            router.push('/dashboard/university')
+          } else if (data.user.role === 'EMPLOYER') {
+            router.push('/marketplace')
+          } else if (data.user.role === 'INVESTOR') {
+            router.push('/marketplace')
+          } else if (data.user.role === 'ADMIN') {
+            router.push('/admin/governance')
+          }
+        }, 1000)
       } else {
-        console.log('[AUTH] Login failed:', data.error)
         setError(data.error || 'Invalid email or password')
       }
     } catch (err: any) {

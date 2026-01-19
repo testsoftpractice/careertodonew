@@ -89,50 +89,40 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Convert role to match database enum
-    let finalRole: UserRole = role as UserRole
-    if (role === 'UNIVERSITY') {
-      finalRole = 'UNIVERSITY_ADMIN'
-    }
+    // Create user
+    console.log('[SIGNUP] Creating user in database:', email)
+    const user = await db.user.create({
+      data: {
+        email,
+        name: `${firstName} ${lastName}`,
+        role: role as UserRole,
+        bio,
+        verificationStatus: VerificationStatus.PENDING,
+        password: hashedPassword,
+        universityId: university?.id,
+        major: role === 'STUDENT' ? major : null,
+        graduationYear: role === 'STUDENT' && graduationYear ? parseInt(graduationYear) : null,
+      },
+    })
 
-    console.log('[SIGNUP] Creating user in database:', email, 'with role:', finalRole)
-    const result = await db.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          email,
-          name: `${firstName} ${lastName}`,
-          role: finalRole,
-          bio,
-          verificationStatus: VerificationStatus.PENDING,
-          password: hashedPassword,
-          universityId: university?.id,
-          major: finalRole === 'STUDENT' ? major : null,
-          graduationYear: finalRole === 'STUDENT' && graduationYear ? parseInt(graduationYear) : null,
-        },
-      })
-
-      // Create professional record for user registration
-      await tx.professionalRecord.create({
-        data: {
-          userId: user.id,
-          type: 'SKILL_ACQUIRED',
-          title: 'Platform Registration',
-          description: `Registered as ${role} on CareerToDo Platform`,
-          startDate: new Date(),
-          metadata: JSON.stringify({ role, email }),
-          hash: `reg-${user.id}-${Date.now()}`, // Generate a simple hash for system records
-        },
-      })
-
-      return user
+    // Create professional record for user registration
+    await db.professionalRecord.create({
+      data: {
+        userId: user.id,
+        type: 'SKILL_ACQUIRED',
+        title: 'Platform Registration',
+        description: `Registered as ${role} on CareerToDo Platform`,
+        startDate: new Date(),
+        metadata: JSON.stringify({ role, email }),
+      },
     })
 
     // Generate JWT token
     const token = generateToken({
-      userId: result.id,
-      email: result.email,
-      role: result.role,
-      verificationStatus: result.verificationStatus,
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      verificationStatus: user.verificationStatus,
     })
 
     return NextResponse.json(
@@ -140,17 +130,28 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'User created successfully',
         user: {
-          id: result.id,
-          email: result.email,
-          name: result.name,
-          role: result.role,
-          verificationStatus: result.verificationStatus,
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          verificationStatus: user.verificationStatus,
         },
         token,
       },
       { status: 201 }
     )
-  } catch (error: any) {
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const formattedErrors = error.errors.map(err => ({
+        field: err.path.join('.'),
+        message: err.message,
+      }))
+      return NextResponse.json(
+        { success: false, error: 'Validation error', errors: formattedErrors },
+        { status: 400 }
+      )
+    }
+
     console.error('[SIGNUP ERROR] Detailed error:', {
       message: error instanceof Error ? error.message : String(error),
       name: error instanceof Error ? error.name : 'Unknown',
@@ -158,27 +159,6 @@ export async function POST(request: NextRequest) {
       fullError: JSON.stringify(error, Object.getOwnPropertyNames(error))
     })
 
-    // Handle Zod validation errors
-    if (error && error.name === 'ZodError') {
-      const formattedErrors = error.issues?.map((err: any) => ({
-        field: err.path?.join('.') || 'unknown',
-        message: err.message || 'Validation failed',
-      })) || []
-      return NextResponse.json(
-        { success: false, error: 'Validation error', errors: formattedErrors },
-        { status: 400 }
-      )
-    }
-
-    // Handle Prisma errors
-    if (error && error.code && error.code.startsWith('P')) {
-      return NextResponse.json(
-        { success: false, error: 'Database error. Please try again.' },
-        { status: 500 }
-      )
-    }
-
-    // Handle other errors
     return NextResponse.json(
       { success: false, error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

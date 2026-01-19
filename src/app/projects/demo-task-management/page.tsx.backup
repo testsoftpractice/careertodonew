@@ -1,0 +1,1033 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Input } from '@/components/ui/input'
+import {
+  ArrowLeft, Plus, Clock, CheckCircle2, Circle, Play, Pause,
+  X, Search, BarChart3, GitBranch, Timer, LogOut, LogIn, Activity,
+  Target, Zap, AlertTriangle, Calendar,
+} from 'lucide-react'
+import Link from 'next/link'
+
+interface User {
+  id: string
+  name: string
+  role: string
+  avatar?: string
+}
+
+interface Task {
+  id: string
+  title: string
+  description: string
+  status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE'
+  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+  assignedTo: string
+  estimatedHours: number
+  actualHours: number
+  dueDate?: Date
+  completedAt?: Date
+  dependsOn: string[]
+  blocks: string[]
+  tags: string[]
+  labels: string[]
+  checklist: ChecklistItem[]
+}
+
+interface ChecklistItem {
+  id: string
+  item: string
+  completed: boolean
+  completedAt?: Date
+}
+
+interface TimeEntry {
+  id: string
+  taskId: string
+  userId: string
+  startTime: Date
+  endTime?: Date
+  duration: number
+  description?: string
+}
+
+interface WorkSession {
+  id: string
+  date: Date
+  userId: string
+  taskId?: string
+  checkInTime: Date
+  checkOutTime?: Date
+  duration: number
+  workType: 'ONSITE' | 'REMOTE' | 'HYBRID'
+  notes?: string
+}
+
+const demoUsers: User[] = [
+  { id: '1', name: 'Sarah Johnson', role: 'Project Lead', avatar: 'https://api.dicebear.com/7.x/sarah/svg' },
+  { id: '2', name: 'Michael Chen', role: 'Tech Lead', avatar: 'https://api.dicebear.com/7.x/michael/svg' },
+  { id: '3', name: 'Emily Davis', role: 'Frontend Dev', avatar: 'https://api.dicebear.com/7.x/emily/svg' },
+  { id: '4', name: 'James Wilson', role: 'Backend Dev', avatar: 'https://api.dicebear.com/7.x/james/svg' },
+]
+
+const demoTasks: Task[] = [
+  {
+    id: '1',
+    title: 'System Architecture Design',
+    description: 'Create comprehensive system architecture including microservices, data flow, and scalability patterns',
+    status: 'DONE',
+    priority: 'CRITICAL',
+    assignedTo: '1',
+    estimatedHours: 16,
+    actualHours: 18.5,
+    dueDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    dependsOn: [],
+    blocks: ['2', '3'],
+    tags: ['architecture', 'critical', 'documentation'],
+    checklist: [
+      { id: 'c1', item: 'Define core services', completed: true, completedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+      { id: 'c2', item: 'Create data flow diagrams', completed: true, completedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000) },
+      { id: 'c3', item: 'Document API contracts', completed: true, completedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
+      { id: 'c4', item: 'Design database schema', completed: true, completedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000) },
+    ],
+  },
+  {
+    id: '2',
+    title: 'Authentication Service Implementation',
+    description: 'Build JWT-based authentication service with refresh tokens and role-based access control',
+    status: 'IN_PROGRESS',
+    priority: 'CRITICAL',
+    assignedTo: '2',
+    estimatedHours: 24,
+    actualHours: 18.5,
+    dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+    dependsOn: ['1'],
+    blocks: ['4'],
+    tags: ['security', 'auth', 'backend'],
+    checklist: [
+      { id: 'c5', item: 'Setup JWT library', completed: true, completedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
+      { id: 'c6', item: 'Implement login endpoint', completed: true, completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
+      { id: 'c7', item: 'Create refresh token logic', completed: true, completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
+      { id: 'c8', item: 'Add social login providers', completed: false },
+      { id: 'c9', item: 'Implement role-based middleware', completed: false },
+    ],
+  },
+  {
+    id: '3',
+    title: 'Database Schema & Migrations',
+    description: 'Create Prisma schema with proper relationships, indexes, and migration strategies',
+    status: 'IN_PROGRESS',
+    priority: 'HIGH',
+    assignedTo: '4',
+    estimatedHours: 20,
+    actualHours: 12.5,
+    dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 0),
+    dependsOn: ['1'],
+    blocks: ['4'],
+    tags: ['database', 'backend', 'prisma'],
+    checklist: [
+      { id: 'c10', item: 'Define User model', completed: true, completedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
+      { id: 'c11', item: 'Create Project model', completed: true, completedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
+      { id: 'c12', item: 'Add performance indexes', completed: false },
+      { id: 'c13', item: 'Design Task model with dependencies', completed: true, completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
+    ],
+  },
+  {
+    id: '4',
+    title: 'RESTful API Endpoints',
+    description: 'Implement all CRUD endpoints for projects, tasks, users with validation',
+    status: 'TODO',
+    priority: 'HIGH',
+    assignedTo: '4',
+    estimatedHours: 40,
+    actualHours: 0,
+    dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+    dependsOn: ['2', '3'],
+    blocks: [],
+    tags: ['api', 'nestjs', 'typescript'],
+    checklist: [
+      { id: 'c14', item: 'Setup NestJS structure', completed: false },
+      { id: 'c15', item: 'Create User endpoints', completed: false },
+      { id: 'c16', item: 'Create Project endpoints', completed: false },
+      { id: 'c17', item: 'Create Task endpoints with dependencies', completed: false },
+      { id: 'c18', item: 'Add pagination and filtering', completed: false },
+      { id: 'c19', item: 'Implement global error handler', completed: false },
+      { id: 'c20', item: 'Add request validation', completed: false },
+      { id: 'c21', item: 'Implement rate limiting', completed: false },
+      { id: 'c22', item: 'Add response pagination', completed: false },
+    ],
+  },
+]
+
+const demoTimeEntries: TimeEntry[] = [
+  {
+    id: 'te1',
+    taskId: '1',
+    userId: '1',
+    startTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    endTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000),
+    duration: 4,
+    description: 'Initial architecture research and design',
+  },
+  {
+    id: 'te2',
+    taskId: '2',
+    userId: '2',
+    startTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    endTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000),
+    duration: 8,
+    description: 'JWT setup and login implementation',
+  },
+]
+
+const demoWorkSessions: any[] = []
+
+export default function EnterpriseWorkshopDemo() {
+  const [tasks, setTasks] = useState<Task[]>(demoTasks)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeTab, setActiveTab] = useState('board')
+  const [showTaskDialog, setShowTaskDialog] = useState(false)
+  
+  const [activeTimers, setActiveTimers] = useState<Record<string, { startTime: Date; elapsed: number }>>({})
+  
+  const currentUser = demoUsers[0]
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveTimers(prev => {
+        const updated = { ...prev }
+        Object.keys(updated).forEach(taskId => {
+          if (updated[taskId]) {
+            const now = new Date()
+            const elapsed = (now.getTime() - updated[taskId].startTime.getTime()) / 1000 / 60
+            updated[taskId] = { ...updated[taskId], elapsed }
+          }
+        })
+        return updated
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const startTimer = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId)
+    if (!task || task.status !== 'IN_PROGRESS') return
+    
+    setActiveTimers(prev => ({
+      ...prev,
+      [taskId]: { startTime: new Date(), elapsed: 0 }
+    }))
+    setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'IN_PROGRESS' } : t))
+  }
+
+  const stopTimer = (taskId: string) => {
+    const timer = activeTimers[taskId]
+    if (!timer) return
+    
+    setTasks(tasks.map(t => t.id === taskId ? { ...t, actualHours: t.actualHours + timer.elapsed } : t))
+    setActiveTimers(prev => {
+      const updated = { ...prev }
+      delete updated[taskId]
+      return updated
+    })
+  }
+
+  const handleStatusChange = (taskId: string, newStatus: Task['status']) => {
+    const task = tasks.find(t => t.id === taskId)
+    
+    if (task?.status === 'IN_PROGRESS' && newStatus !== 'IN_PROGRESS') {
+      stopTimer(taskId)
+    }
+    
+    if (task?.status !== 'IN_PROGRESS' && newStatus === 'IN_PROGRESS') {
+      startTimer(taskId)
+    }
+    
+    setTasks(tasks.map(t => {
+      if (t.id === taskId) {
+        return { ...t, status: newStatus }
+      }
+      return t
+    }))
+  }
+
+  const handleChecklistToggle = (taskId: string, checklistItemId: string) => {
+    setTasks(tasks.map(t => {
+      if (task.id === taskId) {
+        return {
+          ...task,
+          checklist: task.checklist.map(item =>
+            item.id === checklistItemId
+              ? { ...item, completed: !item.completed }
+              : item
+          ),
+        }
+      }
+      return task
+    }))
+  }
+
+  const getPriorityColor = (priority: Task['priority']) => {
+    const colors: Record<string, string> = {
+      CRITICAL: 'bg-red-100 text-red-700 border-red-300',
+      HIGH: 'bg-orange-100 text-orange-700 border-orange-300',
+      MEDIUM: 'bg-blue-100 text-blue-700 border-blue-300',
+      LOW: 'bg-gray-100 text-gray-700 border-gray-300',
+    }
+    return colors[priority] || colors.MEDIUM
+  }
+
+  const getStatusColor = (status: Task['status']) => {
+    const colors: Record<string, string> = {
+      DONE: 'bg-green-100 text-green-700 border-green-300',
+      IN_PROGRESS: 'bg-blue-100 text-blue-700 border-blue-300',
+      TODO: 'bg-yellow-100 text-yellow-700 border-yellow-300',
+      REVIEW: 'bg-purple-100 text-purple-700 border-purple-300',
+    }
+    return colors[status] || colors.TODO
+  }
+
+  const getChecklistProgress = (task: Task) => {
+    if (!task.checklist || task.checklist.length === 0) return 0
+    const completed = task.checklist.filter((item: ChecklistItem) => item.completed).length
+    return (completed / task.checklist.length) * 100
+  }
+
+  const getUserById = (userId: string) => {
+    return demoUsers.find(u => u.id === userId)
+  }
+
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60)
+    const mins = Math.floor(minutes % 60)
+    if (hours > 0 && mins > 0) {
+      return hours + 'h ' + mins + 'm'
+    }
+    if (hours > 0) {
+      return hours + 'h'
+    }
+    return mins + 'm'
+  }
+
+  const columns = [
+    { id: 'todo', title: 'To Do', status: 'TODO' },
+    { id: 'in-progress', title: 'In Progress', status: 'IN_PROGRESS' },
+    { id: 'review', title: 'Review', status: 'REVIEW' },
+    { id: 'done', title: 'Done', status: 'DONE' },
+  ]
+
+  const getFilteredTasks = () => {
+    if (!searchQuery) return tasks
+    const query = searchQuery.toLowerCase()
+    return tasks.filter(t =>
+      t.title.toLowerCase().includes(query) ||
+      t.description.toLowerCase().includes(query) ||
+      t.tags.some((tag: string) => tag.toLowerCase().includes(query))
+    )
+  }
+
+  const getColumnTasks = (columnId: string) => {
+    return getFilteredTasks().filter((task: Task) =>
+      task.status === columns.find((c: { id: string }) => c.id === columnId)?.status
+    )
+  }
+
+  const totalTasks = tasks.length
+  const completedTasks = tasks.filter((t: Task) => t.status === 'DONE').length
+  const inProgressTasks = tasks.filter((t: Task) => t.status === 'IN_PROGRESS').length
+  const totalActualHours = tasks.reduce((sum, t: Task) => sum + t.actualHours, 0)
+  const totalEstimatedHours = tasks.reduce((sum, t: Task) => sum + t.estimatedHours, 0)
+
+  const onTrackTasks = tasks.filter((t: Task) => t.actualHours <= t.estimatedHours).length
+  const overBudgetTasks = tasks.filter((t: Task) => t.actualHours > t.estimatedHours).length
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="border-b bg-background/95 backdrop-blur-xl sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Link href="/dashboard/student" className="flex items-center gap-2">
+                <ArrowLeft className="h-5 w-5" />
+                <span className="font-semibold">Workshop Dashboard</span>
+              </Link>
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search tasks..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="default">
+                <Plus className="mr-2 h-4 w-4" />
+                New Task
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t bg-muted/50 px-4 py-2">
+          <div className="container mx-auto flex items-center justify-between text-sm">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-green-700">
+                <Circle className="h-4 w-4" />
+                <span className="font-medium">Checked In</span>
+                <span>Workshop Session Active</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">
+                  Time Since: {new Date().toLocaleTimeString()}
+                </span>
+              </div>
+              <div className="flex items-center gap-4">
+                <Timer className="h-4 w-4 text-blue-600 animate-pulse" />
+                <span className="font-medium">
+                  Total: {totalActualHours.toFixed(1)}h logged
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 container mx-auto px-4 py-6">
+        <div className="grid gap-4 mb-6 md:grid-cols-6">
+          <Card className="border-l-4 border-l-blue-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Target className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Total Tasks</span>
+              </div>
+              <div className="text-3xl font-bold">{totalTasks}</div>
+              <div className="text-xs text-muted-foreground mt-1">Active in sprint</div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-orange-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Clock className="h-4 w-4 text-orange-500" />
+                <span className="text-sm text-muted-foreground">In Progress</span>
+              </div>
+              <div className="text-3xl font-bold text-blue-600">{inProgressTasks}</div>
+              <div className="text-xs text-muted-foreground mt-1">Currently working</div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-green-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span className="text-sm text-muted-foreground">Completed</span>
+              </div>
+              <div className="text-3xl font-bold text-green-600">{completedTasks}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {((completedTasks / totalTasks) * 100).toFixed(0)}% done
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-red-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <AlertTriangle className="h-4 w-4 text-red-500" />
+                <span className="text-sm text-muted-foreground">Overdue Tasks</span>
+              </div>
+              <div className="text-3xl font-bold text-red-600">
+                {tasks.filter((t: Task) => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'DONE').length}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">Needs attention</div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-purple-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <BarChart3 className="h-4 w-4 text-purple-500" />
+                <span className="text-sm text-muted-foreground">Logged Hours</span>
+              </div>
+              <div className="text-3xl font-bold text-purple-600">{totalActualHours.toFixed(1)}h</div>
+              <div className="text-xs text-muted-foreground mt-1">Total time tracked</div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-yellow-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Activity className="h-4 w-4 text-yellow-500" />
+                <span className="text-sm text-muted-foreground">Budget Health</span>
+              </div>
+              <div className="text-3xl font-bold text-yellow-600">
+                {Math.round((onTrackTasks / totalTasks) * 100)}%
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-sm text-muted-foreground">On Track</span>
+              </div>
+              <Progress value={(onTrackTasks / totalTasks) * 100} className="mt-2 h-2" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-muted-foreground mb-2">Estimated vs Actual</div>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-sm">
+                <span>Estimated:</span>
+                <span className="font-semibold">{totalEstimatedHours}h</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span>Actual:</span>
+                <span className={`font-semibold ${totalActualHours > totalEstimatedHours ? 'text-red-600' : 'text-green-600'}`}>
+                  {totalActualHours}h
+                </span>
+              </div>
+              </div>
+              <div className="flex justify-center">
+                <span className={`text-sm ${totalActualHours > totalEstimatedHours ? 'Over Budget' : 'On Track'}`}>
+                  {totalActualHours > totalEstimatedHours ? (Math.abs((totalActualHours - totalEstimatedHours) / totalEstimatedHours * 100).toFixed(0) + '%') : 'On Budget'}
+                </span>
+              </div>
+              </div>
+              <Progress value={(totalActualHours / totalEstimatedHours) * 100} className="mt-2 h-2" />
+            </CardContent>
+          </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-muted-foreground mb-2">Task Budget Health</div>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-sm">
+                <span>On Track:</span>
+                <span className="font-semibold text-green-600">{onTrackTasks} / {totalTasks}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span>Over Budget:</span>
+                <span className="font-semibold text-red-600">{overBudgetTasks}</span>
+              </div>
+              </div>
+              <Progress value={(onTrackTasks / totalTasks) * 100} className="mt-2 h-2" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full max-w-2xl grid-cols-4">
+          <TabsTrigger value="board">Board</TabsTrigger>
+          <TabsTrigger value="list">List</TabsTrigger>
+          <TabsTrigger value="time-tracking">Time Log</TabsTrigger>
+          <TabsTrigger value="sessions">Sessions</TabsTrigger>
+        </TabsList>
+
+          <TabsContent value="board">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {columns.map((column) => (
+                <Card key={column.id} className="min-h-[650px]">
+                  <CardHeader className="pb-3 border-b">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base font-semibold">{column.title}</CardTitle>
+                      <Badge variant="outline" className="text-xs">{getColumnTasks(column.id).length}</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-3 space-y-3">
+                    {getColumnTasks(column.id).map((task: Task) => (
+                      <div
+                        key={task.id}
+                        className={`p-4 border rounded-lg cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] ${getPriorityColor(task.priority)}`}
+                        onClick={() => setSelectedTask(task)}
+                      >
+                        <div className="mb-3">
+                          <h4 className="font-semibold text-sm line-clamp-2">{task.title}</h4>
+                          {task.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>
+                          )}
+                        </div>
+
+                        {task.status === 'IN_PROGRESS' && activeTimers[task.id] && (
+                          <div className="flex items-center gap-2 p-2 bg-blue-500/10 rounded-lg border border-blue-500/30 mb-3">
+                            <Timer className="h-4 w-4 text-blue-600 animate-pulse" />
+                            <span className="text-sm font-mono font-semibold text-blue-600">
+                              {formatDuration(activeTimers[task.id].elapsed * 60)}
+                            </span>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="ml-auto"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                stopTimer(task.id)
+                              }}
+                            >
+                              <Pause className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+
+                        {task.checklist.length > 0 && (
+                          <div className="mb-3">
+                            <div className="flex items-center justify-between text-xs mb-1">
+                              <span className="text-muted-foreground">Progress</span>
+                              <span className="font-medium">
+                                {getChecklistProgress(task).toFixed(0)}% ({task.checklist.filter((c) => c.completed).length}/{task.checklist.length})
+                              </span>
+                            </div>
+                            <Progress value={getChecklistProgress(task)} className="h-2" />
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2">
+                            {task.assignedTo && getUserById(task.assignedTo) && (
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={getUserById(task.assignedTo)?.avatar} />
+                                <AvatarFallback className="text-[10px]">
+                                  {getUserById(task.assignedTo)?.name?.split(' ').map((n: string) => n[0]).join('')}
+                                </AvatarFallback>
+                                </Avatar>
+                              </Avatar>
+                            )}
+                            )}
+                          </div>
+                          {task.dueDate && (
+                            <div className={`flex items-center gap-1 ${new Date(task.dueDate) < new Date() && task.status !== 'DONE' ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
+                              <Calendar className="h-3 w-3" />
+                              <span>{new Date(task.dueDate).toLocaleDateString()}</span>
+                              {new Date(task.dueDate) < new Date() && task.status !== 'DONE' && (
+                                <Badge variant="destructive" className="text-xs ml-1">Overdue</Badge>
+                              )}
+                            )}
+                          </div>
+                          <div className={`text-right font-medium ${task.actualHours > task.estimatedHours ? 'text-red-600' : 'text-green-600'}`}>
+                            {task.actualHours}h / {task.estimatedHours}h
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 mt-3 pt-3 border-t">
+                        {task.status === 'TODO' && (
+                          <Button
+                            size="sm"
+                            className="flex-1"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleStatusChange(task.id, 'IN_PROGRESS')
+                            }}
+                          >
+                            <Play className="mr-1 h-3 w-3" />
+                            Start
+                          </Button>
+                        )}
+                        {task.status === 'IN_PROGRESS' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleStatusChange(task.id, 'REVIEW')
+                              }}
+                            >
+                              Submit
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="flex-1"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                stopTimer(task.id)
+                              }}
+                              <Pause className="h-3 w-3" />
+                              Stop Timer
+                            </Button>
+                          </>
+                        )}
+                        {task.status === 'REVIEW' && (
+                          <>
+                            <Button
+                              size="sm"
+                              className="flex-1"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleStatusChange(task.id, 'DONE')
+                              }}
+                              <CheckCircle2 className="mr-1 h-3 w-3" />
+                              Approve
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="flex-1"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleStatusChange(task.id, 'TODO')
+                              }}
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        {task.status === 'DONE' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleStatusChange(task.id, 'TODO')
+                            }}
+                            Reopen
+                          </Button>
+                        )}
+                      )}
+                    </div>
+                  ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="list">
+            <Card>
+              <CardHeader>
+                <CardTitle>All Tasks</CardTitle>
+                <CardDescription>Detailed view of all project tasks</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {getFilteredTasks().map((task: Task) => (
+                    <div
+                      key={task.id}
+                      className={`p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md ${getPriorityColor(task.priority)}`}
+                      onClick={() => setSelectedTask(task)}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start gap-2 mb-2">
+                            <Badge className={getStatusColor(task.status)}>{task.status}</Badge>
+                            <Badge className={getPriorityColor(task.priority)}>{task.priority}</Badge>
+                            {task.dependsOn.length > 0 && (
+                              <Badge variant="outline">
+                                <GitBranch className="h-3 w-3 mr-1" />
+                                {task.dependsOn.length}
+                              </Badge>
+                            )}
+                          </div>
+                          <h4 className="font-semibold mb-1">{task.title}</h4>
+                          {task.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2">{task.description}</p>
+                          )}
+                          {task.checklist.length > 0 && (
+                            <div className="mt-2">
+                              <div className="flex justify-between text-xs mb-1">
+                                <span>Progress</span>
+                                <span className="font-medium">
+                                  {getChecklistProgress(task).toFixed(0)}% ({task.checklist.filter((c) => c.completed).length}/{task.checklist.length})
+                                </span>
+                              </div>
+                              <Progress value={getChecklistProgress(task)} className="h-1" />
+                            </div>
+                          </div>
+                        </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-sm">
+                            <div className="font-medium mb-1">{task.estimatedHours}h est.</div>
+                            <div className={`text-xs ${task.actualHours > task.estimatedHours ? 'text-red-600' : 'text-green-600'}`}>
+                              {task.actualHours}h act.
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="time-tracking">
+            <Card>
+              <CardHeader>
+                <CardTitle>Time Log</CardTitle>
+                <CardDescription>Detailed time entries for all tasks</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                  {demoTimeEntries.map((entry) => {
+                    const task = tasks.find((t: Task) => t.id === entry.taskId)
+                    const user = getUserById(entry.userId)
+                    return (
+                      <div key={entry.id} className="p-4 border rounded-lg hover:bg-muted/30">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="default">WORK</Badge>
+                              <span>{task?.title || 'N/A'}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-2">{entry.description}</p>
+                          </div>
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                              {user && <span>{user?.name}</span>}
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                <span>{entry.startTime.toLocaleDateString()}</span>
+                              <span>-</span>
+                                {entry.endTime && (
+                                  <span>-</span>
+                                </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant="outline" className="font-mono text-sm">
+                              {formatDuration(entry.duration * 60)}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="sessions">
+            <div className="text-center py-12 text-muted-foreground">
+              <div className="space-y-6">
+                <div>
+                  <Circle className="h-12 w-12 mx-auto mb-4" />
+                  <p className="text-lg font-semibold text-center mb-4">Workshop Check In System</p>
+                  <div className="text-muted-foreground">
+                    Check In/Out functionality will be implemented.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </main>
+
+      {selectedTask && (
+        <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <DialogTitle className="text-2xl">{selectedTask.title}</DialogTitle>
+                  <div className="flex gap-2 mt-2">
+                    <Badge className={getPriorityColor(selectedTask.priority)}>{selectedTask.priority}</Badge>
+                    <Badge className={getStatusColor(selectedTask.status)}>{selectedTask.status}</Badge>
+                  {selectedTask.dependsOn.length > 0 && (
+                      <Badge variant="outline">
+                        <GitBranch className="h-3 w-3 mr-1" />
+                        {selectedTask.dependsOn.length}
+                      </Badge>
+                    )}
+                  )}
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setSelectedTask(null)}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              {selectedTask.description && (
+                <div>
+                  <Label className="text-base font-semibold">Description</Label>
+                  <p className="text-sm text-muted-foreground mt-2">{selectedTask.description}</p>
+                </div>
+              )}
+
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <Label className="text-sm">Assigned To</Label>
+                  <div className="mt-2">
+                    {selectedTask.assignedTo && getUserById(selectedTask.assignedTo) && (
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={getUserById(selectedTask.assignedTo)?.avatar} />
+                          <AvatarFallback className="text-sm">
+                            {getUserById(selectedTask.assignedTo)?.name?.split(' ').map((n) => n[0]).join('')}
+                          </AvatarFallback>
+                          </Avatar>
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium">{getUserById(selectedTask.assignedTo)?.name}</div>
+                          <div className="text-xs text-muted-foreground">{getUserById(selectedTask.assignedTo)?.role}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <Label className="text-sm">Due Date</Label>
+                  <div className={`mt-2 text-lg font-semibold ${selectedTask.dueDate && new Date(selectedTask.dueDate) < new Date() && selectedTask.status !== 'DONE' ? 'text-red-600' : ''}`}>
+                    {selectedTask.dueDate ? new Date(selectedTask.dueDate).toLocaleDateString() : 'Not set'}
+                    {selectedTask.dueDate && new Date(selectedTask.dueDate) < new Date() && selectedTask.status !== 'DONE' && (
+                      <Badge variant="destructive" className="text-xs ml-1">Overdue</Badge>
+                    )}
+                  )}
+                </div>
+              </div>
+
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <Label className="text-sm">Time Tracking</Label>
+                  <div className="mt-2 space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span>Estimated:</span>
+                      <span className="font-semibold">{selectedTask.estimatedHours}h</span>
+                    </div>
+                      <span>Actual:</span>
+                      <span className={`font-semibold ${selectedTask.actualHours > selectedTask.estimatedHours ? 'text-red-600' : 'text-green-600'}`}>
+                        {selectedTask.actualHours}h
+                      </span>
+                    </div>
+                    {selectedTask.actualHours > 0 && selectedTask.estimatedHours > 0 && (
+                      <Progress 
+                        value={Math.min((selectedTask.actualHours / selectedTask.estimatedHours) * 100, 100)}
+                        className="mt-2 h-2" 
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {selectedTask.dependsOn.length > 0 && (
+              <div>
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  <GitBranch className="h-4 w-4" />
+                  Dependencies ({selectedTask.dependsOn.length})
+                </Label>
+                <div className="mt-2 space-y-2">
+                  {selectedTask.dependsOn.map((depId) => {
+                    const depTask = tasks.find((t: Task) => t.id === depId)
+                    return depTask ? (
+                      <div key={depId} className="p-3 border rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="font-medium">{depTask.title}</div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={getStatusColor(depTask.status)}>{depTask.status}</Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null
+                  })}
+                </div>
+              </div>
+            )}
+            )}
+
+            {selectedTask.checklist.length > 0 && (
+              <div>
+                <Label className="text-base font-semibold">Checklist ({selectedTask.checklist.filter((c) => c.completed).length}/{selectedTask.checklist.length})</Label>
+                <div className="mt-2 space-y-2">
+                  <Progress value={getChecklistProgress(selectedTask)} className="h-2" />
+                  <div className="space-y-2">
+                    {selectedTask.checklist.map((item) => (
+                      <div key={item.id} className="flex items-start gap-2">
+                        <div
+                          className="flex items-center gap-2"
+                        >
+                            <div className={`w-6 h-6 rounded border-2 flex items-center justify-center ${item.completed ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-500'}`}>
+                              {item.completed && <CheckCircle2 className="h-4 w-4 text-white" />}
+                            </div>
+                            <div className="flex-1">
+                              <p className={`text-sm ${item.completed ? 'line-through text-muted-foreground' : ''}`}>{item.item}</p>
+                            </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+            )}
+
+            <div className="flex gap-3 mt-6 pt-3 border-t">
+              {selectedTask.status === 'TODO' && (
+                <Button
+                  size="lg"
+                  onClick={() => handleStatusChange(selectedTask.id, 'IN_PROGRESS')}
+                >
+                  <Play className="mr-2 h-5 w-5" />
+                  Start Task & Begin Tracking
+                </Button>
+              )}
+              {selectedTask.status === 'IN_PROGRESS' && (
+                <>
+                  <Button
+                    size="lg"
+                    onClick={() => handleStatusChange(selectedTask.id, 'REVIEW')}
+                  >
+                    Submit for Review
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="destructive"
+                    onClick={() => stopTimer(selectedTask.id)}
+                  >
+                    <Pause className="mr-2 h-5 w-5" />
+                    Stop Timer
+                  </Button>
+                </>
+              )}
+              {selectedTask.status === 'REVIEW' && (
+                <>
+                  <Button
+                    size="lg"
+                    onClick={() => handleStatusChange(selectedTask.id, 'DONE')}
+                    >
+                    <CheckCircle2 className="mr-2 h-5 w-5" />
+                    Approve & Complete
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => handleStatusChange(selectedTask.id, 'TODO')}
+                    >
+                      Reject
+                    </Button>
+                  )}
+                )}
+              {selectedTask.status === 'DONE' && (
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => handleStatusChange(selectedTask.id, 'TODO')}
+                  >
+                    Reopen Task
+                  </Button>
+                )}
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  )
+}

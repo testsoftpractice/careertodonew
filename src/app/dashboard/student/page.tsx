@@ -44,17 +44,6 @@ import { toast } from '@/hooks/use-toast'
 
 export default function StudentDashboard() {
   const { user } = useAuth()
-  const router = useRouter()
-
-  // Redirect to auth if not logged in
-  useEffect(() => {
-    if (!user && typeof window !== 'undefined') {
-      console.log('[DASHBOARD] No user found, redirecting to auth...')
-      router.push('/auth')
-    }
-  }, [user, router])
-
-  // ... rest of the component
   const [activeTab, setActiveTab] = useState('overview')
 
   // Data states (fetched from API)

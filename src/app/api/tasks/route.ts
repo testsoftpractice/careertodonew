@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { TaskStatus, TaskPriority } from '@prisma/client'
 
-// GET /api/tasks - List tasks with filters
+// ==================== TASKS API ====================
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const projectId = searchParams.get('projectId')
-    const assigneeId = searchParams.get('assigneeId')
-    const status = searchParams.get('status')
-    const priority = searchParams.get('priority')
-    const departmentId = searchParams.get('departmentId')
+    const projectId = searchParams.projectId as string | undefined
+    const assigneeId = searchParams.assigneeId as string | undefined
+    const status = searchParams.status as string | undefined
+    const priority = searchParams.priority as string | undefined
 
     const where: any = {}
 
@@ -22,162 +21,144 @@ export async function GET(request: NextRequest) {
       where.assigneeId = assigneeId
     }
 
-    if (status && status !== 'all') {
-      where.status = status as TaskStatus
+    if (status) {
+      where.status = status as any
     }
 
-    if (priority && priority !== 'all') {
-      where.priority = priority as TaskPriority
-    }
-
-    if (departmentId) {
-      where.departmentId = departmentId
+    if (priority) {
+      where.priority = priority as any
     }
 
     const tasks = await db.task.findMany({
       where,
       include: {
-        project: {
-          select: {
-            id: true,
-            title: true,
-          },
-        },
-        department: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
         assignee: {
           select: {
             id: true,
             name: true,
+            email: true,
             avatar: true,
-          },
+          }
         },
         creator: {
           select: {
             id: true,
             name: true,
-          },
+          }
         },
-        subtasks: true,
-      },
-      orderBy: [
-        { priority: 'desc' },
-        { dueDate: 'asc' },
-        { createdAt: 'desc' },
-      ],
-      take: 100,
-    })
-
-    return NextResponse.json({
-      tasks: tasks.map(task => ({
-        id: task.id,
-        title: task.title,
-        description: task.description,
-        projectId: task.projectId,
-        project: task.project,
-        departmentId: task.departmentId,
-        department: task.department,
-        assigneeId: task.assigneeId,
-        assignee: task.assignee,
-        creatorId: task.creatorId,
-        creator: task.creator,
-        status: task.status,
-        priority: task.priority,
-        dueDate: task.dueDate,
-        completedAt: task.completedAt,
-        deliverable: task.deliverable,
-        outputUrl: task.outputUrl,
-        qualityScore: task.qualityScore,
-        feedback: task.feedback,
-        subtasks: task.subtasks,
-        createdAt: task.createdAt,
-        updatedAt: task.updatedAt,
-      })),
-    })
-  } catch (error) {
-    console.error('Get tasks error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
-
-// POST /api/tasks - Create a new task
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const {
-      title,
-      description,
-      projectId,
-      departmentId,
-      assigneeId,
-      creatorId,
-      priority,
-      dueDate,
-      dependsOn,
-    } = body
-
-    const task = await db.task.create({
-      data: {
-        title,
-        description,
-        projectId,
-        departmentId,
-        assigneeId,
-        creatorId,
-        status: TaskStatus.PENDING,
-        priority: priority || TaskPriority.MEDIUM,
-        dueDate: dueDate ? new Date(dueDate) : null,
-        dependsOn,
-      },
-      include: {
         project: {
           select: {
             id: true,
             title: true,
-          },
+            status: true,
+          }
         },
-        assignee: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
+        subtasks: {
+          orderBy: { order: 'asc' }
+        }
       },
+      orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }]
     })
 
-    // Create notification for assignee
-    if (assigneeId) {
-      await db.notification.create({
-        data: {
-          userId: assigneeId,
-          type: 'TASK_ASSIGNED',
-          title: 'New Task Assigned',
-          message: `You have been assigned to task: ${title}`,
-          link: `/projects/${projectId}/tasks/${task.id}`,
-        },
-      })
+    return NextResponse.json({
+      success: true,
+      data: tasks,
+      count: tasks.length
+    })
+  } catch (error) {
+    console.error('Tasks API error:', error)
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to fetch tasks'
+    }, { status: 500 })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+
+    const task = await db.task.create({
+      data: {
+        title: body.title,
+        description: body.description,
+        projectId: body.projectId,
+        assigneeId: body.assigneeId,
+        creatorId: body.creatorId,
+        departmentId: body.departmentId,
+        priority: body.priority || 'MEDIUM',
+        dueDate: body.dueDate ? new Date(body.dueDate) : null,
+        deliverable: body.deliverable,
+        outputUrl: body.outputUrl,
+      }
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: task
+    }, { status: 201 })
+  } catch (error) {
+    console.error('Task creation error:', error)
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to create task'
+    }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const taskId = searchParams.id as string
+
+    if (!taskId) {
+      return NextResponse.json({
+        success: false,
+        error: 'Task ID is required'
+      }, { status: 400 })
     }
 
-    return NextResponse.json(
-      {
-        message: 'Task created successfully',
-        task,
-      },
-      { status: 201 }
-    )
+    const body = await request.json()
+
+    const updateData: any = {}
+
+    if (body.status !== undefined) {
+      updateData.status = body.status
+      if (body.status === 'COMPLETED') {
+        updateData.completedAt = new Date()
+      }
+    }
+
+    if (body.assigneeId !== undefined) {
+      updateData.assigneeId = body.assigneeId
+    }
+
+    if (body.priority !== undefined) {
+      updateData.priority = body.priority
+    }
+
+    if (body.qualityScore !== undefined) {
+      updateData.qualityScore = parseFloat(body.qualityScore)
+    }
+
+    if (body.feedback !== undefined) {
+      updateData.feedback = body.feedback
+    }
+
+    const task = await db.task.update({
+      where: { id: taskId },
+      data: updateData
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: task
+    })
   } catch (error) {
-    console.error('Create task error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('Task update error:', error)
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to update task'
+    }, { status: 500 })
   }
 }

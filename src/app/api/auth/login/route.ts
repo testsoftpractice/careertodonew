@@ -156,7 +156,6 @@ export async function POST(request: NextRequest) {
     const avgReliability = ratings.filter(r => r.dimension === 'RELIABILITY').reduce((sum, r) => sum + r.score, 0) / (ratings.filter(r => r.dimension === 'RELIABILITY').length || 1)
 
     return NextResponse.json({
-      success: true,
       message: 'Login successful',
       user: {
         id: user.id,

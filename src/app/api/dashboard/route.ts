@@ -1,53 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getTokenFromHeaders } from '@/lib/auth/jwt'
-import { isValidUUID } from '@/lib/uuid-validation'
-import jwt from 'jsonwebtoken'
+
+// ==================== DASHBOARD API ====================
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication
-    const token = getTokenFromHeaders(request.headers)
-    if (!token) {
-      return NextResponse.json({
-        success: false,
-        error: 'Unauthorized - No token provided'
-      }, { status: 401 })
-    }
-
-    // Verify token
-    const JWT_SECRET = process.env.JWT_SECRET
-    if (!JWT_SECRET) {
-      throw new Error('JWT_SECRET not configured')
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET)
-    if (!decoded) {
-      return NextResponse.json({
-        success: false,
-        error: 'Unauthorized - Invalid token'
-      }, { status: 401 })
-    }
-
     const { searchParams } = new URL(request.url)
     const userId = searchParams.userId as string | undefined
     const role = searchParams.role as string | undefined
-
-    // Validate userId format
-    if (userId && !isValidUUID(userId)) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid user ID format'
-      }, { status: 400 })
-    }
-
-    // Verify that the token owner matches the requested userId
-    if (userId && decoded.userId !== userId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Unauthorized - Access denied'
-      }, { status: 403 })
-    }
 
     if (!userId || !role) {
       return NextResponse.json({
@@ -77,109 +37,65 @@ export async function GET(request: NextRequest) {
 
     // STUDENT Dashboard
     if (role === 'STUDENT') {
-      // Get my businesses
-      const myBusinesses = await db.business.findMany({
-        where: { founderId: userId },
+      const myProjects = await db.projectMember.findMany({
+        where: { userId },
         include: {
-          university: {
-            select: {
-              id: true,
-              name: true,
-              code: true,
-            }
-          },
-          businessPlan: {
-            select: {
-              isApproved: true,
-              approvedAt: true,
-            }
-          },
-          employees: {
+          project: {
             include: {
-              employee: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                }
+              tasks: {
+                where: { assigneeId: userId },
+                take: 5,
+                orderBy: { dueDate: 'asc' }
               }
-            },
-            where: {
-              isActive: true
             }
-          },
-          _count: {
-            employees: true
           }
+        }
+      })
+
+      const mySkills = await db.skill.findMany({
+        where: { userId },
+        orderBy: { level: 'desc' }
+      })
+
+      const myTimeEntries = await db.timeEntry.findMany({
+        where: { userId },
+        orderBy: { startTime: 'desc' },
+        take: 20
+      })
+
+      const myWorkSessions = await db.workSession.findMany({
+        where: { userId },
+        orderBy: { checkInTime: 'desc' },
+        take: 10
+      })
+
+      const availableJobs = await db.job.findMany({
+        where: {
+          status: 'PUBLISHED'
         },
+        take: 20,
         orderBy: { createdAt: 'desc' }
       })
 
-      // Get business applications
-      const myApplications = await db.businessApplication.findMany({
+      const myApplications = await db.jobApplication.findMany({
         where: { applicantId: userId },
         include: {
-          business: {
-            include: {
-              founder: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  avatar: true,
-                  university: {
-                    select: {
-                      id: true,
-                      name: true,
-                      code: true,
-                    }
-                  }
-                }
-              },
-              university: {
-                select: {
-                  id: true,
-                  name: true,
-                }
-              }
-            }
-          }
+          job: true
         },
         orderBy: { appliedAt: 'desc' }
       })
 
-      // Get available businesses to join
-      const availableBusinesses = await db.business.findMany({
-        where: {
-          status: 'APPROVED',
-          universityId: user.universityId
-        },
-        include: {
-          founder: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              avatar: true,
-              major: true,
-            }
-          },
-          _count: {
-            employees: true
-          }
-        },
-        orderBy: { createdAt: 'desc' }
-      })
-
-      dashboardData.myBusinesses = myBusinesses
-      dashboardData.businessApplications = myApplications
-      dashboardData.availableBusinesses = availableBusinesses
+      dashboardData.projects = myProjects
+      dashboardData.skills = mySkills
+      dashboardData.timeEntries = myTimeEntries
+      dashboardData.workSessions = myWorkSessions
+      dashboardData.availableJobs = availableJobs
+      dashboardData.applications = myApplications
       dashboardData.stats = {
-        totalBusinesses: myBusinesses.length,
-        approvedBusinesses: myBusinesses.filter(b => b.status === 'APPROVED').length,
-        pendingApplications: myApplications.filter(a => a.status === 'PENDING').length,
-        acceptedApplications: myApplications.filter(a => a.status === 'ACCEPTED').length,
-        businessesWithOpenings: availableBusinesses.filter(b => b.employeesRecruited < b.teamSizeGoal).length,
+        totalProjects: myProjects.length,
+        totalSkills: mySkills.length,
+        totalHours: myTimeEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0),
+        applicationsPending: myApplications.filter(app => app.status === 'PENDING').length,
       }
     }
 
@@ -189,163 +105,209 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ dashboardData }, { status: 200 })
       }
 
-      // Get university businesses awaiting approval
       const university = await db.university.findUnique({
         where: { id: user.universityId }
       })
 
-      const pendingBusinesses = await db.business.findMany({
-        where: {
-          universityId: user.universityId,
-          status: { in: ['SUBMITTED', 'UNDER_REVIEW', 'REVISION_REQUIRED'] }
-        },
+      const universityProjects = await db.project.findMany({
+        where: { universityId: user.universityId },
         include: {
-          founder: {
+          projectLead: {
             select: {
               id: true,
               name: true,
               email: true,
               major: true,
-              university: {
-                select: {
-                  id: true,
-                  name: true,
-                }
-              }
             }
           },
-          businessPlan: {
-            select: {
-              isApproved: true,
-              executiveSummary: true,
-              marketAnalysis: true,
-            }
-          },
-          applications: {
-            where: { status: 'PENDING' },
-            take: 20,
-            include: {
-              applicant: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  avatar: true,
-                  major: true,
-                  university: {
-                    select: {
-                      id: true,
-                      name: true,
-                      code: true,
-                    }
-                  }
-                }
-              }
-            }
-          },
-        },
-        orderBy: { submittedAt: 'desc' }
-      })
-
-      // Get approved businesses for this university
-      const approvedBusinesses = await db.business.findMany({
-        where: {
-          universityId: user.universityId,
-          status: 'APPROVED'
-        },
-        include: {
-          founder: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              avatar: true,
-            }
-          },
-          employees: {
+          members: {
             take: 5,
             include: {
-              employee: {
+              user: {
                 select: {
                   id: true,
                   name: true,
                   email: true,
-                  university: {
-                    select: {
-                      id: true,
-                      name: true,
-                      code: true,
-                    }
-                  }
+                  major: true,
+                  role: true,
                 }
               }
             }
           },
           _count: {
-            employees: true
-          }
-        },
-        orderBy: { approvedAt: 'desc' }
-      })
-
-      dashboardData.university = university
-      dashboardData.pendingBusinesses = pendingBusinesses
-      dashboardData.approvedBusinesses = approvedBusinesses
-      dashboardData.stats = {
-        totalPending: pendingBusinesses.length,
-        totalApproved: approvedBusinesses.length,
-        totalRevenue: approvedBusinesses.reduce((sum, b) => sum + (b.revenueGenerated || 0), 0),
-        employeesPlaced: approvedBusinesses.reduce((sum, b) => sum + b.employeesRecruited, 0),
-        studentsInvolved: approvedBusinesses.length,
-      }
-    }
-
-    // EMPLOYER Dashboard (can post jobs for their businesses)
-    if (role === 'EMPLOYER') {
-      const myBusinesses = await db.business.findMany({
-        where: {
-          founderId: userId,
-          status: { in: ['ACTIVE', 'PAUSED'] }
-        },
-        include: {
-          businessPlan: {
-            select: {
-              isApproved: true
-            }
-          },
-          employees: {
-            include: {
-              employee: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                }
-              }
-            }
-          },
-          applications: {
-            where: { status: 'PENDING' },
-            take: 20,
-            _count: {
-              applications: true
-            }
-          },
-          _count: {
-            employees: true,
-            applications: true,
+            members: true,
+            tasks: true
           }
         },
         orderBy: { createdAt: 'desc' }
       })
 
-      dashboardData.myBusinesses = myBusinesses
+      const universityStudents = await db.user.findMany({
+        where: {
+          universityId: user.universityId,
+          role: 'STUDENT'
+        },
+        take: 50,
+        orderBy: { createdAt: 'desc' }
+      })
+
+      dashboardData.university = university
+      dashboardData.projects = universityProjects
+      dashboardData.students = universityStudents
       dashboardData.stats = {
-        totalBusinesses: myBusinesses.length,
-        activeBusinesses: myBusinesses.filter(b => b.status === 'ACTIVE').length,
-        totalEmployees: myBusinesses.reduce((sum, b) => sum + (b.employeesRecruited || 0), 0),
-        pendingApplications: myBusinesses.reduce((sum, b) => sum + b.applications?.length || 0, 0),
-        totalRevenue: myBusinesses.reduce((sum, b) => sum + (b.revenueGenerated || 0), 0),
+        totalProjects: universityProjects.length,
+        totalStudents: universityStudents.length,
+        activeProjects: universityProjects.filter(p => p.status === 'ACTIVE').length,
+      }
+    }
+
+    // EMPLOYER Dashboard
+    if (role === 'EMPLOYER') {
+      const postedJobs = await db.job.findMany({
+        where: { employerId: userId },
+        include: {
+          _count: {
+            applications: true
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      })
+
+      const applications = await db.jobApplication.findMany({
+        where: {
+          job: {
+            employerId: userId
+          }
+        },
+        include: {
+          applicant: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+              major: true,
+              university: {
+                select: {
+                  name: true,
+                  code: true,
+                }
+              }
+            }
+          },
+          job: true
+        }
+      })
+
+      const supplierProfile = await db.supplier.findFirst({
+        where: { userId }
+      })
+
+      dashboardData.postedJobs = postedJobs
+      dashboardData.applications = applications
+      dashboardData.supplier = supplierProfile
+      dashboardData.stats = {
+        totalJobs: postedJobs.length,
+        totalApplications: applications.length,
+        pendingApplications: applications.filter(a => a.status === 'PENDING').length,
+        activeJobs: postedJobs.filter(j => j.status === 'PUBLISHED').length,
+      }
+    }
+
+    // INVESTOR Dashboard
+    if (role === 'INVESTOR') {
+      const investments = await db.investment.findMany({
+        where: { investorId: userId },
+        include: {
+          project: {
+            include: {
+              projectLead: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  avatar: true,
+                }
+              },
+              university: {
+                select: {
+                  id: true,
+                  name: true,
+                  code: true,
+                }
+              }
+            },
+            members: {
+              take: 3,
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  }
+                }
+              }
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      })
+
+      const availableProjects = await db.project.findMany({
+        where: {
+          seekingInvestment: true,
+          status: 'APPROVED'
+        },
+        take: 20,
+        orderBy: { createdAt: 'desc' }
+      })
+
+      dashboardData.investments = investments
+      dashboardData.availableProjects = availableProjects
+      dashboardData.stats = {
+        totalInvestments: investments.length,
+        totalAmount: investments.reduce((sum, inv) => sum + (inv.amount || 0), 0),
+        fundedProjects: investments.filter(inv => inv.status === 'FUNDED').length,
+      }
+    }
+
+    // PLATFORM ADMIN Dashboard
+    if (role === 'PLATFORM_ADMIN') {
+      const allUsers = await db.user.findMany({
+        take: 100,
+        orderBy: { createdAt: 'desc' }
+      })
+
+      const allProjects = await db.project.findMany({
+        take: 50,
+        orderBy: { createdAt: 'desc' }
+      })
+
+      const allUniversities = await db.university.findMany({
+        orderBy: { totalProjects: 'desc' }
+      })
+
+      const recentJobs = await db.job.findMany({
+        take: 20,
+        orderBy: { createdAt: 'desc' }
+      })
+
+      const recentInvestments = await db.investment.findMany({
+        take: 20,
+        orderBy: { createdAt: 'desc' }
+      })
+
+      dashboardData.users = allUsers
+      dashboardData.projects = allProjects
+      dashboardData.universities = allUniversities
+      dashboardData.jobs = recentJobs
+      dashboardData.investments = recentInvestments
+      dashboardData.stats = {
+        totalUsers: allUsers.length,
+        totalProjects: allProjects.length,
+        totalUniversities: allUniversities.length,
+        totalInvestments: recentInvestments.length,
       }
     }
 

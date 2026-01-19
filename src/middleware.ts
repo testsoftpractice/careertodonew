@@ -1,86 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth/jwt-edge'
 
-// Public paths that don't require authentication
-const publicPaths = [
-  '/',
-  '/about',
-  '/features',
-  '/solutions',
-  '/contact',
-  '/support',
-  '/terms',
-  '/privacy',
-  '/auth',
-  '/forgot-password',
-  '/reset-password',
-  '/admin/login',
-]
-
-// API paths that are public (for browsing data)
-const publicApiPaths = [
-  '/api/auth/login',
-  '/api/auth/signup',
-  '/api/auth/forgot-password',
-  '/api/auth/reset-password',
-  '/api/auth/reset-password/validate-token',
-  '/api/admin/login',
-  '/api/admin/verify',
-]
+// ⚠️ AUTHENTICATION DISABLED FOR TESTING
+// All pages and APIs are now publicly accessible
+// No login/signup required
 
 export function middleware(request: NextRequest) {
-  const { pathname } = new URL(request.url)
-
-  // Allow public paths
-  if (publicPaths.some(path => pathname === path || pathname.startsWith(path + '/'))) {
-    return NextResponse.next()
-  }
-
-  // Allow public API paths
-  if (publicApiPaths.some(path => pathname.startsWith(path))) {
-    return NextResponse.next()
-  }
-
-  // For API routes, verify JWT token in Authorization header
-  if (pathname.startsWith('/api/')) {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'Unauthorized - No token provided' },
-        { status: 401 }
-      )
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-    const decoded = verifyToken(token)
-
-    if (!decoded) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Invalid token' },
-        { status: 401 }
-      )
-    }
-
-    const requestHeaders = new Headers(request.headers)
-    requestHeaders.set('x-user-id', decoded.userId)
-    requestHeaders.set('x-user-email', decoded.email)
-    requestHeaders.set('x-user-role', decoded.role)
-
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    })
-  }
-
-  // For protected page routes - SKIP COOKIE VALIDATION
-  // Allow all page routes to pass through, let them handle auth in the page
-  console.log('[MIDDLEWARE] Skipping cookie validation for page routes - allowing access')
+  // Allow everything - no authentication checks
   return NextResponse.next()
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api).*)',
+    // Match all routes except static files
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }

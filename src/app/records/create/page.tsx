@@ -226,7 +226,6 @@ export default function CreateRecordPage() {
                         <SelectValue placeholder="Select a project (optional)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No project linked</SelectItem>
                         {projects.map((project) => (
                           <SelectItem key={project.id} value={project.id}>
                             {project.title}

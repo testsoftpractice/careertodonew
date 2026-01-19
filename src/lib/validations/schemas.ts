@@ -3,12 +3,7 @@ import { z } from 'zod'
 // Auth schemas
 export const signupSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   role: z.enum(['STUDENT', 'UNIVERSITY', 'EMPLOYER', 'INVESTOR', 'PLATFORM_ADMIN']),
@@ -113,7 +108,7 @@ export const createRatingSchema = z.object({
 // Professional Record schemas
 export const createRecordSchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
-  type: z.enum(['PROJECT_ROLE', 'LEADERSHIP_POSITION', 'TASK_COMPLETION', 'SKILL_ACQUIRED', 'CERTIFICATION', 'ACHIEVEMENT', 'EMPLOYMENT']),
+  type: z.enum(['PROJECT_ROLE', 'LEADERSHIP', 'TASK_COMPLETION', 'SKILL_ACQUIRED', 'CERTIFICATION', 'ACHIEVEMENT', 'EMPLOYMENT']),
   title: z.string().min(1, 'Record title is required'),
   description: z.string().max(500, 'Description must be less than 500 characters').optional(),
   projectId: z.string().optional(),

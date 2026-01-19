@@ -42,25 +42,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const storedUser = localStorage.getItem('user')
       const storedToken = localStorage.getItem('token')
+      console.log('[AUTH-CONTEXT] Loading auth state from localStorage')
+      console.log('[AUTH-CONTEXT] storedUser:', storedUser ? 'Found' : 'Not found')
+      console.log('[AUTH-CONTEXT] storedToken:', storedToken ? 'Found' : 'Not found')
+
       if (storedUser && storedToken) {
-        setUser(JSON.parse(storedUser))
+        const parsedUser = JSON.parse(storedUser)
+        setUser(parsedUser)
         setToken(storedToken)
+        console.log('[AUTH-CONTEXT] Auth state loaded successfully')
+        console.log('[AUTH-CONTEXT] User:', parsedUser.email)
+        console.log('[AUTH-CONTEXT] Role:', parsedUser.role)
+      } else {
+        console.log('[AUTH-CONTEXT] No auth state in localStorage')
       }
     } catch (error) {
-      console.error('Error loading auth state:', error)
+      console.error('[AUTH-CONTEXT] Error loading auth state:', error)
     } finally {
       setLoading(false)
     }
   }, [])
 
   const login = (userData: User, authToken: string) => {
+    console.log('[AUTH-CONTEXT] Login called with user:', userData.email, 'role:', userData.role)
     setUser(userData)
     setToken(authToken)
     try {
       localStorage.setItem('user', JSON.stringify(userData))
       localStorage.setItem('token', authToken)
+      console.log('[AUTH-CONTEXT] Auth state saved to localStorage')
     } catch (error) {
-      console.error('Error saving auth state:', error)
+      console.error('[AUTH-CONTEXT] Error saving auth state:', error)
     }
   }
 

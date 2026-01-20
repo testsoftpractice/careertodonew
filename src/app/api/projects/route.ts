@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     const project = await db.project.create({
       data: {
-        title: body.title,
+        name: body.name,
         description: body.description,
         ownerId: body.ownerId,
         status: 'IDEA',

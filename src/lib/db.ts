@@ -8,4 +8,6 @@ export const db =
   globalForPrisma.prisma ??
     new PrismaClient({
       log: ['query'],
-    })
+    }) ?? globalForPrisma.prisma
+
+globalForPrisma.prisma = db

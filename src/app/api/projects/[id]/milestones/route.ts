@@ -69,15 +69,80 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (body.completedAt !== undefined && body.completedAt === null) {
       updates.completedAt = new Date()
     }
+    if (body.status !== undefined) updates.status = body.status
 
-    const milestone = await db.milestone.update({
+    // Fetch existing milestone before updating
+    const existingMilestone = await db.milestone.findUnique({
       where: { id: milestoneId },
-      data: updates
+      select: {
+        id: true,
+        status: true,
+        projectId: true,
+        title: true,
+      },
+    })
+
+    if (!existingMilestone) {
+      return NextResponse.json({ success: false, error: "Milestone not found" }, { status: 404 })
+    }
+
+    const isAchieving = body.status === 'ACHIEVED' && existingMilestone.status !== 'ACHIEVED'
+
+    // Update milestone in a transaction to also award points
+    const updatedMilestone = await db.$transaction(async (tx) => {
+      const milestone = await tx.milestone.update({
+        where: { id: milestoneId },
+        data: updates,
+        include: {
+          project: {
+            select: {
+              id: true,
+              title: true,
+              projectLeadId: true,
+            },
+          },
+        },
+      })
+
+      // Award points for milestone achievement
+      if (isAchieving && milestone.project?.projectLeadId) {
+        try {
+          await tx.pointTransaction.create({
+            data: {
+              userId: milestone.project.projectLeadId,
+              points: 25, // MILESTONE_ACHIEVEMENT points
+              source: 'MILESTONE_ACHIEVEMENT',
+              description: `Achieved milestone: ${milestone.title}`,
+              metadata: JSON.stringify({
+                milestoneId: milestone.id,
+                milestoneTitle: milestone.title,
+                projectId: milestone.projectId,
+                projectTitle: milestone.project.title,
+              }),
+            }
+          })
+
+          // Update user's total points
+          await tx.user.update({
+            where: { id: milestone.project.projectLeadId },
+            data: {
+              totalPoints: {
+                increment: 25,
+              },
+            },
+          })
+        } catch (pointsError) {
+          console.error('Failed to award points for milestone achievement:', pointsError)
+          // Continue even if points awarding fails
+        }
+      }
+
+      return milestone
     })
 
     return NextResponse.json({
       success: true,
-      data: milestone,
+      data: updatedMilestone,
     })
   } catch (error: any) {
     console.error("Update milestone error:", error)

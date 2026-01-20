@@ -4,12 +4,12 @@ import { db } from "@/lib/db"
 export async function GET(request: NextRequest) {
   try {
     const userId = request.nextUrl.searchParams.get("userId")
-    
+
     if (!userId) {
       return NextResponse.json({ success: false, error: "User ID required" }, { status: 400 })
     }
 
-    const [portfolio, totalInvestments, totalEquity, averageReturn, opportunities] = await Promise.all([
+    const [portfolio, totalInvestments, totalEquity, opportunities] = await Promise.all([
       db.investment.findMany({
         where: { investorId: userId },
         orderBy: { investedAt: "desc" },
@@ -20,10 +20,6 @@ export async function GET(request: NextRequest) {
         where: { investorId: userId },
         _sum: { equity: true },
       }),
-      db.investment.aggregate({
-        where: { investorId: userId },
-        _avg: { actualReturn: true },
-      }),
       db.project.findMany({
         where: { seekingInvestment: true, status: "ACTIVE" },
         take: 20,
@@ -31,7 +27,6 @@ export async function GET(request: NextRequest) {
     ])
 
     const totalEquityValue = totalEquity._sum.equity || 0
-    const avgReturnValue = averageReturn._avg.actualReturn || 0
 
     return NextResponse.json({
       success: true,
@@ -39,7 +34,6 @@ export async function GET(request: NextRequest) {
         portfolio,
         totalInvestments,
         totalEquity: totalEquityValue,
-        averageReturn: avgReturnValue ? Math.round(avgReturnValue * 100) / 100 : 0,
         opportunities,
       },
     })

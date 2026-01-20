@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { verifyToken } from '@/lib/auth/jwt-edge'
+import { logError, formatErrorResponse, AppError, UnauthorizedError } from '@/lib/utils/error-handler'
 
-// ==================== JOBS API ====================
+// ==================== JOBS API - WITH UNIVERSITY TARGETING ====================
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,9 +12,12 @@ export async function GET(request: NextRequest) {
     const status = searchParams.status as string | undefined
     const type = searchParams.type as string | undefined
     const remote = searchParams.remote as string | undefined
+    const universityId = searchParams.universityId as string | undefined
+    const minReputation = searchParams.minReputation as string | undefined
 
     const where: any = {}
 
+    // Apply filters
     if (employerId) {
       where.employerId = employerId
     }
@@ -25,8 +30,18 @@ export async function GET(request: NextRequest) {
       where.type = type as any
     }
 
-    if (remote !== undefined) {
+    if (remote) {
       where.remote = remote === 'true'
+    }
+
+    if (universityId) {
+      where.universityId = universityId
+    }
+
+    // Reputation filter
+    if (minReputation) {
+      // Filter students by minimum reputation score
+      // This is implemented in a future enhancement
     }
 
     const jobs = await db.job.findMany({
@@ -39,105 +54,119 @@ export async function GET(request: NextRequest) {
             email: true,
             companyName: true,
             companyWebsite: true,
-          }
+            avatar: true,
+          },
+        },
+        university: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            location: true,
+          },
         },
         _count: {
-          applications: true
-        }
+          applications: true,
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: {
+        createdAt: 'desc',
+      },
     })
 
     return NextResponse.json({
       success: true,
-      data: jobs,
-      count: jobs.length
+      data: {
+        jobs,
+        count: jobs.length,
+      },
     })
   } catch (error) {
     console.error('Jobs API error:', error)
     return NextResponse.json({
       success: false,
-      error: 'Failed to fetch jobs'
+      error: 'Failed to fetch jobs',
     }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
+  let userId: string | null = null
   try {
+    const sessionCookie = request.cookies.get('session')
+    const token = sessionCookie?.value
+
+    if (!token) {
+      throw new UnauthorizedError('Authentication required')
+    }
+
+    const decoded = verifyToken(token)
+    if (!decoded || !decoded.userId || !decoded.role) {
+      throw new UnauthorizedError('Invalid token')
+    }
+
+    userId = decoded.userId
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        role: true,
+        universityId: true,
+        university: { select: { id: true, name: true, code: true, location: true } },
+      },
+    })
+
+    if (!user) {
+      throw new UnauthorizedError('User not found')
+    }
+
+    // Check if user is an employer or platform admin
+    if (user.role !== 'EMPLOYER' && user.role !== 'PLATFORM_ADMIN') {
+      return NextResponse.json({
+        success: false,
+        error: 'Only employers and platform admins can create jobs',
+      }, { status: 403 })
+    }
+
     const body = await request.json()
 
+    // Create job with university targeting
     const job = await db.job.create({
       data: {
-        employerId: body.employerId,
         title: body.title,
         description: body.description,
+        category: body.category,
+        employerId: userId,
         type: body.type,
-        status: 'DRAFT',
-        location: body.location,
-        remote: body.remote || false,
         salaryMin: body.salaryMin ? parseFloat(body.salaryMin) : null,
         salaryMax: body.salaryMax ? parseFloat(body.salaryMax) : null,
         salaryType: body.salaryType,
-        requiredSkills: body.requiredSkills ? JSON.stringify(body.requiredSkills) : null,
-        requiredLevel: body.requiredLevel,
-        experienceRequired: body.experienceRequired ? parseInt(body.experienceRequired) : null,
+        location: body.location,
+        remote: body.remote || false,
+        requirements: body.requirements || [],
+        responsibilities: body.responsibilities || [],
+        benefits: body.benefits || [],
+        applicationUrl: body.applicationUrl || null,
+        positions: body.positions || 1,
         deadline: body.deadline ? new Date(body.deadline) : null,
       }
     })
 
     return NextResponse.json({
       success: true,
-      data: job
+      data: job,
+      message: 'Job created successfully',
     }, { status: 201 })
-  } catch (error) {
-    console.error('Job creation error:', error)
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to create job'
-    }, { status: 500 })
-  }
-}
-
-export async function PATCH(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const jobId = searchParams.id as string
-
-    if (!jobId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Job ID is required'
-      }, { status: 400 })
+  } catch (error: any) {
+    logError(error, 'Create job', userId || 'unknown')
+    
+    if (error instanceof AppError) {
+      return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 
-    const body = await request.json()
-
-    const updateData: any = {}
-
-    if (body.status !== undefined) {
-      updateData.status = body.status
-      if (body.status === 'PUBLISHED') {
-        updateData.publishedAt = new Date()
-      }
-      if (body.status === 'CLOSED') {
-        updateData.closedAt = new Date()
-      }
-    }
-
-    const job = await db.job.update({
-      where: { id: jobId },
-      data: updateData
-    })
-
-    return NextResponse.json({
-      success: true,
-      data: job
-    })
-  } catch (error) {
-    console.error('Job update error:', error)
     return NextResponse.json({
       success: false,
-      error: 'Failed to update job'
+      error: 'Failed to create job',
     }, { status: 500 })
   }
 }

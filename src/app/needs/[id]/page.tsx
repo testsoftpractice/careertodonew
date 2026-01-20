@@ -280,7 +280,7 @@ export default function NeedDetailPage() {
                   <div className="flex items-center gap-3">
                     <Avatar>
                       <AvatarFallback>
-                        {need.postedBy.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
+                        {need.postedBy.name?.split(' ').map((n) => n[0]).join('').toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">

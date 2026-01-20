@@ -16,6 +16,7 @@ const publicPaths = [
   '/reset-password',
   '/projects',
   '/marketplace',
+  '/marketplace/projects',
   '/leaderboards',
   '/jobs',
   '/suppliers',
@@ -26,13 +27,80 @@ const publicPaths = [
   '/api/auth/reset-password',
 ]
 
-// Define dashboard paths and their required roles
-const dashboardPaths: Record<string, string[]> = {
-  '/dashboard/student': ['STUDENT', 'MENTOR', 'PLATFORM_ADMIN'],
+// Define all protected routes with their allowed roles
+const protectedRoutes: Record<string, string[]> = {
+  // Student routes - only students and platform admins
+  '/dashboard/student': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/dashboard/student/settings': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/dashboard/student/profile': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/dashboard/student/projects': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/dashboard/student/verifications': ['STUDENT', 'PLATFORM_ADMIN'],
+
+  // Employer routes - only employers and platform admins
   '/dashboard/employer': ['EMPLOYER', 'PLATFORM_ADMIN'],
+  '/dashboard/employer/settings': ['EMPLOYER', 'PLATFORM_ADMIN'],
+  '/dashboard/employer/profile': ['EMPLOYER', 'PLATFORM_ADMIN'],
+  '/dashboard/employer/projects': ['EMPLOYER', 'PLATFORM_ADMIN'],
+  '/dashboard/employer/jobs': ['EMPLOYER', 'PLATFORM_ADMIN'],
+  '/dashboard/employer/verification-requests': ['EMPLOYER', 'PLATFORM_ADMIN'],
+
+  // Investor routes - only investors and platform admins
   '/dashboard/investor': ['INVESTOR', 'PLATFORM_ADMIN'],
+  '/dashboard/investor/settings': ['INVESTOR', 'PLATFORM_ADMIN'],
+  '/dashboard/investor/profile': ['INVESTOR', 'PLATFORM_ADMIN'],
+  '/dashboard/investor/projects': ['INVESTOR', 'PLATFORM_ADMIN'],
+  '/dashboard/investor/investments': ['INVESTOR', 'PLATFORM_ADMIN'],
+  '/dashboard/investor/portfolio': ['INVESTOR', 'PLATFORM_ADMIN'],
+  '/dashboard/investor/deals': ['INVESTOR', 'PLATFORM_ADMIN'],
+  '/dashboard/investor/proposals': ['INVESTOR', 'PLATFORM_ADMIN'],
+
+  // University routes - only university admins and platform admins
   '/dashboard/university': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/dashboard/university/settings': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/dashboard/university/profile': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/dashboard/university/students': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/dashboard/university/projects': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/dashboard/university/departments': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+
+  // Platform admin routes - only platform admins
   '/admin': ['PLATFORM_ADMIN'],
+  '/admin/settings': ['PLATFORM_ADMIN'],
+  '/admin/projects': ['PLATFORM_ADMIN'],
+  '/admin/users': ['PLATFORM_ADMIN'],
+  '/admin/compliance': ['PLATFORM_ADMIN'],
+  '/admin/governance': ['PLATFORM_ADMIN'],
+  '/admin/content': ['PLATFORM_ADMIN'],
+  '/admin/audit': ['PLATFORM_ADMIN'],
+
+    // Dashboard notifications - all authenticated users
+  '/dashboard/notifications': ['STUDENT', 'EMPLOYER', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+
+  // Business routes - students, platform admins
+  '/business/create': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/businesses': ['STUDENT', 'EMPLOYER', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+
+  // API routes that need protection
+  '/api/businesses': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/api/dashboard/student': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/api/dashboard/student/stats': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/api/dashboard/employer': ['EMPLOYER', 'PLATFORM_ADMIN'],
+  '/api/dashboard/employer/stats': ['EMPLOYER', 'PLATFORM_ADMIN'],
+  '/api/dashboard/investor': ['INVESTOR', 'PLATFORM_ADMIN'],
+  '/api/dashboard/investor/stats': ['INVESTOR', 'PLATFORM_ADMIN'],
+  '/api/dashboard/university': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/dashboard/university/stats': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/dashboard/university/students': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/dashboard/university/projects': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/dashboard/university/activity': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/dashboard/university/departments': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/admin': ['PLATFORM_ADMIN'],
+  '/api/admin/users': ['PLATFORM_ADMIN'],
+  '/api/admin/projects': ['PLATFORM_ADMIN'],
+  '/api/admin/universities': ['PLATFORM_ADMIN'],
+  '/api/admin/compliance': ['PLATFORM_ADMIN'],
+  '/api/admin/governance': ['PLATFORM_ADMIN'],
+  '/api/admin/content': ['PLATFORM_ADMIN'],
+  '/api/admin/audit': ['PLATFORM_ADMIN'],
 }
 
 // Helper function to check if a path is public
@@ -40,9 +108,10 @@ function isPublicPath(pathname: string): boolean {
   return publicPaths.some(path => pathname.startsWith(path))
 }
 
-// Helper function to get required role for a path
-function getRequiredRole(pathname: string): string[] | null {
-  for (const [basePath, allowedRoles] of Object.entries(dashboardPaths)) {
+// Helper function to get allowed roles for a path
+function getAllowedRoles(pathname: string): string[] | null {
+  // Find the most specific matching route
+  for (const [basePath, allowedRoles] of Object.entries(protectedRoutes)) {
     if (pathname.startsWith(basePath)) {
       return allowedRoles
     }
@@ -50,12 +119,25 @@ function getRequiredRole(pathname: string): string[] | null {
   return null
 }
 
+// Helper function to get the appropriate dashboard path for a user role
+function getDashboardForRole(role: string): string {
+  const roleDashboardMap: Record<string, string> = {
+    'STUDENT': '/dashboard/student',
+    'EMPLOYER': '/dashboard/employer',
+    'INVESTOR': '/dashboard/investor',
+    'UNIVERSITY_ADMIN': '/dashboard/university',
+    'PLATFORM_ADMIN': '/admin',
+  }
+  return roleDashboardMap[role] || '/'
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  console.log('[MIDDLEWARE] Request:', pathname)
+  console.log('=== MIDDLEWARE ===')
+  console.log('[MIDDLEWARE] Path:', pathname)
 
-  // Skip static files
+  // Skip static files and API routes that don't need protection
   if (
     pathname.startsWith('/_next/static') ||
     pathname.startsWith('/_next/image') ||
@@ -67,84 +149,104 @@ export function middleware(request: NextRequest) {
 
   // Allow public paths
   if (isPublicPath(pathname)) {
-    console.log('[MIDDLEWARE] Public path, allowing access:', pathname)
+    console.log('[MIDDLEWARE] ✅ Public path - allowing:', pathname)
     return NextResponse.next()
   }
 
-  // For protected routes, check authentication
-  try {
-    // Get token from cookie (named 'session')
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+  // For protected routes, check authentication and authorization
+  const allowedRoles = getAllowedRoles(pathname)
 
-    if (!token) {
-      console.log('[MIDDLEWARE] No session cookie found, redirecting to auth')
-      const url = request.nextUrl.clone()
-      url.pathname = '/auth'
-      url.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(url)
-    }
+  if (allowedRoles) {
+    console.log('[MIDDLEWARE] 🔒 Protected route:', pathname)
+    console.log('[MIDDLEWARE] Allowed roles:', allowedRoles.join(', '))
 
-    // Verify token and get user info
-    const decoded = verifyToken(token)
+    try {
+      // Get token from cookie
+      const sessionCookie = request.cookies.get('session')
+      const token = sessionCookie?.value
 
-    if (!decoded || !decoded.userId || !decoded.role) {
-      console.log('[MIDDLEWARE] Invalid token, redirecting to auth')
-      const url = request.nextUrl.clone()
-      url.pathname = '/auth'
-      url.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(url)
-    }
+      if (!token) {
+        console.log('[MIDDLEWARE] ❌ No token - redirecting to auth')
+        const url = request.nextUrl.clone()
+        url.pathname = '/auth'
+        url.searchParams.set('redirect', pathname)
+        return NextResponse.redirect(url)
+      }
 
-    // Get required roles for this path
-    const requiredRoles = getRequiredRole(pathname)
+      // Verify token
+      const decoded = verifyToken(token)
 
-    if (requiredRoles) {
-      // Check if user's role is allowed
-      if (!requiredRoles.includes(decoded.role)) {
-        console.log(
-          '[MIDDLEWARE] Role mismatch:',
-          'User role:',
-          decoded.role,
-          'Required roles:',
-          requiredRoles
-        )
+      if (!decoded || !decoded.userId || !decoded.role) {
+        console.log('[MIDDLEWARE] ❌ Invalid token - redirecting to auth')
+        const url = request.nextUrl.clone()
+        url.pathname = '/auth'
+        url.searchParams.set('redirect', pathname)
+        return NextResponse.redirect(url)
+      }
 
-        // Redirect to appropriate dashboard based on user's role
-        const userRole = decoded.role
-        let targetPath = '/'
+      console.log('[MIDDLEWARE] 👤 User:', decoded.userId, 'Role:', decoded.role)
 
-        if (userRole === 'STUDENT' || userRole === 'MENTOR') {
-          targetPath = '/dashboard/student'
-        } else if (userRole === 'EMPLOYER') {
-          targetPath = '/dashboard/employer'
-        } else if (userRole === 'INVESTOR') {
-          targetPath = '/dashboard/investor'
-        } else if (userRole === 'UNIVERSITY_ADMIN') {
-          targetPath = '/dashboard/university'
-        } else if (userRole === 'PLATFORM_ADMIN') {
-          targetPath = '/admin'
-        }
+      // Check if user's role is allowed for this route
+      if (!allowedRoles.includes(decoded.role)) {
+        console.log('[MIDDLEWARE] ❌ ACCESS DENIED - Wrong role')
+        console.log('[MIDDLEWARE] User role:', decoded.role)
+        console.log('[MIDDLEWARE] Required roles:', allowedRoles.join(', '))
+
+        // Redirect to user's appropriate dashboard
+        const targetPath = getDashboardForRole(decoded.role)
+        console.log('[MIDDLEWARE] 🔄 Redirecting to:', targetPath)
 
         const url = request.nextUrl.clone()
         url.pathname = targetPath
         return NextResponse.redirect(url)
       }
 
-      console.log('[MIDDLEWARE] Role check passed:', decoded.role, '->', pathname)
+      console.log('[MIDDLEWARE] ✅ ACCESS GRANTED:', decoded.role, '->', pathname)
+      return NextResponse.next()
+
+    } catch (error) {
+      console.error('[MIDDLEWARE] ❌ Error:', error)
+      const url = request.nextUrl.clone()
+      url.pathname = '/auth'
+      url.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(url)
     }
+  }
+
+  // For any other path not explicitly defined, require authentication but no specific role check
+  console.log('[MIDDLEWARE] ⚠️  Undefined route - requiring auth only')
+  try {
+    const sessionCookie = request.cookies.get('session')
+    const token = sessionCookie?.value
+
+    if (!token) {
+      console.log('[MIDDLEWARE] ❌ No token - redirecting to auth')
+      const url = request.nextUrl.clone()
+      url.pathname = '/auth'
+      url.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(url)
+    }
+
+    const decoded = verifyToken(token)
+
+    if (!decoded || !decoded.userId) {
+      console.log('[MIDDLEWARE] ❌ Invalid token - redirecting to auth')
+      const url = request.nextUrl.clone()
+      url.pathname = '/auth'
+      url.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(url)
+    }
+
+    console.log('[MIDDLEWARE] ✅ Auth valid for undefined route')
+    return NextResponse.next()
+
   } catch (error) {
-    console.error('[MIDDLEWARE] Error:', error)
-    // On error, redirect to auth
+    console.error('[MIDDLEWARE] ❌ Error:', error)
     const url = request.nextUrl.clone()
     url.pathname = '/auth'
     url.searchParams.set('redirect', pathname)
     return NextResponse.redirect(url)
   }
-
-  // All checks passed, allow access
-  console.log('[MIDDLEWARE] Access granted:', pathname)
-  return NextResponse.next()
 }
 
 export const config = {

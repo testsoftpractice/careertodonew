@@ -399,7 +399,7 @@ export default function SupplierDetailPage() {
                   <div className="flex items-center gap-3">
                     <Avatar>
                       <AvatarFallback>
-                        {supplier.owner.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
+                        {supplier.owner.name?.split(' ').map((n) => n[0]).join('').toUpperCase() || 'S'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">

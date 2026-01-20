@@ -249,7 +249,7 @@ export default function AdminUsersPage() {
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                         <span className="font-semibold text-primary">
-                          {user.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                          {user.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'U'}
                         </span>
                       </div>
                       <div>

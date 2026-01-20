@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
     const logs = await db.auditLog.findMany({
       orderBy: {
-        timestamp: sort,
+        createdAt: sort,
       },
       take: limit,
     })
@@ -22,11 +22,10 @@ export async function GET(request: NextRequest) {
           id: log.id,
           action: log.action,
           userId: log.userId,
-          userEmail: log.userId ? log.user?.email || null : null,
-          timestamp: log.timestamp?.toISOString() || new Date().toISOString(),
-          ip: log.ip,
+          timestamp: log.createdAt.toISOString(),
+          ip: log.ipAddress,
           status: "Success",
-          details: log.details,
+          details: log.changes,
         })),
         totalCount,
         currentPage: 1,

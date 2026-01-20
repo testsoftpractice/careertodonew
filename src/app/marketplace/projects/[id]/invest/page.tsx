@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
 
 export default function MarketInvestmentPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const { user } = useAuth()
   const [project, setProject] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -20,11 +21,11 @@ export default function MarketInvestmentPage({ params }: { params: Promise<{ id:
 
   useEffect(() => {
     const fetchProject = async () => {
-      if (!user || !params.id) return
+      if (!user || !id) return
 
       try {
         setLoading(true)
-        const response = await fetch(`/api/projects/${params.id}`)
+        const response = await fetch(`/api/projects/${id}`)
         const data = await response.json()
 
         if (data.success) {
@@ -49,7 +50,7 @@ export default function MarketInvestmentPage({ params }: { params: Promise<{ id:
     }
 
     fetchProject()
-  }, [user, resolvedParams.id])
+  }, [user, id])
 
   const handleInvest = async () => {
     if (!user || !project) return

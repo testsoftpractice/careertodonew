@@ -226,7 +226,7 @@ export default function LeaderboardsPage() {
                       <CardHeader className="text-center pb-4">
                         <Avatar className="h-24 w-24 mx-auto mb-4 border-4">
                           <AvatarFallback className="text-2xl">
-                            {student.name.split(' ').map(n => n[0]).join('')}
+                            {student.name?.split(' ').map(n => n[0]).join('') || 'S'}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex items-center justify-center gap-2 mb-2">
@@ -292,7 +292,7 @@ export default function LeaderboardsPage() {
                             <div className="flex items-center gap-3">
                               <Avatar>
                                 <AvatarFallback>
-                                  {student.name.split(' ').map(n => n[0]).join('')}
+                                  {student.name?.split(' ').map(n => n[0]).join('') || 'S'}
                                 </AvatarFallback>
                               </Avatar>
                               <span className="font-medium">{student.name}</span>

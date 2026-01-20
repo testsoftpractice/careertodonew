@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { logError, formatErrorResponse, AppError, UnauthorizedError, ValidationError, validateEmail, DatabaseError } from "@/lib/utils/error-handler"
+import { logError, formatErrorResponse, AppError, UnauthorizedError } from "@/lib/utils/error-handler"
 
 export async function GET(request: NextRequest) {
+  let userId: string | null = null
   try {
-    const userId = request.nextUrl.searchParams.get("userId")
-    
+    userId = request.nextUrl.searchParams.get("userId")
+
     if (!userId) {
       throw new UnauthorizedError("User ID is required")
-    }
-
-    if (!validateEmail(userId)) {
-      throw new ValidationError("Invalid user ID format")
     }
 
     // Using separate queries to avoid Prisma in operator issues
@@ -21,6 +18,7 @@ export async function GET(request: NextRequest) {
       completedProjects,
       tasksCompleted,
       tasksPending,
+      tasksInProgress,
       projectList,
     ] = await Promise.all([
       db.project.count({ where: { projectLeadId: userId } }),
@@ -31,20 +29,59 @@ export async function GET(request: NextRequest) {
       db.task.count({ where: { assigneeId: userId, status: "IN_PROGRESS" } }),
       db.project.findMany({
         where: { projectLeadId: userId, status: "COMPLETED" },
-        select: { completion: true },
+        select: { completionRate: true },
       }),
     ])
 
-    const avgCompletion = projectList.length > 0 
-      ? projectList.reduce((sum: any, p: any) => sum + (p.completion || 0), 0) / projectList.length 
+    const avgCompletion = projectList.length > 0
+      ? projectList.reduce((sum: number, p: any) => sum + (p.completionRate || 0), 0) / projectList.length
       : 0
-    
-    const reputation = await db.rating.aggregate({
-      where: { userId },
-      _avg: { execution: true, collaboration: true, leadership: true, ethics: true, reliability: true },
+
+    // Calculate reputation from ratings (ratedId = user being rated)
+    const ratings = await db.rating.findMany({
+      where: { ratedId: userId },
+      select: {
+        dimension: true,
+        score: true,
+      },
     })
-    
-    const recentActivityCount = await db.notification.count({ where: { userId, read: false } })
+
+    // Group by dimension and calculate averages
+    const dimensionScores = {
+      execution: [] as number[],
+      collaboration: [] as number[],
+      leadership: [] as number[],
+      ethics: [] as number[],
+      reliability: [] as number[],
+    }
+
+    ratings.forEach(rating => {
+      if (rating.dimension === 'EXECUTION') {
+        dimensionScores.execution.push(rating.score)
+      } else if (rating.dimension === 'COLLABORATION') {
+        dimensionScores.collaboration.push(rating.score)
+      } else if (rating.dimension === 'LEADERSHIP') {
+        dimensionScores.leadership.push(rating.score)
+      } else if (rating.dimension === 'ETHICS') {
+        dimensionScores.ethics.push(rating.score)
+      } else if (rating.dimension === 'RELIABILITY') {
+        dimensionScores.reliability.push(rating.score)
+      }
+    })
+
+    const calculateAvg = (scores: number[]) => {
+      return scores.length > 0 ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : 0
+    }
+
+    const breakdown = {
+      execution: calculateAvg(dimensionScores.execution),
+      collaboration: calculateAvg(dimensionScores.collaboration),
+      leadership: calculateAvg(dimensionScores.leadership),
+      ethics: calculateAvg(dimensionScores.ethics),
+      reliability: calculateAvg(dimensionScores.reliability),
+    }
+
+    const recentActivityCount = await db.notification.count({ where: { userId, isRead: false } })
 
     const stats = {
       totalProjects,
@@ -52,14 +89,9 @@ export async function GET(request: NextRequest) {
       completedProjects,
       tasksCompleted,
       tasksPending,
+      tasksInProgress,
       avgCompletion,
-      reputation: {
-        execution: Math.round(reputation._avg.execution * 10) / 10 || 0,
-        collaboration: Math.round(reputation._avg.collaboration * 10) / 10 || 0,
-        leadership: Math.round(reputation._avg.leadership * 10) / 10 || 0,
-        ethics: Math.round(reputation._avg.ethics * 10) / 10 || 0,
-        reliability: Math.round(reputation._avg.reliability * 10) / 10 || 0,
-      },
+      breakdown,
       recentActivityCount,
     }
 
@@ -68,12 +100,12 @@ export async function GET(request: NextRequest) {
       data: stats,
     })
   } catch (error: any) {
-    logError(error, 'Get student stats', userId)
-    
+    logError(error, 'Get student stats', userId || 'unknown')
+
     if (error instanceof AppError) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
-    
+
     return NextResponse.json({
       success: false,
       error: "Failed to fetch student statistics",

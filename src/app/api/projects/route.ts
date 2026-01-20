@@ -97,25 +97,60 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    const project = await db.project.create({
-      data: {
-        title: body.title,
-        description: body.description,
-        category: body.category,
-        projectLeadId: body.projectLeadId,
-        hrLeadId: body.hrLeadId,
-        universityId: body.universityId,
-        status: body.status || 'PROPOSED',
-        seekingInvestment: body.seekingInvestment || false,
-        investmentGoal: body.investmentGoal ? parseFloat(body.investmentGoal) : null,
-        startDate: body.startDate ? new Date(body.startDate) : null,
-        endDate: body.endDate ? new Date(body.endDate) : null,
+    // Create project in a transaction to also award points
+    const result = await db.$transaction(async (tx) => {
+      const project = await tx.project.create({
+        data: {
+          title: body.title,
+          description: body.description,
+          category: body.category,
+          projectLeadId: body.projectLeadId,
+          hrLeadId: body.hrLeadId,
+          universityId: body.universityId,
+          status: body.status || 'PROPOSED',
+          seekingInvestment: body.seekingInvestment || false,
+          investmentGoal: body.investmentGoal ? parseFloat(body.investmentGoal) : null,
+          startDate: body.startDate ? new Date(body.startDate) : null,
+          endDate: body.endDate ? new Date(body.endDate) : null,
+        }
+      })
+
+      // Award points for business creation
+      try {
+        await tx.pointTransaction.create({
+          data: {
+            userId: body.projectLeadId,
+            points: 100, // BUSINESS_CREATION points
+            source: 'BUSINESS_CREATION',
+            description: `Created business: ${body.title}`,
+            metadata: JSON.stringify({
+              projectId: project.id,
+              projectTitle: body.title,
+              category: body.category,
+            }),
+          }
+        })
+
+        // Update user's total points
+        await tx.user.update({
+          where: { id: body.projectLeadId },
+          data: {
+            totalPoints: {
+              increment: 100,
+            },
+          },
+        })
+      } catch (pointsError) {
+        console.error('Failed to award points for business creation:', pointsError)
+        // Continue even if points awarding fails
       }
+
+      return project
     })
 
     return NextResponse.json({
       success: true,
-      data: project
+      data: result
     }, { status: 201 })
   } catch (error) {
     console.error('Project creation error:', error)

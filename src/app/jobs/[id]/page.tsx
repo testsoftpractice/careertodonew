@@ -352,7 +352,7 @@ export default function JobDetailPage() {
                   <div className="flex items-center gap-3">
                     <Avatar>
                       <AvatarFallback>
-                        {job.postedBy.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
+                        {job.postedBy.name?.split(' ').map((n) => n[0]).join('').toUpperCase() || 'J'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">

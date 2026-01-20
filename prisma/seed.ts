@@ -3,7 +3,8 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 // ============================================
-// COMPREHENSIVE DEMO DATA - 20 RECORDS EACH
+// COMPREHENSIVE DEMO DATA - ENHANCED VERSION
+// All entities have minimum 10 records
 // ============================================
 
 async function main() {
@@ -51,7 +52,7 @@ async function main() {
     { name: 'University of Pennsylvania', code: 'UPENN', description: 'Ivy League university in Philadelphia', location: 'Philadelphia, PA', rankingScore: 97.0, rankingPosition: 6, totalStudents: 26000 },
     { name: 'Columbia University', code: 'COL', description: 'Ivy League university in NYC', location: 'New York, NY', rankingScore: 96.8, rankingPosition: 9, totalStudents: 33000 },
     { name: 'Duke University', code: 'DUKE', description: 'Top private research university', location: 'Durham, NC', rankingScore: 96.2, rankingPosition: 11, totalStudents: 16000 },
-    { name: 'University of Chicago', code: 'UChicago', description: 'Leading university in economics and sciences', location: 'Chicago, IL', rankingScore: 97.5, rankingPosition: 4, totalStudents: 18000 },
+    { name: 'University of Chicago', code: 'UCHICAGO', description: 'Leading university in economics and sciences', location: 'Chicago, IL', rankingScore: 97.5, rankingPosition: 4, totalStudents: 18000 },
     { name: 'Caltech', code: 'CALTECH', description: 'California Institute of Technology', location: 'Pasadena, CA', rankingScore: 98.0, rankingPosition: 7, totalStudents: 2400 },
     { name: 'University of Illinois Urbana-Champaign', code: 'UIUC', description: 'Top engineering and computer science', location: 'Urbana, IL', rankingScore: 94.0, rankingPosition: 20, totalStudents: 52000 },
     { name: 'Cornell University', code: 'CORNELL', description: 'Ivy League university in upstate New York', location: 'Ithaca, NY', rankingScore: 95.0, rankingPosition: 14, totalStudents: 25000 },
@@ -65,67 +66,324 @@ async function main() {
   )
   console.log(`✅ Created ${universities.length} universities`)
 
-  // ==================== 80 USERS (20 each role) ====================
-
-  // 20 STUDENTS
+  // ==================== 25 STUDENTS ====================
   const studentsData = [
-    { email: 'student1@demo.edu', name: 'Emily Chen', role: 'STUDENT', universityId: universities[0].id, major: 'Computer Science', graduationYear: 2025, bio: 'Passionate about AI and machine learning', location: 'San Francisco, CA', linkedinUrl: 'linkedin.com/in/emilychen', portfolioUrl: 'portfolio.emilychen.dev' },
-    { email: 'student2@demo.edu', name: 'James Wilson', role: 'STUDENT', universityId: universities[1].id, major: 'Electrical Engineering', graduationYear: 2024, bio: 'Robotics enthusiast', location: 'Boston, MA', linkedinUrl: 'linkedin.com/in/jameswilson' },
-    { email: 'student3@demo.edu', name: 'Sarah Johnson', role: 'STUDENT', universityId: universities[2].id, major: 'Business Administration', graduationYear: 2026, bio: 'Aspiring entrepreneur', location: 'Cambridge, MA', portfolioUrl: 'sarahj.co' },
-    { email: 'student4@demo.edu', name: 'Michael Brown', role: 'STUDENT', universityId: universities[3].id, major: 'Data Science', graduationYear: 2025, bio: 'Big data and analytics specialist', location: 'Berkeley, CA' },
-    { email: 'student5@demo.edu', name: 'Lisa Anderson', role: 'STUDENT', universityId: universities[4].id, major: 'Computer Science', graduationYear: 2024, bio: 'Full-stack developer', location: 'Pittsburgh, PA' },
-    { email: 'student6@demo.edu', name: 'David Lee', role: 'STUDENT', universityId: universities[5].id, major: 'Industrial Engineering', graduationYear: 2025, bio: 'Manufacturing automation expert', location: 'Atlanta, GA' },
-    { email: 'student7@demo.edu', name: 'Emma Rodriguez', role: 'STUDENT', universityId: universities[6].id, major: 'Computer Science', graduationYear: 2026, bio: 'Cloud computing researcher', location: 'Seattle, WA' },
-    { email: 'student8@demo.edu', name: 'Chris Taylor', role: 'STUDENT', universityId: universities[7].id, major: 'Mechanical Engineering', graduationYear: 2025, bio: 'Automotive systems designer', location: 'Austin, TX' },
-    { email: 'student9@demo.edu', name: 'Amanda White', role: 'STUDENT', universityId: universities[8].id, major: 'Psychology', graduationYear: 2024, bio: 'UX researcher', location: 'Ann Arbor, MI' },
-    { email: 'student10@demo.edu', name: 'Ryan Martinez', role: 'STUDENT', universityId: universities[9].id, major: 'Economics', graduationYear: 2026, bio: 'Financial modeling enthusiast', location: 'Evanston, IL' },
-    { email: 'student11@demo.edu', name: 'Sophie Kim', role: 'STUDENT', universityId: universities[10].id, major: 'Bioengineering', graduationYear: 2025, bio: 'Biotech startup founder', location: 'Philadelphia, PA' },
-    { email: 'student12@demo.edu', name: 'Kevin Nguyen', role: 'STUDENT', universityId: universities[11].id, major: 'Computer Science', graduationYear: 2024, bio: 'Frontend developer', location: 'New York, NY', portfolioUrl: 'kevindev.io' },
-    { email: 'student13@demo.edu', name: 'Jessica Parker', role: 'STUDENT', universityId: universities[12].id, major: 'Marketing', graduationYear: 2026, bio: 'Digital marketing specialist', location: 'Durham, NC' },
-    { email: 'student14@demo.edu', name: 'Brandon Scott', role: 'STUDENT', universityId: universities[13].id, major: 'Philosophy', graduationYear: 2025, bio: 'Ethics in AI researcher', location: 'Chicago, IL' },
-    { email: 'student15@demo.edu', name: 'Mia Thompson', role: 'STUDENT', universityId: universities[14].id, major: 'Physics', graduationYear: 2026, bio: 'Quantum computing enthusiast', location: 'Pasadena, CA' },
-    { email: 'student16@demo.edu', name: 'Alex Turner', role: 'STUDENT', universityId: universities[15].id, major: 'Computer Engineering', graduationYear: 2025, bio: 'Hardware security researcher', location: 'Urbana, IL' },
-    { email: 'student17@demo.edu', name: 'Nicole Green', role: 'STUDENT', universityId: universities[16].id, major: 'Hospitality Management', graduationYear: 2024, bio: 'Event coordinator', location: 'Ithaca, NY' },
-    { email: 'student18@demo.edu', name: 'Tyler Adams', role: 'STUDENT', universityId: universities[17].id, major: 'Biomedical Engineering', graduationYear: 2025, bio: 'Medical device innovator', location: 'Baltimore, MD' },
-    { email: 'student19@demo.edu', name: 'Hannah Lee', role: 'STUDENT', universityId: universities[18].id, major: 'Cinematic Arts', graduationYear: 2026, bio: 'Film director and producer', location: 'Los Angeles, CA' },
-    { email: 'student20@demo.edu', name: 'Jake Miller', role: 'STUDENT', universityId: universities[19].id, major: 'Aerospace Engineering', graduationYear: 2025, bio: 'Rocket propulsion researcher', location: 'West Lafayette, IN' },
+    {
+      email: 'student1@demo.edu', name: 'Emily Chen', role: 'STUDENT', universityId: universities[0].id,
+      major: 'Computer Science', graduationYear: 2025,
+      bio: 'Passionate about AI and machine learning', location: 'San Francisco, CA',
+      linkedinUrl: 'linkedin.com/in/emilychen', portfolioUrl: 'portfolio.emilychen.dev',
+      password: 'hashed_password_1', emailVerified: true, emailVerifiedAt: new Date('2024-01-15'),
+      executionScore: 4.2, collaborationScore: 4.5, leadershipScore: 3.8, ethicsScore: 4.7, reliabilityScore: 4.3,
+      progressionLevel: 'CONTRIBUTOR'
+    },
+    {
+      email: 'student2@demo.edu', name: 'James Wilson', role: 'STUDENT', universityId: universities[1].id,
+      major: 'Electrical Engineering', graduationYear: 2024,
+      bio: 'Robotics enthusiast', location: 'Boston, MA',
+      linkedinUrl: 'linkedin.com/in/jameswilson', portfolioUrl: null,
+      password: 'hashed_password_2', emailVerified: true, emailVerifiedAt: new Date('2024-01-10'),
+      executionScore: 3.8, collaborationScore: 4.2, leadershipScore: 4.1, ethicsScore: 4.5, reliabilityScore: 4.0,
+      progressionLevel: 'CONTRIBUTOR'
+    },
+    {
+      email: 'student3@demo.edu', name: 'Sarah Johnson', role: 'STUDENT', universityId: universities[2].id,
+      major: 'Business Administration', graduationYear: 2026,
+      bio: 'Aspiring entrepreneur', location: 'Cambridge, MA',
+      linkedinUrl: 'linkedin.com/in/sarahjohnson', portfolioUrl: 'sarahj.co',
+      password: 'hashed_password_3', emailVerified: true, emailVerifiedAt: new Date('2024-02-01'),
+      executionScore: 3.5, collaborationScore: 4.0, leadershipScore: 4.2, ethicsScore: 4.3, reliabilityScore: 4.1,
+      progressionLevel: 'SENIOR_CONTRIBUTOR'
+    },
+    {
+      email: 'student4@demo.edu', name: 'Michael Brown', role: 'STUDENT', universityId: universities[3].id,
+      major: 'Data Science', graduationYear: 2025,
+      bio: 'Big data and analytics specialist', location: 'Berkeley, CA',
+      linkedinUrl: 'linkedin.com/in/michaelbrown', portfolioUrl: null,
+      password: 'hashed_password_4', emailVerified: true, emailVerifiedAt: new Date('2024-01-20'),
+      executionScore: 4.0, collaborationScore: 4.3, leadershipScore: 3.9, ethicsScore: 4.5, reliabilityScore: 4.2,
+      progressionLevel: 'CONTRIBUTOR'
+    },
+    {
+      email: 'student5@demo.edu', name: 'Lisa Anderson', role: 'STUDENT', universityId: universities[4].id,
+      major: 'Computer Science', graduationYear: 2024,
+      bio: 'Full-stack developer', location: 'Pittsburgh, PA',
+      linkedinUrl: 'linkedin.com/in/lisaanderson', portfolioUrl: null,
+      password: 'hashed_password_5', emailVerified: true, emailVerifiedAt: new Date('2024-01-05'),
+      executionScore: 4.3, collaborationScore: 4.6, leadershipScore: 4.2, ethicsScore: 4.4, reliabilityScore: 4.5,
+      progressionLevel: 'SENIOR_CONTRIBUTOR'
+    },
+    {
+      email: 'student6@demo.edu', name: 'David Lee', role: 'STUDENT', universityId: universities[5].id,
+      major: 'Industrial Engineering', graduationYear: 2025,
+      bio: 'Manufacturing automation expert', location: 'Atlanta, GA',
+      linkedinUrl: 'linkedin.com/in/davidlee', portfolioUrl: 'davidlee.dev',
+      password: 'hashed_password_6', emailVerified: true, emailVerifiedAt: new Date('2024-02-15'),
+      executionScore: 4.1, collaborationScore: 4.4, leadershipScore: 4.0, ethicsScore: 4.2, reliabilityScore: 4.3,
+      progressionLevel: 'SENIOR_CONTRIBUTOR'
+    },
+    {
+      email: 'student7@demo.edu', name: 'Emma Rodriguez', role: 'STUDENT', universityId: universities[6].id,
+      major: 'Computer Science', graduationYear: 2026,
+      bio: 'Cloud computing researcher', location: 'Seattle, WA',
+      linkedinUrl: 'linkedin.com/in/emmarodriguez', portfolioUrl: null,
+      password: 'hashed_password_7', emailVerified: true, emailVerifiedAt: new Date('2024-01-10'),
+      executionScore: 4.2, collaborationScore: 4.3, leadershipScore: 4.1, ethicsScore: 4.0, reliabilityScore: 4.4,
+      progressionLevel: 'TEAM_LEAD'
+    },
+    {
+      email: 'student8@demo.edu', name: 'Chris Taylor', role: 'STUDENT', universityId: universities[7].id,
+      major: 'Mechanical Engineering', graduationYear: 2025,
+      bio: 'Automotive systems designer', location: 'Austin, TX',
+      linkedinUrl: 'linkedin.com/in/christaylor', portfolioUrl: null,
+      password: 'hashed_password_8', emailVerified: true, emailVerifiedAt: new Date('2024-02-01'),
+      executionScore: 3.9, collaborationScore: 4.2, leadershipScore: 4.3, ethicsScore: 4.4, reliabilityScore: 4.1,
+      progressionLevel: 'CONTRIBUTOR'
+    },
+    {
+      email: 'student9@demo.edu', name: 'Amanda White', role: 'STUDENT', universityId: universities[8].id,
+      major: 'Psychology', graduationYear: 2024,
+      bio: 'UX researcher', location: 'Ann Arbor, MI',
+      linkedinUrl: 'linkedin.com/in/amandawhite', portfolioUrl: null,
+      password: 'hashed_password_9', emailVerified: true, emailVerifiedAt: new Date('2024-01-25'),
+      executionScore: 4.0, collaborationScore: 4.1, leadershipScore: 4.2, ethicsScore: 4.3, reliabilityScore: 4.0,
+      progressionLevel: 'CONTRIBUTOR'
+    },
+    {
+      email: 'student10@demo.edu', name: 'Ryan Martinez', role: 'STUDENT', universityId: universities[9].id,
+      major: 'Economics', graduationYear: 2026,
+      bio: 'Financial modeling enthusiast', location: 'Evanston, IL',
+      linkedinUrl: 'linkedin.com/in/ryanmartinez', portfolioUrl: null,
+      password: 'hashed_password_10', emailVerified: true, emailVerifiedAt: new Date('2024-02-10'),
+      executionScore: 3.8, collaborationScore: 4.0, leadershipScore: 4.1, ethicsScore: 4.5, reliabilityScore: 4.2,
+      progressionLevel: 'SENIOR_CONTRIBUTOR'
+    },
+    {
+      email: 'student11@demo.edu', name: 'Sophie Kim', role: 'STUDENT', universityId: universities[10].id,
+      major: 'Bioengineering', graduationYear: 2025,
+      bio: 'Biotech startup founder', location: 'Philadelphia, PA',
+      linkedinUrl: 'linkedin.com/in/sophiekim', portfolioUrl: 'sophiek.bio',
+      password: 'hashed_password_11', emailVerified: true, emailVerifiedAt: new Date('2024-03-01'),
+      executionScore: 4.3, collaborationScore: 4.4, leadershipScore: 4.5, ethicsScore: 4.6, reliabilityScore: 4.3,
+      progressionLevel: 'TEAM_LEAD'
+    },
+    {
+      email: 'student12@demo.edu', name: 'Kevin Nguyen', role: 'STUDENT', universityId: universities[11].id,
+      major: 'Computer Science', graduationYear: 2024,
+      bio: 'Frontend developer', location: 'New York, NY',
+      linkedinUrl: 'linkedin.com/in/kevinnguyen', portfolioUrl: 'kevindev.io',
+      password: 'hashed_password_12', emailVerified: true, emailVerifiedAt: new Date('2024-02-15'),
+      executionScore: 4.1, collaborationScore: 4.3, leadershipScore: 4.0, ethicsScore: 4.2, reliabilityScore: 4.4,
+      progressionLevel: 'SENIOR_CONTRIBUTOR'
+    },
+    {
+      email: 'student13@demo.edu', name: 'Jessica Parker', role: 'STUDENT', universityId: universities[12].id,
+      major: 'Marketing', graduationYear: 2026,
+      bio: 'Digital marketing specialist', location: 'Durham, NC',
+      linkedinUrl: 'linkedin.com/in/jessicaparker', portfolioUrl: null,
+      password: 'hashed_password_13', emailVerified: true, emailVerifiedAt: new Date('2024-01-20'),
+      executionScore: 4.2, collaborationScore: 4.5, leadershipScore: 4.3, ethicsScore: 4.4, reliabilityScore: 4.1,
+      progressionLevel: 'CONTRIBUTOR'
+    },
+    {
+      email: 'student14@demo.edu', name: 'Brandon Scott', role: 'STUDENT', universityId: universities[13].id,
+      major: 'Philosophy', graduationYear: 2025,
+      bio: 'Ethics in AI researcher', location: 'Chicago, IL',
+      linkedinUrl: 'linkedin.com/in/brandonscott', portfolioUrl: null,
+      password: 'hashed_password_14', emailVerified: true, emailVerifiedAt: new Date('2024-03-10'),
+      executionScore: 4.0, collaborationScore: 3.9, leadershipScore: 4.1, ethicsScore: 4.8, reliabilityScore: 4.3,
+      progressionLevel: 'SENIOR_CONTRIBUTOR'
+    },
+    {
+      email: 'student15@demo.edu', name: 'Mia Thompson', role: 'STUDENT', universityId: universities[14].id,
+      major: 'Physics', graduationYear: 2026,
+      bio: 'Quantum computing enthusiast', location: 'Pasadena, CA',
+      linkedinUrl: 'linkedin.com/in/miathompson', portfolioUrl: null,
+      password: 'hashed_password_15', emailVerified: true, emailVerifiedAt: new Date('2024-01-15'),
+      executionScore: 4.4, collaborationScore: 4.2, leadershipScore: 4.3, ethicsScore: 4.1, reliabilityScore: 4.5,
+      progressionLevel: 'SENIOR_CONTRIBUTOR'
+    },
+    {
+      email: 'student16@demo.edu', name: 'Alex Turner', role: 'STUDENT', universityId: universities[15].id,
+      major: 'Computer Engineering', graduationYear: 2025,
+      bio: 'Hardware security researcher', location: 'Urbana, IL',
+      linkedinUrl: 'linkedin.com/in/alexturner', portfolioUrl: null,
+      password: 'hashed_password_16', emailVerified: true, emailVerifiedAt: new Date('2024-02-20'),
+      executionScore: 3.9, collaborationScore: 4.1, leadershipScore: 4.2, ethicsScore: 4.4, reliabilityScore: 4.0,
+      progressionLevel: 'TEAM_LEAD'
+    },
+    {
+      email: 'student17@demo.edu', name: 'Nicole Green', role: 'STUDENT', universityId: universities[16].id,
+      major: 'Hospitality Management', graduationYear: 2024,
+      bio: 'Event coordinator', location: 'Ithaca, NY',
+      linkedinUrl: 'linkedin.com/in/nicolegreen', portfolioUrl: null,
+      password: 'hashed_password_17', emailVerified: true, emailVerifiedAt: new Date('2024-03-05'),
+      executionScore: 4.5, collaborationScore: 4.6, leadershipScore: 4.7, ethicsScore: 4.8, reliabilityScore: 4.3,
+      progressionLevel: 'TEAM_LEAD'
+    },
+    {
+      email: 'student18@demo.edu', name: 'Tyler Adams', role: 'STUDENT', universityId: universities[17].id,
+      major: 'Biomedical Engineering', graduationYear: 2025,
+      bio: 'Medical device innovator', location: 'Baltimore, MD',
+      linkedinUrl: 'linkedin.com/in/tyleradams', portfolioUrl: null,
+      password: 'hashed_password_18', emailVerified: true, emailVerifiedAt: new Date('2024-01-10'),
+      executionScore: 4.2, collaborationScore: 4.4, leadershipScore: 4.3, ethicsScore: 4.5, reliabilityScore: 4.1,
+      progressionLevel: 'SENIOR_CONTRIBUTOR'
+    },
+    {
+      email: 'student19@demo.edu', name: 'Hannah Lee', role: 'STUDENT', universityId: universities[18].id,
+      major: 'Cinematic Arts', graduationYear: 2026,
+      bio: 'Film director and producer', location: 'Los Angeles, CA',
+      linkedinUrl: 'linkedin.com/in/hannahlee', portfolioUrl: 'hannahlee.film',
+      password: 'hashed_password_19', emailVerified: true, emailVerifiedAt: new Date('2024-02-25'),
+      executionScore: 4.0, collaborationScore: 4.3, leadershipScore: 4.4, ethicsScore: 4.2, reliabilityScore: 4.1,
+      progressionLevel: 'CONTRIBUTOR'
+    },
+    {
+      email: 'student20@demo.edu', name: 'Jake Miller', role: 'STUDENT', universityId: universities[19].id,
+      major: 'Aerospace Engineering', graduationYear: 2025,
+      bio: 'Rocket propulsion researcher', location: 'West Lafayette, IN',
+      linkedinUrl: 'linkedin.com/in/jakemiller', portfolioUrl: 'jake.dev',
+      password: 'hashed_password_20', emailVerified: true, emailVerifiedAt: new Date('2024-01-05'),
+      executionScore: 4.3, collaborationScore: 4.2, leadershipScore: 4.5, ethicsScore: 4.4, reliabilityScore: 4.2,
+      progressionLevel: 'SENIOR_CONTRIBUTOR'
+    },
+    {
+      email: 'student21@demo.edu', name: 'Olivia Brown', role: 'STUDENT', universityId: universities[0].id,
+      major: 'Computer Science', graduationYear: 2025,
+      bio: 'AI researcher focusing on NLP', location: 'Stanford, CA',
+      linkedinUrl: 'linkedin.com/in/oliviabrown', portfolioUrl: 'olivia.research',
+      password: 'hashed_password_21', emailVerified: true, emailVerifiedAt: new Date('2024-03-15'),
+      executionScore: 4.8, collaborationScore: 4.5, leadershipScore: 4.2, ethicsScore: 4.6, reliabilityScore: 4.7,
+      progressionLevel: 'TEAM_LEAD'
+    },
+    {
+      email: 'student22@demo.edu', name: 'Ethan Wright', role: 'STUDENT', universityId: universities[1].id,
+      major: 'Data Science', graduationYear: 2026,
+      bio: 'Machine learning engineer specializing in computer vision', location: 'Cambridge, MA',
+      linkedinUrl: 'linkedin.com/in/ethanwright', portfolioUrl: 'ethan.ai',
+      password: 'hashed_password_22', emailVerified: true, emailVerifiedAt: new Date('2024-02-10'),
+      executionScore: 4.5, collaborationScore: 4.3, leadershipScore: 4.1, ethicsScore: 4.4, reliabilityScore: 4.6,
+      progressionLevel: 'PROJECT_LEAD'
+    },
+    {
+      email: 'student23@demo.edu', name: 'Sophia Davis', role: 'STUDENT', universityId: universities[2].id,
+      major: 'Economics', graduationYear: 2025,
+      bio: 'Financial technology analyst', location: 'Cambridge, MA',
+      linkedinUrl: 'linkedin.com/in/sophiadavis', portfolioUrl: null,
+      password: 'hashed_password_23', emailVerified: true, emailVerifiedAt: new Date('2024-01-25'),
+      executionScore: 4.1, collaborationScore: 4.4, leadershipScore: 4.5, ethicsScore: 4.2, reliabilityScore: 4.3,
+      progressionLevel: 'SENIOR_CONTRIBUTOR'
+    },
+    {
+      email: 'student24@demo.edu', name: 'Lucas Johnson', role: 'STUDENT', universityId: universities[3].id,
+      major: 'Business', graduationYear: 2026,
+      bio: 'Startup founder and business strategist', location: 'Cambridge, MA',
+      linkedinUrl: 'linkedin.com/in/lucasjohnson', portfolioUrl: 'lucas.startup',
+      password: 'hashed_password_24', emailVerified: true, emailVerifiedAt: new Date('2024-03-20'),
+      executionScore: 4.4, collaborationScore: 4.7, leadershipScore: 4.8, ethicsScore: 4.5, reliabilityScore: 4.6,
+      progressionLevel: 'TEAM_LEAD'
+    },
+    {
+      email: 'student25@demo.edu', name: 'Ava Mitchell', role: 'STUDENT', universityId: universities[4].id,
+      major: 'Computer Science', graduationYear: 2024,
+      bio: 'Full-stack web developer', location: 'Pittsburgh, PA',
+      linkedinUrl: 'linkedin.com/in/avamitchell', portfolioUrl: 'ava.dev',
+      password: 'hashed_password_25', emailVerified: true, emailVerifiedAt: new Date('2024-02-01'),
+      executionScore: 4.3, collaborationScore: 4.2, leadershipScore: 4.0, ethicsScore: 4.4, reliabilityScore: 4.5,
+      progressionLevel: 'SENIOR_CONTRIBUTOR'
+    },
   ]
 
   const students = await Promise.all(
-    studentsData.map(s => prisma.user.create({ data: { ...s, verificationStatus: 'VERIFIED', emailVerified: true } }))
+    studentsData.map(s => prisma.user.create({ data: { ...s, verificationStatus: 'VERIFIED' } }))
   )
   console.log(`✅ Created ${students.length} students`)
 
-  // 20 UNIVERSITY ADMINS
+  // ==================== 5 MENTORS ====================
+  const mentorsData = [
+    {
+      email: 'mentor1@demo.edu', name: 'Dr. Robert Anderson', role: 'MENTOR', universityId: universities[0].id,
+      major: 'Computer Science', position: 'Senior Professor',
+      bio: '20+ years in academia, AI/ML research', location: 'Stanford, CA',
+      linkedinUrl: 'linkedin.com/in/drrobertanderson', portfolioUrl: null,
+      password: 'hashed_mentor_1', emailVerified: true, emailVerifiedAt: new Date('2020-01-01'),
+      executionScore: 4.9, collaborationScore: 4.8, leadershipScore: 4.9, ethicsScore: 4.9, reliabilityScore: 4.8,
+      progressionLevel: 'PROJECT_LEAD'
+    },
+    {
+      email: 'mentor2@demo.edu', name: 'Dr. Sarah Williams', role: 'MENTOR', universityId: universities[1].id,
+      major: 'Electrical Engineering', position: 'Professor',
+      bio: 'Expert in embedded systems', location: 'Cambridge, MA',
+      linkedinUrl: 'linkedin.com/in/drsarahwilliams', portfolioUrl: null,
+      password: 'hashed_mentor_2', emailVerified: true, emailVerifiedAt: new Date('2019-06-15'),
+      executionScore: 4.7, collaborationScore: 4.6, leadershipScore: 4.7, ethicsScore: 4.8, reliabilityScore: 4.7,
+      progressionLevel: 'DEPARTMENT_HEAD'
+    },
+    {
+      email: 'mentor3@demo.edu', name: 'Dr. Michael Johnson', role: 'MENTOR', universityId: universities[2].id,
+      major: 'Business', position: 'Associate Professor',
+      bio: 'Startup advisor and entrepreneur', location: 'Cambridge, MA',
+      linkedinUrl: 'linkedin.com/in/drmichaeljohnson', portfolioUrl: null,
+      password: 'hashed_mentor_3', emailVerified: true, emailVerifiedAt: new Date('2020-03-10'),
+      executionScore: 4.5, collaborationScore: 4.5, leadershipScore: 4.4, ethicsScore: 4.6, reliabilityScore: 4.4,
+      progressionLevel: 'SENIOR_CONTRIBUTOR'
+    },
+    {
+      email: 'mentor4@demo.edu', name: 'Dr. Emily Davis', role: 'MENTOR', universityId: universities[3].id,
+      major: 'Data Science', position: 'Professor',
+      bio: 'AI ethics researcher', location: 'Berkeley, CA',
+      linkedinUrl: 'linkedin.com/in/dremilydavis', portfolioUrl: null,
+      password: 'hashed_mentor_4', emailVerified: true, emailVerifiedAt: new Date('2019-08-20'),
+      executionScore: 4.6, collaborationScore: 4.7, leadershipScore: 4.5, ethicsScore: 4.9, reliabilityScore: 4.8,
+      progressionLevel: 'DEPARTMENT_HEAD'
+    },
+    {
+      email: 'mentor5@demo.edu', name: 'Dr. James Brown', role: 'MENTOR', universityId: universities[4].id,
+      major: 'Robotics', position: 'Research Director',
+      bio: 'Robotics and automation expert', location: 'Pittsburgh, PA',
+      linkedinUrl: 'linkedin.com/in/drjamesbrown', portfolioUrl: null,
+      password: 'hashed_mentor_5', emailVerified: true, emailVerifiedAt: new Date('2020-05-15'),
+      executionScore: 4.8, collaborationScore: 4.9, leadershipScore: 4.8, ethicsScore: 4.7, reliabilityScore: 4.9,
+      progressionLevel: 'PROJECT_LEAD'
+    },
+  ]
+
+  const mentors = await Promise.all(
+    mentorsData.map(m => prisma.user.create({ data: { ...m, verificationStatus: 'VERIFIED' } }))
+  )
+  console.log(`✅ Created ${mentors.length} mentors`)
+
+  // ==================== 20 UNIVERSITY ADMINS ====================
   const uniAdminsData = [
-    { email: 'admin1@stanford.edu', name: 'Dr. Robert Martinez', role: 'UNIVERSITY_ADMIN', universityId: universities[0].id, bio: 'Professor of Computer Science', position: 'Dean of Engineering', location: 'Stanford, CA' },
-    { email: 'admin2@mit.edu', name: 'Dr. Sarah Williams', role: 'UNIVERSITY_ADMIN', universityId: universities[1].id, bio: 'Professor of Electrical Engineering', position: 'Department Head', location: 'Cambridge, MA' },
-    { email: 'admin3@harvard.edu', name: 'Dr. Michael Johnson', role: 'UNIVERSITY_ADMIN', universityId: universities[2].id, bio: 'Professor of Business', position: 'Associate Dean', location: 'Cambridge, MA' },
-    { email: 'admin4@berkeley.edu', name: 'Dr. Emily Davis', role: 'UNIVERSITY_ADMIN', universityId: universities[3].id, bio: 'Professor of Data Science', position: 'Program Director', location: 'Berkeley, CA' },
-    { email: 'admin5@cmu.edu', name: 'Dr. James Brown', role: 'UNIVERSITY_ADMIN', universityId: universities[4].id, bio: 'Professor of Robotics', position: 'Research Director', location: 'Pittsburgh, PA' },
-    { email: 'admin6@gatech.edu', name: 'Dr. Linda Wilson', role: 'UNIVERSITY_ADMIN', universityId: universities[5].id, bio: 'Professor of Industrial Engineering', position: 'Department Chair', location: 'Atlanta, GA' },
-    { email: 'admin7@washington.edu', name: 'Dr. Kevin Anderson', role: 'UNIVERSITY_ADMIN', universityId: universities[6].id, bio: 'Professor of Computer Science', position: 'Associate Dean', location: 'Seattle, WA' },
-    { email: 'admin8@utexas.edu', name: 'Dr. Rachel Taylor', role: 'UNIVERSITY_ADMIN', universityId: universities[7].id, bio: 'Professor of Mechanical Engineering', position: 'Program Coordinator', location: 'Austin, TX' },
-    { email: 'admin9@umich.edu', name: 'Dr. David Martinez', role: 'UNIVERSITY_ADMIN', universityId: universities[8].id, bio: 'Professor of Psychology', position: 'Department Head', location: 'Ann Arbor, MI' },
-    { email: 'admin10@northwestern.edu', name: 'Dr. Jennifer Lee', role: 'UNIVERSITY_ADMIN', universityId: universities[9].id, bio: 'Professor of Economics', position: 'Associate Dean', location: 'Evanston, IL' },
-    { email: 'admin11@upenn.edu', name: 'Dr. Robert Chen', role: 'UNIVERSITY_ADMIN', universityId: universities[10].id, bio: 'Professor of Bioengineering', position: 'Research Director', location: 'Philadelphia, PA' },
-    { email: 'admin12@columbia.edu', name: 'Dr. Sarah Wilson', role: 'UNIVERSITY_ADMIN', universityId: universities[11].id, bio: 'Professor of Computer Science', position: 'Department Chair', location: 'New York, NY' },
-    { email: 'admin13@duke.edu', name: 'Dr. Michael Brown', role: 'UNIVERSITY_ADMIN', universityId: universities[12].id, bio: 'Professor of Marketing', position: 'Program Director', location: 'Durham, NC' },
-    { email: 'admin14@uchicago.edu', name: 'Dr. Emily Rodriguez', role: 'UNIVERSITY_ADMIN', universityId: universities[13].id, bio: 'Professor of Philosophy', position: 'Department Head', location: 'Chicago, IL' },
-    { email: 'admin15@caltech.edu', name: 'Dr. James Anderson', role: 'UNIVERSITY_ADMIN', universityId: universities[14].id, bio: 'Professor of Physics', position: 'Associate Dean', location: 'Pasadena, CA' },
-    { email: 'admin16@uiuc.edu', name: 'Dr. Linda Taylor', role: 'UNIVERSITY_ADMIN', universityId: universities[15].id, bio: 'Professor of Computer Engineering', position: 'Department Chair', location: 'Urbana, IL' },
-    { email: 'admin17@cornell.edu', name: 'Dr. Kevin Martinez', role: 'UNIVERSITY_ADMIN', universityId: universities[16].id, bio: 'Professor of Hospitality', position: 'Program Director', location: 'Ithaca, NY' },
-    { email: 'admin18@jhu.edu', name: 'Dr. Rachel Chen', role: 'UNIVERSITY_ADMIN', universityId: universities[17].id, bio: 'Professor of Biomedical Engineering', position: 'Research Director', location: 'Baltimore, MD' },
-    { email: 'admin19@usc.edu', name: 'Dr. David Wilson', role: 'UNIVERSITY_ADMIN', universityId: universities[18].id, bio: 'Professor of Cinematic Arts', position: 'Department Chair', location: 'Los Angeles, CA' },
-    { email: 'admin20@purdue.edu', name: 'Dr. Emily Brown', role: 'UNIVERSITY_ADMIN', universityId: universities[19].id, bio: 'Professor of Aerospace Engineering', position: 'Associate Dean', location: 'West Lafayette, IN' },
+    { email: 'admin1@stanford.edu', name: 'Dr. Robert Martinez', role: 'UNIVERSITY_ADMIN', universityId: universities[0].id, position: 'Dean of Engineering', location: 'Stanford, CA' },
+    { email: 'admin2@mit.edu', name: 'Dr. Sarah Williams', role: 'UNIVERSITY_ADMIN', universityId: universities[1].id, position: 'Department Head', location: 'Cambridge, MA' },
+    { email: 'admin3@harvard.edu', name: 'Dr. Michael Johnson', role: 'UNIVERSITY_ADMIN', universityId: universities[2].id, position: 'Associate Dean', location: 'Cambridge, MA' },
+    { email: 'admin4@berkeley.edu', name: 'Dr. Emily Davis', role: 'UNIVERSITY_ADMIN', universityId: universities[3].id, position: 'Program Director', location: 'Berkeley, CA' },
+    { email: 'admin5@cmu.edu', name: 'Dr. James Brown', role: 'UNIVERSITY_ADMIN', universityId: universities[4].id, position: 'Research Director', location: 'Pittsburgh, PA' },
+    { email: 'admin6@gatech.edu', name: 'Dr. Linda Wilson', role: 'UNIVERSITY_ADMIN', universityId: universities[5].id, position: 'Department Chair', location: 'Atlanta, GA' },
+    { email: 'admin7@washington.edu', name: 'Dr. Kevin Anderson', role: 'UNIVERSITY_ADMIN', universityId: universities[6].id, position: 'Associate Dean', location: 'Seattle, WA' },
+    { email: 'admin8@utexas.edu', name: 'Dr. Rachel Taylor', role: 'UNIVERSITY_ADMIN', universityId: universities[7].id, position: 'Program Coordinator', location: 'Austin, TX' },
+    { email: 'admin9@umich.edu', name: 'Dr. David Martinez', role: 'UNIVERSITY_ADMIN', universityId: universities[8].id, position: 'Department Head', location: 'Ann Arbor, MI' },
+    { email: 'admin10@northwestern.edu', name: 'Dr. Jennifer Lee', role: 'UNIVERSITY_ADMIN', universityId: universities[9].id, position: 'Associate Dean', location: 'Evanston, IL' },
+    { email: 'admin11@upenn.edu', name: 'Dr. Robert Chen', role: 'UNIVERSITY_ADMIN', universityId: universities[10].id, position: 'Research Director', location: 'Philadelphia, PA' },
+    { email: 'admin12@columbia.edu', name: 'Dr. Sarah Wilson', role: 'UNIVERSITY_ADMIN', universityId: universities[11].id, position: 'Department Chair', location: 'New York, NY' },
+    { email: 'admin13@duke.edu', name: 'Dr. Michael Brown', role: 'UNIVERSITY_ADMIN', universityId: universities[12].id, position: 'Program Director', location: 'Durham, NC' },
+    { email: 'admin14@uchicago.edu', name: 'Dr. Emily Rodriguez', role: 'UNIVERSITY_ADMIN', universityId: universities[13].id, position: 'Department Head', location: 'Chicago, IL' },
+    { email: 'admin15@caltech.edu', name: 'Dr. James Anderson', role: 'UNIVERSITY_ADMIN', universityId: universities[14].id, position: 'Associate Dean', location: 'Pasadena, CA' },
+    { email: 'admin16@uiuc.edu', name: 'Dr. Linda Taylor', role: 'UNIVERSITY_ADMIN', universityId: universities[15].id, position: 'Department Chair', location: 'Urbana, IL' },
+    { email: 'admin17@cornell.edu', name: 'Dr. Kevin Martinez', role: 'UNIVERSITY_ADMIN', universityId: universities[16].id, position: 'Program Director', location: 'Ithaca, NY' },
+    { email: 'admin18@jhu.edu', name: 'Dr. Rachel Chen', role: 'UNIVERSITY_ADMIN', universityId: universities[17].id, position: 'Research Director', location: 'Baltimore, MD' },
+    { email: 'admin19@usc.edu', name: 'Dr. David Wilson', role: 'UNIVERSITY_ADMIN', universityId: universities[18].id, position: 'Department Chair', location: 'Los Angeles, CA' },
+    { email: 'admin20@purdue.edu', name: 'Dr. Emily Brown', role: 'UNIVERSITY_ADMIN', universityId: universities[19].id, position: 'Associate Dean', location: 'West Lafayette, IN' },
   ]
 
   const uniAdmins = await Promise.all(
-    uniAdminsData.map(a => prisma.user.create({ data: { ...a, verificationStatus: 'VERIFIED', emailVerified: true } }))
+    uniAdminsData.map(a => prisma.user.create({ data: { ...a, verificationStatus: 'VERIFIED' } }))
   )
   console.log(`✅ Created ${uniAdmins.length} university admins`)
 
-  // 20 EMPLOYERS
+  // ==================== 20 EMPLOYERS ====================
   const employersData = [
     { email: 'employer1@company.com', name: 'John Smith', role: 'EMPLOYER', companyName: 'TechCorp Inc.', position: 'CTO', companyWebsite: 'techcorp.com', bio: 'Technology company focused on AI solutions', location: 'San Francisco, CA' },
     { email: 'employer2@company.com', name: 'Mary Johnson', role: 'EMPLOYER', companyName: 'DataFlow Systems', position: 'VP of Engineering', companyWebsite: 'dataflow.io', bio: 'Data infrastructure provider', location: 'Austin, TX' },
@@ -150,11 +408,11 @@ async function main() {
   ]
 
   const employers = await Promise.all(
-    employersData.map(e => prisma.user.create({ data: { ...e, verificationStatus: 'VERIFIED', emailVerified: true } }))
+    employersData.map(e => prisma.user.create({ data: { ...e, verificationStatus: 'VERIFIED' } }))
   )
   console.log(`✅ Created ${employers.length} employers`)
 
-  // 20 INVESTORS
+  // ==================== 20 INVESTORS ====================
   const investorsData = [
     { email: 'investor1@vc.com', name: 'Mark Thompson', role: 'INVESTOR', firmName: 'Venture Capital Partners', investmentFocus: 'AI, ML, DeepTech', bio: 'Early-stage technology investor', location: 'San Francisco, CA' },
     { email: 'investor2@vc.com', name: 'Sarah Chen', role: 'INVESTOR', firmName: 'Sequoia Growth', investmentFocus: 'Consumer, B2B', bio: 'Growth stage investor', location: 'Menlo Park, CA' },
@@ -179,12 +437,22 @@ async function main() {
   ]
 
   const investors = await Promise.all(
-    investorsData.map(i => prisma.user.create({ data: { ...i, verificationStatus: 'VERIFIED', emailVerified: true } }))
+    investorsData.map(i => prisma.user.create({ data: { ...i, verificationStatus: 'VERIFIED' } }))
   )
   console.log(`✅ Created ${investors.length} investors`)
 
+  // ==================== 1 PLATFORM ADMIN ====================
+  const platformAdminData = [
+    { email: 'admin@platform.com', name: 'System Administrator', role: 'PLATFORM_ADMIN', bio: 'Platform admin with full access', location: 'Remote' }
+  ]
+
+  const platformAdmins = await Promise.all(
+    platformAdminData.map(p => prisma.user.create({ data: { ...p, verificationStatus: 'VERIFIED' } }))
+  )
+  console.log(`✅ Created ${platformAdmins.length} platform admins`)
+
   // Combine all users
-  const allUsers = [...students, ...uniAdmins, ...employers, ...investors]
+  const allUsers = [...students, ...mentors, ...uniAdmins, ...employers, ...investors, ...platformAdmins]
 
   // ==================== 20 PROJECTS ====================
   const projectsData = [
@@ -198,6 +466,8 @@ async function main() {
       status: 'ACTIVE',
       seekingInvestment: true,
       investmentGoal: 500000,
+      teamSize: Math.floor(Math.random() * 15) + 5,
+      completionRate: 65,
       startDate: new Date('2024-01-15'),
     },
     {
@@ -210,6 +480,8 @@ async function main() {
       status: 'ACTIVE',
       seekingInvestment: true,
       investmentGoal: 1000000,
+      teamSize: Math.floor(Math.random() * 20) + 10,
+      completionRate: 40,
       startDate: new Date('2024-02-01'),
     },
     {
@@ -222,6 +494,8 @@ async function main() {
       status: 'ACTIVE',
       seekingInvestment: true,
       investmentGoal: 750000,
+      teamSize: Math.floor(Math.random() * 12) + 8,
+      completionRate: 55,
       startDate: new Date('2024-01-20'),
     },
     {
@@ -229,10 +503,13 @@ async function main() {
       description: 'Decentralized supply chain tracking using blockchain technology',
       category: 'STARTUP',
       projectLeadId: students[3].id,
+      hrLeadId: uniAdmins[3].id,
       universityId: universities[3].id,
       status: 'ACTIVE',
       seekingInvestment: true,
       investmentGoal: 2000000,
+      teamSize: Math.floor(Math.random() * 18) + 6,
+      completionRate: 70,
       startDate: new Date('2024-03-01'),
     },
     {
@@ -245,6 +522,8 @@ async function main() {
       status: 'ACTIVE',
       seekingInvestment: true,
       investmentGoal: 1500000,
+      teamSize: Math.floor(Math.random() * 14) + 7,
+      completionRate: 60,
       startDate: new Date('2024-02-15'),
     },
     {
@@ -252,10 +531,13 @@ async function main() {
       description: 'AI-driven cybersecurity threat detection and response',
       category: 'STARTUP',
       projectLeadId: students[5].id,
+      hrLeadId: uniAdmins[5].id,
       universityId: universities[5].id,
       status: 'ACTIVE',
       seekingInvestment: true,
       investmentGoal: 3000000,
+      teamSize: Math.floor(Math.random() * 16) + 8,
+      completionRate: 50,
       startDate: new Date('2024-01-10'),
     },
     {
@@ -268,6 +550,8 @@ async function main() {
       status: 'RECRUITING',
       seekingInvestment: true,
       investmentGoal: 800000,
+      teamSize: Math.floor(Math.random() * 10) + 5,
+      completionRate: 30,
       startDate: new Date('2024-03-15'),
     },
     {
@@ -275,10 +559,13 @@ async function main() {
       description: 'IoT sensors and AI for precision agriculture',
       category: 'STARTUP',
       projectLeadId: students[7].id,
+      hrLeadId: uniAdmins[7].id,
       universityId: universities[7].id,
       status: 'ACTIVE',
       seekingInvestment: true,
       investmentGoal: 1200000,
+      teamSize: Math.floor(Math.random() * 12) + 6,
+      completionRate: 75,
       startDate: new Date('2024-02-01'),
     },
     {
@@ -291,6 +578,8 @@ async function main() {
       status: 'ACTIVE',
       seekingInvestment: true,
       investmentGoal: 2500000,
+      teamSize: Math.floor(Math.random() * 20) + 10,
+      completionRate: 80,
       startDate: new Date('2024-01-05'),
     },
     {
@@ -298,10 +587,13 @@ async function main() {
       description: 'AI-powered learning analytics for educational institutions',
       category: 'STARTUP',
       projectLeadId: students[9].id,
+      hrLeadId: uniAdmins[9].id,
       universityId: universities[9].id,
       status: 'ACTIVE',
       seekingInvestment: true,
       investmentGoal: 900000,
+      teamSize: Math.floor(Math.random() * 15) + 8,
+      completionRate: 85,
       startDate: new Date('2024-02-20'),
     },
     {
@@ -314,6 +606,8 @@ async function main() {
       status: 'ACTIVE',
       seekingInvestment: true,
       investmentGoal: 5000000,
+      teamSize: Math.floor(Math.random() * 18) + 9,
+      completionRate: 45,
       startDate: new Date('2023-12-01'),
     },
     {
@@ -321,10 +615,13 @@ async function main() {
       description: 'Automated regulatory compliance for financial institutions',
       category: 'STARTUP',
       projectLeadId: students[11].id,
+      hrLeadId: uniAdmins[11].id,
       universityId: universities[11].id,
       status: 'ACTIVE',
       seekingInvestment: true,
       investmentGoal: 1500000,
+      teamSize: Math.floor(Math.random() * 14) + 7,
+      completionRate: 70,
       startDate: new Date('2024-01-25'),
     },
     {
@@ -332,79 +629,97 @@ async function main() {
       description: 'Comprehensive framework for ethical AI development',
       category: 'RESEARCH',
       projectLeadId: students[12].id,
-      hrLeadId: uniAdmins[13].id,
+      hrLeadId: uniAdmins[12].id,
       universityId: universities[12].id,
       status: 'ACTIVE',
+      seekingInvestment: true,
       investmentGoal: 0,
+      teamSize: Math.floor(Math.random() * 16) + 8,
+      completionRate: 55,
       startDate: new Date('2024-01-01'),
     },
     {
       title: 'Quantum Cryptography',
       description: 'Post-quantum cryptography for secure communications',
       category: 'RESEARCH',
-      projectLeadId: students[14].id,
-      universityId: universities[14].id,
+      projectLeadId: students[13].id,
+      hrLeadId: uniAdmins[13].id,
+      universityId: universities[13].id,
       status: 'RECRUITING',
       seekingInvestment: true,
       investmentGoal: 2000000,
+      teamSize: Math.floor(Math.random() * 8) + 4,
+      completionRate: 25,
       startDate: new Date('2024-03-01'),
     },
     {
       title: 'Biomedical Imaging AI',
       description: 'Deep learning for medical image analysis',
       category: 'RESEARCH',
-      projectLeadId: students[15].id,
-      hrLeadId: uniAdmins[17].id,
-      universityId: universities[15].id,
+      projectLeadId: students[14].id,
+      hrLeadId: uniAdmins[14].id,
+      universityId: universities[14].id,
       status: 'ACTIVE',
       seekingInvestment: true,
       investmentGoal: 3000000,
+      teamSize: Math.floor(Math.random() * 12) + 6,
+      completionRate: 60,
       startDate: new Date('2024-02-10'),
     },
     {
       title: 'Hospitality Tech Platform',
       description: 'Comprehensive platform for hospitality industry',
       category: 'STARTUP',
-      projectLeadId: students[16].id,
-      universityId: universities[16].id,
+      projectLeadId: students[15].id,
+      hrLeadId: uniAdmins[15].id,
+      universityId: universities[15].id,
       status: 'ACTIVE',
       seekingInvestment: true,
       investmentGoal: 600000,
+      teamSize: Math.floor(Math.random() * 10) + 5,
+      completionRate: 72,
       startDate: new Date('2024-03-01'),
     },
     {
       title: 'Medical Device Innovation',
       description: 'Next-generation medical devices for remote monitoring',
       category: 'RESEARCH',
-      projectLeadId: students[17].id,
-      hrLeadId: uniAdmins[17].id,
-      universityId: universities[17].id,
+      projectLeadId: students[16].id,
+      hrLeadId: uniAdmins[16].id,
+      universityId: universities[16].id,
       status: 'ACTIVE',
       seekingInvestment: true,
       investmentGoal: 4000000,
+      teamSize: Math.floor(Math.random() * 15) + 8,
+      completionRate: 65,
       startDate: new Date('2023-11-01'),
     },
     {
       title: 'Cinematic AI Platform',
       description: 'AI-powered video editing and production tools',
       category: 'STARTUP',
-      projectLeadId: students[18].id,
-      universityId: universities[18].id,
+      projectLeadId: students[17].id,
+      hrLeadId: uniAdmins[17].id,
+      universityId: universities[17].id,
       status: 'ACTIVE',
       seekingInvestment: true,
       investmentGoal: 1800000,
+      teamSize: Math.floor(Math.random() * 12) + 6,
+      completionRate: 78,
       startDate: new Date('2024-02-05'),
     },
     {
       title: 'Aerospace Propulsion',
       description: 'Next-gen rocket propulsion technology',
       category: 'RESEARCH',
-      projectLeadId: students[19].id,
-      hrLeadId: uniAdmins[19].id,
-      universityId: universities[19].id,
+      projectLeadId: students[18].id,
+      hrLeadId: uniAdmins[18].id,
+      universityId: universities[18].id,
       status: 'ACTIVE',
       seekingInvestment: true,
       investmentGoal: 10000000,
+      teamSize: Math.floor(Math.random() * 20) + 10,
+      completionRate: 40,
       startDate: new Date('2023-10-01'),
     },
   ]
@@ -415,9 +730,10 @@ async function main() {
   console.log(`✅ Created ${projects.length} projects`)
 
   // ==================== PROJECT MEMBERS & DEPARTMENTS ====================
+  const departments = ['Engineering', 'Product', 'Design', 'Marketing', 'Operations', 'Research', 'QA']
   for (const project of projects) {
     const memberCount = Math.floor(Math.random() * 8) + 4
-    const teamMembers = allUsers.filter(u => u.role !== 'INVESTOR').slice(0, memberCount)
+    const teamMembers = allUsers.filter(u => ['STUDENT', 'MENTOR'].includes(u.role)).slice(0, memberCount)
 
     const projectMembers = await Promise.all(
       teamMembers.map((member, index) =>
@@ -436,12 +752,11 @@ async function main() {
 
     // Create departments
     const deptCount = Math.floor(Math.random() * 3) + 2
-    const departments = ['Engineering', 'Product', 'Design', 'Marketing', 'Operations', 'Research', 'QA']
     for (let i = 0; i < deptCount; i++) {
       await prisma.department.create({
         data: {
           projectId: project.id,
-          name: departments[i],
+          name: departments[i % departments.length],
           description: `${departments[i]} department`,
           headId: teamMembers[Math.min(i, teamMembers.length - 1)]?.id,
           memberCount: Math.floor(Math.random() * 5) + 2,
@@ -456,9 +771,10 @@ async function main() {
       data: { totalProjects: { increment: 1 } }
     })
   }
+
   console.log(`✅ Created project members and departments`)
 
-  // ==================== 100 TASKS (5 per project) ====================
+  // ==================== 150 TASKS (5-10 per project) ====================
   const taskTitles = [
     'Research and Requirements', 'Design System Setup', 'Frontend Development', 'Backend API Development',
     'Database Design', 'Authentication Implementation', 'Unit Testing', 'Integration Testing',
@@ -467,13 +783,13 @@ async function main() {
   ]
 
   for (const project of projects) {
-    const taskCount = 5
+    const taskCount = Math.floor(Math.random() * 10) + 5
     for (let i = 0; i < taskCount; i++) {
-      const assignee = project.members.length > 0 ? allUsers[Math.floor(Math.random() * allUsers.length)] : undefined
+      const assignee = project.projectLeadId
       await prisma.task.create({
         data: {
           projectId: project.id,
-          assigneeId: assignee?.id,
+          assigneeId: assignee,
           creatorId: project.projectLeadId,
           title: taskTitles[i % taskTitles.length],
           description: `Complete ${taskTitles[i % taskTitles.length]} for ${project.title}`,
@@ -614,7 +930,7 @@ async function main() {
       requiredSkills: JSON.stringify(['Figma', 'User Research', 'Prototyping', 'Visual Design']),
       requiredLevel: 'INTERMEDIATE',
       experienceRequired: 2,
-      deadline: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+      deadline: new Date(Date.now() + 60 * 24 * 60 * 1000),
     },
     {
       employerId: employers[8].id,
@@ -624,7 +940,7 @@ async function main() {
       status: 'PUBLISHED',
       location: 'Los Angeles, CA',
       remote: true,
-      salaryMin: 80,
+      salaryMin: 80000,
       salaryMax: 120,
       salaryType: 'HOURLY',
       requiredSkills: JSON.stringify(['JavaScript', 'React', 'Node.js', 'MongoDB']),
@@ -815,13 +1131,13 @@ async function main() {
   )
   console.log(`✅ Created ${jobs.length} jobs`)
 
-  // ==================== 50 SKILLS (for students) ====================
+  // ==================== 75 SKILLS (3 per student) ====================
   const skillCategories = ['Programming', 'Data Science', 'Design', 'Marketing', 'Business', 'Engineering', 'Research', 'Management']
   const skillNames = ['Python', 'JavaScript', 'React', 'Node.js', 'SQL', 'Machine Learning', 'Data Analysis', 'UI/UX Design', 'Product Management', 'Cloud Computing', 'DevOps', 'Cybersecurity', 'Blockchain', 'Mobile Development', 'Artificial Intelligence', 'Research', 'Leadership', 'Communication']
 
   const skillsData = []
-  for (const student of students.slice(0, 15)) {
-    const numSkills = Math.floor(Math.random() * 6) + 3
+  for (const student of students.slice(0, 25)) {
+    const numSkills = Math.floor(Math.random() * 5) + 3
     for (let i = 0; i < numSkills; i++) {
       const skillName = skillNames[Math.floor(Math.random() * skillNames.length)]
       skillsData.push({
@@ -841,9 +1157,9 @@ async function main() {
   )
   console.log(`✅ Created ${skills.length} skills`)
 
-  // ==================== 50 RATINGS ====================
+  // ==================== 100 RATINGS ====================
   const ratingData = []
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 100; i++) {
     const rater = allUsers[Math.floor(Math.random() * allUsers.length)]
     const rated = allUsers[Math.floor(Math.random() * allUsers.length)]
     const project = projects[Math.floor(Math.random() * projects.length)]
@@ -863,9 +1179,9 @@ async function main() {
   )
   console.log(`✅ Created ${ratings.length} ratings`)
 
-  // ==================== 20 INVESTMENTS ====================
+  // ==================== 30 INVESTMENTS ====================
   const investmentsData = []
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 30; i++) {
     const investor = investors[i]
     const project = projects[i % projects.length]
     investmentsData.push({
@@ -873,7 +1189,7 @@ async function main() {
       investorId: investor.id,
       type: ['EQUITY', 'REVENUE_SHARE', 'CONVERTIBLE_NOTE', 'GRANT'][Math.floor(Math.random() * 4)],
       status: project.investmentRaised > 0 ? 'FUNDED' : 'INTERESTED',
-      amount: project.investmentRaised * (Math.random() * 0.5 + 0.5),
+      amount: project.investmentRaised ? project.investmentRaised * (Math.random() * 0.5 + 0.5) : (Math.random() * 50000 + 50000),
       equity: Math.random() * 10 + 5,
     })
   }
@@ -883,7 +1199,7 @@ async function main() {
   )
   console.log(`✅ Created ${investments.length} investments`)
 
-  // ==================== 20 MILESTONES ====================
+  // ==================== 30 MILESTONES ====================
   const milestoneTitles = ['Prototype Complete', 'MVP Launch', 'Beta Release', 'Product Launch', 'Series A Funding', 'Team Expansion', 'Market Validation', 'User Acquisition Target', 'Revenue Milestone', 'Partnership Signed']
 
   for (const project of projects) {
@@ -894,19 +1210,20 @@ async function main() {
           projectId: project.id,
           title: milestoneTitles[i % milestoneTitles.length],
           description: `Achieve ${milestoneTitles[i % milestoneTitles.length]} for ${project.title}`,
-          status: ['NOT_STARTED', 'IN_PROGRESS', 'ACHIEVED', 'DELAYED'][Math.floor(Math.random() * 4)],
+          status: ['NOT_STARTED', 'IN_PROGRESS', 'ACHIEVED', 'DELAYED', 'CANCELLED'][Math.floor(Math.random() * 5)],
           targetDate: new Date(Date.now() + (i + 1) * 30 * 24 * 60 * 60 * 1000),
           metrics: JSON.stringify({ progress: Math.random() * 100 }),
         }
       })
     }
   }
+
   console.log(`✅ Created milestones for all projects`)
 
-  // ==================== 30 TIME ENTRIES ====================
+  // ==================== 50 TIME ENTRIES ====================
   for (const project of projects.slice(0, 15)) {
-    const member = project.members[0] || allUsers[0]
-    for (let i = 0; i < 2; i++) {
+    const member = project.projectLeadId
+    for (let i = 0; i < 3; i++) {
       const startTime = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000)
       await prisma.timeEntry.create({
         data: {
@@ -920,10 +1237,11 @@ async function main() {
       })
     }
   }
+
   console.log(`✅ Created time entries`)
 
-  // ==================== 20 WORK SESSIONS ====================
-  for (const student of students.slice(0, 20)) {
+  // ==================== 30 WORK SESSIONS ====================
+  for (const student of students.slice(0, 30)) {
     await prisma.workSession.create({
       data: {
         userId: student.id,
@@ -936,14 +1254,17 @@ async function main() {
       }
     })
   }
+
   console.log(`✅ Created work sessions`)
 
-  // ==================== 30 PROFESSIONAL RECORDS ====================
+  // ==================== 75 PROFESSIONAL RECORDS ====================
   const recordTypes = ['PROJECT_ROLE', 'LEADERSHIP_POSITION', 'TASK_COMPLETION', 'SKILL_ACQUIRED', 'CERTIFICATION', 'ACHIEVEMENT']
-  for (const student of students) {
+
+  for (const student of students.slice(0, 75)) {
     const numRecords = Math.floor(Math.random() * 3) + 1
     for (let i = 0; i < numRecords; i++) {
       const project = projects[i % projects.length]
+      const uniAdmin = uniAdmins[i % uniAdmins.length]
       await prisma.professionalRecord.create({
         data: {
           userId: student.id,
@@ -951,32 +1272,37 @@ async function main() {
           title: `${recordTypes[i % recordTypes.length]} - ${project.title}`,
           description: `Participated in ${project.title} as ${recordTypes[i % recordTypes.length].toLowerCase()}`,
           projectId: project.id,
+          roleName: i === 0 ? 'Developer' : 'Designer',
+          department: i === 1 ? 'Engineering' : 'Marketing',
           startDate: new Date(Date.now() - Math.random() * 180 * 24 * 60 * 60 * 1000),
           endDate: new Date(),
           isVerified: Math.random() > 0.6,
-          verifiedBy: uniAdmins[i % uniAdmins.length].id,
+          verifiedBy: uniAdmin.id,
           verifiedAt: Math.random() > 0.6 ? new Date() : undefined,
         }
       })
     }
   }
+
   console.log(`✅ Created professional records`)
 
   // ==================== 30 MESSAGES ====================
   for (let i = 0; i < 30; i++) {
     const sender = allUsers[i % allUsers.length]
     const receiver = allUsers[(i + 1) % allUsers.length]
+    const project = projects[i % projects.length]
     await prisma.message.create({
       data: {
         senderId: sender.id,
         receiverId: receiver.id,
-        projectId: projects[i % projects.length].id,
-        content: `Hi, I wanted to discuss the ${projects[i % projects.length].title} project. Let me know your availability.`,
+        projectId: project.id,
+        content: `Hi, I wanted to discuss ${project.title} project. Let me know your availability.`,
         type: 'TEXT',
         status: 'DELIVERED',
       }
     })
   }
+
   console.log(`✅ Created messages`)
 
   // ==================== 20 JOB APPLICATIONS ====================
@@ -991,18 +1317,465 @@ async function main() {
       }
     })
   }
+
   console.log(`✅ Created job applications`)
+
+  // ==================== 10 SUPPLIERS ====================
+  const suppliersData = [
+    {
+      name: 'Tech Supplies Co.',
+      description: 'Provider of computer hardware and software for universities',
+      location: 'San Francisco, CA',
+      contactEmail: 'contact@techsupplies.com',
+      website: 'techsupplies.com',
+      category: 'Technology',
+      rating: 4.5,
+    },
+    {
+      name: 'Lab Equipment Plus',
+      description: 'Research laboratory equipment and supplies',
+      location: 'Boston, MA',
+      contactEmail: 'orders@labequip.com',
+      website: 'labequip.com',
+      category: 'Research',
+      rating: 4.2,
+    },
+    {
+      name: 'Cloud Services Provider',
+      description: 'Cloud infrastructure and hosting solutions',
+      location: 'Seattle, WA',
+      contactEmail: 'info@cloudprovider.com',
+      website: 'cloudprovider.com',
+      category: 'Infrastructure',
+      rating: 4.7,
+    },
+    {
+      name: 'AI Research Tools',
+      description: 'AI and machine learning research platforms',
+      location: 'Cambridge, MA',
+      contactEmail: 'sales@airesearch.com',
+      website: 'airesearch.com',
+      category: 'Technology',
+      rating: 4.8,
+    },
+    {
+      name: 'Data Storage Solutions',
+      description: 'Secure and scalable data storage',
+      location: 'Austin, TX',
+      contactEmail: 'support@datastorage.io',
+      website: 'datastorage.io',
+      category: 'Infrastructure',
+      rating: 4.3,
+    },
+    {
+      name: 'Cybersecurity Services',
+      description: 'Security assessment and penetration testing',
+      location: 'Washington, DC',
+      contactEmail: 'security@cybersec.com',
+      website: 'cybersec.com',
+      category: 'Security',
+      rating: 4.6,
+    },
+    {
+      name: 'Marketing Automation',
+      description: 'Digital marketing tools and platforms',
+      location: 'New York, NY',
+      contactEmail: 'sales@marketauto.com',
+      website: 'marketauto.com',
+      category: 'Marketing',
+      rating: 4.4,
+    },
+    {
+      name: 'BioTech Research Materials',
+      description: 'Laboratory supplies for biotech research',
+      location: 'Boston, MA',
+      contactEmail: 'orders@biomaterials.com',
+      website: 'biomaterials.com',
+      category: 'Research',
+      rating: 4.9,
+    },
+    {
+      name: 'Legal Compliance Services',
+      description: 'Regulatory compliance consulting',
+      location: 'Chicago, IL',
+      contactEmail: 'consult@legalcomply.com',
+      website: 'legalcomply.com',
+      category: 'Services',
+      rating: 4.1,
+    },
+    {
+      name: 'Video Production Services',
+      description: 'Professional video production and editing',
+      location: 'Los Angeles, CA',
+      contactEmail: 'production@videoco.com',
+      website: 'videoco.com',
+      category: 'Media',
+      rating: 4.0,
+    },
+  ]
+
+  const suppliers = await Promise.all(
+    suppliersData.map(s => prisma.supplier.create({ data: { s } }))
+  )
+  console.log(`✅ Created ${suppliers.length} suppliers`)
+
+  // ==================== 20 VERIFICATION REQUESTS ====================
+  const verificationData = [
+    {
+      requesterId: employers[0].id,
+      subjectId: students[0].id,
+      purpose: 'Employment Background Check',
+      status: 'APPROVED',
+      accessDuration: 30,
+      approvedBy: uniAdmins[0].id,
+      approvedAt: new Date('2024-01-15'),
+      employerRating: 4.5,
+      employerComment: 'Verified background and qualifications',
+    },
+    {
+      requesterId: employers[1].id,
+      subjectId: students[1].id,
+      purpose: 'Project Role Verification',
+      status: 'APPROVED',
+      accessDuration: 60,
+      approvedBy: uniAdmins[1].id,
+      approvedAt: new Date('2024-02-01'),
+      employerRating: 4.8,
+      employerComment: 'Strong candidate for software engineering role',
+    },
+    {
+      requesterId: employers[2].id,
+      subjectId: students[2].id,
+      purpose: 'Internship Opportunity',
+      status: 'PENDING',
+      accessDuration: 90,
+    },
+    {
+      requesterId: employers[3].id,
+      subjectId: students[3].id,
+      purpose: 'Startup Partnership',
+      status: 'UNDER_REVIEW',
+      accessDuration: 45,
+    },
+    {
+      requesterId: employers[4].id,
+      subjectId: students[4].id,
+      purpose: 'Employment Verification',
+      status: 'APPROVED',
+      accessDuration: 60,
+      approvedBy: uniAdmins[3].id,
+      approvedAt: new Date('2024-01-20'),
+      employerRating: 4.2,
+      employerComment: 'Confirmed internship role',
+    },
+    {
+      requesterId: employers[5].id,
+      subjectId: students[5].id,
+      purpose: 'Full-time Position',
+      status: 'PENDING',
+      accessDuration: 120,
+    },
+    {
+      requesterId: employers[6].id,
+      subjectId: students[6].id,
+      purpose: 'Skill Assessment',
+      status: 'APPROVED',
+      accessDuration: 30,
+      approvedBy: uniAdmins[6].id,
+      approvedAt: new Date('2024-02-15'),
+      employerRating: 4.7,
+      employerComment: 'Skills verified successfully',
+    },
+    {
+      requesterId: employers[7].id,
+      subjectId: students[7].id,
+      purpose: 'Graduate Verification',
+      status: 'APPROVED',
+      accessDuration: 90,
+      approvedBy: uniAdmins[7].id,
+      approvedAt: new Date('2024-03-01'),
+      employerRating: 4.6,
+      employerComment: 'Graduation verified',
+    },
+    {
+      requesterId: employers[8].id,
+      subjectId: students[8].id,
+      purpose: 'Employment Opportunity',
+      status: 'UNDER_REVIEW',
+      accessDuration: 45,
+    },
+    {
+      requesterId: employers[9].id,
+      subjectId: students[9].id,
+      purpose: 'Background Check',
+      status: 'APPROVED',
+      accessDuration: 30,
+      approvedBy: uniAdmins[8].id,
+      approvedAt: new Date('2024-02-20'),
+      employerRating: 4.4,
+      employerComment: 'Background check passed',
+    },
+    {
+      requesterId: employers[10].id,
+      subjectId: students[10].id,
+      purpose: 'Leadership Role',
+      status: 'APPROVED',
+      accessDuration: 120,
+      approvedBy: uniAdmins[9].id,
+      approvedAt: new Date('2024-01-25'),
+      employerRating: 4.9,
+      employerComment: 'Leadership potential confirmed',
+    },
+    {
+      requesterId: employers[11].id,
+      subjectId: students[11].id,
+      purpose: 'Project Contribution',
+      status: 'APPROVED',
+      accessDuration: 60,
+      approvedBy: uniAdmins[10].id,
+      approvedAt: new Date('2024-03-10'),
+      employerRating: 4.3,
+      employerComment: 'Project contributions verified',
+    },
+    {
+      requesterId: employers[12].id,
+      subjectId: students[12].id,
+      purpose: 'Innovation Showcase',
+      status: 'UNDER_REVIEW',
+      accessDuration: 30,
+    },
+    {
+      requesterId: employers[13].id,
+      subjectId: students[13].id,
+      purpose: 'Competition Participation',
+      status: 'APPROVED',
+      accessDuration: 90,
+      approvedBy: uniAdmins[13].id,
+      approvedAt: new Date('2024-02-01'),
+      employerRating: 4.1,
+      employerComment: 'Competition performance verified',
+    },
+    {
+      requesterId: employers[14].id,
+      subjectId: students[14].id,
+      purpose: 'Research Collaboration',
+      status: 'APPROVED',
+      accessDuration: 60,
+      approvedBy: uniAdmins[14].id,
+      approvedAt: new Date('2024-02-15'),
+      employerRating: 4.0,
+      employerComment: 'Research skills confirmed',
+    },
+    {
+      requesterId: employers[15].id,
+      subjectId: students[15].id,
+      purpose: 'Internship Offer',
+      status: 'PENDING',
+      accessDuration: 90,
+    },
+    {
+      requesterId: employers[16].id,
+      subjectId: students[16].id,
+      purpose: 'Mentorship Request',
+      status: 'APPROVED',
+      accessDuration: 180,
+      approvedBy: uniAdmins[15].id,
+      approvedAt: new Date('2024-03-20'),
+      employerRating: 4.8,
+      employerComment: 'Mentorship approved',
+    },
+    {
+      requesterId: employers[17].id,
+      subjectId: students[17].id,
+      purpose: 'Co-op Opportunity',
+      status: 'APPROVED',
+      accessDuration: 180,
+      approvedBy: uniAdmins[16].id,
+      approvedAt: new Date('2024-01-25'),
+      employerRating:  4.7,
+      employerComment: 'Co-op opportunity confirmed',
+    },
+    {
+      requesterId: employers[18].id,
+      subjectId: students[18].id,
+      purpose: 'Full-time Position',
+      status: 'PENDING',
+      accessDuration: 60,
+    },
+    {
+      requesterId: employers[19].id,
+      subjectId: students[19].id,
+      purpose: 'Capstone Project',
+      status: 'UNDER_REVIEW',
+      accessDuration: 30,
+    },
+  ]
+
+  const verificationRequests = await Promise.all(
+    verificationData.map(v => prisma.verificationRequest.create({ data: v }))
+  )
+  console.log(`✅ Created ${verificationRequests.length} verification requests`)
+
+  // ==================== 20 NOTIFICATIONS ====================
+  const notificationData = []
+  const notificationTypes = ['TASK_ASSIGNED', 'TASK_DUE_SOON', 'PROJECT_INVITATION', 'NEW_MESSAGE', 'RATING_RECEIVED', 'ACHIEVEMENT_UNLOCKED', 'VERIFICATION_APPROVED', 'VERIFICATION_REQUESTED', 'INVESTMENT_RECEIVED', 'JOB_APPLICATION_RECEIVED', 'SKILL_VERIFIED', 'MILESTONE_ACHIEVED', 'PROJECT_UPDATED', 'NEW_OPPORTUNITY']
+
+  for (let i = 0; i < 20; i++) {
+    const user = allUsers[Math.floor(Math.random() * allUsers.length)]
+    const project = projects[Math.floor(Math.random() * projects.length)]
+    notificationData.push({
+      userId: user.id,
+      type: notificationTypes[i % notificationTypes.length],
+      title: notificationTypes[i % notificationTypes.length].replace(/_/g, ' '),
+      message: `${notificationTypes[i % notificationTypes.length].replace(/_/g, ' ')}: ${notificationTypes[i % notificationTypes.length].replace(/_/g, ' ')} for ${project.title}`,
+      read: Math.random() > 0.5,
+      link: `/dashboard/${user.role.toLowerCase().replace('_', '-')}/${project.id}`,
+    })
+  }
+
+  const notifications = await Promise.all(
+    notificationData.map(n => prisma.notification.create({ data: n }))
+  )
+  console.log(`✅ Created ${notifications.length} notifications`)
+
+  // ==================== 10 AGREEMENTS ====================
+  const agreementTypes = ['PARTNERSHIP', 'INVESTMENT', 'IP_RIGHTS', 'SERVICE_AGREEMENT']
+
+  for (let i = 0; i < 10; i++) {
+    const project = projects[i]
+    const investment = investments[i]
+    agreementData.push({
+      projectId: project.id,
+      type: agreementTypes[i % agreementTypes.length],
+      parties: JSON.stringify([
+        {
+          name: project.title,
+          role: investment ? 'Investor' : 'Project Team',
+          contact: 'admin@platform.com',
+        }
+      ]),
+      terms: JSON.stringify({
+        equityPercentage: Math.random() * 20 + 5,
+        vestingPeriod: '48 months',
+        paymentSchedule: 'Quarterly',
+        deliverables: 'Project deliverables and milestones',
+        confidentiality: 'Strict for 2 years post-launch',
+      }),
+      ipOwnership: JSON.stringify({
+        project: 80,
+        investors: 20,
+      }),
+      revenueSplit: JSON.stringify({
+        project: 40,
+        platform: 5,
+        company: 5,
+      }),
+      platformShare: Math.random() * 5 + 2.5,
+      status: 'SIGNED',
+      signedAt: new Date(),
+      documentUrl: 'https://example.com/agreements/agreement-' + i + '.pdf',
+    })
+  }
+
+  const agreements = await Promise.all(
+    agreementData.map(a => prisma.agreement.create({ data: a }))
+  )
+  console.log(`✅ Created ${agreements.length} agreements`)
+
+  // ==================== 15 AUDIT LOGS ====================
+  const auditActions = ['USER_LOGIN', 'PROJECT_CREATED', 'USER_UPDATED', 'PROJECT_DELETED', 'INVESTMENT_MADE', 'VERIFICATION_APPROVED', 'ACCESS_GRANTED', 'ACCESS_DENIED', 'SYSTEM_UPDATE', 'DATA_EXPORT', 'SECURITY_ALERT', 'COMPLIANCE_REPORT']
+
+  for (let i = 0; i < 15; i++) {
+    const user = allUsers[Math.floor(Math.random() * allUsers.length)]
+    const project = projects[Math.floor(Math.random() * projects.length)]
+    const action = auditActions[i % auditActions.length]
+    auditLogData.push({
+      userId: user.id,
+      action: action,
+      entityType: ['USER', 'PROJECT', 'INVESTMENT', 'VERIFICATION', 'AGREEMENT'][Math.floor(Math.random() * 4)],
+      entityId: user.id,
+      details: JSON.stringify({
+        timestamp: new Date().toISOString(),
+        user: user.email,
+        project: project.title,
+        ip: '192.168.1.1',
+        userAgent: 'Mozilla/5.0',
+      }),
+      ipAddress: user.location || 'Remote',
+      status: 'SUCCESS',
+    })
+  }
+
+  const auditLogs = await Promise.all(
+    auditLogData.map(a => prisma.auditLog.create({ data: a }))
+  )
+  console.log(`✅ Created ${auditLogs.length} audit logs`)
+
+  // ==================== 20 LEADERBOARD ENTRIES ====================
+  const leaderboardCategories = ['OVERALL', 'STUDENTS', 'PROJECTS', 'INVESTORS', 'INNOVATORS', 'MOST_ACTIVE']
+
+  for (let i = 0; i < 20; i++) {
+    const user = allUsers[Math.floor(Math.random() * allUsers.length)]
+    leaderboardData.push({
+      userId: user.id,
+      category: leaderboardCategories[i % leaderboardCategories.length],
+      rank: i + 1,
+      score: Math.floor(Math.random() * 1000) / 10 + 4000,
+      metrics: JSON.stringify({
+        projectsCreated: Math.floor(Math.random() * 10),
+        totalEarnings: Math.floor(Math.random() * 500000) / 100,
+        reputationScore: user.executionScore + user.collaborationScore + user.leadershipScore + user.ethicsScore + user.reliabilityScore,
+        activeDays: Math.floor(Math.random() * 365) + 10,
+      }),
+      updatedAt: new Date(),
+    })
+  }
+
+  const leaderboards = await Promise.all(
+    leaderboardData.map(l => prisma.leaderboard.create({ data: l }))
+  )
+  console.log(`✅ Created ${leaderboards.length} leaderboard entries`)
+
+  // ==================== 20 SUB-TASKS ====================
+  const subTaskTitles = ['Requirements Analysis', 'UI Wireframes', 'Database Schema', 'API Documentation', 'Unit Tests', 'Integration Tests', 'Deployment Guide', 'User Documentation', 'Performance Testing', 'Security Review', 'Code Review', 'Load Testing']
+
+  for (const task of projects.slice(0, 10)) {
+    const subTaskCount = Math.floor(Math.random() * 3) + 2
+    for (let i = 0; i < subTaskCount; i++) {
+      await prisma.subTask.create({
+        data: {
+          taskId: 'N/A', // Will connect later if needed
+          title: subTaskTitles[i % subTaskTitles.length],
+          description: `Subtask for ${subTaskTitles[i % subTaskTitles.length]}`,
+          status: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'][Math.floor(Math.random() * 4)],
+          completedAt: Math.random() > 0.5 ? new Date() : undefined,
+          order: i + 1,
+        }
+      })
+    }
+  }
+
+  console.log(`✅ Created subtasks for sample tasks`)
 
   console.log('🎉 Seeding completed successfully!')
   console.log(`📊 Summary:`)
   console.log(`   - ${universities.length} Universities`)
-  console.log(`   - ${allUsers.length} Users (${students.length} students, ${uniAdmins.length} admins, ${employers.length} employers, ${investors.length} investors)`)
-  console.log(`   - ${projects.length} Projects with teams and tasks`)
+  console.log(`   - ${allUsers.length} Total Users (${students.length} students, ${mentors.length} mentors, ${uniAdmins.length} admins, ${employers.length} employers, ${investors.length} investors, ${platformAdmins.length} platform admins)`)
+  console.log(`   - ${projects.length} Projects with teams, tasks, milestones`)
   console.log(`   - ${jobs.length} Jobs`)
   console.log(`   - ${skills.length} Skills`)
   console.log(`   - ${ratings.length} Ratings`)
   console.log(`   - ${investments.length} Investments`)
-  console.log(`   - Milestones, Time Entries, Work Sessions, Messages, Applications, Professional Records created`)
+  console.log(`   - ${milestones.length} Milestones`)
+  console.log(`   - ${notifications.length} Notifications`)
+  console.log(`   - ${verificationRequests.length} Verification Requests`)
+  console.log(`   - ${suppliers.length} Suppliers`)
+  console.log(`   - ${agreements.length} Agreements`)
+  console.log(`   - ${auditLogs.length} Audit Logs`)
+  console.log(`   - ${leaderboards.length} Leaderboard Entries`)
+  console.log(`   - Time Entries, Work Sessions, Messages, Applications, Professional Records, Subtasks created`)
+
+  process.exit(0)
 }
 
 main()

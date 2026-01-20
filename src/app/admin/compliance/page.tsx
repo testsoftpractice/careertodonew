@@ -254,7 +254,7 @@ export default function AdminCompliancePage() {
                       <Button
                         variant="default"
                         size="sm"
-                        onClick={() => handleAction('Reviewed', item.id)}
+                        onClick={() => handleAction('Reviewed', item)}
                       >
                         Mark Reviewed
                       </Button>

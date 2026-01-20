@@ -1,517 +1,823 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
-  Briefcase,
   Users,
+  Briefcase,
   Calendar,
   Target,
-  Plus,
-  UserPlus,
-  Settings,
+  TrendingUp,
   CheckCircle2,
   Clock,
   AlertCircle,
-  Star,
-  Shield,
+  FileText,
+  BarChart3,
+  PieChart,
   ArrowLeft,
-  Loader2,
+  Settings,
+  Plus,
+  X,
+  ChevronRight,
 } from 'lucide-react'
+import { useAuth } from '@/contexts/auth-context'
+import { toast } from '@/hooks/use-toast'
 import Link from 'next/link'
 
-interface ProjectData {
+interface TeamMember {
+  id: string
+  name: string
+  avatar: string
+  role: string
+  email: string
+}
+
+interface Vacancy {
   id: string
   title: string
   description: string
-  category: string
-  status: string
-  projectLead: any
-  hrLead: any
-  university: any
-  members: any[]
-  departments: any[]
-  tasks: any[]
-  milestones: any[]
-  investments: any[]
-  agreements: any[]
-  completionRate: number
-  teamSize: number
-  seekingInvestment: boolean
-  investmentGoal: number | null
-  investmentRaised: number | null
-  startDate: string | null
-  endDate: string | null
-  approvalDate: string | null
-  createdAt: string
-  updatedAt: string
+  type: 'FULL_TIME' | 'PART_TIME' | 'INTERNSHIP'
+  skills: string[]
+  slots: number
+  filled: number
 }
 
-export default function ProjectDetailPage({ params }: { params: { id: string } }) {
-  const router = useRouter()
-  const [activeTab, setActiveTab] = useState('overview')
+interface Milestone {
+  id: string
+  title: string
+  description: string
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'
+  dueDate: string
+  completedAt?: string
+}
+
+export default function ProjectDetail({ params }: { params: { id: string } }) {
+  const { user } = useAuth()
+  const projectId = params.id
+
+  const [project, setProject] = useState<any>(null)
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [vacancies, setVacancies] = useState<Vacancy[]>([])
+  const [milestones, setMilestones] = useState<Milestone[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [project, setProject] = useState<ProjectData | null>(null)
+  const [activeTab, setActiveTab] = useState('overview')
+
+  const [showVacancyModal, setShowVacancyModal] = useState(false)
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false)
+
+  const [newVacancy, setNewVacancy] = useState<Partial<Vacancy>>({
+    title: '',
+    description: '',
+    type: 'FULL_TIME',
+    skills: [],
+    slots: 1,
+    filled: 0,
+  })
+
+  const [newMilestone, setNewMilestone] = useState<Partial<Milestone>>({
+    title: '',
+    description: '',
+    status: 'PENDING',
+    dueDate: '',
+  })
 
   useEffect(() => {
-    fetchProject()
-  }, [params.id])
+    if (projectId) {
+      fetchProjectData()
+    }
+  }, [projectId])
 
-  const fetchProject = async () => {
+  const fetchProjectData = async () => {
     try {
-      setLoading(true)
-      const response = await fetch(`/api/projects/${params.id}`)
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          setError('Project not found')
-        } else {
-          setError('Failed to load project')
-        }
-        return
+      // Fetch project details
+      const projectResponse = await fetch(`/api/projects/${projectId}`)
+      const projectData = await projectResponse.json()
+      if (projectData.success) {
+        setProject(projectData.data)
       }
 
-      const data = await response.json()
-      setProject(data.project)
-    } catch (err) {
-      console.error('Fetch project error:', err)
-      setError('An error occurred while loading the project')
+      // Fetch team members
+      const teamResponse = await fetch(`/api/projects/${projectId}/team`)
+      const teamData = await teamResponse.json()
+      if (teamData.success) {
+        setTeamMembers(teamData.data || [])
+      }
+
+      // Fetch vacancies
+      const vacanciesResponse = await fetch(`/api/projects/${projectId}/vacancies`)
+      const vacanciesData = await vacanciesResponse.json()
+      if (vacanciesData.success) {
+        setVacancies(vacanciesData.data || [])
+      }
+
+      // Fetch milestones
+      const milestonesResponse = await fetch(`/api/projects/${projectId}/milestones`)
+      const milestonesData = await milestonesResponse.json()
+      if (milestonesData.success) {
+        setMilestones(milestonesData.data || [])
+      }
+    } catch (error) {
+      console.error('Fetch project data error:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load project data',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'URGENT': return 'bg-red-500/10 text-red-500 border-red-500/20'
-      case 'HIGH': return 'bg-orange-500/10 text-orange-500 border-orange-500/20'
-      case 'MEDIUM': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
-      case 'LOW': return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-      default: return 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+  const handleCreateVacancy = async () => {
+    if (!project || !newVacancy.title) return
+
+    try {
+      const response = await fetch('/api/vacancies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId,
+          ...newVacancy,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setVacancies([...vacancies, data.data])
+        setNewVacancy({
+          title: '',
+          description: '',
+          type: 'FULL_TIME',
+          skills: [],
+          slots: 1,
+          filled: 0,
+        })
+        setShowVacancyModal(false)
+        toast({
+          title: 'Success',
+          description: 'Vacancy created successfully',
+        })
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to create vacancy',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      console.error('Create vacancy error:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to create vacancy',
+        variant: 'destructive',
+      })
     }
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'COMPLETED': return <CheckCircle2 className="h-4 w-4 text-green-500" />
-      case 'IN_PROGRESS': return <Clock className="h-4 w-4 text-yellow-500" />
-      case 'PENDING': return <AlertCircle className="h-4 w-4 text-blue-500" />
-      case 'ASSIGNED': return <Clock className="h-4 w-4 text-yellow-500" />
-      default: return <AlertCircle className="h-4 w-4 text-gray-500" />
+  const handleCreateMilestone = async () => {
+    if (!project || !newMilestone.title) return
+
+    try {
+      const response = await fetch('/api/milestones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId,
+          ...newMilestone,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setMilestones([...milestones, data.data])
+        setNewMilestone({
+          title: '',
+          description: '',
+          status: 'PENDING',
+          dueDate: '',
+        })
+        setShowMilestoneModal(false)
+        toast({
+          title: 'Success',
+          description: 'Milestone created successfully',
+        })
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to create milestone',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      console.error('Create milestone error:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to create milestone',
+        variant: 'destructive',
+      })
     }
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'VERIFIED':
+      case 'ACTIVE':
+      case 'COMPLETED':
+        return <Badge className="bg-emerald-500 hover:bg-emerald-600">{status.replace('_', ' ')}</Badge>
+      case 'REJECTED':
+        return <Badge className="bg-red-500 hover:bg-red-600">{status.replace('_', ' ')}</Badge>
+      case 'UNDER_REVIEW':
+        return <Badge className="bg-amber-500 hover:bg-amber-600">{status.replace('_', ' ')}</Badge>
+      default:
+        return <Badge className="bg-slate-500 hover:bg-slate-600">{status.replace('_', ' ')}</Badge>
+    }
+  }
+
+  const getMilestoneStatusBadge = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return <Badge className="bg-emerald-500 hover:bg-emerald-600">Completed</Badge>
+      case 'IN_PROGRESS':
+        return <Badge className="bg-blue-500 hover:bg-blue-600">In Progress</Badge>
+      case 'PENDING':
+      default:
+        return <Badge className="bg-slate-500 hover:bg-slate-600">Pending</Badge>
+    }
+  }
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
+  }
+
+  const calculateProgress = (filled: number, total: number) => {
+    return total > 0 ? Math.round((filled / total) * 100) : 0
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading project...</p>
+          <div className="h-12 w-12 border-4 border-t-primary border-r-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading project details...</p>
         </div>
       </div>
     )
   }
 
-  if (error || !project) {
+  if (!project) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Error</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">{error || 'Project not found'}</p>
-            <Button onClick={() => router.back()}>Go Back</Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-16 w-16 mx-auto mb-4 text-red-500" />
+          <h2 className="text-xl font-bold mb-2">Project Not Found</h2>
+          <p className="text-muted-foreground mb-6">The project you're looking for doesn't exist or you don't have access to it.</p>
+          <Link href="/dashboard/student">
+            <Button>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </Link>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="border-b bg-background">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="h-5 w-5" />
-                <span className="font-semibold">Back</span>
-              </Link>
-              <div className="h-6 w-px bg-border" />
-              <div>
-                <h1 className="text-xl font-bold">{project.title}</h1>
-                <p className="text-sm text-muted-foreground">{project.description}</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <Link href="/dashboard/student">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+          </Link>
+        </div>
+
+        {/* Project Header */}
+        <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800 mb-6">
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-3">
+                  {getStatusBadge(project.status)}
+                  {project.rejectionReason && project.status === 'REJECTED' && (
+                    <Badge className="bg-red-100 text-red-700 border-red-300">
+                      Rejection Reason: {project.rejectionReason}
+                    </Badge>
+                  )}
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2">{project.title}</h1>
+                <p className="text-base text-muted-foreground">{project.description}</p>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant={project.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                {project.status}
-              </Badge>
               <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4" />
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
               </Button>
             </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 py-8">
-        {/* Project Overview Cards */}
-        <div className="grid gap-6 mb-8 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Progress</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{project.completionRate.toFixed(0)}%</div>
-              <Progress value={project.completionRate} className="mt-2 h-2" />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Team Size</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{project.teamSize}</div>
-              <p className="text-xs text-muted-foreground mt-1">{project.departments.length} departments</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Tasks</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{project.tasks.filter(t => t.status !== 'COMPLETED').length}</div>
-              <p className="text-xs text-muted-foreground mt-1">{project.tasks.length} total tasks</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Milestones</CardTitle>
-              <Star className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{project.milestones.filter(m => m.status === 'ACHIEVED').length}</div>
-              <p className="text-xs text-muted-foreground mt-1">{project.milestones.length} total milestones</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Leadership Info */}
-        <Card className="mb-8 border-primary/50 bg-primary/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
-              Project Leadership
-            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="flex items-start gap-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={project.projectLead?.avatar} />
-                  <AvatarFallback>{project.projectLead?.name?.split(' ').map((n: string) => n[0]).join('') || 'PL'}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-medium">{project.projectLead?.name || 'Not assigned'}</div>
-                  <div className="text-sm text-muted-foreground">Project Lead</div>
-                  <div className="text-xs text-muted-foreground mt-1">{project.projectLead?.email || ''}</div>
-                </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                <div className="text-3xl font-bold text-primary mb-1">{project.completionRate || 0}%</div>
+                <div className="text-xs text-muted-foreground">Completion</div>
               </div>
-              <div className="flex items-start gap-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={project.hrLead?.avatar} />
-                  <AvatarFallback>{project.hrLead?.name?.split(' ').map((n: string) => n[0]).join('') || 'HR'}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-medium">{project.hrLead?.name || 'Not assigned'}</div>
-                  <div className="text-sm text-muted-foreground">HR Lead</div>
-                  <div className="text-xs text-muted-foreground mt-1">{project.hrLead?.email || ''}</div>
-                </div>
+              <div className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                <div className="text-3xl font-bold text-emerald-600 mb-1">{teamMembers.length}</div>
+                <div className="text-xs text-muted-foreground">Team Members</div>
+              </div>
+              <div className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                <div className="text-3xl font-bold text-blue-600 mb-1">{vacancies.filter(v => v.filled < v.slots).length}</div>
+                <div className="text-xs text-muted-foreground">Open Vacancies</div>
+              </div>
+              <div className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                <div className="text-3xl font-bold text-purple-600 mb-1">{milestones.filter(m => m.status === 'COMPLETED').length}/{milestones.length}</div>
+                <div className="text-xs text-muted-foreground">Milestones</div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-4xl grid-cols-5">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="team">Team</TabsTrigger>
-            <TabsTrigger value="tasks">Tasks</TabsTrigger>
-            <TabsTrigger value="departments">Departments</TabsTrigger>
-            <TabsTrigger value="milestones">Milestones</TabsTrigger>
-          </TabsList>
+        {/* Tab Navigation */}
+        <div className="flex gap-2 mb-6 border-b border-slate-200 dark:border-slate-700 pb-4 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
+              activeTab === 'overview'
+                ? 'bg-primary text-white'
+                : 'bg-slate-100 dark:bg-slate-800 text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            <BarChart3 className="h-4 w-4 mr-2 inline" />
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('team')}
+            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
+              activeTab === 'team'
+                ? 'bg-primary text-white'
+                : 'bg-slate-100 dark:bg-slate-800 text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            <Users className="h-4 w-4 mr-2 inline" />
+            Team & Roles
+          </button>
+          <button
+            onClick={() => setActiveTab('vacancies')}
+            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
+              activeTab === 'vacancies'
+                ? 'bg-primary text-white'
+                : 'bg-slate-100 dark:bg-slate-800 text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            <Briefcase className="h-4 w-4 mr-2 inline" />
+            Vacancies
+          </button>
+          <button
+            onClick={() => setActiveTab('milestones')}
+            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
+              activeTab === 'milestones'
+                ? 'bg-primary text-white'
+                : 'bg-slate-100 dark:bg-slate-800 text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            <Target className="h-4 w-4 mr-2 inline" />
+            Milestones
+          </button>
+        </div>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>About This Project</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <div className="text-sm text-muted-foreground">Category</div>
-                    <div className="font-medium">{project.category}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">Start Date</div>
-                    <div className="font-medium">{project.startDate ? new Date(project.startDate).toLocaleDateString() : 'Not set'}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">End Date</div>
-                    <div className="font-medium">{project.endDate ? new Date(project.endDate).toLocaleDateString() : 'Not set'}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">Status</div>
-                    <Badge variant={project.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                      {project.status}
-                    </Badge>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">Completion</div>
-                    <Progress value={project.completionRate} className="mt-2 h-2" />
-                    <div className="text-sm font-medium mt-1">{project.completionRate.toFixed(0)}%</div>
-                  </div>
-                  {project.seekingInvestment && (
-                    <div>
-                      <div className="text-sm text-muted-foreground">Investment</div>
-                      <div className="font-medium">
-                        ${project.investmentRaised?.toLocaleString() || 0} raised of ${project.investmentGoal?.toLocaleString() || 0}
-                      </div>
-                      <Progress value={project.investmentGoal ? ((project.investmentRaised || 0) / project.investmentGoal * 100) : 0} className="mt-2 h-2" />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button className="w-full">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create New Task
-                  </Button>
-                  <Button className="w-full" variant="outline">
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Add Team Member
-                  </Button>
-                  <Button className="w-full" variant="outline">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Create Milestone
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Performance Metrics */}
+            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800">
               <CardHeader>
-                <CardTitle>Milestone Progress</CardTitle>
-                <CardDescription>Track key project achievements</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-blue-500" />
+                  Performance Metrics
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {project.milestones.length === 0 ? (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">Overall Progress</span>
+                    <span className="text-sm font-bold text-primary">{project.completionRate || 0}%</span>
+                  </div>
+                  <Progress value={project.completionRate || 0} className="h-2" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20">
+                    <div className="text-2xl font-bold text-blue-600 mb-1">{project.tasksCompleted || 0}</div>
+                    <div className="text-xs text-muted-foreground">Tasks Done</div>
+                  </div>
+                  <div className="text-center p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20">
+                    <div className="text-2xl font-bold text-emerald-600 mb-1">{project.totalPoints || 0}</div>
+                    <div className="text-xs text-muted-foreground">Points Earned</div>
+                  </div>
+                </div>
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">Project Lead</span>
+                    <span className="font-medium">{project.projectLead?.name || user?.name}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">Created</span>
+                    <span className="font-medium">{formatDate(project.createdAt)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Last Updated</span>
+                    <span className="font-medium">{formatDate(project.updatedAt)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Milestone Progress */}
+            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5 text-purple-500" />
+                    Recent Milestones
+                  </CardTitle>
+                  <Button size="sm" onClick={() => setShowMilestoneModal(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Milestone
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {milestones.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    No milestones yet
+                    <Target className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm">No milestones yet</p>
                   </div>
                 ) : (
-                  project.milestones.map((milestone) => (
-                    <div key={milestone.id} className="flex items-center gap-4 p-3 rounded-lg border">
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                        milestone.status === 'ACHIEVED' ? 'bg-green-500 text-white' : 'bg-muted'
-                      }`}>
-                        {milestone.status === 'ACHIEVED' ? (
-                          <CheckCircle2 className="h-5 w-5" />
-                        ) : milestone.status === 'IN_PROGRESS' ? (
-                          <Clock className="h-5 w-5 text-muted-foreground" />
-                        ) : (
-                          <AlertCircle className="h-5 w-5 text-muted-foreground" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium">{milestone.title}</div>
-                        <div className="text-sm text-muted-foreground">
-                          Target: {new Date(milestone.targetDate).toLocaleDateString()}
-                          {milestone.achievedAt && ` • Achieved: ${new Date(milestone.achievedAt).toLocaleDateString()}`}
+                  <div className="space-y-3">
+                    {milestones.slice(0, 5).map((milestone) => (
+                      <div key={milestone.id} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                        <div className="mt-1">
+                          {getMilestoneStatusBadge(milestone.status)}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-sm mb-1">{milestone.title}</h4>
+                          {milestone.description && (
+                            <p className="text-xs text-muted-foreground line-clamp-2">{milestone.description}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            <span>Due: {formatDate(milestone.dueDate)}</span>
+                          </div>
                         </div>
                       </div>
-                      <Badge variant={milestone.status === 'ACHIEVED' ? 'default' : 'secondary'}>
-                        {milestone.status}
-                      </Badge>
-                    </div>
-                  ))
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* Team Tab */}
-          <TabsContent value="team" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Team Members</CardTitle>
-                <CardDescription>{project.members.length} members across {project.departments.length} departments</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {project.members.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No team members yet
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {project.members.map((member) => (
-                      <div key={member.id} className="flex items-center gap-4 p-4 rounded-lg border">
-                        <Avatar>
-                          <AvatarImage src={member.user?.avatar} />
-                          <AvatarFallback>{member.user?.name?.split(' ').map((n: string) => n[0]).join('') || 'U'}</AvatarFallback>
+        {activeTab === 'team' && (
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-blue-500" />
+                  Team & Roles
+                </CardTitle>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Team Member
+                </Button>
+              </div>
+              <CardDescription>
+                {teamMembers.length} team member{teamMembers.length !== 1 ? 's' : ''}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {teamMembers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">No team members yet</p>
+                </div>
+              ) : (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {teamMembers.map((member) => (
+                    <div key={member.id} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:shadow-lg transition-all duration-200">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={member.avatar} />
+                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-semibold">
+                            {member.name?.charAt(0) || 'U'}
+                          </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                          <div className="font-medium">{member.user?.name}</div>
-                          <div className="text-sm text-muted-foreground">{member.role}</div>
+                          <h4 className="font-semibold text-sm">{member.name}</h4>
+                          <p className="text-xs text-primary">{member.role}</p>
                         </div>
-                        <Badge>{member.user?.progressionLevel || 'CONTRIBUTOR'}</Badge>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Tasks Tab */}
-          <TabsContent value="tasks" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Project Tasks</CardTitle>
-                <CardDescription>{project.tasks.length} tasks</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {project.tasks.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No tasks yet
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {project.tasks.map((task) => (
-                      <div key={task.id} className="flex items-center gap-4 p-4 rounded-lg border">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(task.status)}
+                      {member.email && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <FileText className="h-3 w-3" />
+                          <span className="truncate">{member.email}</span>
                         </div>
-                        <div className="flex-1">
-                          <div className="font-medium">{task.title}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {task.assignee?.name || 'Unassigned'} • {task.department?.name || 'No department'}
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === 'vacancies' && (
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-emerald-500" />
+                  Open Positions
+                </CardTitle>
+                <Button size="sm" onClick={() => setShowVacancyModal(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Vacancy
+                </Button>
+              </div>
+              <CardDescription>
+                {vacancies.length} vacancy{vacancies.length !== 1 ? 'ies' : ''} available
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {vacancies.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Briefcase className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">No vacancies posted yet</p>
+                </div>
+              ) : (
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {vacancies.map((vacancy) => (
+                    <div key={vacancy.id} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:shadow-lg transition-all duration-200 border border-slate-200 dark:border-slate-700">
+                      <div className="flex items-start justify-between mb-3">
+                        <Badge
+                          className={`${
+                            vacancy.type === 'FULL_TIME' ? 'bg-blue-500' :
+                            vacancy.type === 'PART_TIME' ? 'bg-emerald-500' :
+                            'bg-purple-500'
+                          }`}
+                        >
+                          {vacancy.type.replace('_', ' ')}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {vacancy.filled}/{vacancy.slots} filled
+                        </span>
+                      </div>
+                      <h4 className="font-semibold text-base mb-2">{vacancy.title}</h4>
+                      {vacancy.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{vacancy.description}</p>
+                      )}
+                      {vacancy.skills && vacancy.skills.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {vacancy.skills.map((skill, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <div className="mb-2">
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="text-muted-foreground">Progress</span>
+                          <span className="font-medium">{calculateProgress(vacancy.filled, vacancy.slots)}%</span>
+                        </div>
+                        <Progress value={calculateProgress(vacancy.filled, vacancy.slots)} className="h-2" />
+                      </div>
+                      <Button size="sm" className="w-full">
+                        View Details
+                        <ChevronRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === 'milestones' && (
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-purple-500" />
+                  Project Milestones
+                </CardTitle>
+                <Button size="sm" onClick={() => setShowMilestoneModal(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Milestone
+                </Button>
+              </div>
+              <CardDescription>
+                {milestones.filter(m => m.status === 'COMPLETED').length} of {milestones.length} completed
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {milestones.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Target className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">No milestones set yet</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {milestones.map((milestone, index) => (
+                    <div key={milestone.id} className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:shadow-lg transition-all duration-200">
+                      <div className="flex-shrink-0 mt-1">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                          milestone.status === 'COMPLETED' ? 'bg-emerald-500' :
+                          milestone.status === 'IN_PROGRESS' ? 'bg-blue-500' :
+                          'bg-slate-400'
+                        }`}>
+                          {index + 1}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-semibold">{milestone.title}</h4>
+                          {getMilestoneStatusBadge(milestone.status)}
+                        </div>
+                        {milestone.description && (
+                          <p className="text-sm text-muted-foreground mb-2">{milestone.description}</p>
+                        )}
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>Due: {formatDate(milestone.dueDate)}</span>
                           </div>
-                        </div>
-                        <Badge className={getPriorityColor(task.priority)}>
-                          {task.priority}
-                        </Badge>
-                        <Badge variant={task.status === 'COMPLETED' ? 'default' : 'secondary'}>
-                          {task.status}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Departments Tab */}
-          <TabsContent value="departments" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Departments</CardTitle>
-                <CardDescription>{project.departments.length} departments</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {project.departments.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No departments yet
-                  </div>
-                ) : (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {project.departments.map((department) => (
-                      <Card key={department.id}>
-                        <CardHeader>
-                          <CardTitle className="text-lg">{department.name}</CardTitle>
-                          {department.head && (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Avatar className="h-6 w-6">
-                                <AvatarImage src={department.head.avatar} />
-                                <AvatarFallback>{department.head.name?.split(' ').map((n: string) => n[0]).join('') || 'H'}</AvatarFallback>
-                              </Avatar>
-                              {department.head.name}
+                          {milestone.completedAt && (
+                            <div className="flex items-center gap-1">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                              <span>Completed: {formatDate(milestone.completedAt)}</span>
                             </div>
                           )}
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex justify-between text-sm">
-                            <span>{department._count.members} members</span>
-                            <span>{department._count.tasks} tasks</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Milestones Tab */}
-          <TabsContent value="milestones" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>All Milestones</CardTitle>
-                <CardDescription>{project.milestones.length} milestones</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {project.milestones.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No milestones yet
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {project.milestones.map((milestone) => (
-                      <div key={milestone.id} className="p-4 rounded-lg border">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="font-medium">{milestone.title}</div>
-                          <Badge variant={milestone.status === 'ACHIEVED' ? 'default' : 'secondary'}>
-                            {milestone.status}
-                          </Badge>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Target: {new Date(milestone.targetDate).toLocaleDateString()}
-                          {milestone.achievedAt && ` • Achieved: ${new Date(milestone.achievedAt).toLocaleDateString()}`}
                         </div>
                       </div>
-                    ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Add Vacancy Modal */}
+        {showVacancyModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowVacancyModal(false)}
+          >
+            <div
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold">Create Vacancy</h3>
+                  <Button variant="ghost" size="icon" onClick={() => setShowVacancyModal(false)}>
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="vacancyTitle">Title *</Label>
+                    <Input
+                      id="vacancyTitle"
+                      value={newVacancy.title}
+                      onChange={(e) => setNewVacancy({ ...newVacancy, title: e.target.value })}
+                      placeholder="Position title"
+                    />
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </main>
+                  <div>
+                    <Label htmlFor="vacancyType">Type</Label>
+                    <select
+                      id="vacancyType"
+                      value={newVacancy.type}
+                      onChange={(e) => setNewVacancy({ ...newVacancy, type: e.target.value as Vacancy['type'] })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                    >
+                      <option value="FULL_TIME">Full Time</option>
+                      <option value="PART_TIME">Part Time</option>
+                      <option value="INTERNSHIP">Internship</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="slots">Number of Positions</Label>
+                    <Input
+                      id="slots"
+                      type="number"
+                      value={newVacancy.slots}
+                      onChange={(e) => setNewVacancy({ ...newVacancy, slots: parseInt(e.target.value) })}
+                      placeholder="1"
+                      min="1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="vacancyDescription">Description</Label>
+                    <Textarea
+                      id="vacancyDescription"
+                      value={newVacancy.description}
+                      onChange={(e) => setNewVacancy({ ...newVacancy, description: e.target.value })}
+                      placeholder="Describe the role and requirements..."
+                      rows={4}
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => setShowVacancyModal(false)} className="flex-1">
+                      Cancel
+                    </Button>
+                    <Button onClick={handleCreateVacancy} className="flex-1">
+                      Create Vacancy
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Milestone Modal */}
+        {showMilestoneModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowMilestoneModal(false)}
+          >
+            <div
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold">Add Milestone</h3>
+                  <Button variant="ghost" size="icon" onClick={() => setShowMilestoneModal(false)}>
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="milestoneTitle">Title *</Label>
+                    <Input
+                      id="milestoneTitle"
+                      value={newMilestone.title}
+                      onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
+                      placeholder="Milestone name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="milestoneDescription">Description</Label>
+                    <Textarea
+                      id="milestoneDescription"
+                      value={newMilestone.description}
+                      onChange={(e) => setNewMilestone({ ...newMilestone, description: e.target.value })}
+                      placeholder="Describe this milestone..."
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="dueDate">Due Date *</Label>
+                    <Input
+                      id="dueDate"
+                      type="date"
+                      value={newMilestone.dueDate}
+                      onChange={(e) => setNewMilestone({ ...newMilestone, dueDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => setShowMilestoneModal(false)} className="flex-1">
+                      Cancel
+                    </Button>
+                    <Button onClick={handleCreateMilestone} className="flex-1">
+                      Add Milestone
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

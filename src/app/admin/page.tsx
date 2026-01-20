@@ -26,17 +26,13 @@ import {
   Activity,
 } from 'lucide-react'
 import Link from 'next/link'
+import { logoutAndRedirect } from '@/lib/utils/logout'
 
 export default function AdminPage() {
   const router = useRouter()
 
   const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' })
-      router.push('/auth')
-    } catch (error) {
-      console.error('Logout error:', error)
-    }
+    await logoutAndRedirect()
   }
 
   const adminModules = [

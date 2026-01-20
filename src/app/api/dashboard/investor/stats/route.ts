@@ -9,31 +9,57 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "User ID required" }, { status: 400 })
     }
 
-    const [portfolio, totalInvestments, totalEquity, opportunities] = await Promise.all([
+    const [portfolio, totalInvestments, totalAmount, opportunities] = await Promise.all([
       db.investment.findMany({
-        where: { investorId: userId },
-        orderBy: { investedAt: "desc" },
+        where: { userId },
+        include: {
+          project: {
+            select: {
+              id: true,
+              name: true,
+              status: true,
+              description: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
         take: 20,
       }),
-      db.investment.count({ where: { investorId: userId } }),
+      db.investment.count({ where: { userId } }),
       db.investment.aggregate({
-        where: { investorId: userId },
-        _sum: { equity: true },
+        where: { userId, status: 'COMPLETED' },
+        _sum: { amount: true },
       }),
       db.project.findMany({
-        where: { seekingInvestment: true, status: "ACTIVE" },
+        where: { status: "IN_PROGRESS" },
+        include: {
+          owner: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
         take: 20,
+        orderBy: { createdAt: 'desc' },
       }),
     ])
 
-    const totalEquityValue = totalEquity._sum.equity || 0
+    const totalInvestedAmount = totalAmount._sum.amount || 0
 
     return NextResponse.json({
       success: true,
       data: {
         portfolio,
         totalInvestments,
-        totalEquity: totalEquityValue,
+        totalInvestedAmount,
         opportunities,
       },
     })

@@ -1,44 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { educations, users } from '@/lib/schema'
 import { getServerSession } from '@/lib/session'
 import { z } from 'zod'
 
 // GET /api/education - Get all education for a user
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = request.nextUrl.searchParams
-    const userId = searchParams.get('userId')
-    const status = searchParams.get('status')
+    const userId = request.nextUrl.searchParams.get('userId')
 
     // Build where clause
     const where: any = {}
     if (userId) {
       where.userId = userId
     }
-    if (status) {
-      where.current = status === 'true' ? true : false
-    }
 
     // Fetch education records
     const userEducations = await db.education.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: {
-            id: true,
-            school: true,
-            degree: true,
-            field: true,
-            description: true,
-            startDate: true,
-            endDate: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        },
-      },
     })
 
     return NextResponse.json({
@@ -93,16 +72,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Create education
+    const createData: any = {
+      userId: session.user.id,
+      school: body.school,
+      degree: body.degree,
+      field: body.field || null,
+      description: body.description || null,
+      startDate: new Date(body.startDate),
+    }
+
+    if (body.endDate) {
+      createData.endDate = new Date(body.endDate)
+    }
+
     const education = await db.education.create({
-      data: {
-        userId: session.user.id,
-        school: body.school,
-        degree: body.degree,
-        field: body.field || null,
-        description: body.description || null,
-        startDate: new Date(body.startDate),
-        endDate: body.endDate ? new Date(body.endDate) : null,
-      },
+      data: createData,
     })
 
     return NextResponse.json({
@@ -123,7 +107,7 @@ export async function POST(request: NextRequest) {
 // PATCH /api/education/[id] - Update education
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id?: string }
+  { params }: { params: Promise<{ id?: string }> }
 ) {
   try {
     const session = await getServerSession()
@@ -131,7 +115,7 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
-    const educationId = params.id
+    const { id: educationId } = await params
     if (!educationId) {
       return NextResponse.json({
         success: false,
@@ -179,7 +163,7 @@ export async function PATCH(
 // DELETE /api/education/[id] - Delete education
 export async function DELETE(
   request: NextRequest,
-  { params }: { params?: { id?: string } }
+  { params }: { params: Promise<{ id?: string }> }
 ) {
   try {
     const session = await getServerSession()
@@ -187,11 +171,11 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
-    const educationId = params.id
+    const { id: educationId } = await params
     if (!educationId) {
       return NextResponse.json({
-      success: false,
-      error: 'Education ID is required',
+        success: false,
+        error: 'Education ID is required',
         message: 'Education ID is required',
       })
     }

@@ -1,67 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { verifyToken } from '@/lib/auth/jwt-edge'
-import { logError, formatErrorResponse, AppError, UnauthorizedError } from '@/lib/utils/error-handler'
+import { verifyToken } from '@/lib/auth/jwt'
+import { logError, formatErrorResponse, AppError, UnauthorizedError, ForbiddenError } from '@/lib/utils/error-handler'
 
-// ==================== BUSINESSES API ====================
-
+// GET /api/businesses - Get businesses (filtered by user access or public)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const status = searchParams.status as string | undefined
-    const universityId = searchParams.universityId as string | undefined
-    const businessLeadId = searchParams.businessLeadId as string | undefined
-    const seekingInvestment = searchParams.seekingInvestment as string | undefined
-    const seekingCollaborators = searchParams.seekingCollaborators as string | undefined
+    const status = searchParams.get('status')
+    const userId = searchParams.get('userId') // Owner's businesses
 
+    // Authentication check
+    const sessionCookie = request.cookies.get('session')
+    const token = sessionCookie?.value
+
+    let authenticatedUserId: string | null = null
+    let userRole: string | null = null
+
+    if (token) {
+      const decoded = verifyToken(token)
+      if (decoded && decoded.userId) {
+        authenticatedUserId = decoded.userId
+        userRole = decoded.role
+      }
+    }
+
+    // Build query
     const where: any = {}
 
     if (status) {
-      where.status = status as any
+      where.status = status
     }
 
-    if (universityId) {
-      where.universityId = universityId
+    // If requesting specific user's businesses, filter by owner
+    if (userId) {
+      where.ownerId = userId
     }
 
-    if (businessLeadId) {
-      where.businessLeadId = businessLeadId
-    }
-
-    if (seekingInvestment) {
-      where.seekingInvestment = seekingInvestment === 'true'
-    }
-
-    if (seekingCollaborators) {
-      where.seekingCollaborators = true
-    }
-
-    const businesses = await db.project.findMany({
+    const businesses = await db.business.findMany({
       where,
       include: {
-        projectLead: {
+        owner: {
           select: {
             id: true,
             name: true,
             email: true,
             avatar: true,
             role: true,
-            university: {
-              select: {
-                id: true,
-                name: true,
-                code: true,
-                location: true,
-              },
-            },
-          },
-        },
-        university: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
-            location: true,
           },
         },
         members: {
@@ -73,14 +58,17 @@ export async function GET(request: NextRequest) {
                 email: true,
                 avatar: true,
                 role: true,
-                major: true,
               },
             },
           },
-          take: 10,
+          orderBy: { joinedAt: 'desc' },
         },
         _count: {
-          members: true,
+          select: {
+            members: true,
+            projects: true,
+            jobs: true,
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -102,9 +90,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// POST /api/businesses - Create a new business
 export async function POST(request: NextRequest) {
   let userId: string | null = null
   try {
+    // Authentication
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
@@ -118,86 +108,53 @@ export async function POST(request: NextRequest) {
     }
 
     userId = decoded.userId
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: { id: true, role: true, universityId: true, university: { name: true } },
-    })
+    userRole = decoded.role
 
-    if (!user) {
-      throw new UnauthorizedError('User not found')
-    }
-
-    // Check if user is a student or mentor
-    if (user.role !== 'STUDENT' && user.role !== 'MENTOR' && user.role !== 'PLATFORM_ADMIN') {
-      return NextResponse.json({
-        success: false,
-        error: 'Only students, mentors, and platform admins can create businesses',
-      }, { status: 403 })
+    // Authorization - Only employers and platform admins can create businesses
+    if (userRole !== 'EMPLOYER' && userRole !== 'PLATFORM_ADMIN') {
+      throw new ForbiddenError('Only employers and platform admins can create businesses')
     }
 
     const body = await request.json()
 
-    // Create the business/project
-    const business = await db.project.create({
+    // Validate required fields
+    if (!body.name) {
+      throw new AppError('Business name is required', 400)
+    }
+
+    // Create business
+    const business = await db.business.create({
       data: {
-        title: body.title,
+        name: body.name,
         description: body.description,
-        category: body.category,
-        projectLeadId: userId,
-        universityId: user.universityId,
-        status: 'PROPOSED', // Business needs university approval
-        seekingInvestment: body.seekingInvestment || false,
-        investmentGoal: body.investmentGoal ? parseFloat(body.investmentGoal) : null,
-        startDate: body.startDate ? new Date(body.startDate) : null,
-        endDate: body.endDate ? new Date(body.endDate) : null,
-      }
-    })
-
-    // Award points for creating a business
-    const pointsAwarded = 50
-    await db.user.update({
-      where: { id: userId },
-      data: {
-        executionScore: {
-          increment: 10,
-        },
-        collaborationScore: {
-          increment: 10,
-        },
-        leadershipScore: {
-          increment: 10,
-        },
-        ethicsScore: {
-          increment: 10,
-        },
-        reliabilityScore: {
-          increment: 10,
-        },
+        industry: body.industry,
+        location: body.location,
+        website: body.website,
+        logo: body.logo,
+        size: body.size,
+        status: 'PENDING', // Requires verification
+        ownerId: userId,
       },
-    })
-
-    // Create points log entry
-    await db.pointTransaction.create({
-      data: {
-        userId: userId,
-        points: pointsAwarded,
-        source: 'BUSINESS_CREATION',
-        description: `Created business: ${body.title}`,
-        metadata: JSON.stringify({
-          businessId: business.id,
-          category: body.category,
-        }),
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          },
+        },
       },
     })
 
     return NextResponse.json({
       success: true,
       data: business,
-      message: `Business created successfully! +${pointsAwarded} points earned`,
+      message: 'Business created successfully and pending verification',
     }, { status: 201 })
   } catch (error: any) {
     logError(error, 'Create business', userId || 'unknown')
-    
+
     if (error instanceof AppError) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }

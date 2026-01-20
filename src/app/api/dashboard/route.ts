@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
           project: {
             include: {
               tasks: {
-                where: { assigneeId: userId },
+                where: { assignedTo: userId },
                 take: 5,
                 orderBy: { dueDate: 'asc' }
               }
@@ -59,30 +59,30 @@ export async function GET(request: NextRequest) {
 
       const myTimeEntries = await db.timeEntry.findMany({
         where: { userId },
-        orderBy: { startTime: 'desc' },
+        orderBy: { date: 'desc' },
         take: 20
       })
 
       const myWorkSessions = await db.workSession.findMany({
         where: { userId },
-        orderBy: { checkInTime: 'desc' },
+        orderBy: { startTime: 'desc' },
         take: 10
       })
 
       const availableJobs = await db.job.findMany({
         where: {
-          status: 'PUBLISHED'
+          published: true,
         },
         take: 20,
         orderBy: { createdAt: 'desc' }
       })
 
       const myApplications = await db.jobApplication.findMany({
-        where: { applicantId: userId },
+        where: { userId },
         include: {
           job: true
         },
-        orderBy: { appliedAt: 'desc' }
+        orderBy: { createdAt: 'desc' }
       })
 
       dashboardData.projects = myProjects
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
       dashboardData.stats = {
         totalProjects: myProjects.length,
         totalSkills: mySkills.length,
-        totalHours: myTimeEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0),
+        totalHours: myTimeEntries.reduce((sum, entry) => sum + entry.hours, 0),
         applicationsPending: myApplications.filter(app => app.status === 'PENDING').length,
       }
     }
@@ -110,33 +110,19 @@ export async function GET(request: NextRequest) {
       })
 
       const universityProjects = await db.project.findMany({
-        where: { universityId: user.universityId },
+        where: {
+          owner: {
+            universityId: user.universityId
+          },
+        },
         include: {
-          projectLead: {
+          owner: {
             select: {
               id: true,
               name: true,
               email: true,
               major: true,
             }
-          },
-          members: {
-            take: 5,
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  major: true,
-                  role: true,
-                }
-              }
-            }
-          },
-          _count: {
-            members: true,
-            tasks: true
           }
         },
         orderBy: { createdAt: 'desc' }
@@ -157,14 +143,14 @@ export async function GET(request: NextRequest) {
       dashboardData.stats = {
         totalProjects: universityProjects.length,
         totalStudents: universityStudents.length,
-        activeProjects: universityProjects.filter(p => p.status === 'ACTIVE').length,
+        activeProjects: universityProjects.filter(p => p.status === 'IN_PROGRESS').length,
       }
     }
 
     // EMPLOYER Dashboard
     if (role === 'EMPLOYER') {
       const postedJobs = await db.job.findMany({
-        where: { employerId: userId },
+        where: { userId },
         include: {
           _count: {
             applications: true
@@ -176,7 +162,7 @@ export async function GET(request: NextRequest) {
       const applications = await db.jobApplication.findMany({
         where: {
           job: {
-            employerId: userId
+            userId
           }
         },
         include: {
@@ -196,56 +182,33 @@ export async function GET(request: NextRequest) {
             }
           },
           job: true
-        }
-      })
-
-      const supplierProfile = await db.supplier.findFirst({
-        where: { userId }
+        },
+        orderBy: { createdAt: 'desc' }
       })
 
       dashboardData.postedJobs = postedJobs
       dashboardData.applications = applications
-      dashboardData.supplier = supplierProfile
       dashboardData.stats = {
         totalJobs: postedJobs.length,
         totalApplications: applications.length,
         pendingApplications: applications.filter(a => a.status === 'PENDING').length,
-        activeJobs: postedJobs.filter(j => j.status === 'PUBLISHED').length,
+        activeJobs: postedJobs.filter(j => j.published).length,
       }
     }
 
     // INVESTOR Dashboard
     if (role === 'INVESTOR') {
       const investments = await db.investment.findMany({
-        where: { investorId: userId },
+        where: { userId },
         include: {
           project: {
             include: {
-              projectLead: {
+              owner: {
                 select: {
                   id: true,
                   name: true,
                   email: true,
                   avatar: true,
-                }
-              },
-              university: {
-                select: {
-                  id: true,
-                  name: true,
-                  code: true,
-                }
-              }
-            },
-            members: {
-              take: 3,
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                  }
                 }
               }
             }
@@ -256,8 +219,15 @@ export async function GET(request: NextRequest) {
 
       const availableProjects = await db.project.findMany({
         where: {
-          seekingInvestment: true,
-          status: 'APPROVED'
+          status: 'IN_PROGRESS'
+        },
+        include: {
+          owner: {
+            select: {
+              id: true,
+              name: true,
+            }
+          }
         },
         take: 20,
         orderBy: { createdAt: 'desc' }
@@ -267,8 +237,8 @@ export async function GET(request: NextRequest) {
       dashboardData.availableProjects = availableProjects
       dashboardData.stats = {
         totalInvestments: investments.length,
-        totalAmount: investments.reduce((sum, inv) => sum + (inv.amount || 0), 0),
-        fundedProjects: investments.filter(inv => inv.status === 'FUNDED').length,
+        totalAmount: investments.reduce((sum, inv) => sum + inv.amount, 0),
+        fundedProjects: investments.filter(inv => inv.status === 'COMPLETED').length,
       }
     }
 

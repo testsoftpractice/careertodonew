@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { verifyToken } from '@/lib/auth/jwt-edge'
+import { verifyToken } from '@/lib/auth/jwt'
 import { logError, formatErrorResponse, AppError, UnauthorizedError, ForbiddenError } from '@/lib/utils/error-handler'
 
 // ==================== UNIVERSITY APPROVAL API ====================
@@ -222,7 +222,7 @@ export async function POST(request: NextRequest) {
     const pointsAwarded = action === 'approve' ? 100 : 0
 
     await db.user.update({
-      where: { id: business.projectLeadId },
+      where: { id: business.ownerId },
       data: {
         executionScore: {
           increment: action === 'approve' ? 15 : 0,
@@ -245,9 +245,9 @@ export async function POST(request: NextRequest) {
     // Create point transaction for business lead
     await db.pointTransaction.create({
       data: {
-        userId: business.projectLeadId,
+        userId: business.ownerId,
         points: pointsAwarded,
-        source: action === 'approve' ? 'BUSINESS_APROVAL' : 'BUSINESS_REJECTION',
+        source: action === 'approve' ? 'BUSINESS_APPROVAL' : 'BUSINESS_REJECTION',
         description: `${action === 'approve' ? 'Approved' : 'Rejected'} business: ${business.title}`,
         metadata: JSON.stringify({
           businessId: business.id,
@@ -282,8 +282,8 @@ export async function POST(request: NextRequest) {
     // Send notification to business lead
     await db.notification.create({
       data: {
-        userId: business.projectLeadId,
-        type: action === 'approve' ? 'BUSINESS_APROVAL' : 'BUSINESS_REJECTION',
+        userId: business.ownerId,
+        type: action === 'approve' ? 'BUSINESS_APPROVAL' : 'BUSINESS_REJECTION',
         title: action === 'approve' ? '🎉 Business Approved!' : '❌ Business Rejected',
         message: `Your business "${business.title}" has been ${action.toLowerCase()}.`,
         link: `/businesses/${business.id}`,
@@ -297,7 +297,7 @@ export async function POST(request: NextRequest) {
       await db.notification.createMany({
         data: memberIds.map((userId) => ({
           userId,
-          type: action === 'approve' ? 'BUSINESS_APROVAL' : 'BUSINESS_REJECTION',
+          type: action === 'approve' ? 'BUSINESS_APPROVAL' : 'BUSINESS_REJECTION',
           title: action === 'approve' ? 'Team Business Approved!' : 'Team Business Rejected',
           message: `A business you're part of "${business.title}" has been ${action.toLowerCase()}`,
           link: `/businesses/${business.id}`,

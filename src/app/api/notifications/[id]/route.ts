@@ -1,87 +1,135 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+import { verifyToken } from '@/lib/auth/jwt'
+import { logError, formatErrorResponse, AppError, UnauthorizedError, NotFoundError } from '@/lib/utils/error-handler'
 
-// Mock notification storage (in production, use database)
-const notificationsStore = new Map<string, any[]>()
-
+// PATCH /api/notifications/[id] - Update notification (mark as read)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let userId: string | null = null
   try {
     const { id } = await params
     const body = await request.json()
-    const { userId, action } = body
+    const { read } = body
 
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'User ID is required' },
-        { status: 400 }
-      )
+    // Authentication
+    const sessionCookie = request.cookies.get('session')
+    const token = sessionCookie?.value
+
+    if (!token) {
+      throw new UnauthorizedError('Authentication required')
     }
 
-    const userNotifications = notificationsStore.get(userId) || []
-
-    if (action === 'mark_read') {
-      // Mark notification as read
-      const notification = userNotifications.find((n) => n.id === id)
-      if (notification) {
-        notification.read = true
-        notificationsStore.set(userId, userNotifications)
-
-        return NextResponse.json({
-          success: true,
-          data: notification,
-        })
-      }
-
-      return NextResponse.json(
-        { success: false, error: 'Notification not found' },
-        { status: 404 }
-      )
+    const decoded = verifyToken(token)
+    if (!decoded || !decoded.userId || !decoded.role) {
+      throw new UnauthorizedError('Invalid token')
     }
 
-    return NextResponse.json(
-      { success: false, error: 'Invalid action' },
-      { status: 400 }
-    )
-  } catch (error) {
-    console.error('Error updating notification:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to update notification' },
-      { status: 500 }
-    )
+    userId = decoded.userId
+
+    // Get notification
+    const notification = await db.notification.findUnique({
+      where: { id },
+    })
+
+    if (!notification) {
+      throw new NotFoundError('Notification not found')
+    }
+
+    // Check if user owns this notification
+    if (notification.userId !== userId && decoded.role !== 'PLATFORM_ADMIN') {
+      return NextResponse.json({
+        success: false,
+        error: 'Access denied',
+      }, { status: 403 })
+    }
+
+    // Update notification
+    const updatedNotification = await db.notification.update({
+      where: { id },
+      data: { read: read === undefined ? true : read },
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: updatedNotification,
+    })
+  } catch (error: any) {
+    logError(error, 'Update notification', userId || 'unknown')
+
+    if (error instanceof AppError) {
+      return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
+    }
+
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to update notification',
+    }, { status: 500 })
   }
 }
 
+// DELETE /api/notifications/[id] - Delete notification
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let userId: string | null = null
   try {
     const { id } = await params
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
 
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'User ID is required' },
-        { status: 400 }
-      )
+    // Authentication
+    const sessionCookie = request.cookies.get('session')
+    const token = sessionCookie?.value
+
+    if (!token) {
+      throw new UnauthorizedError('Authentication required')
     }
 
-    const userNotifications = notificationsStore.get(userId) || []
-    const updatedNotifications = userNotifications.filter((n) => n.id !== id)
-    notificationsStore.set(userId, updatedNotifications)
+    const decoded = verifyToken(token)
+    if (!decoded || !decoded.userId || !decoded.role) {
+      throw new UnauthorizedError('Invalid token')
+    }
+
+    userId = decoded.userId
+
+    // Get notification
+    const notification = await db.notification.findUnique({
+      where: { id },
+    })
+
+    if (!notification) {
+      throw new NotFoundError('Notification not found')
+    }
+
+    // Check if user owns this notification
+    if (notification.userId !== userId && decoded.role !== 'PLATFORM_ADMIN') {
+      return NextResponse.json({
+        success: false,
+        error: 'Access denied',
+      }, { status: 403 })
+    }
+
+    // Delete notification
+    await db.notification.delete({
+      where: { id },
+    })
 
     return NextResponse.json({
       success: true,
       message: 'Notification deleted',
     })
-  } catch (error) {
-    console.error('Error deleting notification:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to delete notification' },
-      { status: 500 }
-    )
+  } catch (error: any) {
+    logError(error, 'Delete notification', userId || 'unknown')
+
+    if (error instanceof AppError) {
+      return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
+    }
+
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to delete notification',
+    }, { status: 500 })
   }
 }

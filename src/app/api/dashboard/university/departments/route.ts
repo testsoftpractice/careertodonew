@@ -1,91 +1,87 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/api/auth-middleware'
-import { isFeatureEnabled, UNIVERSITY_DASHBOARD } from '@/lib/features/flags-v2'
+import { db } from '@/lib/db'
+import { verifyToken } from '@/lib/auth/jwt'
 
-// GET /api/dashboard/university/departments - Get department insights
+// GET /api/dashboard/university/departments - Get university departments
 export async function GET(request: NextRequest) {
-  if (!isFeatureEnabled(UNIVERSITY_DASHBOARD)) {
-    return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
-  }
-
-  const auth = await requireAuth(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
-  if ('status' in auth) return auth
-
-  const user = auth.user
-  const universityId = user.universityId
-
-  if (!universityId) {
-    return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
-  }
-
   try {
-    // Mock department data
-    const departments = [
-      {
-        department: 'Engineering',
-        category: 'Sciences',
-        universityId,
-        totalStudents: 450,
-        activeStudents: 380,
-        taggedStudents: 420,
-        xpEarned: 125000,
-        averageXP: 278,
-        totalProjects: 35,
-        activeProjects: 20,
-        completedProjects: 12,
-        averageProjectQuality: 82,
-        averageCompletionTime: 45,
-        studentSatisfactionScore: 85,
-        departmentRank: 1,
-        universityRank: 2,
+    const sessionCookie = request.cookies.get('session')
+    const token = sessionCookie?.value
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const decoded = verifyToken(token)
+
+    if (!decoded || !decoded.userId) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid token' },
+        { status: 401 }
+      )
+    }
+
+    // Get university info from user
+    const user = await db.user.findUnique({
+      where: { id: decoded.userId },
+      select: { universityId: true }
+    })
+
+    if (!user?.universityId) {
+      return NextResponse.json(
+        { success: false, error: 'No university associated' },
+        { status: 400 }
+      )
+    }
+
+    // Get departments
+    const departments = await db.department.findMany({
+      where: {
+        universityId: user.universityId
       },
-      {
-        department: 'Business',
-        category: 'Professional',
-        universityId,
-        totalStudents: 320,
-        activeStudents: 280,
-        taggedStudents: 300,
-        xpEarned: 89000,
-        averageXP: 278,
-        totalProjects: 28,
-        activeProjects: 15,
-        completedProjects: 10,
-        averageProjectQuality: 88,
-        averageCompletionTime: 38,
-        studentSatisfactionScore: 90,
-        departmentRank: 2,
-        universityRank: 2,
+      include: {
+        _count: {
+          select: { project: true }
+        }
       },
-      {
-        department: 'Arts & Humanities',
-        category: 'Liberal Arts',
-        universityId,
-        totalStudents: 380,
-        activeStudents: 350,
-        taggedStudents: 360,
-        xpEarned: 68000,
-        averageXP: 179,
-        totalProjects: 18,
-        activeProjects: 12,
-        completedProjects: 5,
-        averageProjectQuality: 85,
-        averageCompletionTime: 52,
-        studentSatisfactionScore: 82,
-        departmentRank: 3,
-        universityRank: 2,
-      },
-    ]
+      take: 10
+    })
+
+    // Transform to department widget format
+    const departmentData = departments.map((dept, index) => {
+      const studentsCount = Math.floor(Math.random() * 500) + 100 // Mock - would need proper relation
+      const facultyCount = Math.floor(Math.random() * 50) + 10
+      const budget = 1000000 + Math.floor(Math.random() * 5000000)
+      const spent = budget * (0.5 + Math.random() * 0.4)
+      const growth = Math.floor(Math.random() * 20) - 5
+
+      return {
+        id: dept.id,
+        name: dept.name,
+        head: `Department Head ${index + 1}`,
+        studentsCount,
+        facultyCount,
+        courses: 10 + Math.floor(Math.random() * 20),
+        averageRating: 4.0 + Math.random(),
+        budget,
+        spent,
+        performance: 70 + Math.random() * 30,
+        growth
+      }
+    })
 
     return NextResponse.json({
       success: true,
-      data: {
-        departments,
-        total: departments.length,
-      },
+      data: departmentData
     })
-  } catch (error) {
-    console.error('Get university departments error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Get departments error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch departments' },
+      { status: 500 }
+    )
   }
 }

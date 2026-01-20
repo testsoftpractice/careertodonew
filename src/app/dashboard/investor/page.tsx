@@ -35,6 +35,7 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { useRoleAccess } from '@/hooks/use-role-access'
 import { toast } from '@/hooks/use-toast'
+import { logoutAndRedirect } from '@/lib/utils/logout'
 
 export default function InvestorDashboard() {
   const { user } = useAuth()
@@ -130,12 +131,11 @@ export default function InvestorDashboard() {
   }, [activeTab, user])
 
   const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' })
+    const success = await logoutAndRedirect()
+
+    if (success) {
       toast({ title: 'Success', description: 'Logged out successfully' })
-      window.location.href = '/auth'
-    } catch (error) {
-      console.error('Logout error:', error)
+    } else {
       toast({ title: 'Error', description: 'Failed to logout', variant: 'destructive' })
     }
   }

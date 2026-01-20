@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { leaveRequests, users } from '@/lib/schema'
 import { getServerSession } from '@/lib/session'
 import { z } from 'zod'
 
 // GET /api/leave-requests - Get all leave requests for a user
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = request.nextUrl.searchParams
-    const userId = searchParams.get('userId')
-    const status = searchParams.get('status')
+    const userId = request.nextUrl.searchParams.get('userId')
+    const status = request.nextUrl.searchParams.get('status')
 
     // Build where clause
     const where: any = {}
@@ -24,21 +22,6 @@ export async function GET(request: NextRequest) {
     const requests = await db.leaveRequest.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: {
-            id: true,
-            leaveType: true,
-            startDate: true,
-            endDate: true,
-            reason: true,
-            status: true,
-            rejectionReason: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        },
-      },
     })
 
     return NextResponse.json({
@@ -73,7 +56,6 @@ export async function POST(request: NextRequest) {
         error: 'Leave type is required',
         message: 'Leave type is required',
       })
-    }
     }
 
     if (!body.startDate || !body.endDate) {
@@ -131,7 +113,7 @@ export async function POST(request: NextRequest) {
 // PATCH /api/leave-requests/[id] - Update leave request status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id?: string } }
+  { params }: { params: Promise<{ id?: string }> }
 ) {
   try {
     const session = await getServerSession()
@@ -139,7 +121,7 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
-    const requestId = params.id
+    const { id: requestId } = await params
     if (!requestId) {
       return NextResponse.json({
         success: false,
@@ -185,7 +167,7 @@ export async function PATCH(
     })
   } catch (error) {
     console.error('PATCH leave-requests/[id] error:', error)
-    return NextResponse.json.json({
+    return NextResponse.json({
       success: false,
       error: 'Failed to update leave request',
       message: 'Failed to update leave request',
@@ -196,7 +178,7 @@ export async function PATCH(
 // DELETE /api/leave-requests/[id] - Delete leave request
 export async function DELETE(
   request: NextRequest,
-  { params }: { params?: { id?: string } }
+  { params }: { params: Promise<{ id?: string }> }
 ) {
   try {
     const session = await getServerSession()
@@ -204,7 +186,7 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
-    const requestId = params.id
+    const { id: requestId } = await params
     if (!requestId) {
       return NextResponse.json({
         success: false,

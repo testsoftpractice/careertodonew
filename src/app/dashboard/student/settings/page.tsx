@@ -128,7 +128,7 @@ export default function StudentSettingsPage() {
               <h1 className="text-xl sm:text-2xl font-bold truncate">Student Settings</h1>
             </div>
             <div className="flex items-center gap-3 sm:gap-4">
-              <Button variant="ghost" size="sm" asChild>
+              <Button variant="ghost" size="sm" asChild className="cursor-pointer">
                 <Link href="/dashboard/student">
                   Back to Dashboard
                 </Link>
@@ -142,15 +142,15 @@ export default function StudentSettingsPage() {
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="preferences">Preferences</TabsTrigger>
-              <TabsTrigger value="notifications">Notifications</TabsTrigger>
-              <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 border-2 bg-background">
+              <TabsTrigger value="preferences" className="cursor-pointer">Preferences</TabsTrigger>
+              <TabsTrigger value="notifications" className="cursor-pointer">Notifications</TabsTrigger>
+              <TabsTrigger value="security" className="cursor-pointer">Security</TabsTrigger>
             </TabsList>
 
             {/* Preferences Tab */}
             <TabsContent value="preferences" className="space-y-6 mt-6">
-              <Card>
+              <Card className="border-2 shadow-lg">
                 <CardHeader>
                   <CardTitle>Display Preferences</CardTitle>
                   <CardDescription>Customize your profile visibility and settings</CardDescription>
@@ -190,20 +190,20 @@ export default function StudentSettingsPage() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-2 shadow-lg">
                 <CardHeader>
                   <CardTitle>Quick Actions</CardTitle>
                   <CardDescription>Access related settings</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button variant="outline" className="justify-start w-full" asChild>
+                  <Button variant="outline" className="justify-start w-full cursor-pointer" asChild>
                     <Link href="/dashboard/student/profile">
                       <User className="h-4 w-4 mr-2" />
                       Edit Profile
                     </Link>
                   </Button>
                   <Button variant="outline" className="justify-start w-full" asChild>
-                    <Link href="/marketplace">
+                    <Link href="/marketplace" className="cursor-pointer">
                       <Shield className="h-4 w-4 mr-2" />
                       Browse Marketplace
                     </Link>
@@ -214,7 +214,7 @@ export default function StudentSettingsPage() {
               <Button
                 onClick={handleSavePreferences}
                 disabled={loading}
-                className="w-full"
+                className="w-full cursor-pointer"
               >
                 <Save className="h-4 w-4 mr-2" />
                 {loading ? 'Saving...' : 'Save Preferences'}
@@ -223,7 +223,7 @@ export default function StudentSettingsPage() {
 
             {/* Notifications Tab */}
             <TabsContent value="notifications" className="space-y-6 mt-6">
-              <Card>
+              <Card className="border-2 shadow-lg">
                 <CardHeader>
                   <CardTitle>Email Notifications</CardTitle>
                   <CardDescription>Control which emails you receive</CardDescription>
@@ -311,7 +311,7 @@ export default function StudentSettingsPage() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-2 shadow-lg">
                 <CardHeader>
                   <CardTitle>Push Notifications</CardTitle>
                   <CardDescription>Control browser push notifications</CardDescription>
@@ -338,7 +338,7 @@ export default function StudentSettingsPage() {
               <Button
                 onClick={handleSavePreferences}
                 disabled={loading}
-                className="w-full"
+                className="w-full cursor-pointer"
               >
                 <Save className="h-4 w-4 mr-2" />
                 {loading ? 'Saving...' : 'Save Notification Settings'}
@@ -347,7 +347,7 @@ export default function StudentSettingsPage() {
 
             {/* Security Tab */}
             <TabsContent value="security" className="space-y-6 mt-6">
-              <Card>
+              <Card className="border-2 shadow-lg">
                 <CardHeader>
                   <CardTitle>Change Password</CardTitle>
                   <CardDescription>Update your account password</CardDescription>
@@ -369,7 +369,7 @@ export default function StudentSettingsPage() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3"
+                        className="absolute right-0 top-0 h-full px-3 cursor-pointer"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
@@ -410,7 +410,7 @@ export default function StudentSettingsPage() {
                   <Button
                     onClick={handleChangePassword}
                     disabled={loading || !account.currentPassword || !account.newPassword}
-                    className="w-full"
+                    className="w-full cursor-pointer"
                   >
                     <Lock className="h-4 w-4 mr-2" />
                     {loading ? 'Changing...' : 'Change Password'}
@@ -418,21 +418,21 @@ export default function StudentSettingsPage() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-2 shadow-lg">
                 <CardHeader>
                   <CardTitle>Account Actions</CardTitle>
                   <CardDescription>Manage your account</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Button variant="outline" className="justify-start w-full" asChild>
-                    <Link href="/dashboard/student/profile">
+                    <Link href="/dashboard/student/profile" className="cursor-pointer">
                       <User className="h-4 w-4 mr-2" />
                       Edit Profile Information
                     </Link>
                   </Button>
 
                   <Button variant="outline" className="justify-start w-full" asChild>
-                    <Link href="/auth/forgot-password">
+                    <Link href="/auth/forgot-password" className="cursor-pointer">
                       <Mail className="h-4 w-4 mr-2" />
                       Reset Password via Email
                     </Link>
@@ -440,7 +440,7 @@ export default function StudentSettingsPage() {
 
                   <div className="pt-4 border-t">
                     <Button variant="destructive" className="justify-start w-full" asChild>
-                      <Link href="/auth">
+                      <Link href="/auth" className="cursor-pointer">
                         <LogOut className="h-4 w-4 mr-2" />
                         Sign Out
                       </Link>

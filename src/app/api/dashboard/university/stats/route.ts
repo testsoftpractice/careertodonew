@@ -10,8 +10,22 @@ export async function GET(request: NextRequest) {
     }
 
     const totalStudents = await db.user.count({ where: { universityId, role: "STUDENT" } })
-    const totalProjects = await db.project.count({ where: { universityId } })
-    const activeDepartments = await db.department.count({ where: { project: { universityId } } })
+    const totalProjects = await db.project.count({
+      where: {
+        owner: {
+          universityId: universityId,
+        },
+      },
+    })
+    const activeDepartments = await db.department.count({
+      where: {
+        project: {
+          owner: {
+            universityId: universityId,
+          },
+        },
+      },
+    })
 
     // Get top students with calculated reputation from individual scores
     const users = await db.user.findMany({

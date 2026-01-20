@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth/jwt-edge'
+import { verifyToken } from '@/lib/auth/jwt'
 
 // Define public paths that don't require authentication
 const publicPaths = [
@@ -36,7 +36,7 @@ const protectedRoutes: Record<string, string[]> = {
   '/dashboard/student/projects': ['STUDENT', 'PLATFORM_ADMIN'],
   '/dashboard/student/verifications': ['STUDENT', 'PLATFORM_ADMIN'],
 
-  // Employer routes - only employers and platform admins
+  // For employer routes - only employers and platform admins
   '/dashboard/employer': ['EMPLOYER', 'PLATFORM_ADMIN'],
   '/dashboard/employer/settings': ['EMPLOYER', 'PLATFORM_ADMIN'],
   '/dashboard/employer/profile': ['EMPLOYER', 'PLATFORM_ADMIN'],
@@ -75,24 +75,48 @@ const protectedRoutes: Record<string, string[]> = {
     // Dashboard notifications - all authenticated users
   '/dashboard/notifications': ['STUDENT', 'EMPLOYER', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
 
-  // Business routes - students, platform admins
-  '/business/create': ['STUDENT', 'PLATFORM_ADMIN'],
+  // Business routes - employers, students, platform admins
+  '/business/create': ['EMPLOYER', 'STUDENT', 'PLATFORM_ADMIN'],
   '/businesses': ['STUDENT', 'EMPLOYER', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
 
   // API routes that need protection
-  '/api/businesses': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/api/businesses': ['EMPLOYER', 'STUDENT', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/businesses/[id]': ['EMPLOYER', 'STUDENT', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/businesses/[id]/members': ['EMPLOYER', 'STUDENT', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/businesses/[id]/members/[memberId]': ['EMPLOYER', 'STUDENT', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
   '/api/dashboard/student': ['STUDENT', 'PLATFORM_ADMIN'],
   '/api/dashboard/student/stats': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/api/dashboard/student/courses': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/api/dashboard/student/grades': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/api/dashboard/student/schedule': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/api/dashboard/student/study-time': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/api/dashboard/student/achievements': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/api/dashboard/student/skills': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/api/dashboard/student/mentors': ['STUDENT', 'PLATFORM_ADMIN'],
+  '/api/dashboard/student/deadlines': ['STUDENT', 'PLATFORM_ADMIN'],
   '/api/dashboard/employer': ['EMPLOYER', 'PLATFORM_ADMIN'],
   '/api/dashboard/employer/stats': ['EMPLOYER', 'PLATFORM_ADMIN'],
+  '/api/dashboard/employer/jobs': ['EMPLOYER', 'PLATFORM_ADMIN'],
+  '/api/dashboard/employer/candidates': ['EMPLOYER', 'PLATFORM_ADMIN'],
+  '/api/dashboard/employer/pipeline': ['EMPLOYER', 'PLATFORM_ADMIN'],
+  '/api/dashboard/employer/team': ['EMPLOYER', 'PLATFORM_ADMIN'],
   '/api/dashboard/investor': ['INVESTOR', 'PLATFORM_ADMIN'],
   '/api/dashboard/investor/stats': ['INVESTOR', 'PLATFORM_ADMIN'],
+  '/api/dashboard/investor/portfolio': ['INVESTOR', 'PLATFORM_ADMIN'],
+  '/api/dashboard/investor/deals': ['INVESTOR', 'PLATFORM_ADMIN'],
+  '/api/dashboard/investor/startups': ['INVESTOR', 'PLATFORM_ADMIN'],
+  '/api/dashboard/investor/financial': ['INVESTOR', 'PLATFORM_ADMIN'],
   '/api/dashboard/university': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
   '/api/dashboard/university/stats': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/dashboard/university/departments': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/dashboard/university/research': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/dashboard/university/funding': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
   '/api/dashboard/university/students': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
   '/api/dashboard/university/projects': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
   '/api/dashboard/university/activity': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
   '/api/dashboard/university/departments': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/dashboard/university/performance': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/dashboard/university/approvals': ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
   '/api/admin': ['PLATFORM_ADMIN'],
   '/api/admin/users': ['PLATFORM_ADMIN'],
   '/api/admin/projects': ['PLATFORM_ADMIN'],
@@ -101,6 +125,15 @@ const protectedRoutes: Record<string, string[]> = {
   '/api/admin/governance': ['PLATFORM_ADMIN'],
   '/api/admin/content': ['PLATFORM_ADMIN'],
   '/api/admin/audit': ['PLATFORM_ADMIN'],
+  '/api/dashboard/admin/platform': ['PLATFORM_ADMIN'],
+  '/api/dashboard/admin/system': ['PLATFORM_ADMIN'],
+  '/api/dashboard/admin/security': ['PLATFORM_ADMIN'],
+  '/api/dashboard/admin/users': ['PLATFORM_ADMIN'],
+  '/api/investments': ['INVESTOR', 'EMPLOYER', 'STUDENT', 'PLATFORM_ADMIN'],
+  '/api/jobs': ['EMPLOYER', 'STUDENT', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/projects': ['EMPLOYER', 'STUDENT', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/tasks': ['EMPLOYER', 'STUDENT', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
+  '/api/users': ['EMPLOYER', 'STUDENT', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'],
 }
 
 // Helper function to check if a path is public
@@ -255,3 +288,6 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }
+
+// Force Node.js runtime since middleware uses jsonwebtoken
+export const runtime = 'nodejs'

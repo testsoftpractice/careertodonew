@@ -217,10 +217,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.removeItem('user')
       localStorage.removeItem('token')
+      // Also clear any session cookies if they exist
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
     } catch (error) {
       console.error('[Auth] Error clearing auth state:', error)
     }
-    router.push('/')
+    // Force page reload to ensure clean state
+    if (typeof window !== 'undefined') {
+      window.location.href = '/'
+    }
   }
 
   return (

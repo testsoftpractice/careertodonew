@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { InvestmentType, InvestmentStatus } from '@prisma/client'
 
 // GET /api/investments - List investments with filters
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('projectId')
-    const investorId = searchParams.get('investorId')
+    const userId = searchParams.get('userId')
     const status = searchParams.get('status')
     const type = searchParams.get('type')
 
@@ -17,142 +16,36 @@ export async function GET(request: NextRequest) {
       where.projectId = projectId
     }
 
-    if (investorId) {
-      where.investorId = investorId
+    if (userId) {
+      where.userId = userId
     }
 
     if (status && status !== 'all') {
-      where.status = status as InvestmentStatus
+      where.status = status
     }
 
     if (type && type !== 'all') {
-      where.type = type as InvestmentType
+      where.type = type
     }
 
     const investments = await db.investment.findMany({
       where,
       include: {
-        project: {
-          include: {
-            projectLead: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-            university: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-        investor: {
+        user: {
           select: {
             id: true,
             name: true,
             email: true,
+            avatar: true,
           },
         },
-        agreement: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: 100,
-    })
-
-    return NextResponse.json({
-      investments: investments.map(inv => ({
-        id: inv.id,
-        projectId: inv.projectId,
-        project: inv.project,
-        investorId: inv.investorId,
-        investor: inv.investor,
-        type: inv.type,
-        status: inv.status,
-        amount: inv.amount,
-        equity: inv.equity,
-        terms: inv.terms,
-        agreementId: inv.agreementId,
-        agreement: inv.agreement,
-        createdAt: inv.createdAt,
-        fundedAt: inv.fundedAt,
-        expiresAt: inv.expiresAt,
-      })),
-    })
-  } catch (error) {
-    console.error('Get investments error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
-
-// POST /api/investments - Create a new investment interest
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const {
-      projectId,
-      investorId,
-      type,
-      amount,
-      equity,
-      terms,
-    } = body
-
-    // Check if project exists and is seeking investment
-    const project = await db.project.findUnique({
-      where: { id: projectId },
-    })
-
-    if (!project) {
-      return NextResponse.json(
-        { error: 'Project not found' },
-        { status: 404 }
-      )
-    }
-
-    if (!project.seekingInvestment) {
-      return NextResponse.json(
-        { error: 'This project is not seeking investment' },
-        { status: 400 }
-      )
-    }
-
-    // Check if investor already has an investment in this project
-    const existingInvestment = await db.investment.findFirst({
-      where: {
-        projectId,
-        investorId,
-      },
-    })
-
-    if (existingInvestment) {
-      return NextResponse.json(
-        { error: 'You already have an investment interest in this project' },
-        { status: 400 }
-      )
-    }
-
-    const investment = await db.investment.create({
-      data: {
-        projectId,
-        investorId,
-        type: type as InvestmentType,
-        status: InvestmentStatus.INTERESTED,
-        amount: amount ? parseFloat(amount) : null,
-        equity: equity ? parseFloat(equity) : null,
-        terms: terms ? JSON.stringify(terms) : null,
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-      },
-      include: {
         project: {
-          include: {
-            projectLead: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            status: true,
+            owner: {
               select: {
                 id: true,
                 name: true,
@@ -161,37 +54,154 @@ export async function POST(request: NextRequest) {
             },
           },
         },
-        investor: {
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 100,
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: investments.map(inv => ({
+        id: inv.id,
+        userId: inv.userId,
+        user: inv.user,
+        projectId: inv.projectId,
+        project: inv.project,
+        type: inv.type,
+        status: inv.status,
+        amount: inv.amount,
+        createdAt: inv.createdAt,
+        updatedAt: inv.updatedAt,
+      })),
+    })
+  } catch (error) {
+    console.error('Get investments error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+// POST /api/investments - Create a new investment
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const {
+      userId,
+      projectId,
+      type,
+      amount,
+    } = body
+
+    // Validate required fields
+    if (!userId || !projectId) {
+      return NextResponse.json(
+        { success: false, error: 'userId and projectId are required' },
+        { status: 400 }
+      )
+    }
+
+    // Check if user exists
+    const user = await db.user.findUnique({
+      where: { id: userId },
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check if project exists
+    const project = await db.project.findUnique({
+      where: { id: projectId },
+      include: {
+        owner: {
+          select: { id: true, name: true },
+        },
+      },
+    })
+
+    if (!project) {
+      return NextResponse.json(
+        { success: false, error: 'Project not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check if user already has an investment in this project
+    const existingInvestment = await db.investment.findFirst({
+      where: {
+        projectId,
+        userId,
+      },
+    })
+
+    if (existingInvestment) {
+      return NextResponse.json(
+        { success: false, error: 'You already have an investment in this project' },
+        { status: 400 }
+      )
+    }
+
+    const investment = await db.investment.create({
+      data: {
+        userId,
+        projectId,
+        type: type || 'EQUITY',
+        status: 'PENDING',
+        amount: amount ? parseFloat(amount) : 0,
+      },
+      include: {
+        user: {
           select: {
             id: true,
             name: true,
+            email: true,
+          },
+        },
+        project: {
+          select: {
+            id: true,
+            name: true,
+            owner: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
     })
 
-    // Create notification for project lead
+    // Create notification for project owner
     await db.notification.create({
       data: {
-        userId: project.projectLeadId,
-        type: 'INVESTMENT_REQUEST',
-        title: 'New Investment Interest',
-        message: `${investment.investor.name} has expressed interest in investing in your project "${project.title}"`,
-        link: `/projects/${projectId}/investments`,
+        userId: project.owner.id,
+        type: 'INVESTMENT',
+        title: 'New Investment',
+        message: `${investment.user.name} has invested in your project "${project.name}"`,
+        priority: 'HIGH',
       },
     })
 
     return NextResponse.json(
       {
-        message: 'Investment interest created successfully',
-        investment,
+        success: true,
+        message: 'Investment created successfully',
+        data: investment,
       },
       { status: 201 }
     )
   } catch (error) {
     console.error('Create investment error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     )
   }

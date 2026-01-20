@@ -3,14 +3,17 @@ import { cookies } from 'next/headers'
 
 export async function POST(request: NextRequest) {
   try {
-    // Clear session cookie
+    // Create response with instructions to clear client-side storage
     const response = NextResponse.json({
       success: true,
       message: 'Logged out successfully',
+      clearStorage: true, // Flag to tell client to clear localStorage
     })
 
-    // Delete the session cookie
+    // Delete all auth-related cookies
     response.cookies.delete('session')
+    response.cookies.delete('token')
+    response.cookies.delete('user')
 
     return response
   } catch (error) {

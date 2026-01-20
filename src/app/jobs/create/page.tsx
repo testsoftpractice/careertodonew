@@ -687,6 +687,7 @@ export default function PostJobPage() {
                   <Select
                     multiple={true}
                     value={formData.remoteLocations}
+                    defaultValue={[]}
                     onValueChange={(value) => handleInputChange('remoteLocations', value)}
                     >
                       <SelectTrigger>

@@ -31,10 +31,10 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      orderBy: { startTime: 'desc' }
+      orderBy: { date: 'desc' }
     })
 
-    const totalHours = timeEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0)
+    const totalHours = timeEntries.reduce((sum, entry) => sum + (entry.hours || 0), 0)
 
     return NextResponse.json({
       success: true,
@@ -59,9 +59,11 @@ export async function POST(request: NextRequest) {
       data: {
         userId: body.userId,
         taskId: body.taskId,
-        type: body.type || 'WORK',
-        startTime: new Date(),
+        date: new Date(),
+        hours: parseFloat(body.hours),
         description: body.description,
+        billable: body.billable || false,
+        hourlyRate: body.hourlyRate ? parseFloat(body.hourlyRate) : null,
       }
     })
 
@@ -95,8 +97,8 @@ export async function PATCH(request: NextRequest) {
     const timeEntry = await db.timeEntry.update({
       where: { id: entryId },
       data: {
-        endTime: new Date(),
-        duration: body.duration ? parseFloat(body.duration) : null,
+        hours: body.hours ? parseFloat(body.hours) : undefined,
+        description: body.description,
       }
     })
 

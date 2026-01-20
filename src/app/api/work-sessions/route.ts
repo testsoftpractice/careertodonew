@@ -22,16 +22,9 @@ export async function GET(request: NextRequest) {
             avatar: true,
             location: true,
           }
-        },
-        task: {
-          select: {
-            id: true,
-            title: true,
-            projectId: true,
-          }
         }
       },
-      orderBy: { checkInTime: 'desc' }
+      orderBy: { startTime: 'desc' }
     })
 
     const totalHours = workSessions.reduce((sum, session) => sum + (session.duration || 0), 0)
@@ -58,11 +51,7 @@ export async function POST(request: NextRequest) {
     const workSession = await db.workSession.create({
       data: {
         userId: body.userId,
-        taskId: body.taskId,
-        type: body.type || 'ONSITE',
-        checkInTime: new Date(),
-        checkInLocation: body.checkInLocation,
-        notes: body.notes,
+        startTime: new Date(),
       }
     })
 
@@ -93,14 +82,17 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json()
 
+    const updateData: any = {
+      endTime: new Date(),
+    }
+
+    if (body.duration) {
+      updateData.duration = parseInt(body.duration)
+    }
+
     const workSession = await db.workSession.update({
       where: { id: sessionId },
-      data: {
-        checkOutTime: new Date(),
-        checkOutLocation: body.checkOutLocation,
-        duration: body.duration ? parseFloat(body.duration) : null,
-        notes: body.notes,
-      }
+      data: updateData
     })
 
     return NextResponse.json({

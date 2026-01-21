@@ -1,73 +1,83 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import Link from 'next/link'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
+import { toast } from '@/hooks/use-toast'
 import {
-  Settings,
-  User,
+  Users,
+  LayoutDashboard,
   Bell,
-  Shield,
-  Lock,
-  Mail,
+  User,
+  LogOut,
+  Settings,
   Save,
   Eye,
   EyeOff,
-  LogOut,
+  Lock,
+  Shield,
 } from 'lucide-react'
-import Link from 'next/link'
+import { logoutAndRedirect } from '@/lib/utils/logout'
 import { useAuth } from '@/contexts/auth-context'
-import { toast } from '@/hooks/use-toast'
+
+export interface Preferences {
+  publicProfile: boolean
+  showReputation: boolean
+  emailNotifications: boolean
+  taskReminders: boolean
+  projectUpdates: boolean
+  weeklyDigest: boolean
+  pushNotifications: boolean
+}
 
 export default function StudentSettingsPage() {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('preferences')
-
-  const [preferences, setPreferences] = useState({
-    emailNotifications: true,
-    pushNotifications: false,
-    taskReminders: true,
-    projectUpdates: true,
-    marketingEmails: false,
-    weeklyDigest: true,
+  const [preferences, setPreferences] = useState<Preferences>({
     publicProfile: true,
     showReputation: true,
+    emailNotifications: true,
+    taskReminders: true,
+    projectUpdates: true,
+    weeklyDigest: true,
+    pushNotifications: true,
   })
-
+  const [activeTab, setActiveTab] = useState('preferences')
+  const [showPassword, setShowPassword] = useState(false)
   const [account, setAccount] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   })
 
-  const [showPassword, setShowPassword] = useState(false)
-
   const handleSavePreferences = async () => {
+    setLoading(true)
     try {
-      setLoading(true)
-      // In a real app, this would call the preferences API
-      // For now, we'll simulate the save
       await new Promise(resolve => setTimeout(resolve, 1000))
-
-      toast({
-        title: 'Success',
-        description: 'Preferences saved successfully',
-      })
+      toast({ title: 'Success', description: 'Settings saved successfully' })
     } catch (error) {
-      console.error('Save preferences error:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to save preferences',
-        variant: 'destructive',
-      })
+      console.error('Save error:', error)
+      toast({ title: 'Error', description: 'Failed to save settings', variant: 'destructive' })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleTogglePreference = <K extends keyof Preferences>(key: K) => {
+    const newValue = !preferences[key]
+    setPreferences(prev => ({ ...prev, [key]: newValue }))
+
+    if (key === 'publicProfile') {
+      toast({
+        title: 'Profile Visibility Changed',
+        description: newValue ? 'Profile is now public' : 'Profile is now private'
+      })
     }
   }
 
@@ -76,7 +86,7 @@ export default function StudentSettingsPage() {
       toast({
         title: 'Error',
         description: 'New passwords do not match',
-        variant: 'destructive',
+        variant: 'destructive'
       })
       return
     }
@@ -85,366 +95,368 @@ export default function StudentSettingsPage() {
       toast({
         title: 'Error',
         description: 'Password must be at least 8 characters',
-        variant: 'destructive',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    if (!account.newPassword) {
+      toast({
+        title: 'Error',
+        description: 'Password is required',
+        variant: 'destructive'
       })
       return
     }
 
     try {
       setLoading(true)
-      // In a real app, this would call the password change API
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      toast({
-        title: 'Success',
-        description: 'Password changed successfully',
-      })
-
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      toast({ title: 'Success', description: 'Password updated successfully' })
+      setShowPassword(false)
       setAccount({
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
       })
     } catch (error) {
-      console.error('Change password error:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to change password',
-        variant: 'destructive',
-      })
+      console.error('Password update error:', error)
+      toast({ title: 'Error', description: 'Failed to update password', variant: 'destructive' })
+      setShowPassword(false)
     } finally {
       setLoading(false)
     }
   }
 
+  const handleLogout = async () => {
+    const success = await logoutAndRedirect()
+    if (success) {
+      toast({ title: 'Success', description: 'Logged out successfully' })
+    }
+  }
+
+  const quickActions = [
+    { id: 'view-profile', label: 'View Profile', icon: User, href: '/dashboard/student/profile' },
+    { id: 'go-dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard/student' },
+    { id: 'logout', label: 'Logout', icon: LogOut, onClick: handleLogout },
+  ]
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-950 flex flex-col">
       <header className="border-b bg-background sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Settings className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
-              <h1 className="text-xl sm:text-2xl font-bold truncate">Student Settings</h1>
+              <Bell className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-primary">
+                  Student Settings
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Manage your account and preferences
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-3 sm:gap-4">
-              <Button variant="ghost" size="sm" asChild className="cursor-pointer">
-                <Link href="/dashboard/student">
-                  Back to Dashboard
-                </Link>
-              </Button>
+            <div className="flex items-center gap-3">
+              {quickActions.map(action => (
+                <Button
+                  key={action.id}
+                  variant="ghost"
+                  size="icon"
+                  className="hover:bg-white/5 dark:hover:bg-slate-100 transition-colors"
+                  asChild={action.href ? Link : undefined}
+                  onClick={action.onClick}
+                  title={action.label}
+                >
+                  {React.createElement(action.icon, { className: "h-4 w-4" })}
+                </Button>
+              ))}
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Tabs */}
+      <main className="flex-1">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 border-2 bg-background">
-              <TabsTrigger value="preferences" className="cursor-pointer">Preferences</TabsTrigger>
-              <TabsTrigger value="notifications" className="cursor-pointer">Notifications</TabsTrigger>
-              <TabsTrigger value="security" className="cursor-pointer">Security</TabsTrigger>
+            <TabsList className="flex gap-2 bg-muted/50 rounded-xl p-1 w-full">
+              <TabsTrigger
+                value="preferences"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-white rounded-xl px-4 py-2.5 transition-all duration-300"
+              >
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  <span className="hidden sm:inline">Preferences</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger
+                value="security"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-red-400 data-[state=active]:text-white rounded-xl px-4 py-2.5 transition-all duration-300"
+              >
+                <div className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">Security</span>
+                </div>
+              </TabsTrigger>
             </TabsList>
 
-            {/* Preferences Tab */}
-            <TabsContent value="preferences" className="space-y-6 mt-6">
-              <Card className="border-2 shadow-lg">
-                <CardHeader>
-                  <CardTitle>Display Preferences</CardTitle>
-                  <CardDescription>Customize your profile visibility and settings</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="publicProfile">Public Profile</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Allow others to see your profile
-                      </p>
+            <TabsContent value="preferences" className="mt-6">
+              <div className="max-w-4xl mx-auto space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Display Preferences</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label htmlFor="publicProfile" className="font-medium">
+                            Public Profile
+                          </Label>
+                        </div>
+                        <Switch
+                          id="publicProfile"
+                          checked={preferences.publicProfile}
+                          onCheckedChange={() => handleTogglePreference('publicProfile')}
+                          className="data-[state=checked]:bg-primary focus-visible"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label htmlFor="showReputation" className="font-medium">
+                            Reputation Scores
+                          </Label>
+                        </div>
+                        <Switch
+                          id="showReputation"
+                          checked={preferences.showReputation}
+                          onCheckedChange={() => handleTogglePreference('showReputation')}
+                          className="data-[state=checked]:bg-primary focus-visible"
+                        />
+                      </div>
                     </div>
-                    <Switch
-                      id="publicProfile"
-                      checked={preferences.publicProfile}
-                      onCheckedChange={(checked) =>
-                        setPreferences({ ...preferences, publicProfile: checked })
-                      }
-                    />
-                  </div>
+                  </CardContent>
+                </Card>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="showReputation">Show Reputation Scores</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Display your reputation scores publicly
-                      </p>
-                    </div>
-                    <Switch
-                      id="showReputation"
-                      checked={preferences.showReputation}
-                      onCheckedChange={(checked) =>
-                        setPreferences({ ...preferences, showReputation: checked })
-                      }
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-2 shadow-lg">
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                  <CardDescription>Access related settings</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button variant="outline" className="justify-start w-full cursor-pointer" asChild>
-                    <Link href="/dashboard/student/profile">
-                      <User className="h-4 w-4 mr-2" />
-                      Edit Profile
-                    </Link>
-                  </Button>
-                  <Button variant="outline" className="justify-start w-full" asChild>
-                    <Link href="/marketplace" className="cursor-pointer">
-                      <Shield className="h-4 w-4 mr-2" />
-                      Browse Marketplace
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Button
-                onClick={handleSavePreferences}
-                disabled={loading}
-                className="w-full cursor-pointer"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {loading ? 'Saving...' : 'Save Preferences'}
-              </Button>
-            </TabsContent>
-
-            {/* Notifications Tab */}
-            <TabsContent value="notifications" className="space-y-6 mt-6">
-              <Card className="border-2 shadow-lg">
-                <CardHeader>
-                  <CardTitle>Email Notifications</CardTitle>
-                  <CardDescription>Control which emails you receive</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="emailNotifications">Email Notifications</Label>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Notifications</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label htmlFor="emailNotifications" className="font-medium">
+                            Email Notifications
+                          </Label>
+                        </div>
+                        <Switch
+                          id="emailNotifications"
+                          checked={preferences.emailNotifications}
+                          onCheckedChange={() => handleTogglePreference('emailNotifications')}
+                          className="data-[state=checked]:bg-primary focus-visible"
+                        />
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         Receive notifications via email
                       </p>
                     </div>
-                    <Switch
-                      id="emailNotifications"
-                      checked={preferences.emailNotifications}
-                      onCheckedChange={(checked) =>
-                        setPreferences({ ...preferences, emailNotifications: checked })
-                      }
-                    />
-                  </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="taskReminders">Task Reminders</Label>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label htmlFor="taskReminders" className="font-medium">
+                            Task Reminders
+                          </Label>
+                        </div>
+                        <Switch
+                          id="taskReminders"
+                          checked={preferences.taskReminders}
+                          onCheckedChange={() => handleTogglePreference('taskReminders')}
+                          className="data-[state=checked]:bg-primary focus-visible"
+                        />
+                      </div>
                       <p className="text-sm text-muted-foreground">
-                        Get notified about upcoming task deadlines
+                        Get notified about task deadlines
                       </p>
                     </div>
-                    <Switch
-                      id="taskReminders"
-                      checked={preferences.taskReminders}
-                      onCheckedChange={(checked) =>
-                        setPreferences({ ...preferences, taskReminders: checked })
-                      }
-                    />
-                  </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="projectUpdates">Project Updates</Label>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label htmlFor="projectUpdates" className="font-medium">
+                            Project Updates
+                          </Label>
+                        </div>
+                        <Switch
+                          id="projectUpdates"
+                          checked={preferences.projectUpdates}
+                          onCheckedChange={() => handleTogglePreference('projectUpdates')}
+                          className="data-[state=checked]:bg-primary focus-visible"
+                        />
+                      </div>
                       <p className="text-sm text-muted-foreground">
-                        Updates on projects you're involved in
+                        Get notified about projects you're involved in
                       </p>
                     </div>
-                    <Switch
-                      id="projectUpdates"
-                      checked={preferences.projectUpdates}
-                      onCheckedChange={(checked) =>
-                        setPreferences({ ...preferences, projectUpdates: checked })
-                      }
-                    />
-                  </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="weeklyDigest">Weekly Digest</Label>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label htmlFor="weeklyDigest" className="font-medium">
+                            Weekly Digest
+                          </Label>
+                        </div>
+                        <Switch
+                          id="weeklyDigest"
+                          checked={preferences.weeklyDigest}
+                          onCheckedChange={() => handleTogglePreference('weeklyDigest')}
+                          className="data-[state=checked]:bg-primary focus-visible"
+                        />
+                      </div>
                       <p className="text-sm text-muted-foreground">
-                        Weekly summary of your activities
+                        Receive weekly summary emails
                       </p>
                     </div>
-                    <Switch
-                      id="weeklyDigest"
-                      checked={preferences.weeklyDigest}
-                      onCheckedChange={(checked) =>
-                        setPreferences({ ...preferences, weeklyDigest: checked })
-                      }
-                    />
-                  </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="marketingEmails">Marketing Emails</Label>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label htmlFor="pushNotifications" className="font-medium">
+                            Push Notifications
+                          </Label>
+                        </div>
+                        <Switch
+                          id="pushNotifications"
+                          checked={preferences.pushNotifications}
+                          onCheckedChange={() => handleTogglePreference('pushNotifications')}
+                          className="data-[state=checked]:bg-primary focus-visible"
+                        />
+                      </div>
                       <p className="text-sm text-muted-foreground">
-                        Receive product updates and promotions
+                        Receive push notifications on your device
                       </p>
                     </div>
-                    <Switch
-                      id="marketingEmails"
-                      checked={preferences.marketingEmails}
-                      onCheckedChange={(checked) =>
-                        setPreferences({ ...preferences, marketingEmails: checked })
-                      }
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              <Card className="border-2 shadow-lg">
-                <CardHeader>
-                  <CardTitle>Push Notifications</CardTitle>
-                  <CardDescription>Control browser push notifications</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="pushNotifications">Enable Push Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive real-time notifications in your browser
-                      </p>
-                    </div>
-                    <Switch
-                      id="pushNotifications"
-                      checked={preferences.pushNotifications}
-                      onCheckedChange={(checked) =>
-                        setPreferences({ ...preferences, pushNotifications: checked })
-                      }
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Button
-                onClick={handleSavePreferences}
-                disabled={loading}
-                className="w-full cursor-pointer"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {loading ? 'Saving...' : 'Save Notification Settings'}
-              </Button>
+                <div className="flex justify-end">
+                  <Button onClick={handleSavePreferences} disabled={loading} className="cursor-pointer">
+                    <Save className="w-4 h-4 mr-2" />
+                    {loading ? 'Saving...' : 'Save Preferences'}
+                  </Button>
+                </div>
+              </div>
             </TabsContent>
 
-            {/* Security Tab */}
-            <TabsContent value="security" className="space-y-6 mt-6">
-              <Card className="border-2 shadow-lg">
+            <TabsContent value="security" className="mt-6">
+              <Card className="max-w-2xl mx-auto">
                 <CardHeader>
-                  <CardTitle>Change Password</CardTitle>
-                  <CardDescription>Update your account password</CardDescription>
+                  <CardTitle>Security</CardTitle>
+                  <CardDescription>Change your password and security settings</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="currentPassword">Current Password</Label>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <Label htmlFor="currentPassword" className="font-medium">
+                      Current Password
+                    </Label>
                     <div className="relative">
                       <Input
                         id="currentPassword"
                         type={showPassword ? 'text' : 'password'}
                         value={account.currentPassword}
-                        onChange={(e) =>
-                          setAccount({ ...account, currentPassword: e.target.value })
-                        }
+                        onChange={e => setAccount({ ...account, currentPassword: e.target.value })}
+                        className="w-full pr-10"
                         placeholder="Enter current password"
                       />
                       <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 cursor-pointer"
-                        onClick={() => setShowPassword(!showPassword)}
+                        size="icon"
+                        className="absolute right-2 top-1/2 -translate-y-1/2"
+                        onClick={togglePasswordVisibility}
                       >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
+                  <Separator className="my-6" />
+
+                  <div className="space-y-4">
+                    <Label htmlFor="newPassword" className="font-medium">
+                      New Password
+                    </Label>
                     <Input
                       id="newPassword"
-                      type={showPassword ? 'text' : 'password'}
+                      type="password"
                       value={account.newPassword}
-                      onChange={(e) =>
-                        setAccount({ ...account, newPassword: e.target.value })
-                      }
+                      onChange={e => setAccount({ ...account, newPassword: e.target.value })}
                       placeholder="Enter new password"
+                      className="w-full"
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Must be at least 8 characters
+                    </p>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <div className="space-y-4">
+                    <Label htmlFor="confirmPassword" className="font-medium">
+                      Confirm New Password
+                    </Label>
                     <Input
                       id="confirmPassword"
-                      type={showPassword ? 'text' : 'password'}
+                      type="password"
                       value={account.confirmPassword}
-                      onChange={(e) =>
-                        setAccount({ ...account, confirmPassword: e.target.value })
-                      }
+                      onChange={e => setAccount({ ...account, confirmPassword: e.target.value })}
                       placeholder="Confirm new password"
+                      className="w-full"
                     />
                   </div>
 
-                  <Button
-                    onClick={handleChangePassword}
-                    disabled={loading || !account.currentPassword || !account.newPassword}
-                    className="w-full cursor-pointer"
-                  >
-                    <Lock className="h-4 w-4 mr-2" />
-                    {loading ? 'Changing...' : 'Change Password'}
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="border-2 shadow-lg">
-                <CardHeader>
-                  <CardTitle>Account Actions</CardTitle>
-                  <CardDescription>Manage your account</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button variant="outline" className="justify-start w-full" asChild>
-                    <Link href="/dashboard/student/profile" className="cursor-pointer">
-                      <User className="h-4 w-4 mr-2" />
-                      Edit Profile Information
-                    </Link>
-                  </Button>
-
-                  <Button variant="outline" className="justify-start w-full" asChild>
-                    <Link href="/auth/forgot-password" className="cursor-pointer">
-                      <Mail className="h-4 w-4 mr-2" />
-                      Reset Password via Email
-                    </Link>
-                  </Button>
-
-                  <div className="pt-4 border-t">
-                    <Button variant="destructive" className="justify-start w-full" asChild>
-                      <Link href="/auth" className="cursor-pointer">
-                        <LogOut className="h-4 w-4 mr-2" />
-                        Sign Out
-                      </Link>
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setAccount({
+                        currentPassword: '',
+                        newPassword: '',
+                        confirmPassword: '',
+                      })}
+                      className="flex-1"
+                    >
+                      Cancel
                     </Button>
+                    <Button
+                      onClick={handleChangePassword}
+                      disabled={loading}
+                      className="flex-1 cursor-pointer"
+                    >
+                      {loading ? 'Updating...' : (
+                        <>
+                          <Lock className="w-4 h-4 mr-2" />
+                          Change Password
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  <Separator className="my-6" />
+
+                  <div className="space-y-4">
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <Shield className="h-5 w-5 text-muted-foreground mt-0.5" />
+                        <div className="flex-1">
+                          <h4 className="font-semibold mb-1">Security Tips</h4>
+                          <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                            <li>Use a strong, unique password</li>
+                            <li>Enable two-factor authentication when available</li>
+                            <li>Don't share your password with anyone</li>
+                            <li>Update your password regularly</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

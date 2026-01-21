@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      orderBy: { date: { desc: 'desc' } } as any
+      orderBy: { date: 'desc' }
     })
 
     const totalHours = timeEntries.reduce((sum, entry) => sum + (entry.hours || 0), 0)

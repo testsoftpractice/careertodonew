@@ -176,6 +176,7 @@ model University {
   code              String                        @unique
   description       String?
   location          String?
+  website           String?
   rankingScore      Float?
   rankingPosition   Int?
   totalStudents     Int?
@@ -665,12 +666,14 @@ model VerificationRequest {
   submittedAt DateTime           @default(now())
   reviewedAt  DateTime?
   notes       String?
+  requesterId String?
 
   // Relations
   user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
+  @@index([requesterId])
 }
 
 model Agreement {

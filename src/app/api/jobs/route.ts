@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       where.published = false
     }
 
-    if (type) {
+    if (type && type !== 'all') {
       where.type = type
     }
 

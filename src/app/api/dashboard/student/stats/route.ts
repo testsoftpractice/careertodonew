@@ -17,9 +17,9 @@ export async function GET(request: NextRequest) {
     const activeProjects = await db.project.count({ where: { ownerId: userId, status: 'IN_PROGRESS' } })
     const completedProjects = await db.project.count({ where: { ownerId: userId, status: 'COMPLETED' } })
 
-    const tasksCompleted = await db.task.count({ where: { assigneeId: userId, status: 'DONE' } })
-    const tasksPending = await db.task.count({ where: { assigneeId: userId, status: 'TODO' } })
-    const tasksInProgress = await db.task.count({ where: { assigneeId: userId, status: 'IN_PROGRESS' } })
+    const tasksCompleted = await db.task.count({ where: { assignedTo: userId, status: 'DONE' } })
+    const tasksPending = await db.task.count({ where: { assignedTo: userId, status: 'TODO' } })
+    const tasksInProgress = await db.task.count({ where: { assignedTo: userId, status: 'IN_PROGRESS' } })
 
     // Get user with their scores
     const user = await db.user.findUnique({

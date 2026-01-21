@@ -1,15 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
+import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { Settings, GripVertical, X, Save, RotateCcw } from 'lucide-react'
+import { GripVertical, RotateCcw, Save, X, Settings, Plus, Briefcase } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { DndContext, DndContextType, DragEndEvent, MouseSensor, TouchSensor, useSensor, useDraggable, DragOverlay, DragOverlay } from '@dnd-kit/core'
+import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/sortable'
 
+// Widget Configuration
 export interface DashboardWidget {
   id: string
   title: string
@@ -30,7 +33,7 @@ interface DashboardEditorProps {
   config: DashboardConfig
   onConfigChange: (config: DashboardConfig) => void
   onSave: () => void
-  onReset: () => void
+  onReset?: () => void
 }
 
 export function DashboardEditor({
@@ -42,6 +45,42 @@ export function DashboardEditor({
   const [isOpen, setIsOpen] = useState(false)
   const [localWidgets, setLocalWidgets] = useState<DashboardWidget[]>(config.widgets)
 
+  // Handle widget drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 10,
+        tolerance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 100,
+        tolerance: 5,
+      },
+    }),
+  )
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    const overId = over.data.current?.id
+    const activeId = active.data.current?.id
+
+    if (activeId && overId && activeId !== overId) {
+      const activeIndex = localWidgets.findIndex(w => w.id === activeId)
+      const overIndex = localWidgets.findIndex(w => w.id === overId)
+
+      if (activeIndex !== -1 && overIndex !== -1) {
+        const newIndex = direction === 'up' ? activeIndex - 1 : activeIndex + 1
+        if (newIndex < 0 || newIndex >= localWidgets.length) return
+
+        const newWidgets = [...localWidgets]
+        newWidgets.splice(newIndex, 0, moved)
+        setLocalWidgets(newWidgets)
+      }
+    }
+  }
+
   const toggleWidget = (widgetId: string) => {
     setLocalWidgets(prev =>
       prev.map(widget =>
@@ -50,20 +89,6 @@ export function DashboardEditor({
           : widget
       )
     )
-  }
-
-  const moveWidget = (widgetId: string, direction: 'up' | 'down') => {
-    const index = localWidgets.findIndex(w => w.id === widgetId)
-    if (index === -1) return
-
-    const newIndex = direction === 'up' ? index - 1 : index + 1
-    if (newIndex < 0 || newIndex >= localWidgets.length) return
-
-    const newWidgets = [...localWidgets]
-    const [moved] = newWidgets.splice(index, 1)
-    newWidgets.splice(newIndex, 0, moved)
-
-    setLocalWidgets(newWidgets.map((widget, i) => ({ ...widget, order: i })))
   }
 
   const handleSave = () => {
@@ -76,10 +101,35 @@ export function DashboardEditor({
   }
 
   const handleReset = () => {
-    onReset()
+    if (typeof onReset === 'function') {
+      onReset()
+    }
     setLocalWidgets(config.widgets)
     setIsOpen(false)
   }
+
+  const moveWidget = (widgetId: string, direction: 'up' | 'down') => {
+    const index = localWidgets.findIndex(w => w.id === widgetId)
+    if (index === -1) return
+
+    const newIndex = direction === 'up' ? index - 1 : index + 1
+    if (newIndex < 0 || newIndex >= localWidgets.length) return
+
+    const newWidgets = [...localWidgets]
+    const [moved] = newWidgets.splice(index, 1)
+    newWidgets.splice(newIndex, 0, moved)
+    setLocalWidgets(newWidgets)
+  }
+
+  const availableWidgets: DashboardWidget[] = [
+  { id: '1', title: 'Stats Overview', component: 'StatsCard', visible: true, order: 0 },
+  { id: '2', title: 'Activity Feed', component: 'ActivityList', visible: true, order: 1 },
+  { id: '3', title: 'Quick Actions', component: 'QuickActions', visible: true, order: 2 },
+  { id: '4', title: 'Recent Tasks', component: 'TaskCard', visible: true, order: 3 },
+  { id: '5', title: 'Projects', component: 'ProjectCard', visible: true, order: 4 },
+  { id: '6', title: 'Time Tracking', component: 'Card', visible: true, order: 5 },
+  { id: '7', title: 'Leave Requests', component: 'Card', visible: false, order: 6 },
+]
 
   const visibleCount = localWidgets.filter(w => w.visible).length
 
@@ -93,58 +143,99 @@ export function DashboardEditor({
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Customize Dashboard</span>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Customize Dashboard</DialogTitle>
             <Badge variant="secondary">{visibleCount} widgets visible</Badge>
-          </DialogTitle>
+          </div>
         </DialogHeader>
-
         <div className="flex flex-col gap-4">
           <div className="text-sm text-muted-foreground">
-            Toggle widgets to show or hide them on your dashboard. Drag to reorder.
+            Drag and drop widgets to reorder. Toggle widgets to show or hide them.
+          </div>
+          <Separator />
+
+          {/* Available Widgets */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium mb-2">Available Widgets</h3>
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {availableWidgets.map((widget) => {
+                  const isAdded = localWidgets.some(w => w.id === widget.id)
+                  return (
+                    <Card
+                      key={widget.id}
+                      className={isAdded ? 'opacity-50' : 'opacity-100'}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-muted/50 rounded-full flex items-center justify-center">
+                            <Briefcase className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                          <div className="flex flex-1">
+                            <div>
+                              <p className="text-sm font-medium">{widget.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {isAdded ? 'Added' : 'Add'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            </ScrollArea>
           </div>
 
           <Separator />
 
+          {/* Active Widgets */}
+          <h3 className="text-sm font-medium mb-2">Active Widgets (Drag to Reorder)</h3>
           <ScrollArea className="h-[400px] pr-4">
             <div className="space-y-2">
               {localWidgets.map((widget, index) => (
-                <Card key={widget.id} className={widget.visible ? 'border-primary' : 'border-muted opacity-60'}>
+                <Card key={widget.id} className="cursor-move">
                   <CardContent className="p-3">
                     <div className="flex items-center gap-3">
-                      <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0 cursor-move" />
+                      <GripVertical className="w-4 h-4 text-muted-400 cursor-move" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium truncate">{widget.title}</span>
-                          <Badge variant="outline" className="text-xs">
+                          <span className="text-sm font-medium truncate flex-1">
+                            {widget.title}
+                          </span>
+                          <Badge variant="outline" className="flex-shrink-0">
                             {widget.component}
                           </Badge>
                         </div>
+                        <Switch
+                          id={`toggle-${widget.id}`}
+                          checked={widget.visible}
+                          onCheckedChange={() => toggleWidget(widget.id)}
+                          className="data-[state=checked]:bg-primary focus-visible"
+                        />
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0"
                           onClick={() => moveWidget(widget.id, 'up')}
                           disabled={index === 0}
+                          className="h-8 w-8 p-0"
+                          title="Move up"
                         >
                           ↑
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0"
                           onClick={() => moveWidget(widget.id, 'down')}
                           disabled={index === localWidgets.length - 1}
+                          className="h-8 w-8 p-0"
+                          title="Move down"
                         >
                           ↓
                         </Button>
-                        <Switch
-                          checked={widget.visible}
-                          onCheckedChange={() => toggleWidget(widget.id)}
-                          className="data-[state=checked]:bg-primary"
-                        />
                       </div>
                     </div>
                   </CardContent>
@@ -152,7 +243,6 @@ export function DashboardEditor({
               ))}
             </div>
           </ScrollArea>
-
           <Separator />
 
           <div className="flex gap-2 justify-end">
@@ -163,7 +253,7 @@ export function DashboardEditor({
             <Button variant="outline" onClick={() => setIsOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave}>
+            <Button onClick={handleSave} className="bg-primary hover:bg-primary/90">
               <Save className="w-4 h-4 mr-2" />
               Save Changes
             </Button>

@@ -948,92 +948,107 @@ export default function StudentDashboard() {
 
       {/* Create Task Dialog */}
       <Dialog open={showTaskDialog} onOpenChange={setShowTaskDialog}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
             <DialogTitle>Create New Task</DialogTitle>
+            <div className="text-sm text-muted-foreground mt-1">
+              Fill in the details below to create a new task.
+            </div>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="task-title">Title</Label>
-              <Input
-                id="task-title"
-                value={taskForm.title}
-                onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
-                placeholder="Enter task title"
-                className="cursor-pointer"
-              />
+          <div className="space-y-6 py-2">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="task-title" className="font-medium">
+                  Title <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="task-title"
+                  value={taskForm.title}
+                  onChange={e => setTaskForm({ ...taskForm, title: e.target.value })}
+                  placeholder="Enter task title"
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <Label htmlFor="task-description">Description</Label>
+                <Textarea
+                  id="task-description"
+                  value={taskForm.description}
+                  onChange={e => setTaskForm({ ...taskForm, description: e.target.value })}
+                  placeholder="Enter task description"
+                  rows={3}
+                  className="w-full resize-none"
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="task-description">Description</Label>
-              <Textarea
-                id="task-description"
-                value={taskForm.description}
-                onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
-                placeholder="Enter task description"
-                rows={3}
-                className="cursor-pointer"
-              />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <Label htmlFor="task-priority">Priority</Label>
+                <Select value={taskForm.priority} onValueChange={(value) => setTaskForm({ ...taskForm, priority: value })}>
+                  <SelectTrigger id="task-priority" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="LOW">Low</SelectItem>
+                    <SelectItem value="MEDIUM">Medium</SelectItem>
+                    <SelectItem value="HIGH">High</SelectItem>
+                    <SelectItem value="CRITICAL">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-4">
+                <Label htmlFor="task-due-date">Due Date</Label>
+                <Input
+                  id="task-due-date"
+                  type="date"
+                  value={taskForm.dueDate}
+                  onChange={e => setTaskForm({ ...taskForm, dueDate: e.target.value })}
+                  className="w-full"
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="task-priority">Priority</Label>
-              <Select
-                value={taskForm.priority}
-                onValueChange={(value) => setTaskForm({ ...taskForm, priority: value })}
-              >
-                <SelectTrigger id="task-priority" className="cursor-pointer">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="LOW" className="cursor-pointer">Low</SelectItem>
-                  <SelectItem value="MEDIUM" className="cursor-pointer">Medium</SelectItem>
-                  <SelectItem value="HIGH" className="cursor-pointer">High</SelectItem>
-                  <SelectItem value="CRITICAL" className="cursor-pointer">Critical</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="task-due-date">Due Date</Label>
-              <Input
-                id="task-due-date"
-                type="date"
-                value={taskForm.dueDate}
-                onChange={(e) => setTaskForm({ ...taskForm, dueDate: e.target.value })}
-                className="cursor-pointer"
-              />
-            </div>
-            <div>
+
+            <div className="space-y-4">
               <Label htmlFor="task-project">Project (Optional)</Label>
-              <Select
-                value={taskForm.projectId}
-                onValueChange={(value) => setTaskForm({ ...taskForm, projectId: value })}
-              >
-                <SelectTrigger id="task-project" className="cursor-pointer">
+              <Select value={taskForm.projectId} onValueChange={(value) => setTaskForm({ ...taskForm, projectId: value })}>
+                <SelectTrigger id="task-project" className="w-full">
                   <SelectValue placeholder="Select a project" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableProjects.map((project) => (
-                    <SelectItem key={project.id} value={project.id} className="cursor-pointer">
-                      {project.name}
-                    </SelectItem>
-                  ))}
+                  {availableProjects.length === 0 ? (
+                    <SelectItem value="" disabled>No projects available</SelectItem>
+                  ) : (
+                    <>
+                      <SelectItem value="">No project</SelectItem>
+                      {availableProjects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
           </div>
+
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setShowTaskDialog(false)}
-              className="cursor-pointer"
+              onClick={() => {
+                setShowTaskDialog(false)
+                setTaskForm({ title: '', description: '', priority: 'MEDIUM', dueDate: '', projectId: '' })
+              }}
             >
               Cancel
             </Button>
             <Button
               onClick={handleCreateTask}
-              disabled={!taskForm.title}
-              className="cursor-pointer"
+              disabled={loading || !taskForm.title}
             >
-              Create Task
+              {loading ? 'Creating...' : 'Create Task'}
             </Button>
           </DialogFooter>
         </DialogContent>

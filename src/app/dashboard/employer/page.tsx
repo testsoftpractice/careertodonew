@@ -36,6 +36,8 @@ import {
   Sparkles,
   ChevronRight,
   Building2,
+  Edit3,
+  Save,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
 import { toast } from '@/hooks/use-toast'
 import {
   Users,
@@ -22,6 +23,8 @@ import {
   EyeOff,
   Lock,
   Shield,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react'
 import { logoutAndRedirect } from '@/lib/utils/logout'
 import { useAuth } from '@/contexts/auth-context'
@@ -50,6 +53,8 @@ export default function StudentSettingsPage() {
   })
   const [activeTab, setActiveTab] = useState('preferences')
   const [showPassword, setShowPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [account, setAccount] = useState({
     currentPassword: '',
     newPassword: '',
@@ -69,16 +74,26 @@ export default function StudentSettingsPage() {
     }
   }
 
-  const handleTogglePreference = <K extends keyof Preferences>(key: K) => {
+  const handleTogglePreference = async <K extends keyof Preferences>(key: K) => {
     const newValue = !preferences[key]
     setPreferences(prev => ({ ...prev, [key]: newValue }))
 
-    if (key === 'publicProfile') {
-      toast({
-        title: 'Profile Visibility Changed',
-        description: newValue ? 'Profile is now public' : 'Profile is now private'
-      })
+    // Show notification for each toggle
+    const preferenceLabels: Record<keyof Preferences, string> = {
+      publicProfile: 'Public Profile',
+      showReputation: 'Reputation Scores',
+      emailNotifications: 'Email Notifications',
+      taskReminders: 'Task Reminders',
+      projectUpdates: 'Project Updates',
+      weeklyDigest: 'Weekly Digest',
+      pushNotifications: 'Push Notifications',
     }
+
+    const action = newValue ? 'enabled' : 'disabled'
+    toast({
+      title: 'Preference Updated',
+      description: `${preferenceLabels[key]} has been ${action}`,
+    })
   }
 
   const handleChangePassword = async () => {
@@ -114,6 +129,8 @@ export default function StudentSettingsPage() {
       await new Promise(resolve => setTimeout(resolve, 1500))
       toast({ title: 'Success', description: 'Password updated successfully' })
       setShowPassword(false)
+      setShowNewPassword(false)
+      setShowConfirmPassword(false)
       setAccount({
         currentPassword: '',
         newPassword: '',
@@ -123,6 +140,8 @@ export default function StudentSettingsPage() {
       console.error('Password update error:', error)
       toast({ title: 'Error', description: 'Failed to update password', variant: 'destructive' })
       setShowPassword(false)
+      setShowNewPassword(false)
+      setShowConfirmPassword(false)
     } finally {
       setLoading(false)
     }
@@ -135,15 +154,53 @@ export default function StudentSettingsPage() {
     }
   }
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(prev => !prev)
-  }
-
   const quickActions = [
     { id: 'view-profile', label: 'View Profile', icon: User, href: '/dashboard/student/profile' },
     { id: 'go-dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard/student' },
     { id: 'logout', label: 'Logout', icon: LogOut, onClick: handleLogout },
   ]
+
+  const ToggleItem = ({ id, label, checked, onChange, description }: {
+    id: string
+    label: string
+    checked: boolean
+    onChange: () => void
+    description?: string
+  }) => (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1 space-y-1">
+          <Label htmlFor={id} className="font-medium text-base">
+            {label}
+          </Label>
+          {description && (
+            <p className="text-sm text-muted-foreground">
+              {description}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {checked ? (
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-50">
+              <CheckCircle2 className="w-3 h-3 mr-1" />
+              On
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-50">
+              <XCircle className="w-3 h-3 mr-1" />
+              Off
+            </Badge>
+          )}
+          <Switch
+            id={id}
+            checked={checked}
+            onCheckedChange={onChange}
+            className="data-[state=checked]:bg-primary focus-visible"
+          />
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-950 flex flex-col">
@@ -151,7 +208,7 @@ export default function StudentSettingsPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-muted-foreground" />
+              <Settings className="h-5 w-5 text-muted-foreground" />
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-primary">
                   Student Settings
@@ -212,7 +269,7 @@ export default function StudentSettingsPage() {
                 className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-red-400 data-[state=active]:text-white rounded-xl px-4 py-2.5 transition-all duration-300"
               >
                 <div className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
+                  <Lock className="h-4 w-4" />
                   <span className="hidden sm:inline">Security</span>
                 </div>
               </TabsTrigger>
@@ -223,143 +280,79 @@ export default function StudentSettingsPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Display Preferences</CardTitle>
+                    <CardDescription>Control how your profile appears to others</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label htmlFor="publicProfile" className="font-medium">
-                            Public Profile
-                          </Label>
-                        </div>
-                        <Switch
-                          id="publicProfile"
-                          checked={preferences.publicProfile}
-                          onCheckedChange={() => handleTogglePreference('publicProfile')}
-                          className="data-[state=checked]:bg-primary focus-visible"
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label htmlFor="showReputation" className="font-medium">
-                            Reputation Scores
-                          </Label>
-                        </div>
-                        <Switch
-                          id="showReputation"
-                          checked={preferences.showReputation}
-                          onCheckedChange={() => handleTogglePreference('showReputation')}
-                          className="data-[state=checked]:bg-primary focus-visible"
-                        />
-                      </div>
-                    </div>
+                  <CardContent className="space-y-6">
+                    <Separator className="my-4" />
+                    <ToggleItem
+                      id="publicProfile"
+                      label="Public Profile"
+                      checked={preferences.publicProfile}
+                      onChange={() => handleTogglePreference('publicProfile')}
+                      description="Make your profile visible to other users on the platform"
+                    />
+                    <Separator className="my-4" />
+                    <ToggleItem
+                      id="showReputation"
+                      label="Reputation Scores"
+                      checked={preferences.showReputation}
+                      onChange={() => handleTogglePreference('showReputation')}
+                      description="Display your reputation scores and ratings on your profile"
+                    />
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader>
                     <CardTitle>Notifications</CardTitle>
+                    <CardDescription>Choose how you want to receive updates</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label htmlFor="emailNotifications" className="font-medium">
-                            Email Notifications
-                          </Label>
-                        </div>
-                        <Switch
-                          id="emailNotifications"
-                          checked={preferences.emailNotifications}
-                          onCheckedChange={() => handleTogglePreference('emailNotifications')}
-                          className="data-[state=checked]:bg-primary focus-visible"
-                        />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Receive notifications via email
-                      </p>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label htmlFor="taskReminders" className="font-medium">
-                            Task Reminders
-                          </Label>
-                        </div>
-                        <Switch
-                          id="taskReminders"
-                          checked={preferences.taskReminders}
-                          onCheckedChange={() => handleTogglePreference('taskReminders')}
-                          className="data-[state=checked]:bg-primary focus-visible"
-                        />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Get notified about task deadlines
-                      </p>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label htmlFor="projectUpdates" className="font-medium">
-                            Project Updates
-                          </Label>
-                        </div>
-                        <Switch
-                          id="projectUpdates"
-                          checked={preferences.projectUpdates}
-                          onCheckedChange={() => handleTogglePreference('projectUpdates')}
-                          className="data-[state=checked]:bg-primary focus-visible"
-                        />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Get notified about projects you're involved in
-                      </p>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label htmlFor="weeklyDigest" className="font-medium">
-                            Weekly Digest
-                          </Label>
-                        </div>
-                        <Switch
-                          id="weeklyDigest"
-                          checked={preferences.weeklyDigest}
-                          onCheckedChange={() => handleTogglePreference('weeklyDigest')}
-                          className="data-[state=checked]:bg-primary focus-visible"
-                        />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Receive weekly summary emails
-                      </p>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label htmlFor="pushNotifications" className="font-medium">
-                            Push Notifications
-                          </Label>
-                        </div>
-                        <Switch
-                          id="pushNotifications"
-                          checked={preferences.pushNotifications}
-                          onCheckedChange={() => handleTogglePreference('pushNotifications')}
-                          className="data-[state=checked]:bg-primary focus-visible"
-                        />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Receive push notifications on your device
-                      </p>
-                    </div>
+                    <Separator className="my-4" />
+                    <ToggleItem
+                      id="emailNotifications"
+                      label="Email Notifications"
+                      checked={preferences.emailNotifications}
+                      onChange={() => handleTogglePreference('emailNotifications')}
+                      description="Receive notifications via email"
+                    />
+                    <Separator className="my-4" />
+                    <ToggleItem
+                      id="taskReminders"
+                      label="Task Reminders"
+                      checked={preferences.taskReminders}
+                      onChange={() => handleTogglePreference('taskReminders')}
+                      description="Get notified about task deadlines and updates"
+                    />
+                    <Separator className="my-4" />
+                    <ToggleItem
+                      id="projectUpdates"
+                      label="Project Updates"
+                      checked={preferences.projectUpdates}
+                      onChange={() => handleTogglePreference('projectUpdates')}
+                      description="Get notified about projects you're involved in"
+                    />
+                    <Separator className="my-4" />
+                    <ToggleItem
+                      id="weeklyDigest"
+                      label="Weekly Digest"
+                      checked={preferences.weeklyDigest}
+                      onChange={() => handleTogglePreference('weeklyDigest')}
+                      description="Receive weekly summary emails of your activity"
+                    />
+                    <Separator className="my-4" />
+                    <ToggleItem
+                      id="pushNotifications"
+                      label="Push Notifications"
+                      checked={preferences.pushNotifications}
+                      onChange={() => handleTogglePreference('pushNotifications')}
+                      description="Receive push notifications on your device"
+                    />
                   </CardContent>
                 </Card>
 
                 <div className="flex justify-end">
-                  <Button onClick={handleSavePreferences} disabled={loading} className="cursor-pointer">
+                  <Button onClick={handleSavePreferences} disabled={loading} className="cursor-pointer" size="lg">
                     <Save className="w-4 h-4 mr-2" />
                     {loading ? 'Saving...' : 'Save Preferences'}
                   </Button>
@@ -392,7 +385,7 @@ export default function StudentSettingsPage() {
                         variant="ghost"
                         size="icon"
                         className="absolute right-2 top-1/2 -translate-y-1/2"
-                        onClick={togglePasswordVisibility}
+                        onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
@@ -405,14 +398,25 @@ export default function StudentSettingsPage() {
                     <Label htmlFor="newPassword" className="font-medium">
                       New Password
                     </Label>
-                    <Input
-                      id="newPassword"
-                      type="password"
-                      value={account.newPassword}
-                      onChange={e => setAccount({ ...account, newPassword: e.target.value })}
-                      placeholder="Enter new password"
-                      className="w-full"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="newPassword"
+                        type={showNewPassword ? 'text' : 'password'}
+                        value={account.newPassword}
+                        onChange={e => setAccount({ ...account, newPassword: e.target.value })}
+                        className="w-full pr-10"
+                        placeholder="Enter new password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-1/2 -translate-y-1/2"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                      >
+                        {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       Must be at least 8 characters
                     </p>
@@ -422,14 +426,25 @@ export default function StudentSettingsPage() {
                     <Label htmlFor="confirmPassword" className="font-medium">
                       Confirm New Password
                     </Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      value={account.confirmPassword}
-                      onChange={e => setAccount({ ...account, confirmPassword: e.target.value })}
-                      placeholder="Confirm new password"
-                      className="w-full"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={account.confirmPassword}
+                        onChange={e => setAccount({ ...account, confirmPassword: e.target.value })}
+                        className="w-full pr-10"
+                        placeholder="Confirm new password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-1/2 -translate-y-1/2"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="flex gap-3 pt-4">

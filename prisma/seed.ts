@@ -1,20 +1,25 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Starting database seeding...')
 
-  // Clean up existing data (delete in correct order to respect foreign keys)
-  await prisma.timeEntry.deleteMany()
-  await prisma.workSession.deleteMany()
-  await prisma.notification.deleteMany()
-  await prisma.rating.deleteMany()
+  // Clean existing data
+  console.log('🧹 Cleaning existing data...')
   await prisma.auditLog.deleteMany()
-  await prisma.agreement.deleteMany()
-  await prisma.investment.deleteMany()
+  await prisma.leaderboard.deleteMany()
+  await prisma.message.deleteMany()
   await prisma.jobApplication.deleteMany()
   await prisma.job.deleteMany()
+  await prisma.businessMember.deleteMany()
+  await prisma.business.deleteMany()
+  await prisma.investment.deleteMany()
+  await prisma.agreement.deleteMany()
+  await prisma.verificationRequest.deleteMany()
+  await prisma.timeEntry.deleteMany()
+  await prisma.workSession.deleteMany()
   await prisma.subTask.deleteMany()
   await prisma.taskDependency.deleteMany()
   await prisma.task.deleteMany()
@@ -24,395 +29,922 @@ async function main() {
   await prisma.projectMember.deleteMany()
   await prisma.project.deleteMany()
   await prisma.leaveRequest.deleteMany()
+  await prisma.professionalRecord.deleteMany()
+  await prisma.rating.deleteMany()
+  await prisma.notification.deleteMany()
   await prisma.education.deleteMany()
   await prisma.experience.deleteMany()
   await prisma.skill.deleteMany()
-  await prisma.verificationRequest.deleteMany()
-  await prisma.professionalRecord.deleteMany()
-  await prisma.leaderboard.deleteMany()
   await prisma.user.deleteMany()
   await prisma.university.deleteMany()
-  await prisma.businessMember.deleteMany()
-  await prisma.business.deleteMany()
 
-  console.log('✅ Cleared existing data')
+  console.log('✅ Database cleaned')
 
-  // Create Universities
-  const universitiesData = [
-    {
-      name: 'Stanford University',
-      code: 'STAN',
-      description: 'Leading research university in Silicon Valley',
-      location: 'Stanford, CA',
-      rankingScore: 98.5,
-      rankingPosition: 3,
-      totalStudents: 17000,
-      verificationStatus: 'VERIFIED',
-      totalProjects: 0,
-    },
-    {
-      name: 'MIT',
-      code: 'MIT',
-      description: 'Massachusetts Institute of Technology',
-      location: 'Cambridge, MA',
-      rankingScore: 99.2,
-      rankingPosition: 1,
-      totalStudents: 11500,
-      verificationStatus: 'VERIFIED',
-      totalProjects: 0,
-    },
-    {
-      name: 'Harvard University',
-      code: 'HARV',
-      description: 'Ivy League research university',
-      location: 'Cambridge, MA',
-      rankingScore: 98.8,
-      rankingPosition: 2,
-      totalStudents: 23000,
-      verificationStatus: 'VERIFIED',
-      totalProjects: 0,
-    },
-    {
-      name: 'UC Berkeley',
-      code: 'UCB',
-      description: 'University of California, Berkeley',
-      location: 'Berkeley, CA',
-      rankingScore: 96.5,
-      rankingPosition: 8,
-      totalStudents: 45000,
-      verificationStatus: 'VERIFIED',
-      totalProjects: 0,
-    },
-    {
-      name: 'Carnegie Mellon',
-      code: 'CMU',
-      description: 'Top computer science and engineering school',
-      location: 'Pittsburgh, PA',
-      rankingScore: 97.2,
-      rankingPosition: 5,
-      totalStudents: 14000,
-      verificationStatus: 'VERIFIED',
-      totalProjects: 0,
-    },
-  ]
-
-  const universities = await prisma.university.createMany({
-    data: universitiesData,
-  })
-  console.log(`✅ Created ${universities.count} universities`)
-
-  // Get created universities to use as references
-  const createdUniversities = await prisma.university.findMany({
-    orderBy: { code: 'asc' },
-  })
-  console.log(`✅ Fetched ${createdUniversities.length} universities for seeding`)
-
-  // Create Users
-  const bcrypt = require('bcryptjs')
-
+  // Hash password helper
   const hashPassword = async (password: string) => {
     return await bcrypt.hash(password, 10)
   }
 
-  const usersData = [
-    {
-      email: 'student1@demo.edu',
-      password: await hashPassword('demo123'),
-      name: 'Emily Chen',
+  // Create University
+  console.log('🏫 Creating University...')
+  const university = await prisma.university.create({
+    data: {
+      name: 'Tech University',
+      code: 'TECH001',
+      description: 'A leading technology university',
+      location: 'San Francisco, CA',
+      website: 'https://techuniversity.edu',
+      rankingScore: 4.5,
+      rankingPosition: 5,
+      totalStudents: 25000,
+      verificationStatus: 'VERIFIED',
+      totalProjects: 150,
+    },
+  })
+  console.log('✅ University created:', university.name)
+
+  // Create Users
+  console.log('👥 Creating users...')
+  const hashedPassword = await hashPassword('password123')
+
+  // Student User
+  const studentUser = await prisma.user.create({
+    data: {
+      email: 'student@techuniversity.edu',
+      password: hashedPassword,
+      name: 'Alex Johnson',
+      avatar: null,
       role: 'STUDENT',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emily&backgroundColor=random',
-      universityId: createdUniversities[0].id,
+      verificationStatus: 'VERIFIED',
+      universityId: university.id,
       major: 'Computer Science',
       graduationYear: 2025,
-      bio: 'Passionate about AI and machine learning',
+      bio: 'Passionate about building impactful software solutions',
       location: 'San Francisco, CA',
-      linkedinUrl: 'linkedin.com/in/emilychen',
-      portfolioUrl: 'portfolio.emilychen.dev',
+      linkedinUrl: 'https://linkedin.com/in/alexjohnson',
+      portfolioUrl: 'https://alexjohnson.dev',
       emailVerified: true,
       emailVerifiedAt: new Date(),
-      verificationStatus: 'VERIFIED',
       executionScore: 4.2,
       collaborationScore: 4.5,
       leadershipScore: 3.8,
-      ethicsScore: 4.7,
+      ethicsScore: 4.6,
       reliabilityScore: 4.3,
       progressionLevel: 'CONTRIBUTOR',
     },
-    {
-      email: 'student2@demo.edu',
-      password: await hashPassword('demo123'),
-      name: 'James Wilson',
-      role: 'STUDENT',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=James&backgroundColor=random',
-      universityId: createdUniversities[1].id,
-      major: 'Electrical Engineering',
-      graduationYear: 2024,
-      bio: 'Robotics enthusiast',
-      location: 'Boston, MA',
-      linkedinUrl: 'linkedin.com/in/jameswilson',
+  })
+  console.log('✅ Student created:', studentUser.name)
+
+  // Mentor User
+  const mentorUser = await prisma.user.create({
+    data: {
+      email: 'mentor@techuniversity.edu',
+      password: hashedPassword,
+      name: 'Sarah Williams',
+      avatar: null,
+      role: 'MENTOR',
       verificationStatus: 'VERIFIED',
-      executionScore: 3.8,
-      collaborationScore: 4.2,
-      leadershipScore: 4.1,
-      ethicsScore: 4.5,
-      reliabilityScore: 4.0,
-      progressionLevel: 'CONTRIBUTOR',
-    },
-    {
-      email: 'university@careertodo.com',
-      password: await hashPassword('admin123'),
-      name: 'Dr. Sarah Martinez',
-      role: 'UNIVERSITY_ADMIN',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah&backgroundColor=random',
-      universityId: createdUniversities[0].id,
-      verificationStatus: 'VERIFIED',
+      universityId: university.id,
+      major: 'Software Engineering',
+      bio: 'Senior software engineer with 10+ years of experience',
+      location: 'New York, NY',
+      linkedinUrl: 'https://linkedin.com/in/sarahwilliams',
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
       executionScore: 4.8,
-      collaborationScore: 4.9,
-      leadershipScore: 5.0,
-      ethicsScore: 5.0,
+      collaborationScore: 4.7,
+      leadershipScore: 4.5,
+      ethicsScore: 4.9,
       reliabilityScore: 4.8,
+      progressionLevel: 'PROJECT_LEAD',
     },
-    {
-      email: 'employer@careertodo.com',
-      password: await hashPassword('demo123'),
-      name: 'Tech Ventures Inc.',
+  })
+  console.log('✅ Mentor created:', mentorUser.name)
+
+  // Employer User
+  const employerUser = await prisma.user.create({
+    data: {
+      email: 'employer@company.com',
+      password: hashedPassword,
+      name: 'Michael Chen',
+      avatar: null,
       role: 'EMPLOYER',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=TechVentures&backgroundColor=random',
       verificationStatus: 'VERIFIED',
+      bio: 'CEO of Tech Innovations Inc.',
+      location: 'San Francisco, CA',
+      linkedinUrl: 'https://linkedin.com/in/michaelchen',
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+      executionScore: 4.9,
+      collaborationScore: 4.6,
+      leadershipScore: 4.8,
+      ethicsScore: 4.7,
+      reliabilityScore: 4.9,
+      progressionLevel: 'PROJECT_LEAD',
     },
-    {
-      email: 'investor@careertodo.com',
-      password: await hashPassword('demo123'),
-      name: 'Apex Ventures',
+  })
+  console.log('✅ Employer created:', employerUser.name)
+
+  // Investor User
+  const investorUser = await prisma.user.create({
+    data: {
+      email: 'investor@vcfirm.com',
+      password: hashedPassword,
+      name: 'Emily Davis',
+      avatar: null,
       role: 'INVESTOR',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ApexVentures&backgroundColor=random',
       verificationStatus: 'VERIFIED',
+      bio: 'Angel investor focused on early-stage tech startups',
+      location: 'Boston, MA',
+      linkedinUrl: 'https://linkedin.com/in/emilydavis',
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+      executionScore: 4.5,
+      collaborationScore: 4.8,
+      leadershipScore: 4.7,
+      ethicsScore: 4.6,
+      reliabilityScore: 4.8,
+      progressionLevel: 'SENIOR_CONTRIBUTOR',
     },
-    {
-      email: 'admin@careertodo.com',
-      password: await hashPassword('admin123'),
-      name: 'Platform Administrator',
-      role: 'PLATFORM_ADMIN',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin&backgroundColor=random',
+  })
+  console.log('✅ Investor created:', investorUser.name)
+
+  // University Admin
+  const adminUser = await prisma.user.create({
+    data: {
+      email: 'admin@techuniversity.edu',
+      password: hashedPassword,
+      name: 'Robert Brown',
+      avatar: null,
+      role: 'UNIVERSITY_ADMIN',
       verificationStatus: 'VERIFIED',
+      universityId: university.id,
+      major: 'Education Administration',
+      bio: 'University administrator overseeing student programs',
+      location: 'San Francisco, CA',
+      linkedinUrl: 'https://linkedin.com/in/robertbrown',
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+      executionScore: 4.7,
+      collaborationScore: 4.8,
+      leadershipScore: 4.9,
+      ethicsScore: 4.8,
+      reliabilityScore: 4.9,
+      progressionLevel: 'PROJECT_LEAD',
     },
-  ]
-
-  const users = await prisma.user.createMany({
-    data: usersData,
   })
-  console.log(`✅ Created ${usersData.length} users`)
+  console.log('✅ University Admin created:', adminUser.name)
 
-  // Get created users to use as references
-  const createdUsers = await prisma.user.findMany({
-    orderBy: { createdAt: 'asc' },
-  })
-  console.log(`✅ Fetched ${createdUsers.length} users for seeding`)
-
-  // Create Skills
-  const skillsData = [
-    { userId: createdUsers[0].id, name: 'React', level: 'EXPERT' },
-    { userId: createdUsers[0].id, name: 'TypeScript', level: 'ADVANCED' },
-    { userId: createdUsers[0].id, name: 'Node.js', level: 'INTERMEDIATE' },
-    { userId: createdUsers[1].id, name: 'Python', level: 'EXPERT' },
-    { userId: createdUsers[1].id, name: 'Machine Learning', level: 'ADVANCED' },
-  ]
-
-  await prisma.skill.createMany({
-    data: skillsData,
-  })
-  console.log(`✅ Created ${skillsData.length} skills`)
-
-  // Create Businesses
-  const businessesData = [
-    {
-      name: 'Tech Ventures Inc.',
-      description: 'Innovative technology company focused on AI and machine learning solutions',
+  // Create Business for Employer
+  console.log('🏢 Creating Business...')
+  const business = await prisma.business.create({
+    data: {
+      name: 'Tech Innovations Inc.',
+      description: 'Leading technology company specializing in innovative software solutions',
       industry: 'Technology',
       location: 'San Francisco, CA',
-      website: 'https://techventures.com',
+      website: 'https://techinnovations.com',
+      logo: null,
       size: '51-200',
       status: 'VERIFIED',
-      ownerId: createdUsers[3].id, // Employer user
       verifiedAt: new Date(),
+      ownerId: employerUser.id,
     },
-  ]
-
-  const businesses = await prisma.business.createMany({
-    data: businessesData,
   })
-  console.log(`✅ Created ${businessesData.length} businesses`)
+  console.log('✅ Business created:', business.name)
 
-  // Get created businesses
-  const createdBusinesses = await prisma.business.findMany()
-
-  // Create Business Members
-  const businessMembersData = [
-    {
-      businessId: createdBusinesses[0].id,
-      userId: createdUsers[0].id, // Emily Chen as a team member
-      role: 'TEAM_MEMBER',
+  // Add Employer to Business
+  await prisma.businessMember.create({
+    data: {
+      businessId: business.id,
+      userId: employerUser.id,
+      role: 'OWNER',
     },
-    {
-      businessId: createdBusinesses[0].id,
-      userId: createdUsers[1].id, // James Wilson as a project manager
-      role: 'PROJECT_MANAGER',
-    },
-  ]
-
-  await prisma.businessMember.createMany({
-    data: businessMembersData,
   })
-  console.log(`✅ Created ${businessMembersData.length} business members`)
+  console.log('✅ Employer added to business')
+
+  // Create Skills for Student
+  console.log('💡 Creating Skills...')
+  const skill1 = await prisma.skill.create({
+    data: {
+      userId: studentUser.id,
+      name: 'JavaScript',
+      level: 'ADVANCED',
+      endorsements: 15,
+    },
+  })
+  const skill2 = await prisma.skill.create({
+    data: {
+      userId: studentUser.id,
+      name: 'TypeScript',
+      level: 'INTERMEDIATE',
+      endorsements: 8,
+    },
+  })
+  const skill3 = await prisma.skill.create({
+    data: {
+      userId: studentUser.id,
+      name: 'React',
+      level: 'ADVANCED',
+      endorsements: 12,
+    },
+  })
+  const skill4 = await prisma.skill.create({
+    data: {
+      userId: studentUser.id,
+      name: 'Node.js',
+      level: 'INTERMEDIATE',
+      endorsements: 7,
+    },
+  })
+  console.log('✅ Skills created for student')
+
+  // Create Experience for Student
+  console.log('💼 Creating Experience...')
+  await prisma.experience.create({
+    data: {
+      userId: studentUser.id,
+      title: 'Software Developer Intern',
+      company: 'Tech Corp',
+      location: 'Remote',
+      description: 'Developed web applications using React and Node.js',
+      startDate: new Date('2023-06-01'),
+      endDate: new Date('2023-09-01'),
+      current: false,
+      skills: 'JavaScript, React, Node.js',
+    },
+  })
+  await prisma.experience.create({
+    data: {
+      userId: studentUser.id,
+      title: 'Freelance Developer',
+      company: 'Self-employed',
+      location: 'San Francisco, CA',
+      description: 'Built websites and web applications for various clients',
+      startDate: new Date('2023-09-15'),
+      current: true,
+      skills: 'JavaScript, TypeScript, React, Node.js',
+    },
+  })
+  console.log('✅ Experience created for student')
+
+  // Create Education for Student
+  console.log('📚 Creating Education...')
+  await prisma.education.create({
+    data: {
+      userId: studentUser.id,
+      school: 'Tech University',
+      degree: 'Bachelor of Science',
+      field: 'Computer Science',
+      description: 'Focus on software development and data structures',
+      startDate: new Date('2021-09-01'),
+      endDate: new Date('2025-05-01'),
+    },
+  })
+  console.log('✅ Education created for student')
 
   // Create Projects
-  const projectsData = [
-    {
-      name: 'AI-Powered Learning Platform',
-      description: 'An intelligent educational platform using AI to personalize learning experiences',
-      ownerId: createdUsers[0].id,
-      businessId: createdBusinesses[0].id, // Link to business
+  console.log('🚀 Creating Projects...')
+  const project1 = await prisma.project.create({
+    data: {
+      name: 'E-Commerce Platform',
+      description: 'A full-stack e-commerce platform with advanced features',
       status: 'IN_PROGRESS',
-      category: 'Education Technology',
-      budget: 50000,
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+      ownerId: employerUser.id,
+      businessId: business.id,
+      startDate: new Date('2024-01-15'),
+      endDate: new Date('2024-06-30'),
+      budget: 50000.0,
+      category: 'Web Development',
     },
-    {
-      name: 'Smart Home Automation System',
-      description: 'IoT-based home automation system with voice control',
-      ownerId: createdUsers[1].id,
-      status: 'FUNDING',
-      category: 'IoT',
-      budget: 75000,
-    },
-    {
-      name: 'E-commerce Marketplace',
-      description: 'Multi-vendor marketplace with advanced features',
-      ownerId: createdUsers[0].id,
+  })
+  console.log('✅ Project 1 created:', project1.name)
+
+  const project2 = await prisma.project.create({
+    data: {
+      name: 'AI-Powered Analytics Dashboard',
+      description: 'Real-time analytics dashboard with AI insights',
       status: 'IDEA',
-      category: 'E-commerce',
+      ownerId: mentorUser.id,
+      startDate: new Date('2024-03-01'),
+      endDate: new Date('2024-09-30'),
+      budget: 75000.0,
+      category: 'AI/ML',
     },
-  ]
-
-  const projects = await prisma.project.createMany({
-    data: projectsData,
   })
-  console.log(`✅ Created ${projects.count} projects`)
+  console.log('✅ Project 2 created:', project2.name)
 
-  // Get created projects
-  const createdProjects = await prisma.project.findMany({
-    orderBy: { createdAt: 'asc' },
-  })
-
-  // Create Project Members
-  const projectMembersData = [
-    {
-      projectId: createdProjects[0].id,
-      userId: createdUsers[1].id, // James as PROJECT_MANAGER
-      role: 'PROJECT_MANAGER',
+  const project3 = await prisma.project.create({
+    data: {
+      name: 'Mobile Health App',
+      description: 'Health tracking mobile application for wellness',
+      status: 'UNDER_REVIEW',
+      ownerId: studentUser.id,
+      startDate: new Date('2024-02-01'),
+      endDate: new Date('2024-08-31'),
+      budget: 30000.0,
+      category: 'Mobile Development',
     },
-    {
-      projectId: createdProjects[0].id,
-      userId: createdUsers[0].id, // Emily as TEAM_MEMBER
+  })
+  console.log('✅ Project 3 created:', project3.name)
+
+  // Add Project Members
+  console.log('👥 Adding project members...')
+  await prisma.projectMember.create({
+    data: {
+      projectId: project1.id,
+      userId: studentUser.id,
       role: 'TEAM_MEMBER',
     },
-  ]
-
-  await prisma.projectMember.createMany({
-    data: projectMembersData,
   })
-  console.log(`✅ Created ${projectMembersData.length} project members`)
+  await prisma.projectMember.create({
+    data: {
+      projectId: project1.id,
+      userId: mentorUser.id,
+      role: 'PROJECT_MANAGER',
+    },
+  })
+  await prisma.projectMember.create({
+    data: {
+      projectId: project2.id,
+      userId: studentUser.id,
+      role: 'TEAM_MEMBER',
+    },
+  })
+  console.log('✅ Project members added')
 
   // Create Tasks
-  const tasksData = [
-    {
-      title: 'Design System Architecture',
-      description: 'Create scalable architecture for the learning platform',
-      projectId: createdProjects[0].id,
-      assignedTo: createdUsers[0].id,
-      assignedBy: createdUsers[0].id,
+  console.log('📋 Creating Tasks...')
+  const task1 = await prisma.task.create({
+    data: {
+      projectId: project1.id,
+      title: 'Design User Authentication System',
+      description: 'Implement secure user authentication with JWT tokens',
       status: 'IN_PROGRESS',
       priority: 'HIGH',
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      estimatedHours: 40,
-      actualHours: 25,
+      assignedTo: studentUser.id,
+      assignedBy: employerUser.id,
+      dueDate: new Date('2024-02-15'),
+      estimatedHours: 8.0,
+      actualHours: 6.5,
     },
-    {
-      title: 'Implement Authentication System',
-      description: 'Build secure auth system with JWT tokens',
-      projectId: createdProjects[0].id,
-      assignedTo: createdUsers[0].id,
-      assignedBy: createdUsers[0].id,
+  })
+  const task2 = await prisma.task.create({
+    data: {
+      projectId: project1.id,
+      title: 'Implement Payment Gateway Integration',
+      description: 'Integrate Stripe payment gateway for checkout',
       status: 'TODO',
-      priority: 'HIGH',
-      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-      estimatedHours: 32,
+      priority: 'CRITICAL',
+      assignedTo: studentUser.id,
+      assignedBy: mentorUser.id,
+      dueDate: new Date('2024-02-20'),
+      estimatedHours: 12.0,
     },
-    {
-      title: 'Develop Mobile App',
-      description: 'Create mobile applications for iOS and Android',
-      projectId: createdProjects[0].id,
-      assignedTo: createdUsers[1].id,
-      assignedBy: createdUsers[0].id,
+  })
+  const task3 = await prisma.task.create({
+    data: {
+      projectId: project1.id,
+      title: 'Create Product Catalog UI',
+      description: 'Design and implement product catalog interface',
       status: 'DONE',
       priority: 'MEDIUM',
-      dueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      estimatedHours: 48,
-      actualHours: 45,
-      completedAt: new Date(),
+      assignedTo: studentUser.id,
+      assignedBy: employerUser.id,
+      dueDate: new Date('2024-02-01'),
+      completedAt: new Date('2024-01-31'),
+      estimatedHours: 6.0,
+      actualHours: 5.5,
     },
-  ]
-
-  const tasks = await prisma.task.createMany({
-    data: tasksData,
   })
-  console.log(`✅ Created ${tasks.count} tasks`)
-
-  // Get created tasks
-  const createdTasks = await prisma.task.findMany({
-    orderBy: { createdAt: 'asc' },
+  const task4 = await prisma.task.create({
+    data: {
+      projectId: project2.id,
+      title: 'Research AI Models',
+      description: 'Research and evaluate suitable AI models for analytics',
+      status: 'IN_PROGRESS',
+      priority: 'HIGH',
+      assignedTo: studentUser.id,
+      assignedBy: mentorUser.id,
+      dueDate: new Date('2024-03-15'),
+      estimatedHours: 16.0,
+    },
   })
+  const task5 = await prisma.task.create({
+    data: {
+      projectId: project2.id,
+      title: 'Build Data Pipeline',
+      description: 'Create ETL pipeline for data processing',
+      status: 'TODO',
+      priority: 'HIGH',
+      assignedTo: mentorUser.id,
+      assignedBy: mentorUser.id,
+      dueDate: new Date('2024-03-30'),
+      estimatedHours: 20.0,
+    },
+  })
+  const task6 = await prisma.task.create({
+    data: {
+      projectId: project3.id,
+      title: 'Design App Architecture',
+      description: 'Create detailed app architecture document',
+      status: 'TODO',
+      priority: 'CRITICAL',
+      assignedTo: studentUser.id,
+      assignedBy: studentUser.id,
+      dueDate: new Date('2024-03-01'),
+      estimatedHours: 10.0,
+    },
+  })
+  console.log('✅ Tasks created')
+
+  // Create Subtasks
+  console.log('📝 Creating Subtasks...')
+  await prisma.subTask.create({
+    data: {
+      taskId: task1.id,
+      title: 'Design database schema for users',
+      completed: true,
+      sortOrder: 1,
+    },
+  })
+  await prisma.subTask.create({
+    data: {
+      taskId: task1.id,
+      title: 'Implement login API endpoint',
+      completed: true,
+      sortOrder: 2,
+    },
+  })
+  await prisma.subTask.create({
+    data: {
+      taskId: task1.id,
+      title: 'Implement JWT token generation',
+      completed: false,
+      sortOrder: 3,
+    },
+  })
+  console.log('✅ Subtasks created')
+
+  // Create Milestones
+  console.log('🎯 Creating Milestones...')
+  await prisma.milestone.create({
+    data: {
+      projectId: project1.id,
+      title: 'Authentication System Complete',
+      description: 'Complete user authentication and authorization',
+      status: 'IN_PROGRESS',
+      dueDate: new Date('2024-02-28'),
+      metrics: '2/3 tasks completed',
+    },
+  })
+  await prisma.milestone.create({
+    data: {
+      projectId: project1.id,
+      title: 'Payment Integration Complete',
+      description: 'Complete payment gateway integration',
+      status: 'NOT_STARTED',
+      dueDate: new Date('2024-03-15'),
+      metrics: '0/1 tasks completed',
+    },
+  })
+  console.log('✅ Milestones created')
+
+  // Create Time Entries
+  console.log('⏱️ Creating Time Entries...')
+  await prisma.timeEntry.create({
+    data: {
+      taskId: task1.id,
+      userId: studentUser.id,
+      date: new Date('2024-02-05'),
+      hours: 3.5,
+      description: 'Worked on database schema design',
+      billable: true,
+      hourlyRate: 50.0,
+    },
+  })
+  await prisma.timeEntry.create({
+    data: {
+      taskId: task1.id,
+      userId: studentUser.id,
+      date: new Date('2024-02-06'),
+      hours: 3.0,
+      description: 'Implemented login API',
+      billable: true,
+      hourlyRate: 50.0,
+    },
+  })
+  await prisma.timeEntry.create({
+    data: {
+      taskId: task3.id,
+      userId: studentUser.id,
+      date: new Date('2024-01-30'),
+      hours: 5.5,
+      description: 'Completed product catalog UI',
+      billable: true,
+      hourlyRate: 50.0,
+    },
+  })
+  console.log('✅ Time entries created')
+
+  // Create Leave Requests
+  console.log('🏖️ Creating Leave Requests...')
+  await prisma.leaveRequest.create({
+    data: {
+      userId: studentUser.id,
+      leaveType: 'SICK_LEAVE',
+      startDate: new Date('2024-02-10'),
+      endDate: new Date('2024-02-11'),
+      reason: 'Feeling unwell, need rest',
+      status: 'APPROVED',
+      reviewedBy: mentorUser.id,
+      reviewedAt: new Date('2024-02-09'),
+    },
+  })
+  await prisma.leaveRequest.create({
+    data: {
+      userId: studentUser.id,
+      leaveType: 'PERSONAL_LEAVE',
+      startDate: new Date('2024-03-15'),
+      endDate: new Date('2024-03-18'),
+      reason: 'Personal family event',
+      status: 'PENDING',
+    },
+  })
+  await prisma.leaveRequest.create({
+    data: {
+      userId: studentUser.id,
+      leaveType: 'VACATION',
+      startDate: new Date('2024-06-01'),
+      endDate: new Date('2024-06-07'),
+      reason: 'Summer vacation',
+      status: 'PENDING',
+    },
+  })
+  console.log('✅ Leave requests created')
 
   // Create Notifications
-  const notificationsData = [
-    {
-      userId: createdUsers[0].id,
+  console.log('🔔 Creating Notifications...')
+  await prisma.notification.create({
+    data: {
+      userId: studentUser.id,
       type: 'TASK_ASSIGNED',
       title: 'New Task Assigned',
-      message: `You have been assigned to: ${createdTasks[0].title}`,
+      message: 'You have been assigned to "Design User Authentication System"',
       priority: 'HIGH',
       read: false,
     },
-    {
-      userId: createdUsers[0].id,
+  })
+  await prisma.notification.create({
+    data: {
+      userId: studentUser.id,
       type: 'PROJECT_UPDATE',
       title: 'Project Update',
-      message: `Project ${createdProjects[0].name} status changed to In Progress`,
+      message: 'E-Commerce Platform status changed to IN_PROGRESS',
       priority: 'MEDIUM',
-      read: false,
+      read: true,
     },
-    {
-      userId: createdUsers[0].id,
-      type: 'SUCCESS',
-      title: 'Task Completed',
-      message: `Congratulations! You completed: ${createdTasks[2].title}`,
-      priority: 'LOW',
-      read: false,
-    },
-  ]
-
-  await prisma.notification.createMany({
-    data: notificationsData,
   })
-  console.log(`✅ Created ${notificationsData.length} notifications`)
+  await prisma.notification.create({
+    data: {
+      userId: studentUser.id,
+      type: 'INFO',
+      title: 'Leave Request Approved',
+      message: 'Your sick leave request has been approved',
+      priority: 'LOW',
+      read: true,
+    },
+  })
+  console.log('✅ Notifications created')
+
+  // Create Ratings
+  console.log('⭐ Creating Ratings...')
+  await prisma.rating.create({
+    data: {
+      fromUserId: mentorUser.id,
+      toUserId: studentUser.id,
+      type: 'EXECUTION',
+      score: 5,
+      comment: 'Excellent work on the authentication system',
+      projectId: project1.id,
+    },
+  })
+  await prisma.rating.create({
+    data: {
+      fromUserId: employerUser.id,
+      toUserId: studentUser.id,
+      type: 'COLLABORATION',
+      score: 4,
+      comment: 'Great team player, always communicates well',
+      projectId: project1.id,
+    },
+  })
+  await prisma.rating.create({
+    data: {
+      fromUserId: mentorUser.id,
+      toUserId: studentUser.id,
+      type: 'RELIABILITY',
+      score: 5,
+      comment: 'Always delivers on time with quality work',
+    },
+  })
+  console.log('✅ Ratings created')
+
+  // Create Jobs
+  console.log('💼 Creating Jobs...')
+  const job1 = await prisma.job.create({
+    data: {
+      userId: employerUser.id,
+      businessId: business.id,
+      title: 'Full Stack Developer',
+      description: 'We are looking for a talented full stack developer to join our team',
+      type: 'FULL_TIME',
+      location: 'San Francisco, CA',
+      salary: '$120,000 - $150,000',
+      published: true,
+      publishedAt: new Date(),
+    },
+  })
+  const job2 = await prisma.job.create({
+    data: {
+      userId: employerUser.id,
+      businessId: business.id,
+      title: 'Frontend Developer Intern',
+      description: 'Summer internship program for aspiring frontend developers',
+      type: 'INTERNSHIP',
+      location: 'Remote',
+      salary: '$30/hour',
+      published: true,
+      publishedAt: new Date(),
+    },
+  })
+  console.log('✅ Jobs created')
+
+  // Create Job Applications
+  console.log('📄 Creating Job Applications...')
+  await prisma.jobApplication.create({
+    data: {
+      jobId: job1.id,
+      userId: studentUser.id,
+      status: 'PENDING',
+    },
+  })
+  console.log('✅ Job applications created')
+
+  // Create Messages
+  console.log('💬 Creating Messages...')
+  await prisma.message.create({
+    data: {
+      fromUserId: employerUser.id,
+      toUserId: studentUser.id,
+      content: 'Hi Alex, would you be interested in working on our new project?',
+      read: false,
+    },
+  })
+  await prisma.message.create({
+    data: {
+      fromUserId: studentUser.id,
+      toUserId: mentorUser.id,
+      content: 'Thanks for the feedback on my task submission!',
+      read: true,
+    },
+  })
+  console.log('✅ Messages created')
+
+  // Create Leaderboard Entries
+  console.log('🏆 Creating Leaderboard Entries...')
+  await prisma.leaderboard.create({
+    data: {
+      userId: studentUser.id,
+      category: 'Tasks Completed',
+      score: 25.0,
+      rank: 3,
+    },
+  })
+  await prisma.leaderboard.create({
+    data: {
+      userId: studentUser.id,
+      category: 'Project Contributions',
+      score: 18.0,
+      rank: 5,
+    },
+  })
+  console.log('✅ Leaderboard entries created')
+
+  // Create Audit Logs
+  console.log('📊 Creating Audit Logs...')
+  await prisma.auditLog.create({
+    data: {
+      userId: studentUser.id,
+      action: 'LOGIN',
+      entity: 'User',
+      entityId: studentUser.id,
+      details: 'User logged in',
+    },
+  })
+  await prisma.auditLog.create({
+    data: {
+      userId: studentUser.id,
+      action: 'CREATE',
+      entity: 'Task',
+      entityId: task1.id,
+      details: 'Created new task: Design User Authentication System',
+    },
+  })
+  console.log('✅ Audit logs created')
+
+  // Create Investments
+  console.log('💰 Creating Investments...')
+  await prisma.investment.create({
+    data: {
+      userId: investorUser.id,
+      projectId: project3.id,
+      amount: 50000.0,
+      type: 'SEED_FUNDING',
+      status: 'APPROVED',
+    },
+  })
+  await prisma.investment.create({
+    data: {
+      userId: investorUser.id,
+      projectId: project2.id,
+      amount: 100000.0,
+      type: 'SERIES_A',
+      status: 'UNDER_REVIEW',
+    },
+  })
+  console.log('✅ Investments created')
+
+  // Create Professional Records
+  console.log('📜 Creating Professional Records...')
+  await prisma.professionalRecord.create({
+    data: {
+      userId: studentUser.id,
+      recordType: 'CERTIFICATION',
+      title: 'AWS Certified Developer',
+      description: 'Amazon Web Services Developer Associate Certification',
+      startDate: new Date('2023-08-01'),
+      verified: true,
+    },
+  })
+  await prisma.professionalRecord.create({
+    data: {
+      userId: mentorUser.id,
+      recordType: 'AWARD',
+      title: 'Best Technical Lead 2023',
+      description: 'Awarded for exceptional leadership in project delivery',
+      startDate: new Date('2023-12-15'),
+      verified: true,
+    },
+  })
+  console.log('✅ Professional records created')
+
+  // Create Verification Requests
+  console.log('✅ Creating Verification Requests...')
+  await prisma.verificationRequest.create({
+    data: {
+      userId: studentUser.id,
+      type: 'IDENTITY',
+      status: 'VERIFIED',
+      submittedAt: new Date('2023-12-01'),
+      reviewedAt: new Date('2023-12-05'),
+      notes: 'Identity verified successfully',
+      requesterId: adminUser.id,
+    },
+  })
+  await prisma.verificationRequest.create({
+    data: {
+      userId: studentUser.id,
+      type: 'EDUCATION',
+      status: 'UNDER_REVIEW',
+      submittedAt: new Date('2024-01-10'),
+      notes: 'Education verification in progress',
+      requesterId: adminUser.id,
+    },
+  })
+  console.log('✅ Verification requests created')
+
+  // Create Agreements
+  console.log('📋 Creating Agreements...')
+  await prisma.agreement.create({
+    data: {
+      userId: studentUser.id,
+      projectId: project1.id,
+      title: 'NDA - E-Commerce Project',
+      content: 'Non-disclosure agreement for E-Commerce Platform project',
+      signed: true,
+      signedAt: new Date('2024-01-15'),
+    },
+  })
+  await prisma.agreement.create({
+    data: {
+      userId: studentUser.id,
+      projectId: project2.id,
+      title: 'IP Agreement - AI Dashboard',
+      content: 'Intellectual property agreement for AI Analytics Dashboard project',
+      signed: false,
+    },
+  })
+  console.log('✅ Agreements created')
+
+  // Create Departments
+  console.log('🏢 Creating Departments...')
+  await prisma.department.create({
+    data: {
+      projectId: project1.id,
+      name: 'Frontend Team',
+      headId: mentorUser.id,
+    },
+  })
+  await prisma.department.create({
+    data: {
+      projectId: project1.id,
+      name: 'Backend Team',
+      headId: mentorUser.id,
+    },
+  })
+  await prisma.department.create({
+    data: {
+      projectId: project2.id,
+      name: 'AI/ML Team',
+    },
+  })
+  console.log('✅ Departments created')
+
+  // Create Vacancies
+  console.log('📢 Creating Vacancies...')
+  await prisma.vacancy.create({
+    data: {
+      projectId: project1.id,
+      title: 'UI/UX Designer',
+      description: 'Looking for talented UI/UX designer',
+      type: 'FULL_TIME',
+      skills: 'Figma, Adobe XD, Prototyping',
+      slots: 2,
+      filled: 1,
+    },
+  })
+  await prisma.vacancy.create({
+    data: {
+      projectId: project2.id,
+      title: 'ML Engineer',
+      description: 'Machine learning engineer for AI analytics',
+      type: 'FULL_TIME',
+      skills: 'Python, TensorFlow, PyTorch',
+      slots: 3,
+      filled: 0,
+    },
+  })
+  console.log('✅ Vacancies created')
+
+  // Create Work Sessions
+  console.log('⏱️ Creating Work Sessions...')
+  await prisma.workSession.create({
+    data: {
+      userId: studentUser.id,
+      startTime: new Date('2024-02-05T09:00:00'),
+      endTime: new Date('2024-02-05T12:30:00'),
+      duration: 12600, // 3.5 hours in seconds
+    },
+  })
+  await prisma.workSession.create({
+    data: {
+      userId: studentUser.id,
+      startTime: new Date('2024-02-06T10:00:00'),
+      endTime: new Date('2024-02-06T13:00:00'),
+      duration: 10800, // 3 hours in seconds
+    },
+  })
+  console.log('✅ Work sessions created')
+
+  // Create Task Dependencies
+  console.log('🔗 Creating Task Dependencies...')
+  await prisma.taskDependency.create({
+    data: {
+      taskId: task2.id,
+      dependsOnId: task1.id,
+    },
+  })
+  await prisma.taskDependency.create({
+    data: {
+      taskId: task4.id,
+      dependsOnId: task2.id,
+    },
+  })
+  console.log('✅ Task dependencies created')
 
   console.log('🎉 Database seeding completed successfully!')
+  console.log('\n📝 Login credentials:')
+  console.log('  Student: student@techuniversity.edu / password123')
+  console.log('  Mentor: mentor@techuniversity.edu / password123')
+  console.log('  Employer: employer@company.com / password123')
+  console.log('  Investor: investor@vcfirm.com / password123')
+  console.log('  Admin: admin@techuniversity.edu / password123')
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seeding failed:', e)
+    console.error('❌ Error seeding database:', e)
     process.exit(1)
   })
   .finally(async () => {

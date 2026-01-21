@@ -135,6 +135,10 @@ export default function StudentSettingsPage() {
     }
   }
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(prev => !prev)
+  }
+
   const quickActions = [
     { id: 'view-profile', label: 'View Profile', icon: User, href: '/dashboard/student/profile' },
     { id: 'go-dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard/student' },
@@ -159,17 +163,31 @@ export default function StudentSettingsPage() {
             </div>
             <div className="flex items-center gap-3">
               {quickActions.map(action => (
-                <Button
-                  key={action.id}
-                  variant="ghost"
-                  size="icon"
-                  className="hover:bg-white/5 dark:hover:bg-slate-100 transition-colors"
-                  asChild={action.href ? Link : undefined}
-                  onClick={action.onClick}
-                  title={action.label}
-                >
-                  {React.createElement(action.icon, { className: "h-4 w-4" })}
-                </Button>
+                <>
+                  {action.href ? (
+                    <Link key={action.id} href={action.href}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="hover:bg-white/5 dark:hover:bg-slate-100 transition-colors"
+                        title={action.label}
+                      >
+                        <action.icon className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button
+                      key={action.id}
+                      variant="ghost"
+                      size="icon"
+                      className="hover:bg-white/5 dark:hover:bg-slate-100 transition-colors"
+                      onClick={action.onClick}
+                      title={action.label}
+                    >
+                      <action.icon className="h-4 w-4" />
+                    </Button>
+                  )}
+                </>
               ))}
             </div>
           </div>

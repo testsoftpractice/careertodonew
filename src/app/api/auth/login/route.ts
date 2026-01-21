@@ -146,14 +146,14 @@ export async function POST(request: NextRequest) {
 
     // Calculate average ratings
     const ratings = await db.rating.findMany({
-      where: { ratedId: user.id },
+      where: { toUserId: user.id },
     })
 
-    const avgExecution = ratings.filter(r => r.dimension === 'EXECUTION').reduce((sum, r) => sum + r.score, 0) / (ratings.filter(r => r.dimension === 'EXECUTION').length || 1)
-    const avgCollaboration = ratings.filter(r => r.dimension === 'COLLABORATION').reduce((sum, r) => sum + r.score, 0) / (ratings.filter(r => r.dimension === 'COLLABORATION').length || 1)
-    const avgLeadership = ratings.filter(r => r.dimension === 'LEADERSHIP').reduce((sum, r) => sum + r.score, 0) / (ratings.filter(r => r.dimension === 'LEADERSHIP').length || 1)
-    const avgEthics = ratings.filter(r => r.dimension === 'ETHICS').reduce((sum, r) => sum + r.score, 0) / (ratings.filter(r => r.dimension === 'ETHICS').length || 1)
-    const avgReliability = ratings.filter(r => r.dimension === 'RELIABILITY').reduce((sum, r) => sum + r.score, 0) / (ratings.filter(r => r.dimension === 'RELIABILITY').length || 1)
+    const avgExecution = ratings.filter(r => r.type === 'EXECUTION').reduce((sum, r) => sum + r.score, 0) / (ratings.filter(r => r.type === 'EXECUTION').length || 1)
+    const avgCollaboration = ratings.filter(r => r.type === 'COLLABORATION').reduce((sum, r) => sum + r.score, 0) / (ratings.filter(r => r.type === 'COLLABORATION').length || 1)
+    const avgLeadership = ratings.filter(r => r.type === 'LEADERSHIP').reduce((sum, r) => sum + r.score, 0) / (ratings.filter(r => r.type === 'LEADERSHIP').length || 1)
+    const avgEthics = ratings.filter(r => r.type === 'ETHICS').reduce((sum, r) => sum + r.score, 0) / (ratings.filter(r => r.type === 'ETHICS').length || 1)
+    const avgReliability = ratings.filter(r => r.type === 'RELIABILITY').reduce((sum, r) => sum + r.score, 0) / (ratings.filter(r => r.type === 'RELIABILITY').length || 1)
 
     return NextResponse.json({
       message: 'Login successful',

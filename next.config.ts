@@ -12,8 +12,8 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
 
-  // Turbopack configuration (Next.js 16 default)
-  turbopack: {},
+  // Turbopack configuration (Next.js 16 default) - disabled due to stability issues
+  // turbopack: {},
 
   // Image optimization settings
   images: {

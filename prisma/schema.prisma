@@ -8,7 +8,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
- directUrl = env("DIRECT_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ============================================
@@ -97,11 +97,11 @@ enum MilestoneStatus {
 }
 
 enum RatingType {
-  SKILL
-  PROFESSIONALISM
-  COMMUNICATION
+  EXECUTION
+  COLLABORATION
   LEADERSHIP
-  TEAMWORK
+  ETHICS
+  RELIABILITY
 }
 
 enum NotificationType {
@@ -227,6 +227,11 @@ model User {
   ethicsScore           Float?
   reliabilityScore      Float?
   progressionLevel      ProgressionLevel?
+
+  // Account security
+  loginAttempts        Int                @default(0)
+  lockedAt             DateTime?
+  lastPasswordChange   DateTime?
 
   // Relations
   skills                Skill[]
@@ -451,6 +456,7 @@ model SubTask {
   taskId    String
   title     String
   completed Boolean  @default(false)
+  sortOrder Int      @default(0)
 
   // Relations
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
@@ -569,10 +575,12 @@ model WorkSession {
 model ProfessionalRecord {
   id          String   @id @default(cuid())
   userId      String
+  recordType  String?
   title       String
   description String
   startDate   DateTime
   endDate     DateTime?
+  metadata    String?
   verified    Boolean  @default(false)
 
   // Relations

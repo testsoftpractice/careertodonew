@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
           }
         },
         subTasks: {
-          orderBy: { order: 'asc' }
+          orderBy: { sortOrder: 'asc' }
         }
       },
       orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }]

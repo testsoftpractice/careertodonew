@@ -164,7 +164,7 @@ function getDashboardForRole(role: string): string {
   return roleDashboardMap[role] || '/'
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   console.log('=== MIDDLEWARE ===')

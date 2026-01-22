@@ -104,7 +104,7 @@ export function TaskCard({
                 {description}
               </p>
             )}
-            {projectName && (
+            {projectName && projectId && (
               <Link
                 href={`/projects/${projectId}`}
                 className="text-xs text-primary hover:underline mt-1 inline-block"

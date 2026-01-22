@@ -6,8 +6,18 @@ const globalForPrisma = globalThis as unknown as {
 
 // Initialize Prisma client (singleton pattern for serverless)
 if (!globalForPrisma.prisma) {
+  console.log('[DB] Initializing Prisma Client...')
+  console.log('[DB] DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET')
+  console.log('[DB] DIRECT_URL:', process.env.DIRECT_URL ? 'SET' : 'NOT SET')
+  console.log('[DB] Using datasource URL:', process.env.DIRECT_URL || process.env.DATABASE_URL)
+
   globalForPrisma.prisma = new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error'] : ['error'],
+    datasources: {
+      db: {
+        url: process.env.DIRECT_URL || process.env.DATABASE_URL
+      }
+    }
   })
 }
 

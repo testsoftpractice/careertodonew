@@ -5,11 +5,12 @@ import { ProjectStatus } from '@prisma/client'
 // GET /api/projects/[id] - Get a specific project
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const project = await db.project.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         owner: {
           select: {
@@ -19,7 +20,13 @@ export async function GET(
             email: true,
           },
         },
-        university: true,
+        business: {
+          select: {
+            id: true,
+            name: true,
+            logo: true,
+          },
+        },
         members: {
           include: {
             user: {
@@ -31,7 +38,6 @@ export async function GET(
                 progressionLevel: true,
               },
             },
-            department: true,
           },
         },
         departments: {
@@ -54,7 +60,7 @@ export async function GET(
                 avatar: true,
               },
             },
-            subtasks: true,
+            subTasks: true,
           },
           orderBy: {
             dueDate: 'asc',
@@ -66,18 +72,7 @@ export async function GET(
             dueDate: 'asc',
           },
         },
-        investments: {
-          include: {
-            investor: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
-        agreements: true,
+        vacancies: true,
       },
     })
 
@@ -96,15 +91,15 @@ export async function GET(
         category: project.category,
         status: project.status,
         owner: project.owner,
-        university: project.university,
+        business: project.business,
         members: project.members,
         departments: project.departments,
         tasks: project.tasks,
         milestones: project.milestones,
-        investments: project.investments,
-        agreements: project.agreements,
+        vacancies: project.vacancies,
         startDate: project.startDate,
         endDate: project.endDate,
+        budget: project.budget,
         createdAt: project.createdAt,
         updatedAt: project.updatedAt,
       },
@@ -121,35 +116,33 @@ export async function GET(
 // PATCH /api/projects/[id] - Update a project
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     const {
-      title,
+      name,
       description,
       status,
-      hrLeadId,
-      completionRate,
-      seekingInvestment,
-      investmentGoal,
-      investmentRaised,
       startDate,
       endDate,
+      budget,
     } = body
 
     const project = await db.project.update({
-      where: { id: params.id },
+      where: { id },
       data: {
-        ...(title && { title }),
+        ...(name !== undefined && { name }),
         ...(description !== undefined && { description }),
         ...(status && { status: status as ProjectStatus }),
         ...(startDate && { startDate: new Date(startDate) }),
-        ...(endDate && { endDate: endDate ? new Date(endDate) : null }),
+        ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
+        ...(budget !== undefined && { budget }),
       },
       include: {
         owner: true,
-        university: true,
+        business: true,
       },
     })
 
@@ -169,11 +162,12 @@ export async function PATCH(
 // DELETE /api/projects/[id] - Delete a project
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await db.project.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({

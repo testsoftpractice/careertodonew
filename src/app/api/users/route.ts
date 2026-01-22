@@ -31,10 +31,7 @@ export async function GET(request: NextRequest) {
         location: true,
         major: true,
         graduationYear: true,
-        companyName: true,
-        position: true,
-        firmName: true,
-        investmentFocus: true,
+        // Removed non-existent fields: companyName, position, firmName, investmentFocus
         executionScore: true,
         collaborationScore: true,
         leadershipScore: true,

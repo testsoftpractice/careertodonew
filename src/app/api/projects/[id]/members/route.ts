@@ -3,30 +3,22 @@ import { z } from 'zod'
 import { requireAuth } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
 import { isFeatureEnabled, PROJECT_ROLES } from '@/lib/features/flags'
-import { ProjectRole } from '@/lib/models/project-roles'
 
-// Validation schemas
+// Validation schemas - using correct ProjectRole enum values from schema
 const addMemberSchema = z.object({
   projectId: z.string(),
   userId: z.string(),
-  role: z.enum(['PROJECT_LEAD', 'CO_LEAD', 'DEPARTMENT_HEAD', 'TEAM_LEAD', 'MENTOR',
-                 'SENIOR_CONTRIBUTOR', 'CONTRIBUTOR', 'JUNIOR_CONTRIBUTOR']),
-  title: z.string().optional(),
-  department: z.string().optional(),
-  approvedBy: z.string().optional(),
+  role: z.enum(['OWNER', 'PROJECT_MANAGER', 'TEAM_LEAD', 'TEAM_MEMBER', 'VIEWER']),
 })
 
 const updateMemberRoleSchema = z.object({
-  role: z.enum(['PROJECT_LEAD', 'CO_LEAD', 'DEPARTMENT_HEAD', 'TEAM_LEAD', 'MENTOR',
-                 'SENIOR_CONTRIBUTOR', 'CONTRIBUTOR', 'JUNIOR_CONTRIBUTOR']),
-  approvedBy: z.string().optional(),
+  role: z.enum(['OWNER', 'PROJECT_MANAGER', 'TEAM_LEAD', 'TEAM_MEMBER', 'VIEWER']),
 })
 
 const inviteMemberSchema = z.object({
   projectId: z.string(),
   email: z.string().email(),
-  role: z.enum(['PROJECT_LEAD', 'CO_LEAD', 'DEPARTMENT_HEAD', 'TEAM_LEAD', 'MENTOR',
-                 'SENIOR_CONTRIBUTOR', 'CONTRIBUTOR', 'JUNIOR_CONTRIBUTOR']),
+  role: z.enum(['OWNER', 'PROJECT_MANAGER', 'TEAM_LEAD', 'TEAM_MEMBER', 'VIEWER']),
   message: z.string().min(10).max(500).optional(),
   expiresAt: z.string().datetime().optional(),
 })
@@ -50,7 +42,7 @@ export async function GET(
     // Get project
     const project = await db.project.findUnique({
       where: { id },
-      select: { projectLeadId: true },
+      select: { ownerId: true },
     })
 
     if (!project) {
@@ -58,9 +50,9 @@ export async function GET(
     }
 
     // Check if user has access to project
-    const isProjectLead = project.projectLeadId === user.id
-    const isUniversityAdmin = user.userRole === 'UNIVERSITY_ADMIN' || user.userRole === 'PLATFORM_ADMIN'
-    const hasAccess = isProjectLead || isUniversityAdmin
+    const isOwner = project.ownerId === user.id
+    const isUniversityAdmin = user.role === 'UNIVERSITY_ADMIN' || user.role === 'PLATFORM_ADMIN'
+    const hasAccess = isOwner || isUniversityAdmin
 
     if (!hasAccess) {
       return NextResponse.json({ error: 'Forbidden - No access to this project' }, { status: 403 })
@@ -76,7 +68,7 @@ export async function GET(
             name: true,
             email: true,
             avatar: true,
-            userRole: true,
+            role: true,
           },
         },
       },
@@ -88,7 +80,7 @@ export async function GET(
       data: {
         project: {
           id: project.id,
-          projectLeadId: project.projectLeadId,
+          ownerId: project.ownerId,
         },
         members,
         totalMembers: members.length,
@@ -119,15 +111,15 @@ export async function POST(
     const body = await request.json()
     const validatedData = addMemberSchema.parse(body)
 
-    // Check if user has permission (project lead or university admin or platform admin)
-    if (user.userRole !== 'PLATFORM_ADMIN' && user.userRole !== 'UNIVERSITY_ADMIN') {
+    // Check if user has permission (project owner or university admin or platform admin)
+    if (user.role !== 'PLATFORM_ADMIN' && user.role !== 'UNIVERSITY_ADMIN') {
       return NextResponse.json({ error: 'Forbidden - Only admins can add members' }, { status: 403 })
     }
 
     // Get project
     const project = await db.project.findUnique({
       where: { id },
-      select: { projectLeadId: true },
+      select: { ownerId: true },
     })
 
     if (!project) {
@@ -146,18 +138,13 @@ export async function POST(
       return NextResponse.json({ error: 'User is already a member of this project' }, { status: 400 })
     }
 
-    // Add team member
+    // Add team member - using only fields that exist in schema
     const member = await db.projectMember.create({
       data: {
         projectId: id,
         userId: validatedData.userId,
         role: validatedData.role,
-        title: validatedData.title,
-        department: validatedData.department,
-        approvedBy: validatedData.approvedBy || null,
         joinedAt: new Date(),
-        currentLevel: 1, // Start at level 1
-        xp: 0,
       },
     })
 
@@ -199,7 +186,7 @@ export async function PUT(
     // Get project
     const project = await db.project.findUnique({
       where: { id },
-      select: { projectLeadId: true },
+      select: { ownerId: true },
     })
 
     if (!project) {
@@ -216,18 +203,17 @@ export async function PUT(
     }
 
     // Check if user has permission to update roles
-    // Project lead, university admin, platform admin can update any role
-    if (user.userRole !== 'PLATFORM_ADMIN' && user.userRole !== 'UNIVERSITY_ADMIN' &&
-        project.projectLeadId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden - Only project lead or admins can update roles' }, { status: 403 })
+    // Project owner, university admin, platform admin can update any role
+    if (user.role !== 'PLATFORM_ADMIN' && user.role !== 'UNIVERSITY_ADMIN' &&
+        project.ownerId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden - Only project owner or admins can update roles' }, { status: 403 })
     }
 
-    // Update member role
+    // Update member role - using only fields that exist in schema
     const updatedMember = await db.projectMember.update({
       where: { id: memberId },
       data: {
         role: validatedData.role,
-        approvedBy: validatedData.approvedBy || member.approvedBy,
         updatedAt: new Date(),
       },
     })
@@ -270,7 +256,7 @@ export async function DELETE(
     // Get project
     const project = await db.project.findUnique({
       where: { id },
-      select: { projectLeadId: true },
+      select: { ownerId: true },
     })
 
     if (!project) {
@@ -278,10 +264,10 @@ export async function DELETE(
     }
 
     // Check if user has permission to remove members
-    // Project lead, university admin, or platform admin can remove members
-    if (user.userRole !== 'PLATFORM_ADMIN' && user.userRole !== 'UNIVERSITY_ADMIN' &&
-        project.projectLeadId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden - Only project lead or admins can remove members' }, { status: 403 })
+    // Project owner, university admin, or platform admin can remove members
+    if (user.role !== 'PLATFORM_ADMIN' && user.role !== 'UNIVERSITY_ADMIN' &&
+        project.ownerId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden - Only project owner or admins can remove members' }, { status: 403 })
     }
 
     // Get member

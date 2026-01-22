@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -58,9 +58,9 @@ interface Milestone {
   completedAt?: string
 }
 
-export default function ProjectDetail({ params }: { params: { id: string } }) {
+export default function ProjectDetail({ params }: { params: Promise<{ id: string }> }) {
   const { user } = useAuth()
-  const projectId = params.id
+  const { id: projectId } = use(params)
 
   const [project, setProject] = useState<any>(null)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])

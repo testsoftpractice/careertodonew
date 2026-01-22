@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
             status: true,
           }
         },
-        subtasks: {
+        subTasks: {
           orderBy: { order: 'asc' }
         }
       },

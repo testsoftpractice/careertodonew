@@ -2,132 +2,117 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { UserRole, VerificationStatus } from '@prisma/client'
 import { hashPassword, generateToken } from '@/lib/auth/jwt'
-import { signupSchema } from '@/lib/validations/schemas'
-import { z } from 'zod'
 
-// POST /api/auth/signup - User registration with password hashing
+// POST /api/auth/signup - Simple user registration
 export async function POST(request: NextRequest) {
   try {
-    // Debug: Check environment variables
-    if (!process.env.DATABASE_URL) {
-      console.error('[SIGNUP ERROR] DATABASE_URL is not set!')
-      return NextResponse.json(
-        { success: false, error: 'Server configuration error: Database not configured' },
-        { status: 500 }
-      )
-    }
-
-    if (!process.env.JWT_SECRET) {
-      console.error('[SIGNUP ERROR] JWT_SECRET is not set!')
-      return NextResponse.json(
-        { success: false, error: 'Server configuration error: JWT secret not configured' },
-        { status: 500 }
-      )
-    }
+    console.log('[SIGNUP] =============== START ===============')
 
     const body = await request.json()
+    console.log('[SIGNUP] Received body:', JSON.stringify(body, null, 2))
 
-    // Validate input
-    const validatedData = signupSchema.parse(body)
-    const {
-      email,
-      password,
-      firstName,
-      lastName,
-      role,
-      bio,
-      universityId,
-      major,
-      graduationYear,
-      universityName,
-      universityCode,
-      website,
-      companyName,
-      companyWebsite,
-      position,
-      firmName,
-      investmentFocus,
-    } = validatedData
+    const { email, password, firstName, lastName, role = 'STUDENT' } = body
 
-    // Check if user already exists
+    console.log('[SIGNUP] Email:', email)
+    console.log('[SIGNUP] Original role:', role)
+
+    // Normalize/validate role - map invalid values to valid ones
+    const validRoles = ['STUDENT', 'MENTOR', 'EMPLOYER', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN']
+    let normalizedRole = role.toUpperCase()
+
+    // Map common invalid role values to valid ones
+    if (normalizedRole === 'UNIVERSITY') {
+      normalizedRole = 'UNIVERSITY_ADMIN'
+      console.log('[SIGNUP] Mapped role UNIVERSITY -> UNIVERSITY_ADMIN')
+    } else if (!validRoles.includes(normalizedRole)) {
+      normalizedRole = 'STUDENT' // Default to STUDENT for invalid roles
+      console.log('[SIGNUP] Defaulting role to STUDENT')
+    }
+
+    console.log('[SIGNUP] Normalized role:', normalizedRole)
+
+    // Basic validation - only check required fields
+    if (!email) {
+      console.log('[SIGNUP] ERROR: Email is missing')
+      return NextResponse.json(
+        { success: false, error: 'Email is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!password) {
+      console.log('[SIGNUP] ERROR: Password is missing')
+      return NextResponse.json(
+        { success: false, error: 'Password is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!firstName) {
+      console.log('[SIGNUP] ERROR: First name is missing')
+      return NextResponse.json(
+        { success: false, error: 'First name is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!lastName) {
+      console.log('[SIGNUP] ERROR: Last name is missing')
+      return NextResponse.json(
+        { success: false, error: 'Last name is required' },
+        { status: 400 }
+      )
+    }
+
+    // Check if user exists
+    console.log('[SIGNUP] Checking if user exists...')
     const existingUser = await db.user.findUnique({
       where: { email },
     })
 
     if (existingUser) {
+      console.log('[SIGNUP] ERROR: User already exists')
       return NextResponse.json(
         { success: false, error: 'User with this email already exists' },
         { status: 400 }
       )
     }
 
+    console.log('[SIGNUP] User does not exist, proceeding...')
+
     // Hash password
-    console.log('[SIGNUP] Hashing password for user:', email)
+    console.log('[SIGNUP] Hashing password...')
     const hashedPassword = await hashPassword(password)
+    console.log('[SIGNUP] Password hashed. Length:', hashedPassword.length)
+    console.log('[SIGNUP] Hash starts with:', hashedPassword.substring(0, 10))
 
-    // For university registration, create or find university
-    let university: { id: string } | null = null
-    if (role === 'STUDENT' && universityId && universityId !== 'other') {
-      const uni = await db.university.findUnique({
-        where: { id: universityId },
-      })
-      if (uni) university = { id: uni.id }
-    } else if (role === 'UNIVERSITY_ADMIN' && universityCode && universityName) {
-      // Check if university already exists
-      const existingUni = await db.university.findUnique({
-        where: { code: universityCode },
-      })
-
-      if (existingUni) {
-        university = { id: existingUni.id }
-      } else {
-        const newUni = await db.university.create({
-          data: {
-            name: universityName,
-            code: universityCode,
-            website: website || null,
-            verificationStatus: VerificationStatus.PENDING,
-          },
-        })
-        university = { id: newUni.id }
-      }
-    }
-
-    // Create user
-    console.log('[SIGNUP] Creating user in database:', email)
+    // Create user - only required fields
+    console.log('[SIGNUP] Creating user in database...')
     const user = await db.user.create({
       data: {
         email,
         name: `${firstName} ${lastName}`,
-        role: role as UserRole,
-        bio: bio || null,
+        role: normalizedRole as UserRole,
         verificationStatus: VerificationStatus.PENDING,
         password: hashedPassword,
-        universityId: university?.id || null,
-        major: role === 'STUDENT' ? (major || null) : null,
-        graduationYear: role === 'STUDENT' && graduationYear ? parseInt(graduationYear) : null,
       },
     })
 
-    // Create professional record for user registration
-    await db.professionalRecord.create({
-      data: {
-        userId: user.id,
-        recordType: 'SKILL_ACQUIRED',
-        title: 'Platform Registration',
-        description: `Registered as ${role} on CareerToDo Platform`,
-        startDate: new Date(),
-        metadata: JSON.stringify({ role, email }),
-      },
-    })
+    console.log('[SIGNUP] User created successfully. ID:', user.id)
+    console.log('[SIGNUP] User email:', user.email)
+    console.log('[SIGNUP] User name:', user.name)
+    console.log('[SIGNUP] User role:', user.role)
 
-    // Generate JWT token
+    // Generate token
     const token = generateToken({
       userId: user.id,
       email: user.email,
       role: user.role,
       verificationStatus: user.verificationStatus,
     })
+
+    console.log('[SIGNUP] Token generated')
+    console.log('[SIGNUP] =============== SUCCESS ===============')
 
     return NextResponse.json(
       {
@@ -145,27 +130,38 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      const formattedErrors = error.issues.map(err => ({
-        field: err.path.join('.'),
-        message: err.message,
-      }))
+    console.error('[SIGNUP] =============== ERROR ===============')
+    console.error('[SIGNUP] Error type:', error?.constructor?.name)
+    console.error('[SIGNUP] Error message:', error instanceof Error ? error.message : String(error))
+    console.error('[SIGNUP] Error stack:', error instanceof Error ? error.stack : 'No stack')
+
+    // Check for unique constraint error
+    if (error instanceof Error && error.message.includes('Unique constraint')) {
+      console.log('[SIGNUP] ERROR: Unique constraint violation')
       return NextResponse.json(
-        { success: false, error: 'Validation error', errors: formattedErrors },
+        { success: false, error: 'User with this email already exists' },
         { status: 400 }
       )
     }
 
-    console.error('[SIGNUP ERROR] Detailed error:', {
-      message: error instanceof Error ? error.message : String(error),
-      name: error instanceof Error ? error.name : 'Unknown',
-      stack: error instanceof Error ? error.stack : undefined,
-      fullError: JSON.stringify(error, Object.getOwnPropertyNames(error))
-    })
+    // Check for Prisma validation error
+    if (error instanceof Error && error.message.includes('Argument')) {
+      console.log('[SIGNUP] ERROR: Prisma validation error')
+      return NextResponse.json(
+        { success: false, error: 'Validation error: ' + error.message },
+        { status: 400 }
+      )
+    }
 
+    console.log('[SIGNUP] ERROR: Returning 500 error')
     return NextResponse.json(
-      { success: false, error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
+      {
+        success: false,
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     )
   }
 }
+

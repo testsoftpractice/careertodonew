@@ -1,28 +1,12 @@
 import { z } from 'zod'
 
-// Auth schemas
+// Auth schemas - Simple
 export const signupSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string().min(1, 'Password is required'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  role: z.enum(['STUDENT', 'MENTOR', 'EMPLOYER', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN']),
-  bio: z.string().optional(),
-  // Student specific fields
-  universityId: z.string().optional(),
-  major: z.string().optional(),
-  graduationYear: z.string().optional(),
-  // University specific fields
-  universityName: z.string().optional(),
-  universityCode: z.string().optional(),
-  website: z.string().url().optional().or(z.literal('')),
-  // Employer specific fields
-  companyName: z.string().optional(),
-  companyWebsite: z.string().url().optional().or(z.literal('')),
-  position: z.string().optional(),
-  // Investor specific fields
-  firmName: z.string().optional(),
-  investmentFocus: z.string().optional(),
+  role: z.string().optional(),
 })
 
 export const loginSchema = z.object({

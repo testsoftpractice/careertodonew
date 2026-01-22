@@ -5,24 +5,20 @@ import { TaskStatus } from '@prisma/client'
 // GET /api/tasks/[id] - Get a specific task
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const task = await db.task.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         project: {
-          include: {
-            projectLead: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
+          select: {
+            id: true,
+            name: true,
+            status: true,
           },
         },
-        department: true,
         assignee: {
           select: {
             id: true,
@@ -38,9 +34,9 @@ export async function GET(
             avatar: true,
           },
         },
-        subtasks: {
+        subTasks: {
           orderBy: {
-            order: 'asc',
+            sortOrder: 'asc',
           },
         },
       },
@@ -66,9 +62,10 @@ export async function GET(
 // PATCH /api/tasks/[id] - Update a task
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     const {
       title,
@@ -77,115 +74,38 @@ export async function PATCH(
       status,
       priority,
       dueDate,
-      deliverable,
-      outputUrl,
-      qualityScore,
-      feedback,
+      estimatedHours,
+      actualHours,
     } = body
 
-    // Fetch the task before updating to check if it's being completed
-    const existingTask = await db.task.findUnique({
-      where: { id: params.id },
-      select: {
-        id: true,
-        status: true,
-        assigneeId: true,
-        creatorId: true,
-        projectId: true,
-        title: true,
+    const updatedTask = await db.task.update({
+      where: { id },
+      data: {
+        ...(title && { title }),
+        ...(description !== undefined && { description }),
+        ...(assigneeId !== undefined && { assignedTo: assigneeId }),
+        ...(status && { status: status as TaskStatus }),
+        ...(priority && { priority }),
+        ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
+        ...(estimatedHours !== undefined && { estimatedHours: estimatedHours ? parseFloat(estimatedHours) : null }),
+        ...(actualHours !== undefined && { actualHours: actualHours ? parseFloat(actualHours) : null }),
+        ...(status === TaskStatus.COMPLETED || status === TaskStatus.DONE ? { completedAt: new Date() } : {}),
+      },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     })
-
-    if (!existingTask) {
-      return NextResponse.json(
-        { error: 'Task not found' },
-        { status: 404 }
-      )
-    }
-
-    const isCompleting = status === TaskStatus.COMPLETED && existingTask.status !== TaskStatus.COMPLETED
-
-    // Update task in a transaction to also award points
-    const updatedTask = await db.$transaction(async (tx) => {
-      const task = await tx.task.update({
-        where: { id: params.id },
-        data: {
-          ...(title && { title }),
-          ...(description !== undefined && { description }),
-          ...(assigneeId !== undefined && { assigneeId }),
-          ...(status && { status: status as TaskStatus }),
-          ...(priority && { priority }),
-          ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
-          ...(deliverable !== undefined && { deliverable }),
-          ...(outputUrl !== undefined && { outputUrl }),
-          ...(qualityScore !== undefined && { qualityScore: parseFloat(qualityScore) }),
-          ...(feedback !== undefined && { feedback }),
-          ...(status === TaskStatus.COMPLETED && !body.completedAt && { completedAt: new Date() }),
-        },
-        include: {
-          project: {
-            select: {
-              id: true,
-              title: true,
-            },
-          },
-          assignee: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      })
-
-      // Award points for task completion
-      if (isCompleting && existingTask.assigneeId) {
-        try {
-          await tx.pointTransaction.create({
-            data: {
-              userId: existingTask.assigneeId,
-              points: 10, // TASK_COMPLETION points
-              source: 'TASK_COMPLETION',
-              description: `Completed task: ${task.title}`,
-              metadata: JSON.stringify({
-                taskId: task.id,
-                taskTitle: task.title,
-                projectId: task.projectId,
-                projectTitle: task.project.title,
-              }),
-            }
-          })
-
-          // Update user's total points
-          await tx.user.update({
-            where: { id: existingTask.assigneeId },
-            data: {
-              totalPoints: {
-                increment: 10,
-              },
-            },
-          })
-        } catch (pointsError) {
-          console.error('Failed to award points for task completion:', pointsError)
-          // Continue even if points awarding fails
-        }
-      }
-
-      return task
-    })
-
-    // Create notification for task completion
-    if (status === TaskStatus.COMPLETED && existingTask.assigneeId) {
-      await db.notification.create({
-        data: {
-          userId: existingTask.creatorId,
-          type: 'TASK_DUE_REMINDER',
-          title: 'Task Completed',
-          message: `Task "${existingTask.title}" has been completed by ${updatedTask.assignee?.name}`,
-          link: `/projects/${existingTask.projectId}/tasks/${existingTask.id}`,
-        },
-      })
-    }
 
     return NextResponse.json({
       message: 'Task updated successfully',
@@ -203,11 +123,12 @@ export async function PATCH(
 // DELETE /api/tasks/[id] - Delete a task
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await db.task.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({

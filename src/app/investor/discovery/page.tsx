@@ -42,8 +42,8 @@ export default function InvestorDiscoveryPage() {
   const [activeTab, setActiveTab] = useState('discover')
   const [filters, setFilters] = useState({
     search: '',
-    university: '',
-    category: '',
+    university: 'all',
+    category: 'all',
     minReputation: 0,
     seekingInvestment: false,
     sortBy: 'rankingScore',
@@ -90,11 +90,11 @@ export default function InvestorDiscoveryPage() {
           )
         }
 
-        if (filters.category) {
+        if (filters.category && filters.category !== 'all') {
           filteredBusinesses = filteredBusinesses.filter((b: any) => b.category === filters.category)
         }
 
-        if (filters.university) {
+        if (filters.university && filters.university !== 'all') {
           filteredBusinesses = filteredBusinesses.filter((b: any) => b.universityId === filters.university)
         }
 
@@ -249,7 +249,7 @@ export default function InvestorDiscoveryPage() {
                       <SelectValue placeholder="All universities" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All universities</SelectItem>
+                      <SelectItem value="all">All universities</SelectItem>
                       {universities.map((uni) => (
                         <SelectItem key={uni.id} value={uni.id}>
                           {uni.name}
@@ -266,7 +266,7 @@ export default function InvestorDiscoveryPage() {
                       <SelectValue placeholder="All categories" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All categories</SelectItem>
+                      <SelectItem value="all">All categories</SelectItem>
                       <SelectItem value="STARTUP">Startup</SelectItem>
                       <SelectItem value="E_COMMERCE">E-Commerce</SelectItem>
                       <SelectItem value="NEWS_MEDIA">News & Media</SelectItem>

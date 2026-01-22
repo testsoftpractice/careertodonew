@@ -91,7 +91,7 @@ export default function StudentDashboard() {
     description: '',
     priority: 'MEDIUM',
     dueDate: '',
-    projectId: '',
+    projectId: 'none',
   })
   const [availableProjects, setAvailableProjects] = useState<any[]>([])
 
@@ -1018,10 +1018,10 @@ export default function StudentDashboard() {
                 </SelectTrigger>
                 <SelectContent>
                   {availableProjects.length === 0 ? (
-                    <SelectItem value="" disabled>No projects available</SelectItem>
+                    <SelectItem value="none" disabled>No projects available</SelectItem>
                   ) : (
                     <>
-                      <SelectItem value="">No project</SelectItem>
+                      <SelectItem value="none">No project</SelectItem>
                       {availableProjects.map((project) => (
                         <SelectItem key={project.id} value={project.id}>
                           {project.name}
@@ -1039,7 +1039,7 @@ export default function StudentDashboard() {
               variant="outline"
               onClick={() => {
                 setShowTaskDialog(false)
-                setTaskForm({ title: '', description: '', priority: 'MEDIUM', dueDate: '', projectId: '' })
+                setTaskForm({ title: '', description: '', priority: 'MEDIUM', dueDate: '', projectId: 'none' })
               }}
             >
               Cancel

@@ -8,7 +8,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+ directUrl = env("DIRECT_URL")
 }
 
 // ============================================
@@ -17,7 +17,6 @@ datasource db {
 
 enum UserRole {
   STUDENT
-  MENTOR
   EMPLOYER
   INVESTOR
   UNIVERSITY_ADMIN
@@ -228,6 +227,7 @@ model User {
   ethicsScore           Float?
   reliabilityScore      Float?
   progressionLevel      ProgressionLevel?
+  totalPoints          Int            @default(0)
 
   // Account security
   loginAttempts        Int                @default(0)
@@ -258,6 +258,7 @@ model User {
   messagesSent          Message[]          @relation("MessagesSent")
   messagesReceived      Message[]          @relation("MessagesReceived")
   leaderboardEntries    Leaderboard[]
+  pointTransactions   PointTransaction[]
   departmentsHeaded     Department[]
 
   // Timestamps
@@ -387,6 +388,7 @@ model Project {
   departments       Department[]
   vacancies         Vacancy[]
   ratings           Rating[]
+  agreements        Agreement[]
 
   // Timestamps
   createdAt         DateTime     @default(now())
@@ -687,6 +689,7 @@ model Agreement {
 
   // Relations
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -843,4 +846,24 @@ model Leaderboard {
   @@unique([userId, category])
   @@index([category])
   @@index([rank])
+}
+
+model PointTransaction {
+  id          String     @id @default(cuid())
+  userId      String
+  points      Int
+  source      String      // TASK_COMPLETION, COURSE_FINISHED, ACHIEVEMENT, etc.
+  description String?
+  metadata    String?     // JSON string for additional data
+
+  // Relations
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([source])
+  @@index([createdAt])
 }

@@ -221,11 +221,10 @@ export default function CreateProjectPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: projectData.title,
+          name: projectData.title,
           description: projectData.description,
           category: projectData.category,
-          projectLeadId: user?.id,
-          universityId: user?.university?.id,
+          ownerId: user?.id,
           seekingInvestment: projectData.seekingInvestment,
           investmentGoal: projectData.investmentGoal ? parseFloat(projectData.investmentGoal) : null,
           startDate: projectData.startDate,

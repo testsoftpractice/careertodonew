@@ -4,33 +4,31 @@ import { db } from "@/lib/db"
 export async function GET(request: NextRequest) {
   try {
     const totalUsers = await db.user.count()
-    const activeProjects = await db.project.count({ where: { status: "ACTIVE" } })
-    const pendingProjects = await db.project.count({ where: { status: "PENDING" } })
+    const inProgressProjects = await db.project.count({ where: { status: "IN_PROGRESS" } })
+    const underReviewProjects = await db.project.count({ where: { status: "UNDER_REVIEW" } })
     const completedProjects = await db.project.count({ where: { status: "COMPLETED" } })
     const totalProjects = await db.project.count()
     const todayStart = new Date(new Date().setHours(0,0,0,0))
-    const todayActive = await db.project.count({ where: { status: "ACTIVE", createdAt: { gte: todayStart } } })
-    const todayCompleted = await db.project.count({ where: { status: "COMPLETED", completedAt: { gte: todayStart } } })
+    const todayActive = await db.project.count({ where: { status: "IN_PROGRESS", createdAt: { gte: todayStart } } })
+    const todayCompleted = await db.project.count({ where: { status: "COMPLETED", updatedAt: { gte: todayStart } } })
     const todaySubmissions = await db.project.count({ where: { createdAt: { gte: todayStart } } })
-    const flaggedContent = await db.professionalRecord.count({ where: { flagged: true } })
     const pendingApprovals = await db.verificationRequest.count({ where: { status: "PENDING" } })
-    const rejectedProjects = await db.project.count({ where: { status: "CANCELED" } })
+    const cancelledProjects = await db.project.count({ where: { status: "CANCELLED" } })
     const complianceScore = 94
     const systemHealth = "Healthy"
     const lastAudit = new Date().toISOString()
 
     const stats = {
       totalUsers,
-      activeProjects,
-      pendingProjects,
+      inProgressProjects,
+      underReviewProjects,
       completedProjects,
       totalProjects,
       todayActive,
       todayCompleted,
       todaySubmissions,
-      flaggedContent,
       pendingApprovals,
-      rejectedProjects,
+      cancelledProjects,
       complianceScore,
       systemHealth,
       lastAudit,

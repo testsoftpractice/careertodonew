@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     // Fetch employer's verification requests
     const allRequests = await db.verificationRequest.findMany({
       where: { requesterId: userId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { submittedAt: 'desc' },
     })
 
     // Calculate statistics

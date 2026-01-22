@@ -55,8 +55,11 @@ export async function GET(request: NextRequest) {
             location: true,
           },
         },
-        _count: {
-          applications: true,
+        applications: {
+          select: {
+            id: true,
+            status: true,
+          },
         },
       },
       orderBy: {

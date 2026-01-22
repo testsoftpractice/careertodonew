@@ -6,7 +6,7 @@ export const signupSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  role: z.enum(['STUDENT', 'UNIVERSITY', 'EMPLOYER', 'INVESTOR', 'PLATFORM_ADMIN']),
+  role: z.enum(['STUDENT', 'MENTOR', 'EMPLOYER', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN']),
   bio: z.string().optional(),
   // Student specific fields
   universityId: z.string().optional(),
@@ -179,7 +179,7 @@ export const taskFilterSchema = z.object({
 })
 
 export const userFilterSchema = z.object({
-  role: z.enum(['all', 'STUDENT', 'UNIVERSITY', 'EMPLOYER', 'INVESTOR', 'PLATFORM_ADMIN']).optional(),
+  role: z.enum(['all', 'STUDENT', 'MENTOR', 'EMPLOYER', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN']).optional(),
   verificationStatus: z.enum(['all', 'PENDING', 'VERIFIED', 'REJECTED']).optional(),
   universityId: z.string().optional(),
   search: z.string().optional(),

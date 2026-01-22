@@ -11,15 +11,7 @@ export async function GET(
     const project = await db.project.findUnique({
       where: { id: params.id },
       include: {
-        projectLead: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            email: true,
-          },
-        },
-        hrLead: {
+        owner: {
           select: {
             id: true,
             name: true,
@@ -51,12 +43,6 @@ export async function GET(
                 avatar: true,
               },
             },
-            _count: {
-              select: {
-                members: true,
-                tasks: true,
-              },
-            },
           },
         },
         tasks: {
@@ -77,7 +63,7 @@ export async function GET(
         },
         milestones: {
           orderBy: {
-            targetDate: 'asc',
+            dueDate: 'asc',
           },
         },
         investments: {
@@ -105,12 +91,11 @@ export async function GET(
     return NextResponse.json({
       project: {
         id: project.id,
-        title: project.title,
+        name: project.name,
         description: project.description,
         category: project.category,
         status: project.status,
-        projectLead: project.projectLead,
-        hrLead: project.hrLead,
+        owner: project.owner,
         university: project.university,
         members: project.members,
         departments: project.departments,
@@ -118,14 +103,8 @@ export async function GET(
         milestones: project.milestones,
         investments: project.investments,
         agreements: project.agreements,
-        completionRate: project.completionRate,
-        teamSize: project.members.length,
-        seekingInvestment: project.seekingInvestment,
-        investmentGoal: project.investmentGoal,
-        investmentRaised: project.investmentRaised,
         startDate: project.startDate,
         endDate: project.endDate,
-        approvalDate: project.approvalDate,
         createdAt: project.createdAt,
         updatedAt: project.updatedAt,
       },
@@ -165,16 +144,11 @@ export async function PATCH(
         ...(title && { title }),
         ...(description !== undefined && { description }),
         ...(status && { status: status as ProjectStatus }),
-        ...(hrLeadId !== undefined && { hrLeadId }),
-        ...(completionRate !== undefined && { completionRate: parseFloat(completionRate) }),
-        ...(seekingInvestment !== undefined && { seekingInvestment }),
-        ...(investmentGoal !== undefined && { investmentGoal: investmentGoal ? parseFloat(investmentGoal) : null }),
-        ...(investmentRaised !== undefined && { investmentRaised: investmentRaised ? parseFloat(investmentRaised) : null }),
         ...(startDate && { startDate: new Date(startDate) }),
         ...(endDate && { endDate: endDate ? new Date(endDate) : null }),
       },
       include: {
-        projectLead: true,
+        owner: true,
         university: true,
       },
     })

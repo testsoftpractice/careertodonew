@@ -5,22 +5,15 @@ export async function GET(request: NextRequest) {
   try {
     const agreements = await db.agreement.findMany({
       include: {
-        investment: {
-          include: {
-            project: {
-              select: {
-                title: true,
-                description: true,
-              },
-            },
-            investor: {
-              select: {
-                name: true,
-                email: true,
-              },
-            },
+        user: {
+          select: {
+            name: true,
+            email: true,
           },
         },
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     })
 
@@ -28,18 +21,15 @@ export async function GET(request: NextRequest) {
       success: true,
       data: agreements.map(agreement => ({
         id: agreement.id,
-        investmentId: agreement.investmentId,
-        projectName: agreement.investment?.project?.title || "",
-        projectDescription: agreement.investment?.project?.description || "",
-        investorName: agreement.investment?.investor?.name || "",
-        investorEmail: agreement.investment?.investor?.email || "",
-        amount: agreement.investment?.amount || 0,
-        equity: agreement.investment?.equity || 0,
-        terms: agreement.terms || "",
-        status: agreement.status || "",
+        title: agreement.title,
+        content: agreement.content,
+        projectId: agreement.projectId,
+        userId: agreement.userId,
+        user: agreement.user,
+        signed: agreement.signed,
         signedAt: agreement.signedAt?.toISOString() || null,
-        expiresAt: agreement.expiresAt?.toISOString() || null,
         createdAt: agreement.createdAt.toISOString(),
+        updatedAt: agreement.updatedAt.toISOString(),
       })),
     })
   } catch (error: any) {
@@ -51,19 +41,19 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { investmentId, terms, ipProtection, terminationClause } = body
+    const { userId, projectId, title, content } = body
 
-    if (!investmentId) {
-      return NextResponse.json({ success: false, error: "Investment ID is required" }, { status: 400 })
+    if (!userId || !title || !content) {
+      return NextResponse.json({ success: false, error: "User ID, title, and content are required" }, { status: 400 })
     }
 
     const agreement = await db.agreement.create({
       data: {
-        investmentId,
-        terms,
-        ipProtection: ipProtection || false,
-        terminationClause: terminationClause || "",
-        status: "DRAFT",
+        userId,
+        projectId: projectId || null,
+        title,
+        content,
+        signed: false,
       },
     })
 
@@ -83,25 +73,18 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const updates: any = {}
 
-    if (body.terms) updates.terms = body.terms
-    if (body.ipProtection !== undefined) updates.ipProtection = body.ipProtection
-    if (body.terminationClause !== undefined) updates.terminationClause = body.terminationClause
-    if (body.status) {
-      updates.status = body.status
-      if (body.status === "SIGNED" && !updates.signedAt) {
+    if (body.title) updates.title = body.title
+    if (body.content) updates.content = body.content
+    if (body.projectId !== undefined) updates.projectId = body.projectId
+    if (body.signed !== undefined) {
+      updates.signed = body.signed
+      if (body.signed && !updates.signedAt) {
         updates.signedAt = new Date()
       }
-      if (body.status === "COMPLETED") {
-        const agreement = await db.agreement.findUnique({ where: { id: agreementId } })
-        if (agreement?.expiresAt && agreement.expiresAt < new Date()) {
-          return NextResponse.json({ success: false, error: "Cannot complete expired agreement" }, { status: 400 })
-        }
-      }
     }
-    if (body.expiresAt !== undefined) updates.expiresAt = new Date(body.expiresAt)
 
     const agreement = await db.agreement.update({
-      where: { id: agreementId },
+      where: { id: agreementId || '' },
       data: updates,
     })
 

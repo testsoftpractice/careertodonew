@@ -93,6 +93,7 @@ export async function GET(request: NextRequest) {
 // POST /api/businesses - Create a new business
 export async function POST(request: NextRequest) {
   let userId: string | null = null
+  let userRole: string | null = null
   try {
     // Authentication
     const sessionCookie = request.cookies.get('session')
@@ -122,17 +123,21 @@ export async function POST(request: NextRequest) {
       throw new AppError('Business name is required', 400)
     }
 
+    // Ensure userId is set
+    if (!userId) {
+      throw new UnauthorizedError('Invalid authentication')
+    }
+
     // Create business
     const business = await db.business.create({
       data: {
         name: body.name,
-        description: body.description,
-        industry: body.industry,
-        location: body.location,
-        website: body.website,
-        logo: body.logo,
-        size: body.size,
-        status: 'PENDING', // Requires verification
+        description: body.description || null,
+        industry: body.industry || null,
+        location: body.location || null,
+        website: body.website || null,
+        logo: body.logo || null,
+        size: body.size || null,
         ownerId: userId,
       },
       include: {

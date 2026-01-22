@@ -66,26 +66,30 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await hashPassword(password)
 
     // For university registration, create or find university
-    let university = null
+    let university: { id: string } | null = null
     if (role === 'STUDENT' && universityId && universityId !== 'other') {
-      university = await db.university.findUnique({
+      const uni = await db.university.findUnique({
         where: { id: universityId },
       })
-    } else if (role === 'UNIVERSITY') {
+      if (uni) university = { id: uni.id }
+    } else if (role === 'UNIVERSITY_ADMIN' && universityCode && universityName) {
       // Check if university already exists
-      university = await db.university.findUnique({
+      const existingUni = await db.university.findUnique({
         where: { code: universityCode },
       })
 
-      if (!university) {
-        university = await db.university.create({
+      if (existingUni) {
+        university = { id: existingUni.id }
+      } else {
+        const newUni = await db.university.create({
           data: {
             name: universityName,
             code: universityCode,
-            website,
+            website: website || null,
             verificationStatus: VerificationStatus.PENDING,
           },
         })
+        university = { id: newUni.id }
       }
     }
 
@@ -96,11 +100,11 @@ export async function POST(request: NextRequest) {
         email,
         name: `${firstName} ${lastName}`,
         role: role as UserRole,
-        bio,
+        bio: bio || null,
         verificationStatus: VerificationStatus.PENDING,
         password: hashedPassword,
-        universityId: university?.id,
-        major: role === 'STUDENT' ? major : null,
+        universityId: university?.id || null,
+        major: role === 'STUDENT' ? (major || null) : null,
         graduationYear: role === 'STUDENT' && graduationYear ? parseInt(graduationYear) : null,
       },
     })
@@ -109,7 +113,7 @@ export async function POST(request: NextRequest) {
     await db.professionalRecord.create({
       data: {
         userId: user.id,
-        type: 'SKILL_ACQUIRED',
+        recordType: 'SKILL_ACQUIRED',
         title: 'Platform Registration',
         description: `Registered as ${role} on CareerToDo Platform`,
         startDate: new Date(),
@@ -142,7 +146,7 @@ export async function POST(request: NextRequest) {
     )
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const formattedErrors = error.errors.map(err => ({
+      const formattedErrors = error.issues.map(err => ({
         field: err.path.join('.'),
         message: err.message,
       }))

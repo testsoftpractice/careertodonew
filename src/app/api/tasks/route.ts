@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
         project: {
           select: {
             id: true,
-            title: true,
+            name: true,
             status: true,
           }
         },
@@ -84,12 +84,10 @@ export async function POST(request: NextRequest) {
         description: body.description,
         projectId: body.projectId,
         assigneeId: body.assigneeId,
-        creatorId: body.creatorId,
-        departmentId: body.departmentId,
+        assignedBy: body.assignedBy || body.creatorId,
         priority: body.priority || 'MEDIUM',
         dueDate: body.dueDate ? new Date(body.dueDate) : null,
-        deliverable: body.deliverable,
-        outputUrl: body.outputUrl,
+        estimatedHours: body.estimatedHours ? parseFloat(body.estimatedHours) : null,
       }
     })
 
@@ -124,7 +122,7 @@ export async function PATCH(request: NextRequest) {
 
     if (body.status !== undefined) {
       updateData.status = body.status
-      if (body.status === 'COMPLETED') {
+      if (body.status === 'DONE' || body.status === 'COMPLETED') {
         updateData.completedAt = new Date()
       }
     }
@@ -137,12 +135,16 @@ export async function PATCH(request: NextRequest) {
       updateData.priority = body.priority
     }
 
-    if (body.qualityScore !== undefined) {
-      updateData.qualityScore = parseFloat(body.qualityScore)
+    if (body.dueDate !== undefined) {
+      updateData.dueDate = body.dueDate ? new Date(body.dueDate) : null
     }
 
-    if (body.feedback !== undefined) {
-      updateData.feedback = body.feedback
+    if (body.estimatedHours !== undefined) {
+      updateData.estimatedHours = body.estimatedHours ? parseFloat(body.estimatedHours) : null
+    }
+
+    if (body.actualHours !== undefined) {
+      updateData.actualHours = body.actualHours ? parseFloat(body.actualHours) : null
     }
 
     const task = await db.task.update({

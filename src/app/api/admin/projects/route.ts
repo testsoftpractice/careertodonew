@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { ProjectStatus } from "@prisma/client"
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,12 +8,21 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") || null
     const limit = parseInt(searchParams.get("limit") || "20")
 
-    const where = status ? { status } : {}
+    const where = status ? { status: status as ProjectStatus } : {}
 
     const [projects, totalCount] = await Promise.all([
       db.project.findMany({
         where,
         take: limit,
+        include: {
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
         orderBy: { createdAt: "desc" },
       }),
       db.project.count({ where }),
@@ -23,16 +33,15 @@ export async function GET(request: NextRequest) {
       data: {
         projects: projects.map(p => ({
           id: p.id,
-          title: p.title,
+          name: p.name,
           description: p.description || "",
           category: p.category || "",
-          university: p.project?.university?.name || "",
           status: p.status,
-          projectLead: p.projectLead || "",
-          riskLevel: "Low",
-          investmentStatus: p.seekingInvestment ? "Seeking" : "Not Seeking",
+          ownerId: p.ownerId,
+          owner: p.owner,
+          budget: p.budget,
           submittedAt: p.createdAt.toISOString(),
-          lastUpdated: p.updatedAt?.toISOString() || null,
+          lastUpdated: p.updatedAt.toISOString(),
         })),
         totalCount,
       },

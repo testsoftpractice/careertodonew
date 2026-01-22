@@ -199,6 +199,11 @@ export async function PATCH(
 
     userId = decoded.userId
 
+    // Ensure userId is set
+    if (!userId) {
+      throw new UnauthorizedError('Invalid authentication')
+    }
+
     // Authorization - Check if user can manage this business
     const canManage = await canManageBusiness(userId, businessId, ['OWNER', 'ADMIN'])
 

@@ -169,6 +169,11 @@ export async function PATCH(
       throw new NotFoundError('Member not found')
     }
 
+    // Ensure userId is set
+    if (!userId) {
+      throw new UnauthorizedError('Invalid authentication')
+    }
+
     // Get requester's role
     const userRole = await getUserBusinessRole(userId, businessId)
 
@@ -271,6 +276,11 @@ export async function DELETE(
 
     if (!targetMember || targetMember.businessId !== businessId) {
       throw new NotFoundError('Member not found')
+    }
+
+    // Ensure userId is set
+    if (!userId) {
+      throw new UnauthorizedError('Invalid authentication')
     }
 
     // Get requester's role

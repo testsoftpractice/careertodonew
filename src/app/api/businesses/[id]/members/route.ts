@@ -147,6 +147,11 @@ export async function POST(
 
     userId = decoded.userId
 
+    // Ensure userId is set
+    if (!userId) {
+      throw new UnauthorizedError('Invalid authentication')
+    }
+
     // Authorization - Only OWNER, ADMIN, HR_MANAGER, or RECRUITER can add members
     const userRole = await getUserBusinessRole(userId, businessId)
 

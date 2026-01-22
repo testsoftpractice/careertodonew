@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { Prisma } from "@prisma/client"
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -7,10 +8,10 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get("page") || "1")
   const limit = parseInt(searchParams.get("limit") || "20")
 
-  const where = search ? {
+  const where: Prisma.UserWhereInput = search ? {
     OR: [
-      { name: { contains: search, mode: "insensitive" } },
-      { email: { contains: search, mode: "insensitive" } },
+      { name: { contains: search, mode: Prisma.QueryMode.insensitive } },
+      { email: { contains: search, mode: Prisma.QueryMode.insensitive } },
     ],
   } : {}
 
@@ -33,9 +34,8 @@ export async function GET(request: NextRequest) {
           name: u.name,
           email: u.email,
           role: u.role,
-          status: u.status,
+          verificationStatus: u.verificationStatus,
           joinedAt: u.createdAt.toISOString(),
-          reputation: u.reputation || 0,
         })),
         totalCount,
         currentPage: page,

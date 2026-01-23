@@ -222,23 +222,23 @@ export default function JobsPage() {
                       <div className="flex items-center justify-between pt-3 border-t">
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{job.applications} applicants</span>
+                          <span className="text-sm">{job.applications?.length || 0} applicants</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Clock className="h-4 w-4" />
-                          <span>Deadline: {new Date(job.deadline).toLocaleDateString()}</span>
+                          <span>Posted: {new Date(job.createdAt).toLocaleDateString()}</span>
                         </div>
                       </div>
 
                       <div className="flex flex-wrap gap-1">
-                        {job.requirements.slice(0, 3).map((req: string, idx: number) => (
+                        {(job.requirements || []).slice(0, 3).map((req: string, idx: number) => (
                           <Badge key={idx} variant="outline" className="text-xs">
                             {req}
                           </Badge>
                         ))}
-                        {job.requirements.length > 3 && (
+                        {(job.requirements || []).length > 3 && (
                           <Badge variant="outline" className="text-xs">
-                            +{job.requirements.length - 3} more
+                            +{(job.requirements || []).length - 3} more
                           </Badge>
                         )}
                       </div>

@@ -10,7 +10,7 @@ import {
   Circle,
   AlertCircle,
   Play,
-  Pause,
+  ExternalLink,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -33,6 +33,8 @@ interface TaskCardProps {
   projectId?: string
   projectName?: string
   className?: string
+  onView?: (id: string) => void
+  onEdit?: (id: string) => void
 }
 
 const priorityColors = {
@@ -64,6 +66,8 @@ export function TaskCard({
   projectId,
   projectName,
   className = '',
+  onView,
+  onEdit,
 }: TaskCardProps) {
   const statusInfo = statusConfig[status]
   const StatusIcon = statusInfo.icon
@@ -116,9 +120,6 @@ export function TaskCard({
               </Link>
             )}
           </div>
-          <Button variant="ghost" size="sm" className="flex-shrink-0 p-2">
-            <MoreHorizontal className="w-4 h-4" />
-          </Button>
         </div>
 
         {/* Progress Bar */}
@@ -133,7 +134,7 @@ export function TaskCard({
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-3 pt-3 border-t">
+        <div className="flex items-center justify-between gap-2 pt-3 border-t">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {dueDate && (
               <div className="flex items-center gap-1.5">
@@ -163,6 +164,28 @@ export function TaskCard({
                 {assignee.name}
               </span>
             </div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 pt-2 mt-2">
+          {projectLink && (
+            <Button variant="outline" size="sm" className="flex-1" asChild>
+              <Link href={projectLink}>
+                <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                View Project
+              </Link>
+            </Button>
+          )}
+          {onView && (
+            <Button variant="outline" size="sm" className="flex-1" onClick={() => onView(id)}>
+              View Details
+            </Button>
+          )}
+          {onEdit && (
+            <Button variant="ghost" size="sm" onClick={() => onEdit(id)}>
+              Edit
+            </Button>
           )}
         </div>
       </CardContent>

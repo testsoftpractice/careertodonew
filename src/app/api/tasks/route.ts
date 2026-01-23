@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (assigneeId) {
-      where.assigneeId = assigneeId
+      where.assignedTo = assigneeId  // Fix: use correct field name from Prisma schema
     }
 
     if (status) {
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
         title: body.title,
         description: body.description,
         projectId: body.projectId,
-        assigneeId: body.assigneeId,
+        assignedTo: body.assigneeId || body.assignedBy,
         assignedBy: body.assignedBy || body.creatorId,
         priority: body.priority || 'MEDIUM',
         dueDate: body.dueDate ? new Date(body.dueDate) : null,

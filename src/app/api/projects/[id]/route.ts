@@ -84,8 +84,10 @@ export async function GET(
     }
 
     return NextResponse.json({
-      project: {
+      success: true,
+      data: {
         id: project.id,
+        title: project.name,  // Include as 'title' for frontend compatibility
         name: project.name,
         description: project.description,
         category: project.category,
@@ -102,6 +104,13 @@ export async function GET(
         budget: project.budget,
         createdAt: project.createdAt,
         updatedAt: project.updatedAt,
+        // Computed fields
+        completionRate: project.tasks && project.tasks.length > 0
+          ? Math.round((project.tasks.filter((t: any) => t.status === 'DONE').length / project.tasks.length) * 100)
+          : 0,
+        tasksCompleted: project.tasks ? project.tasks.filter((t: any) => t.status === 'DONE').length : 0,
+        totalPoints: project.members?.reduce((sum: any, m: any) => sum + (m.user?.totalPoints || 0), 0) || 0,
+        projectLead: project.members?.find((m: any) => m.role === 'OWNER' || m.role === 'PROJECT_MANAGER')?.user || project.owner,
       },
     })
   } catch (error) {

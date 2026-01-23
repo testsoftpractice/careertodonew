@@ -119,6 +119,7 @@ export default function StudentDashboard() {
     stats: false,
     projects: false,
     tasks: false,
+    createTask: false,
   })
 
   // Timer effect
@@ -356,6 +357,7 @@ export default function StudentDashboard() {
     if (!user) return
 
     try {
+      setLoading(prev => ({ ...prev, createTask: true }))
       const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -365,7 +367,7 @@ export default function StudentDashboard() {
           priority: taskForm.priority,
           dueDate: taskForm.dueDate,
           assigneeId: user.id,
-          projectId: taskForm.projectId,
+          projectId: taskForm.projectId === 'none' ? undefined : taskForm.projectId,
         }),
       })
 
@@ -374,13 +376,35 @@ export default function StudentDashboard() {
       if (data.success) {
         toast({ title: 'Success', description: 'Task created successfully' })
         setShowTaskDialog(false)
-        setTaskForm({ title: '', description: '', priority: 'MEDIUM', dueDate: '', projectId: '' })
+        setTaskForm({ title: '', description: '', priority: 'MEDIUM', dueDate: '', projectId: 'none' })
         fetchTasks()
       } else {
         toast({ title: 'Error', description: data.message || 'Failed to create task', variant: 'destructive' })
       }
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to create task', variant: 'destructive' })
+    } finally {
+      setLoading(prev => ({ ...prev, createTask: false }))
+    }
+  }
+
+  const handleViewTask = (taskId: string, projectId: string) => {
+    // Navigate to task edit/view page
+    if (projectId) {
+      // If task has a project, go to project's task management
+      window.location.href = `/projects/${projectId}/tasks`
+    } else {
+      // Otherwise go to task edit page
+      window.location.href = `/tasks/${taskId}`
+    }
+  }
+
+  const handleEditTask = (taskId: string, projectId: string) => {
+    // Navigate to task edit page
+    if (projectId) {
+      window.location.href = `/projects/${projectId}/tasks/${taskId}/edit`
+    } else {
+      window.location.href = `/tasks/${taskId}/edit`
     }
   }
 
@@ -599,6 +623,8 @@ export default function StudentDashboard() {
                         progress={task.progress || 0}
                         projectId={task.project?.id}
                         projectName={task.project?.name}
+                        onView={() => handleViewTask(task.id, task.project?.id || '')}
+                        onEdit={() => handleEditTask(task.id, task.project?.id || '')}
                       />
                     ))}
                     {loading.tasks && (
@@ -679,6 +705,8 @@ export default function StudentDashboard() {
                       progress={task.progress || 0}
                       projectId={task.project?.id}
                       projectName={task.project?.name}
+                      onView={() => handleViewTask(task.id, task.project?.id || '')}
+                      onEdit={() => handleEditTask(task.id, task.project?.id || '')}
                     />
                   ))}
                   {loading.tasks && tasks.length === 0 && (
@@ -1048,9 +1076,9 @@ export default function StudentDashboard() {
             </Button>
             <Button
               onClick={handleCreateTask}
-              disabled={loading || !taskForm.title}
+              disabled={loading.createTask || !taskForm.title}
             >
-              {loading ? 'Creating...' : 'Create Task'}
+              {loading.createTask ? 'Creating...' : 'Create Task'}
             </Button>
           </DialogFooter>
         </DialogContent>

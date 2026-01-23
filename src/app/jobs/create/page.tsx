@@ -321,6 +321,22 @@ export default function PostJobPage() {
   // Submit form
   const handleSubmit = async (e: any) => {
     e.preventDefault()
+
+    // Check if user is logged in
+    if (!user || !user.id) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to post a job',
+        variant: 'destructive',
+      })
+      router.push('/login')
+      return
+    }
+
+    if (!validateForm()) {
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -330,29 +346,12 @@ export default function PostJobPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          employerId: user?.id,
           title: formData.title,
-          companyName: formData.companyName,
-          category: formData.category,
           description: formData.description,
           type: formData.type,
           location: formData.location,
-          salary: formData.salary ? {
-            salaryMin: formData.salaryRange.min,
-            salaryMax: formData.salaryRange.max,
-            salaryType: formData.salaryType,
-          } : null,
-          requirements: formData.requirements,
-          responsibilities: formData.responsibilities,
-          benefits: formData.benefits,
-          applicationUrl: formData.applicationUrl || null,
-          positions: parseInt(formData.positions) || 1,
-          deadline: formData.deadline || null,
-          // University targeting
-          universityIds: formData.universityIds,
-          isRemote: formData.isRemote,
-          targetByReputation: formData.targetByReputation,
-          remoteLocations: formData.remoteLocations,
+          salary: formData.salary || null,
+          published: false,
         }),
       })
 

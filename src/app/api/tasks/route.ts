@@ -78,13 +78,35 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
+    // Validate required fields
+    if (!body.title) {
+      return NextResponse.json({
+        success: false,
+        error: 'Task title is required'
+      }, { status: 400 })
+    }
+
+    if (!body.projectId) {
+      return NextResponse.json({
+        success: false,
+        error: 'Project ID is required. Tasks must belong to a project.'
+      }, { status: 400 })
+    }
+
+    if (!body.assigneeId && !body.assignedBy && !body.creatorId) {
+      return NextResponse.json({
+        success: false,
+        error: 'Either assigneeId, assignedBy, or creatorId is required'
+      }, { status: 400 })
+    }
+
     const task = await db.task.create({
       data: {
         title: body.title,
         description: body.description,
         projectId: body.projectId,
         assignedTo: body.assigneeId || body.assignedBy,
-        assignedBy: body.assignedBy || body.creatorId,
+        assignedBy: body.assignedBy || body.creatorId || body.assigneeId,
         priority: body.priority || 'MEDIUM',
         dueDate: body.dueDate ? new Date(body.dueDate) : null,
         estimatedHours: body.estimatedHours ? parseFloat(body.estimatedHours) : null,

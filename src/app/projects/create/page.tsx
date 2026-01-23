@@ -214,6 +214,31 @@ export default function CreateProjectPage() {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault()
+
+    // Check if user is logged in
+    if (!user || !user.id) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to create a project",
+        variant: "destructive",
+      })
+      router.push("/login")
+      return
+    }
+
+    if (!validateStep1()) {
+      setStep(1)
+      return
+    }
+    if (!validateStep2()) {
+      setStep(2)
+      return
+    }
+    if (!validateStep3()) {
+      setStep(3)
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -224,15 +249,10 @@ export default function CreateProjectPage() {
           name: projectData.title,
           description: projectData.description,
           category: projectData.category,
-          ownerId: user?.id,
-          seekingInvestment: projectData.seekingInvestment,
-          investmentGoal: projectData.investmentGoal ? parseFloat(projectData.investmentGoal) : null,
+          ownerId: user.id,
           startDate: projectData.startDate,
           endDate: projectData.endDate || null,
-          teamSizeMin: parseInt(projectData.teamSizeMin),
-          teamSizeMax: parseInt(projectData.teamSizeMax),
           budget: projectData.budget ? parseFloat(projectData.budget) : null,
-          roles: roles,
         }),
       })
 
@@ -241,7 +261,7 @@ export default function CreateProjectPage() {
       if (data.success) {
         toast({
           title: "Success",
-          description: "Project created successfully! It will be published after review.",
+          description: "Project created successfully!",
         })
         router.push(`/projects/${data.data.id}`)
       } else {

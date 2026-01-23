@@ -4,10 +4,10 @@ import { db } from '@/lib/db'
 // GET /api/jobs/[id] - Get a specific job
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     // Mock job data (in production, fetch from database)
     const mockJobs = [

@@ -72,6 +72,39 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
+    console.log('Project creation request body:', JSON.stringify(body, null, 2))
+
+    // Validate required fields
+    if (!body.name) {
+      return NextResponse.json({
+        success: false,
+        error: 'Project name is required'
+      }, { status: 400 })
+    }
+
+    if (!body.ownerId) {
+      console.error('Owner ID missing from request body')
+      return NextResponse.json({
+        success: false,
+        error: 'Owner ID is required. You must be logged in to create a project.'
+      }, { status: 400 })
+    }
+
+    // Verify owner exists
+    const owner = await db.user.findUnique({
+      where: { id: body.ownerId }
+    })
+
+    console.log('Owner lookup result:', owner ? `Found: ${owner.name} (${owner.id})` : 'Not found')
+
+    if (!owner) {
+      console.error('Owner not found for ID:', body.ownerId)
+      return NextResponse.json({
+        success: false,
+        error: 'Owner not found. Please log in and try again.'
+      }, { status: 404 })
+    }
+
     const project = await db.project.create({
       data: {
         name: body.name,

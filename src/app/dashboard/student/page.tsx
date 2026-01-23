@@ -73,6 +73,7 @@ export default function StudentDashboard() {
   const [timerSeconds, setTimerSeconds] = useState(0)
   const [selectedTaskForTimer, setSelectedTaskForTimer] = useState<string | null>(null)
   const [timeEntries, setTimeEntries] = useState<any[]>([])
+  const [timeSummary, setTimeSummary] = useState<any | null>(null)
 
   // Leave Management State
   const [leaveRequests, setLeaveRequests] = useState<any[]>([])
@@ -149,6 +150,7 @@ export default function StudentDashboard() {
       fetchAvailableProjects()
     } else if (activeTab === 'time-tracking') {
       fetchTimeEntries()
+      fetchTimeSummary()
       fetchTasks()
     } else if (activeTab === 'leave-management') {
       fetchLeaveRequests()
@@ -236,6 +238,21 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error('Fetch time entries error:', error)
+    }
+  }
+
+  const fetchTimeSummary = async () => {
+    if (!user) return
+
+    try {
+      const response = await fetch(`/api/time-summary?userId=${user.id}`)
+      const data = await response.json()
+
+      if (data.success) {
+        setTimeSummary(data.data)
+      }
+    } catch (error) {
+      console.error('Fetch time summary error:', error)
     }
   }
 
@@ -356,6 +373,17 @@ export default function StudentDashboard() {
   const handleCreateTask = async () => {
     if (!user) return
 
+    // Validate task form
+    if (!taskForm.title) {
+      toast({ title: 'Validation Error', description: 'Task title is required', variant: 'destructive' })
+      return
+    }
+
+    if (!taskForm.projectId || taskForm.projectId === 'none') {
+      toast({ title: 'Validation Error', description: 'Please select a project for the task', variant: 'destructive' })
+      return
+    }
+
     try {
       setLoading(prev => ({ ...prev, createTask: true }))
       const response = await fetch('/api/tasks', {
@@ -367,7 +395,7 @@ export default function StudentDashboard() {
           priority: taskForm.priority,
           dueDate: taskForm.dueDate,
           assigneeId: user.id,
-          projectId: taskForm.projectId === 'none' ? undefined : taskForm.projectId,
+          projectId: taskForm.projectId,
         }),
       })
 
@@ -376,10 +404,10 @@ export default function StudentDashboard() {
       if (data.success) {
         toast({ title: 'Success', description: 'Task created successfully' })
         setShowTaskDialog(false)
-        setTaskForm({ title: '', description: '', priority: 'MEDIUM', dueDate: '', projectId: 'none' })
+        setTaskForm({ title: '', description: '', priority: 'MEDIUM', dueDate: '', projectId: '' })
         fetchTasks()
       } else {
-        toast({ title: 'Error', description: data.message || 'Failed to create task', variant: 'destructive' })
+        toast({ title: 'Error', description: data.error || data.message || 'Failed to create task', variant: 'destructive' })
       }
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to create task', variant: 'destructive' })
@@ -894,6 +922,78 @@ export default function StudentDashboard() {
                     ))
                   )}
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Time Overview by Projects */}
+            <Card className="border-2 shadow-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-blue-500" />
+                  Time Overview by Projects
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {timeSummary ? (
+                  <div className="space-y-4">
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div className="text-center p-4 bg-primary/5 rounded-lg">
+                        <p className="text-2xl font-bold">{timeSummary.totalHours.toFixed(1)}h</p>
+                        <p className="text-sm text-muted-foreground">Total Hours</p>
+                      </div>
+                      <div className="text-center p-4 bg-orange-500/5 rounded-lg">
+                        <p className="text-2xl font-bold">{timeSummary.weeklyHours.toFixed(1)}h</p>
+                        <p className="text-sm text-muted-foreground">This Week</p>
+                      </div>
+                      <div className="text-center p-4 bg-green-500/5 rounded-lg">
+                        <p className="text-2xl font-bold">{timeSummary.monthlyHours.toFixed(1)}h</p>
+                        <p className="text-sm text-muted-foreground">This Month</p>
+                      </div>
+                      <div className="text-center p-4 bg-purple-500/5 rounded-lg">
+                        <p className="text-2xl font-bold">{timeSummary.totalEntries}</p>
+                        <p className="text-sm text-muted-foreground">Total Entries</p>
+                      </div>
+                    </div>
+
+                    {/* Project Breakdown */}
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      <h3 className="font-semibold text-lg">Time by Project</h3>
+                      {timeSummary.projectSummaries && timeSummary.projectSummaries.length > 0 ? (
+                        timeSummary.projectSummaries.map((summary: any) => (
+                          <div
+                            key={summary.project.id}
+                            className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent/50"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold truncate">{summary.project.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {summary.totalEntries} {summary.totalEntries === 1 ? 'entry' : 'entries'}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-2xl font-bold">{summary.totalHours.toFixed(1)}h</p>
+                              <Badge variant="outline" className="text-xs">
+                                {summary.project.status}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p>No time tracked yet</p>
+                          <p className="text-sm">Start tracking time to see project breakdown</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50 animate-spin" />
+                    <p>Loading time overview...</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

@@ -27,12 +27,23 @@ export async function GET(request: NextRequest) {
       orderBy: { startTime: 'desc' }
     })
 
-    const totalHours = workSessions.reduce((sum, session) => sum + (session.duration || 0), 0)
+    const totalHours = workSessions.reduce((sum, session) => sum + ((session.duration || 0) / 3600), 0)
+
+    // Map fields to match frontend expectations
+    const mappedSessions = workSessions.map(session => ({
+      ...session,
+      checkInTime: session.startTime,
+      checkOutTime: session.endTime,
+      checkInLocation: session.user?.location || null,
+      notes: null,
+      type: 'WORK_SESSION',
+      duration: session.duration ? (session.duration / 3600) : null,
+    }))
 
     return NextResponse.json({
       success: true,
-      data: workSessions,
-      count: workSessions.length,
+      data: mappedSessions,
+      count: mappedSessions.length,
       totalHours
     })
   } catch (error) {
@@ -86,6 +97,16 @@ export async function PATCH(request: NextRequest) {
       endTime: new Date(),
     }
 
+    // Calculate duration if endTime is being set
+    const existingSession = await db.workSession.findUnique({
+      where: { id: sessionId }
+    })
+
+    if (existingSession) {
+      const durationSeconds = Math.floor((new Date().getTime() - new Date(existingSession.startTime).getTime()) / 1000)
+      updateData.duration = durationSeconds
+    }
+
     if (body.duration) {
       updateData.duration = parseInt(body.duration)
     }
@@ -97,7 +118,15 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: workSession
+      data: {
+        ...workSession,
+        checkInTime: workSession.startTime,
+        checkOutTime: workSession.endTime,
+        checkInLocation: workSession.user?.location || null,
+        notes: null,
+        type: 'WORK_SESSION',
+        duration: workSession.duration ? (workSession.duration / 3600) : null,
+      }
     })
   } catch (error) {
     console.error('Work Session update error:', error)

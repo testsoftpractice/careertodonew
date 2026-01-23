@@ -597,6 +597,7 @@ export default function StudentDashboard() {
                         dueDate={task.dueDate ? new Date(task.dueDate) : undefined}
                         assignee={task.assignee}
                         progress={task.progress || 0}
+                        projectId={task.project?.id}
                         projectName={task.project?.name}
                       />
                     ))}
@@ -676,6 +677,7 @@ export default function StudentDashboard() {
                       dueDate={task.dueDate ? new Date(task.dueDate) : undefined}
                       assignee={task.assignee}
                       progress={task.progress || 0}
+                      projectId={task.project?.id}
                       projectName={task.project?.name}
                     />
                   ))}

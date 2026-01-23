@@ -61,6 +61,7 @@ export function TaskCard({
   dueDate,
   assignee,
   progress = 0,
+  projectId,
   projectName,
   className = '',
 }: TaskCardProps) {
@@ -80,6 +81,8 @@ export function TaskCard({
       return { text: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), color: 'text-muted-foreground' }
     }
   }
+
+  const projectLink = projectId ? `/projects/${projectId}` : null
 
   return (
     <Card className={`${className} hover:shadow-lg transition-all duration-300 hover:-translate-y-1`}>
@@ -104,9 +107,9 @@ export function TaskCard({
                 {description}
               </p>
             )}
-            {projectName && projectId && (
+            {projectLink && (
               <Link
-                href={`/projects/${projectId}`}
+                href={projectLink}
                 className="text-xs text-primary hover:underline mt-1 inline-block"
               >
                 {projectName}

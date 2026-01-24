@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -77,9 +77,7 @@ interface Task {
   updatedAt: string
 }
 
-export default function ProjectDetail({ params }: { params: Promise<{ id: string }> }) {
-  const { user } = useAuth()
-  const { id: projectId } = use(params)
+function ProjectDetailContent({ user, projectId }: { user: any, projectId: string }) {
   const searchParams = useSearchParams()
   const tabFromUrl = searchParams.get('tab')
 
@@ -1202,5 +1200,20 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
         )}
       </div>
     </div>
+  )
+}
+
+export default function ProjectDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { user } = useAuth()
+  const { id: projectId } = use(params)
+  
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-primary border-r-transparent"></div>
+      </div>
+    }>
+      <ProjectDetailContent user={user} projectId={projectId} />
+    </Suspense>
   )
 }

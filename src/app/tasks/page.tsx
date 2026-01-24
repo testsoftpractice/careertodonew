@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
@@ -97,8 +97,7 @@ interface ProjectMember {
   joinedAt: string
 }
 
-export default function TasksPage() {
-  const { user } = useAuth()
+function TasksContent({ user }: { user: any }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const tabFromUrl = searchParams.get('tab')
@@ -856,5 +855,19 @@ export default function TasksPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+export default function TasksPage() {
+  const { user } = useAuth()
+  
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-primary border-r-transparent"></div>
+      </div>
+    }>
+      <TasksContent user={user} />
+    </Suspense>
   )
 }

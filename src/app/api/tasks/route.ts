@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { successResponse, errorResponse, badRequest, unauthorized, forbidden, notFound, validationError } from '@/lib/api-response'
+import { validateRequest, createTaskSchema, updateTaskSchema } from '@/lib/validation'
+import { verifyAuth, requireAuth } from '@/lib/auth/verify'
 
 // ==================== TASKS API ====================
 
@@ -76,113 +79,120 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await requireAuth(request)
+
     const body = await request.json()
 
-    // Validate required fields
-    if (!body.title) {
-      return NextResponse.json({
-        success: false,
-        error: 'Task title is required'
-      }, { status: 400 })
+    // Validate request body
+    const validation = validateRequest(createTaskSchema, body)
+
+    if (!validation.valid) {
+      return validationError(validation.errors)
     }
 
-    if (!body.projectId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Project ID is required. Tasks must belong to a project.'
-      }, { status: 400 })
-    }
+    const data = validation.data
 
-    if (!body.assigneeId && !body.assignedBy && !body.creatorId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Either assigneeId, assignedBy, or creatorId is required'
-      }, { status: 400 })
+    // Verify user is member of the project
+    const memberCount = await db.projectMember.count({
+      where: {
+        projectId: data.projectId,
+        userId: authResult.dbUser.id,
+      },
+    })
+
+    if (memberCount === 0) {
+      return forbidden('You are not a member of this project')
     }
 
     const task = await db.task.create({
       data: {
-        title: body.title,
-        description: body.description,
-        projectId: body.projectId,
-        assignedTo: body.assigneeId || body.assignedBy,
-        assignedBy: body.assignedBy || body.creatorId || body.assigneeId,
-        priority: body.priority || 'MEDIUM',
-        dueDate: body.dueDate ? new Date(body.dueDate) : null,
-        estimatedHours: body.estimatedHours ? parseFloat(body.estimatedHours) : null,
+        title: data.title,
+        description: data.description,
+        projectId: data.projectId,
+        assignedTo: data.assigneeId || undefined,
+        assignedBy: authResult.dbUser.id,
+        priority: data.priority,
+        dueDate: data.dueDate ? new Date(data.dueDate) : null,
+        estimatedHours: data.estimatedHours ? parseFloat(data.estimatedHours) : null,
       }
     })
 
-    return NextResponse.json({
-      success: true,
-      data: task
-    }, { status: 201 })
+    return successResponse(task, 'Task created successfully', { status: 201 })
   } catch (error) {
     console.error('Task creation error:', error)
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to create task'
-    }, { status: 500 })
+    return errorResponse('Failed to create task')
   }
 }
 
 export async function PATCH(request: NextRequest) {
   try {
+    const authResult = await requireAuth(request)
+
     const { searchParams } = new URL(request.url)
     const taskId = searchParams.id as string
 
     if (!taskId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Task ID is required'
-      }, { status: 400 })
+      return badRequest('Task ID is required')
     }
 
     const body = await request.json()
 
+    // Validate request body
+    const validation = validateRequest(updateTaskSchema, body)
+
+    if (!validation.valid) {
+      return validationError(validation.errors)
+    }
+
+    const data = validation.data
+
+    // Check if task exists
+    const existingTask = await db.task.findUnique({
+      where: { id: taskId },
+      include: {
+        project: true,
+      members: {
+          where: { userId: authResult.dbUser.id },
+        },
+      },
+    })
+
+    if (!existingTask) {
+      return notFound('Task not found')
+    }
+
+    // Verify user has permission to update this task
+    const isOwner = existingTask.assignedBy === authResult.dbUser.id
+    const isProjectMember = existingTask.project?.members?.some(m => m.userId === authResult.dbUser.id)
+    const isAssignee = existingTask.assignedTo === authResult.dbUser.id
+
+    if (!isOwner && !isProjectMember && !isAssignee) {
+      return forbidden('You do not have permission to update this task')
+    }
+
     const updateData: any = {}
 
-    if (body.status !== undefined) {
-      updateData.status = body.status
-      if (body.status === 'DONE' || body.status === 'COMPLETED') {
+    if (data.title !== undefined) updateData.title = data.title
+    if (data.description !== undefined) updateData.description = data.description
+    if (data.status !== undefined) {
+      updateData.status = data.status
+      if (data.status === 'DONE' || data.status === 'COMPLETED') {
         updateData.completedAt = new Date()
       }
     }
-
-    if (body.assigneeId !== undefined) {
-      updateData.assigneeId = body.assigneeId
-    }
-
-    if (body.priority !== undefined) {
-      updateData.priority = body.priority
-    }
-
-    if (body.dueDate !== undefined) {
-      updateData.dueDate = body.dueDate ? new Date(body.dueDate) : null
-    }
-
-    if (body.estimatedHours !== undefined) {
-      updateData.estimatedHours = body.estimatedHours ? parseFloat(body.estimatedHours) : null
-    }
-
-    if (body.actualHours !== undefined) {
-      updateData.actualHours = body.actualHours ? parseFloat(body.actualHours) : null
-    }
+    if (data.priority !== undefined) updateData.priority = data.priority
+    if (data.dueDate !== undefined) updateData.dueDate = data.dueDate ? new Date(data.dueDate) : null
+    if (data.estimatedHours !== undefined) updateData.estimatedHours = data.estimatedHours ? parseFloat(data.estimatedHours) : null
+    if (data.actualHours !== undefined) updateData.actualHours = data.actualHours ? parseFloat(data.actualHours) : null
 
     const task = await db.task.update({
       where: { id: taskId },
       data: updateData
     })
 
-    return NextResponse.json({
-      success: true,
-      data: task
-    })
+    return successResponse(task, 'Task updated successfully')
   } catch (error) {
     console.error('Task update error:', error)
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to update task'
-    }, { status: 500 })
+    return errorResponse('Failed to update task')
   }
 }

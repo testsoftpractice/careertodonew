@@ -1,15 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
+import { unauthorized, forbidden } from '@/lib/api-response'
 
 // ==================== PROJECTS API ====================
 
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await verifyAuth(request)
+    if (!authResult.success) {
+      return unauthorized('Authentication required')
+    }
+
     const { searchParams } = new URL(request.url)
     const status = searchParams.status as string | undefined
     const ownerId = searchParams.ownerId as string | undefined
 
-    const where: any = {}
+    const where: Record<string, string | undefined> = {}
+
+    // If filtering by ownerId, only allow viewing own projects or admin
+    if (ownerId) {
+      if (ownerId !== authResult.user!.id && authResult.user!.role !== 'PLATFORM_ADMIN') {
+        return forbidden('You can only view your own projects')
+      }
+      where.ownerId = ownerId
+    }
 
     if (status) {
       where.status = status as any
@@ -70,7 +85,19 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
+
     const body = await request.json()
+
+    // Users can only create projects for themselves
+    if (body.ownerId && body.ownerId !== currentUser.id) {
+      return forbidden('You can only create projects for yourself')
+    }
+
+    // Use authenticated user's ID
+    const ownerId = currentUser.id
 
     console.log('Project creation request body:', JSON.stringify(body, null, 2))
 
@@ -82,23 +109,15 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    if (!body.ownerId) {
-      console.error('Owner ID missing from request body')
-      return NextResponse.json({
-        success: false,
-        error: 'Owner ID is required. You must be logged in to create a project.'
-      }, { status: 400 })
-    }
-
-    // Verify owner exists
+    // Verify owner exists (should exist since they're authenticated)
     const owner = await db.user.findUnique({
-      where: { id: body.ownerId }
+      where: { id: ownerId }
     })
 
     console.log('Owner lookup result:', owner ? `Found: ${owner.name} (${owner.id})` : 'Not found')
 
     if (!owner) {
-      console.error('Owner not found for ID:', body.ownerId)
+      console.error('Owner not found for ID:', ownerId)
       return NextResponse.json({
         success: false,
         error: 'Owner not found. Please log in and try again.'
@@ -109,7 +128,7 @@ export async function POST(request: NextRequest) {
       data: {
         name: body.name,
         description: body.description,
-        ownerId: body.ownerId,
+        ownerId: ownerId,
         status: 'IDEA',
         startDate: body.startDate ? new Date(body.startDate) : null,
         endDate: body.endDate ? new Date(body.endDate) : null,

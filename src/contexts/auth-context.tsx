@@ -180,24 +180,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  // Load auth state from localStorage on mount - prevent SSR access
+  // Load auth state from localStorage on mount - validate token with server
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('user')
-      const storedToken = localStorage.getItem('token')
+    async function loadAuthState() {
+      try {
+        const storedUser = localStorage.getItem('user')
+        const authHeader = localStorage.getItem('token')
 
-      if (storedUser && storedToken) {
-        setUser(JSON.parse(storedUser))
-        setToken(storedToken)
-      } else {
-        // No authentication - user must log in
-        console.log('[Auth] No user in localStorage, user needs to authenticate')
+        if (storedUser) {
+          const userData = JSON.parse(storedUser)
+
+          // Validate token with server
+          try {
+            const response = await fetch('/api/auth/validate', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${authHeader}`,
+              },
+            })
+
+            if (response.ok) {
+              const data = await response.json()
+              if (data.success && data.valid) {
+                setUser(data.user)
+                setToken(authHeader || '')
+              } else {
+                // Invalid token - clear auth state
+                console.log('[Auth] Token invalid, clearing state')
+                localStorage.removeItem('user')
+                localStorage.removeItem('token')
+                setUser(null)
+                setToken(null)
+              }
+            }
+          } catch (error) {
+            console.error('[Auth] Error validating token:', error)
+            // On validation error, clear state
+            localStorage.removeItem('user')
+            localStorage.removeItem('token')
+            setUser(null)
+            setToken(null)
+          }
+        } else {
+          // No user in localStorage
+          console.log('[Auth] No user in localStorage')
+        }
+      } catch (error) {
+        console.error('[Auth] Error loading auth state:', error)
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('[Auth] Error loading auth state:', error)
-    } finally {
-      setLoading(false)
     }
+
+    loadAuthState()
   }, [])
 
   const login = (userData: User, authToken: string) => {
@@ -211,18 +246,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const logout = () => {
-    setUser(null)
-    setToken(null)
+  const logout = async () => {
     try {
+      // Call logout API to clear server-side cookie
+      await fetch('/api/auth/logout', { method: 'POST' })
+
+      // Clear client-side state
+      setUser(null)
+      setToken(null)
       localStorage.removeItem('user')
       localStorage.removeItem('token')
-      // Also clear any session cookies if they exist
-      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-      document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+
+      console.log('[Auth] Logged out successfully')
     } catch (error) {
-      console.error('[Auth] Error clearing auth state:', error)
+      console.error('[Auth] Error during logout:', error)
+
+      // Still clear local state even if API call fails
+      setUser(null)
+      setToken(null)
+      localStorage.removeItem('user')
+      localStorage.removeItem('token')
     }
+
     // Force page reload to ensure clean state
     if (typeof window !== 'undefined') {
       window.location.href = '/'

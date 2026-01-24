@@ -844,6 +844,19 @@ async function main() {
       }),
       prisma.experience.create({
         data: {
+          userId: students[0].id,
+          title: 'Business Operations Lead',
+          company: 'Student Consulting Group',
+          location: 'Stanford, CA',
+          description: 'Led a team of 5 student consultants in developing operational improvement plans for small businesses. Managed client relationships, project delivery, and team coordination.',
+          startDate: new Date('2023-01-15'),
+          endDate: new Date('2023-08-30'),
+          current: false,
+          skills: 'Leadership, Project Management, Client Relations, Business Analysis, Team Coordination'
+        }
+      }),
+      prisma.experience.create({
+        data: {
           userId: students[1].id,
           title: 'Trade Documentation Intern',
           company: 'Maersk',
@@ -948,6 +961,17 @@ async function main() {
           description: 'Focus on supply chain management and risk assessment. Graduating with honors.',
           startDate: new Date('2021-09-01'),
           endDate: new Date('2025-05-15')
+        }
+      }),
+      prisma.education.create({
+        data: {
+          userId: students[0].id,
+          school: 'London School of Economics',
+          degree: 'Study Abroad Certificate',
+          field: 'International Business',
+          description: 'Semester abroad focusing on global trade regulations, international business practices, and cross-cultural management.',
+          startDate: new Date('2024-01-15'),
+          endDate: new Date('2024-05-30')
         }
       }),
       prisma.education.create({

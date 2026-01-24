@@ -1,17 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getServerSession } from '@/lib/session'
+import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
+import { unauthorized, forbidden } from '@/lib/api-response'
 import { z } from 'zod'
 
 // GET /api/leave-requests - Get all leave requests for a user
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await verifyAuth(request)
+    if (!authResult.success) {
+      return unauthorized('Authentication required')
+    }
+
     const userId = request.nextUrl.searchParams.get('userId')
     const status = request.nextUrl.searchParams.get('status')
 
     // Build where clause
-    const where: any = {}
+    const where: Record<string, string | undefined> = {}
     if (userId) {
+      // Only allow viewing own requests or admin/manager
+      if (userId !== authResult.user!.id && authResult.user!.role !== 'PLATFORM_ADMIN' && authResult.user!.role !== 'UNIVERSITY_ADMIN') {
+        return forbidden('You can only view your own leave requests')
+      }
       where.userId = userId
     }
     if (status) {
@@ -42,10 +52,9 @@ export async function GET(request: NextRequest) {
 // POST /api/leave-requests - Create new leave request
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession()
-    if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
-    }
+    // Require authentication
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
 
     const body = await request.json()
 
@@ -86,7 +95,7 @@ export async function POST(request: NextRequest) {
     // Create leave request
     const leaveRequest = await db.leaveRequest.create({
       data: {
-        userId: session.user.id,
+        userId: currentUser.id,
         leaveType: body.leaveType,
         startDate: new Date(body.startDate),
         endDate: new Date(body.endDate),

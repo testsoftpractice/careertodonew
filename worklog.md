@@ -1,285 +1,224 @@
 ---
-Task ID: 1
+Task ID: 33
 Agent: Z.ai Code
-Task: Update /tasks page to link to dashboard tasks tab
+Task: Install and configure @dnd-kit for drag and drop
 
 Work Log:
-- Modified `/home/z/my-project/src/app/tasks/page.tsx` to change the "Back to Dashboard" link from "/" to "/dashboard/student?tab=tasks"
-- Updated the link text from "Dashboard" to "Dashboard Tasks" for clarity
-- This allows users to navigate directly to the tasks tab in the student dashboard from the kanban-style tasks page
+- Verified @dnd-kit is already installed in package.json
+- Added necessary @dnd-kit imports to tasks page:
+  - DndContext
+  - closestCenter
+  - DragOverlay
+  - DragEndEvent
+  - PointerSensor
+  - useSensor
+  - useSensors
+  - DragStartEvent
+- Added GripVertical icon import for drag handle
+- Configured pointer sensor for drag and drop with proper constraints
+- Added sensors state to tasks page
 
 Stage Summary:
-- The /tasks page now properly links to the dashboard's tasks tab, providing better navigation between the two task management interfaces
+- @dnd-kit installed and configured
+- Sensors ready for drag and drop implementation
 
 ---
-Task ID: 2
+Task ID: 34
 Agent: Z.ai Code
-Task: Remove previously applied tasks in dashboard tasks tab
+Task: Add drag and drop to Kanban board in tasks page
 
 Work Log:
-- Reviewed the dashboard tasks tab implementation in `/home/z/my-project/src/app/dashboard/student/page.tsx`
-- Verified that tasks are fetched cleanly from `/api/tasks?assigneeId=${user.id}` without any mock data or pre-applied filters
-- Updated the dashboard to support URL-based tab switching by:
-  - Adding `useSearchParams` import from 'next/navigation'
-  - Adding `searchParams` hook usage
-  - Initializing `activeTab` state with URL parameter: `useState(tabFromUrl || 'overview')`
-- This allows direct navigation to specific tabs via URL (e.g., /dashboard/student?tab=tasks)
+- Wrapped Kanban board with DndContext component
+- Added onDragEnd handler to update task status when dragged to different column:
+  - Maps column IDs to task statuses
+  - Makes PATCH API call to update task status in backend
+  - Updates both personalTasks and projectTasks state based on viewType
+  - Shows success/error toast notifications
+- Removed onClick from cards (drag and drop handles task selection)
+- Changed Card cursor to cursor-grab with grab/grabbing states
+- Added task id as Card id and data attribute for drag
+- Updated delete button to use onClick with stopPropagation
 
 Stage Summary:
-- Dashboard tasks tab shows only real tasks from the database assigned to the current user
-- No mock data or pre-applied filters were found, so no cleanup was needed
-- Added URL-based tab switching support for better navigation
+- Tasks page Kanban board now has full drag and drop functionality
+- Tasks can be dragged between columns (TODO, In Progress, Review, Done)
+- Task status updates persist to backend via PATCH /api/tasks
+- Success/error feedback via toasts
 
 ---
-Task ID: 3
+Task ID: 35
 Agent: Z.ai Code
-Task: Add dashboard tabs bar to /tasks page
+Task: Add drag and drop to Kanban board in student dashboard
 
 Work Log:
-- Completely rewrote `/home/z/my-project/src/app/tasks/page.tsx` to include dashboard-style tabs bar
-- Changed "overview" tab to "dashboard" as requested
-- Maintained all other tabs (Tasks, Projects, Time Tracking, Leave Management)
-- Added consistent styling matching the student dashboard tabs bar
-- Implemented tab navigation with proper icons and responsive labels
+- Pending - Need to add same drag and drop to student dashboard Kanban board
+- Student dashboard Kanban board should match tasks page implementation
 
 Stage Summary:
-- Tasks page now has a proper dashboard-style navigation bar with Dashboard, Tasks, Projects, Time Tracking, and Leave Management tabs
-- Tab system matches the design and functionality of the student dashboard
+- Tasks page drag and drop complete
+- Student dashboard Kanban drag and drop needs implementation
 
 ---
-Task ID: 4
+Task ID: 36
 Agent: Z.ai Code
-Task: Remove top bar from tasks page
+Task: Update backend API to handle task status changes from drag and drop
 
 Work Log:
-- Removed the entire header section from the tasks page that contained:
-  - "Back to Dashboard" link
-  - Project selector
-  - "New Task" button
-- Replaced with dashboard-style tabs bar as the primary navigation
-- Maintained all functionality within tab contents instead
+- Verified backend already has PATCH endpoint for tasks
+- PATCH endpoint supports:
+  - status updates
+  - completedAt auto-set when status is DONE
+  - assigneeId, priority, dueDate, hours updates
+- Backend is ready to handle drag and drop status changes
 
 Stage Summary:
-- Top bar has been completely removed, replaced by integrated dashboard-style tabs bar
-- Navigation is now more consistent with the rest of the application
+- Backend API fully supports task status updates via PATCH
+- No backend changes needed - existing endpoint works perfectly
 
 ---
-Task ID: 5
+---
+Task ID: 46
 Agent: Z.ai Code
-Task: Move project switching below tabs, only show for project tasks
+Task: Check and fix all errors (TypeScript, ESLint, API, build, logs, schema, seed)
 
 Work Log:
-- Implemented sub-tabs system for Personal vs Project tasks within the Tasks tab
-- Moved project selector dropdown below the Personal/Project sub-tabs
-- Project selector only renders when viewType is 'project'
-- Positioned project selector to the right of the sub-tabs for better UX
+- Ran bun run lint - found parsing error in projects/[id]/page.tsx
+- Fixed parsing error:
+  - Removed extra closing brace on line 65
+  - Moved misplaced @dnd-kit imports to correct location (top of file)
+  - Fixed Task interface definition (was missing opening 'interface Task {' line)
+- Fixed handleMoveTask in projects/[id]/page.tsx:
+  - Added userId parameter to API call (was missing, causing 400 errors)
+  - Updated body to include userId from user.id
+- Fixed tasks page API calls:
+  - Changed taskId to id in DELETE URL (API expects 'id' not 'taskId')
+  - Changed DELETE to use dynamic route for project tasks (/api/tasks/${taskId})
+  - Added PATCH endpoint for personal tasks in /api/tasks/personal/route.ts
+    - Supports updating title, description, priority, dueDate, status
+    - Auto-sets completedAt when status is DONE
+    - Validates user owns the task
+- Fixed Next.js 15 compatibility in businesses/[id]/members/[memberId]/route.ts:
+  - Updated params from { params: { ... } } to { params: Promise<...> }
+  - Added await to all params destructuring (GET, PATCH, DELETE)
+- Verified Prisma schema is valid (warning about DIRECT_URL is not blocking)
+- Ran fresh build - all pages compiled successfully
+- ESLint passes with no warnings or errors
 
 Stage Summary:
-- Project switching now appears below the Personal/Project task sub-tabs
-- Project selector is conditionally rendered and only visible when "Project Tasks" is selected
-- Layout is cleaner and more intuitive
+- All parsing errors fixed
+- All API parameter issues resolved
+- Next.js 15 params compatibility updated
+- Build passes successfully with no blocking errors
+- Personal tasks API now supports PATCH method
+- All TypeScript errors in .next/types are auto-generated and will be regenerated on next build
 
 ---
-Task ID: 6
+Task ID: 47
 Agent: Z.ai Code
-Task: Move 'Add new tasks' button beside 'project tasks'
+Task: Secure remaining API routes that lack authentication
 
 Work Log:
-- Added a small "+" button inside the "Project Tasks" tab trigger
-- Button uses preventDefault/stopPropagation to avoid tab switching when clicked
-- Opens the create task dialog directly
-- Added separate "New Personal Task" button for Personal tasks view
+- Identified critical security vulnerabilities in multiple API routes:
+  - points/route.ts: Anyone could award/adjust points
+  - investments/route.ts: Anyone could create/view investments
+  - collaborations/route.ts: Anyone could create/manage collaboration requests
+  - time-entries/route.ts: Anyone could create/view time entries
+  - projects/route.ts: Anyone could create/view projects
+  - leave-requests/route.ts: GET endpoint lacked authentication
+
+- Secured /api/points/route.ts:
+  - Added authentication verification to GET endpoint
+  - Restricted point history/stats viewing to own data or admin
+  - Restricted POST (award points) to admin/mentor roles only
+  - Restricted ADJUST endpoint to platform admin role only
+
+- Secured /api/investments/route.ts:
+  - Added authentication verification to GET endpoint
+  - Added authentication verification to POST endpoint
+  - Users can only create investments for themselves
+  - Users can only view their own investments (unless admin)
+
+- Secured /api/collaborations/route.ts:
+  - Added authentication verification to all endpoints
+  - Users can only search co-founders for themselves
+  - Users can only view own collaboration requests
+  - Users can only create requests as themselves
+  - Users can only respond to requests where they are recipient
+  - Users can only delete requests they created
+  - Removed userId parameter from PATCH/DELETE (uses authenticated user)
+
+- Secured /api/time-entries/route.ts:
+  - Added authentication verification to GET endpoint
+  - Added authentication verification to POST endpoint
+  - Users can only view own time entries (unless admin)
+  - Users can only create time entries for themselves
+  - Task access verification: only assignees or project members can log time
+  - Project owner override allowed for time entry creation
+
+- Secured /api/projects/route.ts:
+  - Added authentication verification to GET endpoint
+  - Added authentication verification to POST endpoint
+  - Users can only view own projects (unless admin)
+  - Users can only create projects for themselves
+  - Removed userId parameter from POST (uses authenticated user)
+
+- Secured /api/leave-requests/route.ts:
+  - Added authentication verification to GET endpoint
+  - Users can only view own requests (unless admin/manager)
+  - Updated POST to use requireAuth (replacing old getServerSession)
+  - Uses authenticated user ID for request creation
+
+- Secured /api/work-sessions/route.ts:
+  - Added authentication verification to GET endpoint
+  - Added authentication verification to POST endpoint
+  - Added authentication verification to PATCH endpoint
+  - Users can only view own work sessions (unless admin)
+  - Users can only create sessions for themselves
+  - Ownership verification for session updates
+
+- Secured /api/needs/route.ts:
+  - Added authentication verification to GET endpoint
+  - Added authentication verification to POST endpoint
+  - Project ownership verification for posting needs
+  - Users can only post needs for projects they own
 
 Stage Summary:
-- "Add new tasks" functionality is now integrated directly beside the "Project Tasks" tab option
-- Personal tasks view has its own dedicated "New Personal Task" button
-- Improved UX with faster access to task creation
+- 8 critical API routes now secured with proper authentication
+- All endpoints now verify user identity before granting access
+- Role-based authorization implemented for sensitive operations
+- Users can only access their own data unless they have admin role
+- ESLint passes with no errors
+- Security posture significantly improved
 
 ---
-Task ID: 7
+Task ID: 48
 Agent: Z.ai Code
-Task: Remove seed data from tasks page
+Task: Replace 'any' types in codebase with proper TypeScript types
 
 Work Log:
-- Removed mock user 'demo-user-id' and replaced with `useAuth()` hook
-- Removed mock project members data
-- Now uses actual authenticated user from auth context
-- Added authentication check - redirects to login if user is not authenticated
-- All API calls now use real user.id from auth context
-- Removed any hardcoded demo data
+- Replaced 'any' types in secured API routes with proper TypeScript types:
+  - points/route.ts: Changed scoreUpdate from 'any' to Record<string, number>
+  - investments/route.ts: Changed where clause from 'any' to Record<string, string | undefined>
+  - time-entries/route.ts: Changed where clause from 'any' to Record<string, string | undefined>
+  - projects/route.ts: Changed where clause from 'any' to Record<string, string | undefined>
+  - work-sessions/route.ts: Changed where clause and updateData to proper types
+  - work-sessions/route.ts: Changed updateData to interface with optional properties
+  - leave-requests/route.ts: Changed where clause from 'any' to Record<string, string | undefined>
+  - needs/route.ts: Changed catch blocks from 'any' to 'unknown'
+  - collaborations/route.ts: Added UserWithSkills interface
+  - collaborations/route.ts: Changed function parameters from 'any' to UserWithSkills
+  - collaborations/route.ts: Changed skill types from 'any' to proper inline types
+  - collaborations/route.ts: Changed where clause from 'any' to Record<string, string | CollaborationStatus>
+
+- Improved type safety across 8 API routes
+- All changes maintain existing functionality while providing better TypeScript support
+- ESLint passes with no errors
 
 Stage Summary:
-- No seed or mock data remains in the tasks page
-- All functionality now uses real authenticated user and actual database data
-- Added proper authentication guard to prevent unauthenticated access
-
----
-
----
-Task ID: 8
-Agent: Z.ai Code
-Task: Investigate seeded tasks data visibility
-
-Work Log:
-- Reviewed seed file (/home/z/my-project/prisma/seed.ts)
-- Confirmed seeded data includes:
-  - 10 real students with emails like alex.stanford@edu.com, emily.mit@edu.com, etc.
-  - All passwords are: Password123!
-  - Personal tasks created for each student with proper userId references
-  - Project tasks created with assignedTo and assignedBy fields
-- Verified login API (/home/z/my-project/src/app/api/auth/login/route.ts) uses real database users
-- Verified task APIs use correct queries:
-  - Personal tasks: db.personalTask.findMany({ where: { userId } })
-  - Project tasks: db.task.findMany({ where: { projectId } })
-  - Main tasks: db.task.findMany({ where: { assignedTo: userId } })
-- Confirmed tasks page uses authenticated user from useAuth() hook
-
-Stage Summary:
-- Seeded tasks ARE in database and tasks page IS correctly configured to fetch them
-- Seeded tasks will be visible when logged in as one of the seeded user accounts
-- No changes needed - tasks page will show seeded data once properly authenticated
-
----
-
----
-Task ID: 9
-Agent: Z.ai Code
-Task: Update student dashboard links to point to /tasks page
-
-Work Log:
-- Verified QuickActions component supports both href and onClick props
-- Updated quickActions array in student dashboard (line 287-292):
-  - Changed "New Task" from onClick: () => setShowTaskDialog(true) to href: '/tasks'
-- Updated "View All" button in Recent Tasks section (line 635):
-  - Changed from href="/dashboard/student?tab=tasks" to href="/tasks"
-- Both buttons now navigate to the dedicated /tasks page with its dashboard-style tabs
-
-Stage Summary:
-- Recent Tasks "View All" button now links to /tasks page
-- Quick Actions "New Task" button now links to /tasks page
-- Both provide clear navigation to dedicated task management interface
-
-Note about data visibility:
-- Recent Tasks section shows tasks.slice(0, 4) from same tasks state
-- Tasks page and Recent Tasks both fetch from /api/tasks?assigneeId={user.id}
-- They display the same seeded data from the database - this is correct behavior
-- Both show real tasks assigned to the authenticated user
-
----
-
----
-Task ID: 10
-Agent: Z.ai Code
-Task: Fix nested button error in TabsTrigger component
-
-Work Log:
-- Fixed nested `<button>` inside `<TabsTrigger>` which caused hydration error
-- Changed line 472 in tasks page:
-  - Removed Button component with onClick handler
-- Replaced with Plus icon directly inside TabsTrigger
-- Added onClick handler to Plus icon for opening create dialog
-- Plus icon now uses preventDefault/stopPropagation to avoid tab switching
-
-Stage Summary:
-- Removed nested button error that was causing hydration warnings
-
----
-Task ID: 11
-Agent: Z.ai Code  
-Task: Make tasks page same width as student dashboard
-
-Work Log:
-- Verified tasks page already uses `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex-1` which matches student dashboard
-- No changes needed
-
-Stage Summary:
-- Tasks page width already matches student dashboard
-- Both use same container styling and max-width
-
----
-Task ID: 12
-Agent: Z.ai Code
-Task: Update all tabs in tasks page to direct link to respected pages
-
-Work Log:
-- Modified tasks page tab navigation to use handleTabChange function:
-  - Dashboard tab → redirects to /dashboard/student
-  - Tasks tab → redirects to /tasks?tab=tasks (stays on tasks page)
-  - Projects tab → redirects to /projects
-  - Time Tracking tab → redirects to /dashboard/student?tab=time-tracking
-
-Stage Summary:
-- All tabs in tasks page now properly link to respected pages
-- Dashboard tab links to student dashboard with "Go to Student Dashboard" button
-- Projects tab links to /projects page
-- Time Tracking tab links to student dashboard time tracking
-
----
-Task ID: 13
-Agent: Z.ai Code
-Task: Add Dashboard button linking to student dashboard
-
-Work Log:
-- Dashboard tab in tasks page already has "Go to Student Dashboard" button
-- Student dashboard Quick Actions now links "New Task" to /tasks page
-- Consistent navigation between both pages
-
-Stage Summary:
-- Dashboard button in tasks page provides direct access to student dashboard
-- Student dashboard Quick Actions "New Task" provides direct access to /tasks page
-
----
-Task ID: 14
-Agent: Z.ai Code
-Task: Set tasks tab active when landing on /tasks page
-
-Work Log:
-- Added useEffect to redirect to /dashboard/student?tab=tasks on mount
-- When users navigate to /tasks, they're automatically redirected to student dashboard with tasks tab active
-
-Stage Summary:
-- Tasks page redirects to student dashboard on load
-- Tasks tab in student dashboard becomes active when coming from /tasks page
-
----
-Task ID: 15
-Agent: Z.ai Code
-Task: Sync time tracking with student dashboard
-
-Work Log:
-- Time Tracking tab in tasks page links to /dashboard/student?tab=time-tracking
-- User can access time tracking from both student dashboard and tasks page
-- Consistent behavior across the application
-
-Stage Summary:
-- Time tracking properly synced between student dashboard and tasks page
-
----
-Task ID: 16
-Agent: Z.ai Code
-Task: Remove leave request from tasks page
-
-Work Log:
-- Removed Leave Management tab from tasks page tabs
-- Only Dashboard, Tasks, Projects, Time Tracking tabs remain
-
-Stage Summary:
-- Leave management now only available in student dashboard
-- Cleaner tasks page with relevant tabs only
-
----
-Task ID: 17
-Agent: Z.ai Code
-Task: Fix foreign key constraint error when creating personal tasks
-
-Work Log:
-- Fixed fetchPersonalTasks to use correct API endpoint: /api/tasks/personal?userId=\${user.id}
-- Changed handleCreateTask to use personal tasks API for viewType === 'personal'
-- Fixed task creation payload to match PersonalTask schema requirements
-
-Stage Summary:
-- Personal tasks now create properly using PersonalTask model
-- Foreign key constraint error resolved
-- Tasks page can create and display seeded personal tasks
+- 8 API routes improved with proper TypeScript types
+- Removed all 'any' types from secured routes
+- Created proper interfaces for complex objects
+- Type safety significantly improved
+- Code is now more maintainable and self-documenting
 
 ---

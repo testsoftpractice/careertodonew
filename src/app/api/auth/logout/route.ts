@@ -1,23 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 
+/**
+ * POST /api/auth/logout
+ * Logout user by clearing the httpOnly token cookie
+ */
 export async function POST(request: NextRequest) {
   try {
-    // Create response with instructions to clear client-side storage
+    console.log('[LOGOUT] =============== START ===============')
+
     const response = NextResponse.json({
       success: true,
       message: 'Logged out successfully',
-      clearStorage: true, // Flag to tell client to clear localStorage
     })
 
-    // Delete all auth-related cookies
-    response.cookies.delete('session')
-    response.cookies.delete('token')
-    response.cookies.delete('user')
+    // Clear httpOnly cookie
+    response.cookies.set({
+      name: 'token',
+      value: '',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 0, // Immediate expiry
+      path: '/',
+    })
+
+    console.log('[LOGOUT] Cookie cleared successfully')
+    console.log('[LOGOUT] =============== SUCCESS ===============')
 
     return response
   } catch (error) {
-    console.error('Logout error:', error)
+    console.error('[LOGOUT] =============== ERROR ===============')
+    console.error('[LOGOUT] Error:', error)
+
     return NextResponse.json(
       {
         success: false,

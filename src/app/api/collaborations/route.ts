@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { CollaborationType, CollaborationStatus, ProjectRole } from '@prisma/client'
+import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
+import { unauthorized, forbidden } from '@/lib/api-response'
 
 // ==================== COLLABORATION API ====================
 
 // Calculate match score between two users based on skills and reputation
-function calculateMatchScore(user1: any, user2: any): number {
+interface UserWithSkills {
+  executionScore: number
+  collaborationScore: number
+  leadershipScore: number
+  ethicsScore: number
+  reliabilityScore: number
+  universityId?: string | null
+  role: string
+  skills?: Array<{ name: string; level: string }>
+}
+
+function calculateMatchScore(user1: UserWithSkills, user2: UserWithSkills): number {
   let score = 0
 
   // Reputation match (weight: 30%)
@@ -26,8 +39,8 @@ function calculateMatchScore(user1: any, user2: any): number {
   // Skills overlap (weight: 30%)
   const skills1 = user1.skills || []
   const skills2 = user2.skills || []
-  const commonSkills = skills1.filter((s1: any) =>
-    skills2.some((s2: any) => s2.name === s1.name)
+  const commonSkills = skills1.filter((s1: { name: string; level: string }) =>
+    skills2.some((s2: { name: string; level: string }) => s2.name === s1.name)
   )
   const skillScore = (commonSkills.length / Math.max(skills1.length, skills2.length || 1)) * 30
 
@@ -38,6 +51,11 @@ function calculateMatchScore(user1: any, user2: any): number {
 // GET: Fetch collaboration requests or find co-founders
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await verifyAuth(request)
+    if (!authResult.success) {
+      return unauthorized('Authentication required')
+    }
+
     const { searchParams } = new URL(request.url)
     const userId = searchParams.userId as string | undefined
     const type = searchParams.type as string // 'requests' or 'cofounders'
@@ -46,6 +64,11 @@ export async function GET(request: NextRequest) {
 
     // Find co-founders
     if (type === 'cofounders' && userId) {
+      // Can only search for co-founders for yourself or as admin
+      if (userId !== authResult.user!.id && authResult.user!.role !== 'PLATFORM_ADMIN') {
+        return forbidden('You can only search for co-founders for yourself')
+      }
+
       const limit = parseInt(searchParams.limit || '20')
 
       // Fetch the requesting user with their skills
@@ -84,7 +107,7 @@ export async function GET(request: NextRequest) {
       })
 
       // Calculate match scores
-      const usersWithMatchScore = users.map((user: any) => ({
+      const usersWithMatchScore = users.map((user: UserWithSkills & { sentCollaborationRequests?: any[] }) => ({
         ...user,
         matchScore: calculateMatchScore(currentUser, user),
         hasPendingRequest: user.sentCollaborationRequests?.length > 0,
@@ -101,7 +124,12 @@ export async function GET(request: NextRequest) {
 
     // Fetch collaboration requests
     if (type === 'requests' && userId) {
-      const where: any = {}
+      // Can only view own requests or as admin
+      if (userId !== authResult.user!.id && authResult.user!.role !== 'PLATFORM_ADMIN') {
+        return forbidden('You can only view your own collaboration requests')
+      }
+
+      const where: Record<string, string | CollaborationStatus> = {}
       if (direction === 'sent') {
         where.requesterId = userId
       } else if (direction === 'received') {
@@ -204,6 +232,10 @@ export async function GET(request: NextRequest) {
 // POST: Create a collaboration request
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
+
     const body = await request.json()
 
     const {
@@ -216,12 +248,9 @@ export async function POST(request: NextRequest) {
       proposedContribution,
     } = body
 
-    // Validate required fields
-    if (!requesterId || !recipientId || !type) {
-      return NextResponse.json({
-        success: false,
-        error: 'requesterId, recipientId, and type are required',
-      }, { status: 400 })
+    // Can only create requests as yourself
+    if (requesterId !== currentUser.id) {
+      return forbidden('You can only create collaboration requests for yourself')
     }
 
     // Validate collaboration type
@@ -323,6 +352,10 @@ export async function POST(request: NextRequest) {
 // PATCH: Accept/reject/cancel a collaboration request
 export async function PATCH(request: NextRequest) {
   try {
+    // Require authentication
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
+
     const { searchParams } = new URL(request.url)
     const requestId = searchParams.id as string
 
@@ -336,12 +369,15 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const { status, responseMessage, userId } = body
 
-    if (!status || !userId) {
+    if (!status) {
       return NextResponse.json({
         success: false,
-        error: 'status and userId are required',
+        error: 'status is required',
       }, { status: 400 })
     }
+
+    // Use authenticated user's ID
+    const actingUserId = currentUser.id
 
     const validStatuses = ['ACCEPTED', 'REJECTED', 'CANCELLED']
     if (!validStatuses.includes(status)) {
@@ -369,7 +405,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Verify user is the recipient
-    if (request.recipientId !== userId) {
+    if (request.recipientId !== actingUserId) {
       return NextResponse.json({
         success: false,
         error: 'Only the recipient can respond to this request',
@@ -398,7 +434,7 @@ export async function PATCH(request: NextRequest) {
           const existingMember = await tx.projectMember.findFirst({
             where: {
               projectId: request.projectId,
-              userId: userId,
+              userId: actingUserId,
             },
           })
 
@@ -406,7 +442,7 @@ export async function PATCH(request: NextRequest) {
             await tx.projectMember.create({
               data: {
                 projectId: request.projectId,
-                userId,
+                userId: actingUserId,
                 role: request.role as ProjectRole,
                 startDate: new Date(),
               },
@@ -422,7 +458,7 @@ export async function PATCH(request: NextRequest) {
         try {
           await tx.pointTransaction.create({
             data: {
-              userId,
+              userId: actingUserId,
               points: 15, // COLLABORATION points
               source: 'COLLABORATION',
               description: `Accepted collaboration request: ${request.type}`,
@@ -435,7 +471,7 @@ export async function PATCH(request: NextRequest) {
           })
 
           await tx.user.update({
-            where: { id: userId },
+            where: { id: actingUserId },
             data: {
               totalPoints: {
                 increment: 15,
@@ -477,6 +513,10 @@ export async function PATCH(request: NextRequest) {
 // DELETE: Cancel/delete a collaboration request
 export async function DELETE(request: NextRequest) {
   try {
+    // Require authentication
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
+
     const { searchParams } = new URL(request.url)
     const requestId = searchParams.id as string
 
@@ -484,16 +524,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Request ID is required',
-      }, { status: 400 })
-    }
-
-    const { searchParams: params } = new URL(request.url)
-    const userId = params.userId as string
-
-    if (!userId) {
-      return NextResponse.json({
-        success: false,
-        error: 'User ID is required',
       }, { status: 400 })
     }
 
@@ -509,7 +539,7 @@ export async function DELETE(request: NextRequest) {
       }, { status: 404 })
     }
 
-    if (request.requesterId !== userId) {
+    if (request.requesterId !== currentUser.id) {
       return NextResponse.json({
         success: false,
         error: 'Only the requester can cancel this request',

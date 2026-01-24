@@ -1,17 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
+import { unauthorized, forbidden } from '@/lib/api-response'
 
 // ==================== TIME ENTRIES API ====================
 
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await verifyAuth(request)
+    if (!authResult.success) {
+      return unauthorized('Authentication required')
+    }
+
     const { searchParams } = new URL(request.url)
     const userId = searchParams.userId as string | undefined
     const taskId = searchParams.taskId as string | undefined
 
-    const where: any = {}
-    if (userId) where.userId = userId
-    if (taskId) where.taskId = taskId
+    const where: Record<string, string | undefined> = {}
+
+    // If filtering by userId, only allow viewing own entries or admin
+    if (userId) {
+      if (userId !== authResult.user!.id && authResult.user!.role !== 'PLATFORM_ADMIN') {
+        return forbidden('You can only view your own time entries')
+      }
+      where.userId = userId
+    }
+
+    // If filtering by taskId, verify user has access to the task
+    if (taskId) {
+      const task = await db.task.findUnique({
+        where: { id: taskId },
+        include: { project: true }
+      })
+
+      if (!task) {
+        return forbidden('Task not found')
+      }
+
+      // Allow viewing time entries for tasks in own projects or assigned to you
+      const isProjectMember = task.project?.ownerId === authResult.user!.id
+      const isAssignee = task.assignedTo === authResult.user!.id
+      const isAdmin = authResult.user!.role === 'PLATFORM_ADMIN'
+
+      if (!isProjectMember && !isAssignee && !isAdmin) {
+        return forbidden('You do not have access to this task')
+      }
+
+      where.taskId = taskId
+    }
 
     const timeEntries = await db.timeEntry.findMany({
       where,
@@ -68,16 +104,21 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
+
     const body = await request.json()
 
-    // Validate required fields
-    if (!body.userId) {
-      return NextResponse.json({
-        success: false,
-        error: 'User ID is required'
-      }, { status: 400 })
+    // Users can only create time entries for themselves
+    if (body.userId && body.userId !== currentUser.id) {
+      return forbidden('You can only create time entries for yourself')
     }
 
+    // Use authenticated user's ID
+    const userId = currentUser.id
+
+    // Validate required fields
     if (!body.taskId) {
       return NextResponse.json({
         success: false,
@@ -104,9 +145,31 @@ export async function POST(request: NextRequest) {
       }, { status: 404 })
     }
 
+    // Verify user has access to the task
+    const task = await db.task.findUnique({
+      where: { id: body.taskId },
+      include: { project: true }
+    })
+
+    if (!task) {
+      return NextResponse.json({
+        success: false,
+        error: 'Task not found'
+      }, { status: 404 })
+    }
+
+    // Only allow time entry if user is assigned to task or is project member
+    const isAssignee = task.assignedTo === userId
+    const isProjectOwner = task.project?.ownerId === userId
+    const isAdmin = currentUser.role === 'PLATFORM_ADMIN'
+
+    if (!isAssignee && !isProjectOwner && !isAdmin) {
+      return forbidden('You can only log time for tasks assigned to you or in your projects')
+    }
+
     const timeEntry = await db.timeEntry.create({
       data: {
-        userId: body.userId,
+        userId: userId,
         taskId: body.taskId,
         date: body.date ? new Date(body.date) : new Date(),
         hours: parseFloat(body.hours),

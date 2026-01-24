@@ -1,22 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
+import { unauthorized, forbidden } from '@/lib/api-response'
 
 // GET /api/investments - List investments with filters
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await verifyAuth(request)
+    if (!authResult.success) {
+      return unauthorized('Authentication required')
+    }
+
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('projectId')
     const userId = searchParams.get('userId')
     const status = searchParams.get('status')
     const type = searchParams.get('type')
 
-    const where: any = {}
+    const where: Record<string, string | undefined> = {}
 
     if (projectId) {
       where.projectId = projectId
     }
 
+    // If filtering by userId, only allow viewing own investments or admin
     if (userId) {
+      if (userId !== authResult.user!.id && authResult.user!.role !== 'PLATFORM_ADMIN') {
+        return forbidden('You can only view your own investments')
+      }
       where.userId = userId
     }
 
@@ -88,6 +99,10 @@ export async function GET(request: NextRequest) {
 // POST /api/investments - Create a new investment
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
+
     const body = await request.json()
     const {
       userId,
@@ -96,12 +111,9 @@ export async function POST(request: NextRequest) {
       amount,
     } = body
 
-    // Validate required fields
-    if (!userId || !projectId) {
-      return NextResponse.json(
-        { success: false, error: 'userId and projectId are required' },
-        { status: 400 }
-      )
+    // Users can only create investments for themselves
+    if (userId !== currentUser.id) {
+      return forbidden('You can only create investments for yourself')
     }
 
     // Check if user exists

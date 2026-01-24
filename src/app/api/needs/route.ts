@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
+import { unauthorized, forbidden } from '@/lib/api-response'
 
 // GET /api/needs - List project needs
 export async function GET(request: NextRequest) {
   try {
+    // Require authentication (even for read operations)
+    const authResult = await verifyAuth(request)
+    if (!authResult.success) {
+      return unauthorized('Authentication required')
+    }
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('projectId')
     const category = searchParams.get('category')
@@ -132,7 +139,7 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(filteredNeeds.length / limit),
       },
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Get needs error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
@@ -144,8 +151,31 @@ export async function GET(request: NextRequest) {
 // POST /api/needs - Create a new need posting
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
+
     const body = await request.json()
     const { projectId, title, description, category, urgency, skills, budget } = body
+
+    // Verify user is owner of the project or is admin
+    if (projectId) {
+      const project = await db.project.findUnique({
+        where: { id: projectId }
+      })
+
+      if (!project) {
+        return NextResponse.json(
+          { success: false, error: 'Project not found' },
+          { status: 404 }
+        )
+      }
+
+      // Only project owner or admin can post needs
+      if (project.ownerId !== currentUser.id && currentUser.role !== 'PLATFORM_ADMIN') {
+        return forbidden('Only project owners can post needs')
+      }
+    }
 
     // Validate input
     if (!projectId || !title || !description || !category || !urgency) {
@@ -166,6 +196,7 @@ export async function POST(request: NextRequest) {
       skills: skills || [],
       budget: budget ? parseFloat(budget) : null,
       status: 'OPEN',
+      createdBy: currentUser.id,
       createdAt: new Date(),
     }
 
@@ -177,7 +208,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Create need error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

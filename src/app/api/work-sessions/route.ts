@@ -1,15 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
+import { unauthorized, forbidden } from '@/lib/api-response'
 
 // ==================== WORK SESSIONS API ====================
 
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await verifyAuth(request)
+    if (!authResult.success) {
+      return unauthorized('Authentication required')
+    }
+
     const { searchParams } = new URL(request.url)
     const userId = searchParams.userId as string | undefined
 
-    const where: any = {}
-    if (userId) where.userId = userId
+    const where: Record<string, string | undefined> = {}
+
+    // If filtering by userId, only allow viewing own sessions or admin
+    if (userId) {
+      if (userId !== authResult.user!.id && authResult.user!.role !== 'PLATFORM_ADMIN') {
+        return forbidden('You can only view your own work sessions')
+      }
+      where.userId = userId
+    }
 
     const workSessions = await db.workSession.findMany({
       where,
@@ -57,11 +71,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    // Require authentication
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
 
+    // Users can only create work sessions for themselves
     const workSession = await db.workSession.create({
       data: {
-        userId: body.userId,
+        userId: currentUser.id,
         startTime: new Date(),
       }
     })
@@ -81,6 +98,10 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    // Require authentication
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
+
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.id as string
 
@@ -93,19 +114,33 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json()
 
-    const updateData: any = {
+    const updateData: {
+      endTime?: Date
+      duration?: number
+    } = {
       endTime: new Date(),
     }
 
-    // Calculate duration if endTime is being set
+    // Verify session ownership
     const existingSession = await db.workSession.findUnique({
       where: { id: sessionId }
     })
 
-    if (existingSession) {
-      const durationSeconds = Math.floor((new Date().getTime() - new Date(existingSession.startTime).getTime()) / 1000)
-      updateData.duration = durationSeconds
+    if (!existingSession) {
+      return NextResponse.json({
+        success: false,
+        error: 'Work session not found'
+      }, { status: 404 })
     }
+
+    // Only allow updating own sessions or admin
+    if (existingSession.userId !== currentUser.id && currentUser.role !== 'PLATFORM_ADMIN') {
+      return forbidden('You can only update your own work sessions')
+    }
+
+    // Calculate duration if endTime is being set
+    const durationSeconds = Math.floor((new Date().getTime() - new Date(existingSession.startTime).getTime()) / 1000)
+    updateData.duration = durationSeconds
 
     if (body.duration) {
       updateData.duration = parseInt(body.duration)

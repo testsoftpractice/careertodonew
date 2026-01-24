@@ -74,6 +74,7 @@ function DashboardContent({ user }: { user: any }) {
   const [timerRunning, setTimerRunning] = useState(false)
   const [timerSeconds, setTimerSeconds] = useState(0)
   const [selectedTaskForTimer, setSelectedTaskForTimer] = useState<string | null>(null)
+  const [currentWorkSessionId, setCurrentWorkSessionId] = useState<string | null>(null)
   const [timeEntries, setTimeEntries] = useState<any[]>([])
   const [timeSummary, setTimeSummary] = useState<any | null>(null)
 
@@ -137,6 +138,19 @@ function DashboardContent({ user }: { user: any }) {
       if (interval) clearInterval(interval)
     }
   }, [timerRunning])
+
+  // Auto-save timer every 30 seconds
+  useEffect(() => {
+    if (!timerRunning || !currentWorkSessionId) return
+
+    const saveInterval = setInterval(async () => {
+      if (selectedTaskForTimer && timerSeconds > 0) {
+        await saveTimeEntry(false) // Save without stopping
+      }
+    }, 30000) // Save every 30 seconds
+
+    return () => clearInterval(saveInterval)
+  }, [timerRunning, currentWorkSessionId, selectedTaskForTimer, timerSeconds])
 
   useEffect(() => {
     if (activeTab === 'overview') {
@@ -291,7 +305,36 @@ function DashboardContent({ user }: { user: any }) {
   ]
 
   // Timer functions
-  const startTimer = () => {
+  const saveTimeEntry = async (stopTimerAfter = false) => {
+    if (!user || !selectedTaskForTimer || timerSeconds === 0) return
+
+    try {
+      const hours = (timerSeconds / 3600).toFixed(2)
+
+      const response = await fetch('/api/time-entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          taskId: selectedTaskForTimer,
+          hours,
+          description: 'Time tracking from dashboard timer',
+        }),
+      })
+
+      if (response.ok && stopTimerAfter) {
+        toast({ title: 'Success', description: 'Time entry saved successfully' })
+        fetchTimeEntries()
+        setTimerSeconds(0)
+        setCurrentWorkSessionId(null)
+      }
+    } catch (error) {
+      console.error('Save time entry error:', error)
+      toast({ title: 'Error', description: 'Failed to save time entry', variant: 'destructive' })
+    }
+  }
+
+  const startTimer = async () => {
     if (!selectedTaskForTimer) {
       toast({
         title: 'Task Required',
@@ -300,38 +343,43 @@ function DashboardContent({ user }: { user: any }) {
       })
       return
     }
-    setTimerRunning(true)
-  }
-
-  const pauseTimer = () => {
-    setTimerRunning(false)
-  }
-
-  const stopTimer = async () => {
-    if (!selectedTaskForTimer || timerSeconds === 0) return
 
     try {
-      const hours = (timerSeconds / 3600).toFixed(2)
-
-      await fetch('/api/time-entries', {
+      // Create work session
+      const response = await fetch('/api/work-sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user?.id,
-          taskId: selectedTaskForTimer,
-          hours,
-          description: 'Time tracking from dashboard timer',
         }),
       })
 
-      toast({ title: 'Success', description: 'Time entry saved successfully' })
-
-      setTimerSeconds(0)
-      setTimerRunning(false)
-      setSelectedTaskForTimer(null)
-      fetchTimeEntries()
+      if (response.ok) {
+        const data = await response.json()
+        setCurrentWorkSessionId(data.data.id)
+        setTimerRunning(true)
+      }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to save time entry', variant: 'destructive' })
+      console.error('Start timer error:', error)
+      toast({ title: 'Error', description: 'Failed to start timer', variant: 'destructive' })
+    }
+  }
+
+  const pauseTimer = async () => {
+    if (!currentWorkSessionId) return
+
+    // Save current time before pausing
+    await saveTimeEntry(true)
+
+    setTimerRunning(false)
+    setCurrentWorkSessionId(null)
+  }
+
+  const toggleTimer = () => {
+    if (timerRunning) {
+      pauseTimer()
+    } else {
+      startTimer()
     }
   }
 
@@ -522,9 +570,12 @@ function DashboardContent({ user }: { user: any }) {
                 <TabsTrigger
                   value="tasks"
                   className="text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-500 data-[state=active]:text-white rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 transition-all duration-300 whitespace-nowrap cursor-pointer font-medium"
+                  asChild
                 >
-                  <ListTodo className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
-                  <span className="hidden sm:inline">Tasks</span>
+                  <Link href="/tasks" className="flex items-center gap-2">
+                    <ListTodo className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
+                    <span className="hidden sm:inline">Tasks</span>
+                  </Link>
                 </TabsTrigger>
                 <TabsTrigger
                   value="projects"
@@ -709,13 +760,21 @@ function DashboardContent({ user }: { user: any }) {
                     <ListTodo className="h-5 w-5 text-primary" />
                     All Tasks
                   </CardTitle>
-                  <Button
-                    onClick={() => setShowTaskDialog(true)}
-                    className="cursor-pointer"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Task
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => setShowTaskDialog(true)}
+                      className="cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Task
+                    </Button>
+                    <Button variant="outline" asChild className="cursor-pointer">
+                      <Link href="/tasks" className="flex items-center gap-1">
+                        View All
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -829,33 +888,22 @@ function DashboardContent({ user }: { user: any }) {
                     {formatTime(timerSeconds)}
                   </div>
                   <div className="flex justify-center gap-2 flex-wrap">
-                    {!timerRunning ? (
-                      <Button
-                        onClick={startTimer}
-                        disabled={timerSeconds > 0 && !selectedTaskForTimer}
-                        className="cursor-pointer"
-                      >
-                        <Play className="h-4 w-4 mr-2" />
-                        Start
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={pauseTimer}
-                        variant="outline"
-                        className="cursor-pointer"
-                      >
-                        <Pause className="h-4 w-4 mr-2" />
-                        Pause
-                      </Button>
-                    )}
                     <Button
-                      onClick={stopTimer}
-                      disabled={!timerRunning && timerSeconds === 0}
-                      variant="destructive"
-                      className="cursor-pointer"
+                      onClick={toggleTimer}
+                      disabled={!selectedTaskForTimer}
+                      className={`cursor-pointer ${timerRunning ? 'bg-orange-500 hover:bg-orange-600' : 'bg-primary hover:bg-primary/90'}`}
                     >
-                      <Square className="h-4 w-4 mr-2" />
-                      Stop & Save
+                      {timerRunning ? (
+                        <>
+                          <Pause className="h-4 w-4 mr-2" />
+                          Pause
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-4 w-4 mr-2" />
+                          Start
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>

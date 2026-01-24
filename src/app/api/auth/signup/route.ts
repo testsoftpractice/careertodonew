@@ -83,8 +83,7 @@ export async function POST(request: NextRequest) {
     // Hash password
     console.log('[SIGNUP] Hashing password...')
     const hashedPassword = await hashPassword(password)
-    console.log('[SIGNUP] Password hashed. Length:', hashedPassword.length)
-    console.log('[SIGNUP] Hash starts with:', hashedPassword.substring(0, 10))
+    console.log('[SIGNUP] Password hashed successfully')
 
     // Create user - only required fields
     console.log('[SIGNUP] Creating user in database...')
@@ -114,7 +113,8 @@ export async function POST(request: NextRequest) {
     console.log('[SIGNUP] Token generated')
     console.log('[SIGNUP] =============== SUCCESS ===============')
 
-    return NextResponse.json(
+    // Create response and set httpOnly cookie
+    const response = NextResponse.json(
       {
         success: true,
         message: 'User created successfully',
@@ -129,6 +129,19 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     )
+
+    // Set httpOnly cookie for token (XSS protection)
+    response.cookies.set({
+      name: 'token',
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 1, // 1 hour in seconds
+      path: '/',
+    })
+
+    return response
   } catch (error) {
     console.error('[SIGNUP] =============== ERROR ===============')
     console.error('[SIGNUP] Error type:', error?.constructor?.name)

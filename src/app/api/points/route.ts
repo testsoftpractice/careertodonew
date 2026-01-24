@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { z } from 'zod'
+import { verifyAuth, requireAuth, requireRole, AuthError } from '@/lib/auth/verify'
+import { unauthorized, forbidden, badRequest, validationError, successResponse } from '@/lib/api-response'
 
 // Validation schemas
 const awardPointsSchema = z.object({
@@ -19,13 +21,18 @@ const adjustPointsSchema = z.object({
 // GET /api/points - Get points for a user
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await verifyAuth(request)
+    if (!authResult.success) {
+      return unauthorized('Authentication required')
+    }
+
     const { searchParams } = new URL(request.url)
     const userId = searchParams.userId as string | undefined
     const leaderboard = searchParams.leaderboard === 'true'
     const history = searchParams.history === 'true'
     const stats = searchParams.stats === 'true'
 
-    // Fetch leaderboard
+    // Fetch leaderboard (public, but requires auth)
     if (leaderboard) {
       const users = await db.user.findMany({
         select: {
@@ -63,8 +70,12 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Fetch points history for a user
+    // Fetch points history for a user - can only view own history unless admin
     if (history && userId) {
+      // Only allow viewing own history or admin viewing any user
+      if (userId !== authResult.user!.id && authResult.user!.role !== 'PLATFORM_ADMIN') {
+        return forbidden('You can only view your own points history')
+      }
       const transactions = await db.pointTransaction.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
@@ -78,8 +89,12 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Fetch stats for a user
+    // Fetch stats for a user - can only view own stats unless admin
     if (stats && userId) {
+      // Only allow viewing own stats or admin viewing any user
+      if (userId !== authResult.user!.id && authResult.user!.role !== 'PLATFORM_ADMIN') {
+        return forbidden('You can only view your own points stats')
+      }
       const user = await db.user.findUnique({
         where: { id: userId },
         select: {
@@ -151,9 +166,20 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/points/award - Award points to a user
+// POST /api/points/award - Award points to a user (admin/mentor only)
 export async function POST(request: NextRequest) {
   try {
+    // Require admin or mentor role to award points
+    let authResult
+    try {
+      authResult = await requireRole(request, ['PLATFORM_ADMIN', 'UNIVERSITY_ADMIN', 'MENTOR'])
+    } catch (error) {
+      if (error instanceof AuthError) {
+        return forbidden('Only admins and mentors can award points')
+      }
+      throw error
+    }
+
     const body = await request.json()
     const validatedData = awardPointsSchema.parse(body)
 
@@ -177,7 +203,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update scores based on point source
-    const scoreUpdate: any = {}
+    const scoreUpdate: Record<string, number> = {}
     if (source === 'TASK_COMPLETION') {
       scoreUpdate.executionScore = (user.executionScore || 0) + (points * 0.1)
       scoreUpdate.reliabilityScore = (user.reliabilityScore || 0) + (points * 0.05)
@@ -236,9 +262,20 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// POST /api/points/adjust - Admin adjust points
+// POST /api/points/adjust - Admin adjust points (platform admin only)
 export async function ADJUST(request: NextRequest) {
   try {
+    // Require platform admin role
+    let authResult
+    try {
+      authResult = await requireRole(request, ['PLATFORM_ADMIN'])
+    } catch (error) {
+      if (error instanceof AuthError) {
+        return forbidden('Only platform administrators can adjust points')
+      }
+      throw error
+    }
+
     const body = await request.json()
     const validatedData = adjustPointsSchema.parse(body)
 

@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
 // DELETE /api/experiences/[id] - Delete experience
 export async function DELETE(
   request: NextRequest,
-  { params }: { id?: string }
+  { params }: { params: Promise<{ id?: string }> }
 ) {
   try {
     const session = await getServerSession()
@@ -126,7 +126,7 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
-    const experienceId = params.id
+    const { id: experienceId } = await params
     if (!experienceId) {
       return NextResponse.json({
         success: false,

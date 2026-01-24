@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyPassword, generateToken } from '@/lib/auth/jwt'
+import { checkAndIncrementLoginAttempts, handleFailedLogin, resetLoginAttempts } from '@/lib/auth/account-lockout'
 
 // POST /api/auth/login - Simple user authentication
 export async function POST(request: NextRequest) {
@@ -48,8 +49,6 @@ export async function POST(request: NextRequest) {
     console.log('[LOGIN] User found. ID:', user.id)
     console.log('[LOGIN] User email:', user.email)
     console.log('[LOGIN] User name:', user.name)
-    console.log('[LOGIN] Password hash length:', user.password?.length)
-    console.log('[LOGIN] Password hash starts with:', user.password?.substring(0, 10))
 
     // Verify password
     console.log('[LOGIN] Verifying password...')
@@ -58,11 +57,45 @@ export async function POST(request: NextRequest) {
 
     if (!passwordValid) {
       console.log('[LOGIN] ERROR: Invalid password')
+
+      // Handle failed login and check account lockout
+      await handleFailedLogin(user.id)
+      const lockoutStatus = await checkAndIncrementLoginAttempts(user.id)
+
+      if (lockoutStatus.locked) {
+        console.log('[LOGIN] ERROR: Account locked')
+        return NextResponse.json(
+          {
+            error: `Account locked due to too many failed attempts. Try again in ${lockoutStatus.remainingTime} minutes.`,
+            locked: true,
+            remainingMinutes: lockoutStatus.remainingTime,
+          },
+          { status: 423 }
+        )
+      }
+
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
+
+    // Check if account is locked before successful login
+    const lockoutStatus = await checkAndIncrementLoginAttempts(user.id)
+    if (lockoutStatus.locked) {
+      console.log('[LOGIN] ERROR: Account locked')
+      return NextResponse.json(
+        {
+          error: `Account locked due to too many failed attempts. Try again in ${lockoutStatus.remainingTime} minutes.`,
+          locked: true,
+          remainingMinutes: lockoutStatus.remainingTime,
+        },
+        { status: 423 }
+      )
+    }
+
+    // Successful login - reset attempts
+    await resetLoginAttempts(user.id)
 
     // Generate token
     const token = generateToken({
@@ -75,7 +108,8 @@ export async function POST(request: NextRequest) {
     console.log('[LOGIN] Token generated successfully')
     console.log('[LOGIN] =============== SUCCESS ===============')
 
-    return NextResponse.json({
+    // Create response and set httpOnly cookie
+    const response = NextResponse.json({
       success: true,
       user: {
         id: user.id,
@@ -86,6 +120,19 @@ export async function POST(request: NextRequest) {
       },
       token,
     })
+
+    // Set httpOnly cookie for token (XSS protection)
+    response.cookies.set({
+      name: 'token',
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 1, // 1 hour in seconds
+      path: '/',
+    })
+
+    return response
   } catch (error) {
     console.error('[LOGIN] =============== ERROR ===============')
     console.error('[LOGIN] Error type:', error?.constructor?.name)

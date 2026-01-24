@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -26,6 +27,9 @@ import {
   Plus,
   X,
   ChevronRight,
+  Circle,
+  Trash2,
+  MessageSquare,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
@@ -58,19 +62,38 @@ interface Milestone {
   completedAt?: string
 }
 
+interface Task {
+  id: string
+  projectId: string
+  title: string
+  description: string | null
+  status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE'
+  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+  assignedTo: string | null
+  assignedBy: string
+  dueDate: string | null
+  completedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export default function ProjectDetail({ params }: { params: Promise<{ id: string }> }) {
   const { user } = useAuth()
   const { id: projectId } = use(params)
+  const searchParams = useSearchParams()
+  const tabFromUrl = searchParams.get('tab')
 
   const [project, setProject] = useState<any>(null)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [vacancies, setVacancies] = useState<Vacancy[]>([])
   const [milestones, setMilestones] = useState<Milestone[]>([])
+  const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'overview')
 
   const [showVacancyModal, setShowVacancyModal] = useState(false)
   const [showMilestoneModal, setShowMilestoneModal] = useState(false)
+  const [showTaskModal, setShowTaskModal] = useState(false)
 
   const [newVacancy, setNewVacancy] = useState<Partial<Vacancy>>({
     title: '',
@@ -85,6 +108,13 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
     title: '',
     description: '',
     status: 'PENDING',
+    dueDate: '',
+  })
+
+  const [newTask, setNewTask] = useState<Partial<Task>>({
+    title: '',
+    description: '',
+    priority: 'MEDIUM',
     dueDate: '',
   })
 
@@ -104,7 +134,7 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
       }
 
       // Fetch team members
-      const teamResponse = await fetch(`/api/projects/${projectId}/team`)
+      const teamResponse = await fetch(`/api/projects/${projectId}/members`)
       const teamData = await teamResponse.json()
       if (teamData.success) {
         setTeamMembers(teamData.data || [])
@@ -122,6 +152,13 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
       const milestonesData = await milestonesResponse.json()
       if (milestonesData.success) {
         setMilestones(milestonesData.data || [])
+      }
+
+      // Fetch tasks
+      const tasksResponse = await fetch(`/api/tasks?projectId=${projectId}`)
+      const tasksData = await tasksResponse.json()
+      if (tasksData.success) {
+        setTasks(tasksData.data || [])
       }
     } catch (error) {
       console.error('Fetch project data error:', error)
@@ -227,6 +264,141 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
     }
   }
 
+  const handleCreateTask = async () => {
+    if (!project || !newTask.title || !user) {
+      if (!user) {
+        toast({
+          title: 'Authentication Required',
+          description: 'Please log in to create tasks',
+          variant: 'destructive',
+        })
+      } else if (!newTask.title) {
+        toast({
+          title: 'Validation Error',
+          description: 'Task title is required',
+          variant: 'destructive',
+        })
+      }
+      return
+    }
+
+    try {
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newTask.title,
+          description: newTask.description,
+          priority: newTask.priority,
+          dueDate: newTask.dueDate,
+          projectId,
+          assigneeId: user.id,
+          assignedBy: user.id,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setTasks([...tasks, data.data])
+        setNewTask({
+          title: '',
+          description: '',
+          priority: 'MEDIUM',
+          dueDate: '',
+        })
+        setShowTaskModal(false)
+        toast({
+          title: 'Success',
+          description: 'Task created successfully',
+        })
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to create task',
+          variant: 'destructive',
+        })
+      }
+    } catch (error: any) {
+      console.error('Create task error:', error)
+      let errorMessage = 'Failed to create task'
+      if (error.message?.includes('Foreign key constraint')) {
+        errorMessage = 'User authentication error. Please log out and log in again.'
+      }
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (!confirm('Are you sure you want to delete this task?')) return
+
+    try {
+      const response = await fetch(`/api/tasks?taskId=${taskId}&projectId=${projectId}`, {
+        method: 'DELETE',
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setTasks(tasks.filter(t => t.id !== taskId))
+        toast({
+          title: 'Success',
+          description: 'Task deleted successfully',
+        })
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to delete task',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      console.error('Delete task error:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete task',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleMoveTask = async (task: Task, newStatus: string) => {
+    try {
+      const response = await fetch('/api/tasks/move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          taskId: task.id,
+          newStepId: newStatus === 'TODO' ? '1' : newStatus === 'IN_PROGRESS' ? '2' : newStatus === 'REVIEW' ? '3' : '4',
+          projectId,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success || data.task) {
+        setTasks(tasks.map(t => t.id === task.id ? (data.data || data.task) : t))
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to move task',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      console.error('Move task error:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to move task',
+        variant: 'destructive',
+      })
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'VERIFIED':
@@ -264,6 +436,37 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
 
   const calculateProgress = (filled: number, total: number) => {
     return total > 0 ? Math.round((filled / total) * 100) : 0
+  }
+
+  const getPriorityColor = (priority: string) => {
+    const colors: Record<string, string> = {
+      CRITICAL: 'bg-red-100 text-red-700 border-red-300 dark:bg-red-950 dark:text-red-400 dark:border-red-800',
+      HIGH: 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950 dark:text-orange-400 dark:border-orange-800',
+      MEDIUM: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800',
+      LOW: 'bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700',
+    }
+    return colors[priority] || colors.MEDIUM
+  }
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      DONE: 'bg-green-100 text-green-700 border-green-300 dark:bg-green-950 dark:text-green-400 dark:border-green-800',
+      IN_PROGRESS: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800',
+      TODO: 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-800',
+      REVIEW: 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-950 dark:text-purple-400 dark:border-purple-800',
+    }
+    return colors[status] || colors.TODO
+  }
+
+  const columns = [
+    { id: 'todo', title: 'To Do', status: 'TODO' },
+    { id: 'in-progress', title: 'In Progress', status: 'IN_PROGRESS' },
+    { id: 'review', title: 'Review', status: 'REVIEW' },
+    { id: 'done', title: 'Done', status: 'DONE' },
+  ]
+
+  const getColumnTasks = (columnId: string) => {
+    return tasks.filter(t => t.status === columns.find(c => c.id === columnId)?.status)
   }
 
   if (loading) {
@@ -358,7 +561,7 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
             onClick={() => setActiveTab('overview')}
             className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
               activeTab === 'overview'
-                ? 'bg-primary text-white'
+                ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white'
                 : 'bg-slate-100 dark:bg-slate-800 text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
@@ -369,7 +572,7 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
             onClick={() => setActiveTab('team')}
             className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
               activeTab === 'team'
-                ? 'bg-primary text-white'
+                ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white'
                 : 'bg-slate-100 dark:bg-slate-800 text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
@@ -380,7 +583,7 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
             onClick={() => setActiveTab('vacancies')}
             className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
               activeTab === 'vacancies'
-                ? 'bg-primary text-white'
+                ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white'
                 : 'bg-slate-100 dark:bg-slate-800 text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
@@ -391,13 +594,26 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
             onClick={() => setActiveTab('milestones')}
             className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
               activeTab === 'milestones'
-                ? 'bg-primary text-white'
+                ? 'bg-gradient-to-r from-orange-600 to-orange-500 text-white'
                 : 'bg-slate-100 dark:bg-slate-800 text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
             <Target className="h-4 w-4 mr-2 inline" />
             Milestones
           </button>
+          {user && (
+            <button
+              onClick={() => setActiveTab('tasks')}
+              className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
+                activeTab === 'tasks'
+                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white'
+                  : 'bg-slate-100 dark:bg-slate-800 text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              <CheckCircle2 className="h-4 w-4 mr-2 inline" />
+              Tasks
+            </button>
+          )}
         </div>
 
         {/* Tab Content */}
@@ -683,6 +899,99 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
           </Card>
         )}
 
+        {activeTab === 'tasks' && (
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-indigo-500" />
+                  Project Tasks
+                </CardTitle>
+                <Button size="sm" onClick={() => setShowTaskModal(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Task
+                </Button>
+              </div>
+              <CardDescription>
+                {tasks.filter(t => t.status === 'DONE').length} of {tasks.length} completed
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {tasks.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <CheckCircle2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-sm">No tasks yet. Create your first task!</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {columns.map((column) => (
+                    <div key={column.id} className="bg-muted/30 rounded-lg p-3 min-h-[300px]">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold text-sm flex items-center gap-2">
+                          {column.title}
+                          <Badge variant="secondary" className="text-xs">
+                            {getColumnTasks(column.id).length}
+                          </Badge>
+                        </h3>
+                      </div>
+                      <div className="space-y-2">
+                        {getColumnTasks(column.id).map((task) => (
+                          <div
+                            key={task.id}
+                            className="bg-card border rounded-lg p-3 hover:shadow-md transition-shadow"
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <h4 className="font-medium text-sm flex-1 line-clamp-2">{task.title}</h4>
+                              <Badge className={`text-xs font-semibold ${getPriorityColor(task.priority)}`}>
+                                {task.priority}
+                              </Badge>
+                            </div>
+                            {task.description && (
+                              <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                                {task.description}
+                              </p>
+                            )}
+                            <div className="flex items-center justify-between text-xs mb-2">
+                              <Badge className={getStatusColor(task.status)}>
+                                {task.status.replace('_', ' ')}
+                              </Badge>
+                              {task.dueDate && (
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <Calendar className="h-3 w-3" />
+                                  {new Date(task.dueDate).toLocaleDateString()}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex gap-1">
+                              {columns.filter(c => c.status !== task.status).map((col) => (
+                                <button
+                                  key={col.id}
+                                  onClick={() => handleMoveTask(task, col.status)}
+                                  className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted-foreground/10 transition-colors"
+                                  title={`Move to ${col.title}`}
+                                >
+                                  → {col.title}
+                                </button>
+                              ))}
+                              <button
+                                onClick={() => handleDeleteTask(task.id)}
+                                className="text-xs px-2 py-1 rounded bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors"
+                                title="Delete task"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Add Vacancy Modal */}
         {showVacancyModal && (
           <div
@@ -810,6 +1119,80 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
                     </Button>
                     <Button onClick={handleCreateMilestone} className="flex-1">
                       Add Milestone
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Task Modal */}
+        {showTaskModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowTaskModal(false)}
+          >
+            <div
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold">Add Task</h3>
+                  <Button variant="ghost" size="icon" onClick={() => setShowTaskModal(false)}>
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="taskTitle">Title *</Label>
+                    <Input
+                      id="taskTitle"
+                      value={newTask.title}
+                      onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                      placeholder="Task name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="taskDescription">Description</Label>
+                    <Textarea
+                      id="taskDescription"
+                      value={newTask.description}
+                      onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                      placeholder="Describe this task..."
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="taskPriority">Priority</Label>
+                    <select
+                      id="taskPriority"
+                      value={newTask.priority}
+                      onChange={(e) => setNewTask({ ...newTask, priority: e.target.value as Task['priority'] })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                    >
+                      <option value="CRITICAL">Critical</option>
+                      <option value="HIGH">High</option>
+                      <option value="MEDIUM">Medium</option>
+                      <option value="LOW">Low</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="taskDueDate">Due Date</Label>
+                    <Input
+                      id="taskDueDate"
+                      type="date"
+                      value={newTask.dueDate}
+                      onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => setShowTaskModal(false)} className="flex-1">
+                      Cancel
+                    </Button>
+                    <Button onClick={handleCreateTask} className="flex-1">
+                      Add Task
                     </Button>
                   </div>
                 </div>

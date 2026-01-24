@@ -259,15 +259,9 @@ export default function ProjectsPage() {
                       </div>
                     )}
                   </CardContent>
-                  <CardFooter className="pt-2 sm:pt-3 flex flex-col sm:flex-row gap-2 sm:gap-3">
-                    <Button variant="outline" className="flex-1 text-sm sm:text-base" asChild>
-                      <Link href={`/projects/${project.id}`}>
-                        <span className="hidden sm:inline">View Details</span>
-                        <span className="sm:hidden">View</span>
-                      </Link>
-                    </Button>
-                    <Button className="flex-1 text-sm sm:text-base" asChild>
-                      <Link href={`/projects/${project.id}/tasks`}>
+                  <CardFooter className="pt-2 sm:pt-3">
+                    <Button className="w-full text-sm sm:text-base" asChild>
+                      <Link href={`/tasks?projectId=${project.id}`}>
                         <span className="hidden sm:inline">View Tasks</span>
                         <span className="sm:hidden">Tasks</span>
                       </Link>

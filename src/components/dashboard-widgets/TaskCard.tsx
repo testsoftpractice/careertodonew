@@ -171,20 +171,16 @@ export function TaskCard({
         <div className="flex gap-2 pt-2 mt-2">
           {projectLink && (
             <Button variant="outline" size="sm" className="flex-1" asChild>
-              <Link href={projectLink}>
-                <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                View Project
+              <Link href={`${projectLink}?tab=tasks`}>
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                View Details
               </Link>
             </Button>
           )}
-          {onView && (
+          {!projectLink && onView && (
             <Button variant="outline" size="sm" className="flex-1" onClick={() => onView(id)}>
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
               View Details
-            </Button>
-          )}
-          {onEdit && (
-            <Button variant="ghost" size="sm" onClick={() => onEdit(id)}>
-              Edit
             </Button>
           )}
         </div>

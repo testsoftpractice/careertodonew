@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -62,10 +63,12 @@ import { Badge } from '@/components/ui/badge'
 
 export default function StudentDashboard() {
   const { user } = useAuth()
+  const searchParams = useSearchParams()
+  const tabFromUrl = searchParams.get('tab')
 
   useRoleAccess(['STUDENT', 'PLATFORM_ADMIN'])
 
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'overview')
   const [isEditMode, setIsEditMode] = useState(false)
 
   // Time Tracking State
@@ -283,7 +286,7 @@ export default function StudentDashboard() {
 
   const quickActions = [
     { id: 'create-project', label: 'New Project', icon: Plus, href: '/projects/create' },
-    { id: 'create-task', label: 'New Task', icon: Plus, onClick: () => setShowTaskDialog(true) },
+    { id: 'create-task', label: 'New Task', icon: Plus, href: '/tasks' },
     { id: 'find-projects', label: 'Find Projects', icon: Search, href: '/projects' },
     { id: 'browse-jobs', label: 'Browse Jobs', icon: Briefcase, href: '/jobs' },
   ]
@@ -629,7 +632,7 @@ export default function StudentDashboard() {
                       Recent Tasks
                     </CardTitle>
                     <Button variant="ghost" size="sm" asChild className="cursor-pointer">
-                      <Link href="/dashboard/student?tab=tasks" className="flex items-center gap-1 text-sm">
+                      <Link href="/tasks" className="flex items-center gap-1 text-sm">
                         View All
                         <ArrowRight className="h-4 w-4" />
                       </Link>
@@ -651,8 +654,6 @@ export default function StudentDashboard() {
                         progress={task.progress || 0}
                         projectId={task.project?.id}
                         projectName={task.project?.name}
-                        onView={() => handleViewTask(task.id, task.project?.id || '')}
-                        onEdit={() => handleEditTask(task.id, task.project?.id || '')}
                       />
                     ))}
                     {loading.tasks && (

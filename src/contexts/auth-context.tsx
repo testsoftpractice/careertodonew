@@ -21,6 +21,20 @@ interface User {
   reputationScores?: any
   createdAt?: Date
   updatedAt?: Date
+  // Score fields
+  executionScore?: number
+  collaborationScore?: number
+  leadershipScore?: number
+  ethicsScore?: number
+  reliabilityScore?: number
+  totalPoints?: number
+  // Employer-specific fields
+  companyName?: string
+  companyWebsite?: string
+  position?: string
+  // Investor-specific fields
+  firmName?: string
+  investmentFocus?: string
 }
 
 interface AuthContextType {
@@ -134,26 +148,7 @@ const demoInvestor: User = {
   updatedAt: new Date(),
 }
 
-const demoMentor: User = {
-  id: 'demo-mentor',
-  email: 'mentor@careertodo.com',
-  name: 'James Chen',
-  role: 'MENTOR',
-  bio: 'Tech industry veteran with 15+ years of experience mentoring young entrepreneurs',
-  avatar: 'https://api.dicebear.com/7.x/jameschen/svg',
-  location: 'San Francisco, CA',
-  linkedinUrl: 'https://linkedin.com/in/jameschen',
-  portfolioUrl: 'https://jameschen.dev',
-  verificationStatus: 'VERIFIED',
-  progressionLevel: 'TEAM_LEAD',
-  executionScore: 5.0,
-  collaborationScore: 4.8,
-  leadershipScore: 5.0,
-  ethicsScore: 5.0,
-  reliabilityScore: 4.9,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-}
+
 
 const demoPlatformAdmin: User = {
   id: 'demo-platform-admin',

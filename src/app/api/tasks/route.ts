@@ -118,9 +118,15 @@ export async function POST(request: NextRequest) {
     })
 
     return successResponse(task, 'Task created successfully', { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Task creation error:', error)
-    return errorResponse('Failed to create task')
+
+    // Handle AuthError - return proper JSON response
+    if (error.name === 'AuthError' || error.statusCode) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
+
+    return errorResponse('Failed to create task', 500)
   }
 }
 
@@ -151,19 +157,24 @@ export async function PATCH(request: NextRequest) {
       where: { id: taskId },
       include: {
         project: true,
-      members: {
-          where: { userId: authResult.dbUser.id },
-        },
-      },
+      }
     })
 
     if (!existingTask) {
       return notFound('Task not found')
     }
 
+    // Check if user is a project member
+    const projectMember = await db.projectMember.findFirst({
+      where: {
+        projectId: existingTask.projectId!,
+        userId: authResult.dbUser.id,
+      },
+    })
+
     // Verify user has permission to update this task
     const isOwner = existingTask.assignedBy === authResult.dbUser.id
-    const isProjectMember = existingTask.project?.members?.some(m => m.userId === authResult.dbUser.id)
+    const isProjectMember = !!projectMember
     const isAssignee = existingTask.assignedTo === authResult.dbUser.id
 
     if (!isOwner && !isProjectMember && !isAssignee) {
@@ -191,8 +202,14 @@ export async function PATCH(request: NextRequest) {
     })
 
     return successResponse(task, 'Task updated successfully')
-  } catch (error) {
+  } catch (error: any) {
     console.error('Task update error:', error)
-    return errorResponse('Failed to update task')
+
+    // Handle AuthError - return proper JSON response
+    if (error.name === 'AuthError' || error.statusCode) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
+
+    return errorResponse('Failed to update task', 500)
   }
 }

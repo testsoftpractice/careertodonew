@@ -261,7 +261,7 @@ export default function ProjectsPage() {
                   </CardContent>
                   <CardFooter className="pt-2 sm:pt-3">
                     <Button className="w-full text-sm sm:text-base" asChild>
-                      <Link href={`/tasks?projectId=${project.id}`}>
+                      <Link href={`/projects/${project.id}/tasks`}>
                         <span className="hidden sm:inline">View Tasks</span>
                         <span className="sm:hidden">Tasks</span>
                       </Link>

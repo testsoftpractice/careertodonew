@@ -3,6 +3,43 @@ import { db } from '@/lib/db'
 import { UserRole, VerificationStatus } from '@prisma/client'
 import { hashPassword, generateToken } from '@/lib/auth/jwt'
 
+// Email validation regex
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i
+
+// Password validation helper
+function validatePassword(password: string): { valid: boolean; errors: string[] } {
+  const errors: string[] = []
+
+  if (password.length < 8) {
+    errors.push('Password must be at least 8 characters long')
+  }
+
+  if (password.length > 128) {
+    errors.push('Password must not exceed 128 characters')
+  }
+
+  if (!/[a-z]/.test(password)) {
+    errors.push('Password must contain at least one lowercase letter')
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Password must contain at least one uppercase letter')
+  }
+
+  if (!/\d/.test(password)) {
+    errors.push('Password must contain at least one number')
+  }
+
+  if (!/[!@#$%^&*()_+\-=\[\]{}|;:'",.<>\/?]/.test(password)) {
+    errors.push('Password must contain at least one special character (!@#$%^&*()_+\\-=\\[\\]{}|;:\'",.<>\\/?)')
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  }
+}
+
 // POST /api/auth/signup - Simple user registration
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +54,7 @@ export async function POST(request: NextRequest) {
     console.log('[SIGNUP] Original role:', role)
 
     // Normalize/validate role - map invalid values to valid ones
-    const validRoles = ['STUDENT', 'MENTOR', 'EMPLOYER', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN']
+    const validRoles = ['STUDENT', 'EMPLOYER', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN']
     let normalizedRole = role.toUpperCase()
 
     // Map common invalid role values to valid ones
@@ -40,10 +77,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Email validation
+    if (!emailRegex.test(email)) {
+      console.log('[SIGNUP] ERROR: Invalid email format')
+      return NextResponse.json(
+        { success: false, error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
+    // Password validation
     if (!password) {
       console.log('[SIGNUP] ERROR: Password is missing')
       return NextResponse.json(
         { success: false, error: 'Password is required' },
+        { status: 400 }
+      )
+    }
+
+    const passwordValidation = validatePassword(password)
+    if (!passwordValidation.valid) {
+      console.log('[SIGNUP] ERROR: Password validation failed:', passwordValidation.errors)
+      return NextResponse.json(
+        { success: false, error: passwordValidation.errors.join('; '), details: passwordValidation.errors },
         { status: 400 }
       )
     }
@@ -79,7 +135,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[SIGNUP] User does not exist, proceeding...')
-
     // Hash password
     console.log('[SIGNUP] Hashing password...')
     const hashedPassword = await hashPassword(password)
@@ -96,7 +151,6 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
       },
     })
-
     console.log('[SIGNUP] User created successfully. ID:', user.id)
     console.log('[SIGNUP] User email:', user.email)
     console.log('[SIGNUP] User name:', user.name)
@@ -112,7 +166,6 @@ export async function POST(request: NextRequest) {
 
     console.log('[SIGNUP] Token generated')
     console.log('[SIGNUP] =============== SUCCESS ===============')
-
     // Create response and set httpOnly cookie
     const response = NextResponse.json(
       {
@@ -147,7 +200,7 @@ export async function POST(request: NextRequest) {
     console.error('[SIGNUP] Error type:', error?.constructor?.name)
     console.error('[SIGNUP] Error message:', error instanceof Error ? error.message : String(error))
     console.error('[SIGNUP] Error stack:', error instanceof Error ? error.stack : 'No stack')
-
+    console.error('[SIGNUP] =============== ERROR ===============')
     // Check for unique constraint error
     if (error instanceof Error && error.message.includes('Unique constraint')) {
       console.log('[SIGNUP] ERROR: Unique constraint violation')
@@ -156,7 +209,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-
     // Check for Prisma validation error
     if (error instanceof Error && error.message.includes('Argument')) {
       console.log('[SIGNUP] ERROR: Prisma validation error')
@@ -165,7 +217,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-
     console.log('[SIGNUP] ERROR: Returning 500 error')
     return NextResponse.json(
       {
@@ -177,4 +228,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

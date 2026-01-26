@@ -34,16 +34,7 @@ import {
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
 import Link from 'next/link'
-import {
-  DndContext,
-  closestCenter,
-  DragOverlay,
-  DragEndEvent,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragStartEvent,
-} from '@dnd-kit/core'
+import ProfessionalKanbanBoard from '@/components/task/ProfessionalKanbanBoard'
 
 interface TeamMember {
   id: string
@@ -231,6 +222,14 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
 
   const handleCreateMilestone = async () => {
     if (!project || !newMilestone.title) return
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to create milestones',
+        variant: 'destructive',
+      })
+      return
+    }
 
     try {
       const response = await fetch('/api/milestones', {
@@ -242,10 +241,17 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
         }),
       })
 
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Create milestone failed:', response.status, errorText)
+        toast({ title: 'Error', description: `Failed to create milestone (${response.status})`, variant: 'destructive' })
+        return
+      }
+
       const data = await response.json()
 
-      if (data.success) {
-        setMilestones([...milestones, data.data])
+      if (data.success || data.data) {
+        setMilestones([...milestones, data.data || data])
         setNewMilestone({
           title: '',
           description: '',
@@ -260,7 +266,7 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
       } else {
         toast({
           title: 'Error',
-          description: data.error || 'Failed to create milestone',
+          description: data.error || data.message || 'Failed to create milestone',
           variant: 'destructive',
         })
       }
@@ -447,37 +453,6 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
 
   const calculateProgress = (filled: number, total: number) => {
     return total > 0 ? Math.round((filled / total) * 100) : 0
-  }
-
-  const getPriorityColor = (priority: string) => {
-    const colors: Record<string, string> = {
-      CRITICAL: 'bg-red-100 text-red-700 border-red-300 dark:bg-red-950 dark:text-red-400 dark:border-red-800',
-      HIGH: 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950 dark:text-orange-400 dark:border-orange-800',
-      MEDIUM: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800',
-      LOW: 'bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700',
-    }
-    return colors[priority] || colors.MEDIUM
-  }
-
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      DONE: 'bg-green-100 text-green-700 border-green-300 dark:bg-green-950 dark:text-green-400 dark:border-green-800',
-      IN_PROGRESS: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800',
-      TODO: 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-800',
-      REVIEW: 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-950 dark:text-purple-400 dark:border-purple-800',
-    }
-    return colors[status] || colors.TODO
-  }
-
-  const columns = [
-    { id: 'todo', title: 'To Do', status: 'TODO' },
-    { id: 'in-progress', title: 'In Progress', status: 'IN_PROGRESS' },
-    { id: 'review', title: 'Review', status: 'REVIEW' },
-    { id: 'done', title: 'Done', status: 'DONE' },
-  ]
-
-  const getColumnTasks = (columnId: string) => {
-    return tasks.filter(t => t.status === columns.find(c => c.id === columnId)?.status)
   }
 
   if (loading) {
@@ -914,18 +889,20 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
           <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-indigo-500" />
-                  Project Tasks
-                </CardTitle>
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-indigo-500" />
+                    Project Tasks
+                  </CardTitle>
+                  <CardDescription className="mt-2">
+                    {tasks.filter(t => t.status === 'DONE').length} of {tasks.length} completed
+                  </CardDescription>
+                </div>
                 <Button size="sm" onClick={() => setShowTaskModal(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Task
                 </Button>
               </div>
-              <CardDescription>
-                {tasks.filter(t => t.status === 'DONE').length} of {tasks.length} completed
-              </CardDescription>
             </CardHeader>
             <CardContent>
               {tasks.length === 0 ? (
@@ -934,70 +911,11 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
                   <p className="text-sm">No tasks yet. Create your first task!</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {columns.map((column) => (
-                    <div key={column.id} className="bg-muted/30 rounded-lg p-3 min-h-[300px]">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-semibold text-sm flex items-center gap-2">
-                          {column.title}
-                          <Badge variant="secondary" className="text-xs">
-                            {getColumnTasks(column.id).length}
-                          </Badge>
-                        </h3>
-                      </div>
-                      <div className="space-y-2">
-                        {getColumnTasks(column.id).map((task) => (
-                          <div
-                            key={task.id}
-                            className="bg-card border rounded-lg p-3 hover:shadow-md transition-shadow"
-                          >
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                              <h4 className="font-medium text-sm flex-1 line-clamp-2">{task.title}</h4>
-                              <Badge className={`text-xs font-semibold ${getPriorityColor(task.priority)}`}>
-                                {task.priority}
-                              </Badge>
-                            </div>
-                            {task.description && (
-                              <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                                {task.description}
-                              </p>
-                            )}
-                            <div className="flex items-center justify-between text-xs mb-2">
-                              <Badge className={getStatusColor(task.status)}>
-                                {task.status.replace('_', ' ')}
-                              </Badge>
-                              {task.dueDate && (
-                                <div className="flex items-center gap-1 text-muted-foreground">
-                                  <Calendar className="h-3 w-3" />
-                                  {new Date(task.dueDate).toLocaleDateString()}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex gap-1">
-                              {columns.filter(c => c.status !== task.status).map((col) => (
-                                <button
-                                  key={col.id}
-                                  onClick={() => handleMoveTask(task, col.status)}
-                                  className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted-foreground/10 transition-colors"
-                                  title={`Move to ${col.title}`}
-                                >
-                                  → {col.title}
-                                </button>
-                              ))}
-                              <button
-                                onClick={() => handleDeleteTask(task.id)}
-                                className="text-xs px-2 py-1 rounded bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors"
-                                title="Delete task"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <ProfessionalKanbanBoard
+                  tasks={tasks}
+                  onDragEnd={handleMoveTask}
+                  onTaskDelete={(task) => handleDeleteTask(task.id)}
+                />
               )}
             </CardContent>
           </Card>
@@ -1081,7 +999,7 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
         {/* Add Milestone Modal */}
         {showMilestoneModal && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowMilestoneModal(false)}
           >
             <div

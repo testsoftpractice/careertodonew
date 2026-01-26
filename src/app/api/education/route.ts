@@ -1,18 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getServerSession } from '@/lib/session'
-import { z } from 'zod'
 
 // GET /api/education - Get all education for a user
 export async function GET(request: NextRequest) {
   try {
+    // Require authentication
+    const authResult = await getServerSession(request)
+    if (!authResult.success) {
+      return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' }, { status: 401 })
+    }
+
     const userId = request.nextUrl.searchParams.get('userId')
 
-    // Build where clause
-    const where: any = {}
-    if (userId) {
-      where.userId = userId
+    // Users can only view their own education (unless admin)
+    if (userId && userId !== authResult.user.id && authResult.user.role !== 'PLATFORM_ADMIN') {
+      return NextResponse.json({ success: false, error: 'Forbidden', message: 'You can only view your own education records' }, { status: 403 })
     }
+
+    // Build where clause - use authenticated user's ID by default
+    const where: any = {}
+    where.userId = userId || authResult.user.id
 
     // Fetch education records
     const userEducations = await db.education.findMany({
@@ -135,10 +143,17 @@ export async function PATCH(
       })
     }
 
-    // Update education
+    // Update education - only update provided fields
     const updateData: any = {
       updatedAt: new Date(),
     }
+
+    if (body.school) updateData.school = body.school
+    if (body.degree) updateData.degree = body.degree
+    if (body.field !== undefined) updateData.field = body.field
+    if (body.description !== undefined) updateData.description = body.description
+    if (body.startDate) updateData.startDate = new Date(body.startDate)
+    if (body.endDate) updateData.endDate = new Date(body.endDate)
 
     const education = await db.education.update({
       where: { id: educationId },

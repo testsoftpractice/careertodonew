@@ -141,8 +141,17 @@ export async function POST(request: NextRequest) {
       success: true,
       data: project
     }, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Project creation error:', error)
+
+    // Handle AuthError - return proper JSON response
+    if (error.name === 'AuthError' || error.statusCode) {
+      return NextResponse.json({
+        success: false,
+        error: error.message || 'Authentication required'
+      }, { status: error.statusCode || 401 })
+    }
+
     return NextResponse.json({
       success: false,
       error: 'Failed to create project'

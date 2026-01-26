@@ -1,3 +1,5 @@
+import { NextRequest } from 'next/server'
+
 /**
  * Session management using httpOnly cookies for security
  * This prevents XSS attacks from stealing tokens
@@ -7,6 +9,81 @@ export interface SessionData {
   user: any
   token: string
   expiresAt: Date
+}
+
+export interface ServerSession {
+  user: {
+    id: string
+    email: string
+    name: string
+    role: string
+    verificationStatus: string
+  }
+  success: boolean
+  error?: string
+}
+
+/**
+ * Get server-side session from request
+ * This extracts token from Authorization header and verifies it
+ * For use in API routes (server-side)
+ */
+export async function getServerSession(request: NextRequest): Promise<ServerSession> {
+  try {
+    // Extract token from Authorization header
+    const authHeader = request.headers.get('authorization')
+
+    if (!authHeader) {
+      return {
+        success: false,
+        user: null as any,
+        error: 'No authorization token found'
+      }
+    }
+
+    const parts = authHeader.split(' ')
+    if (parts.length !== 2 || parts[0] !== 'Bearer') {
+      return {
+        success: false,
+        user: null as any,
+        error: 'Invalid authorization header format'
+      }
+    }
+
+    const token = parts[1]
+
+    // Verify the token
+    const { verifyToken } = await import('@/lib/auth/jwt')
+    const payload = verifyToken(token)
+
+    if (!payload) {
+      return {
+        success: false,
+        user: null as any,
+        error: 'Invalid or expired token'
+      }
+    }
+
+    // Return session with user data from token
+    return {
+      success: true,
+      user: {
+        id: payload.userId,
+        email: payload.email,
+        name: payload.name,
+        role: payload.role,
+        verificationStatus: payload.verificationStatus
+      },
+      error: undefined
+    }
+  } catch (error) {
+    console.error('Error getting server session:', error)
+    return {
+      success: false,
+      user: null as any,
+      error: 'Failed to verify session'
+    }
+  }
 }
 
 /**

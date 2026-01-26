@@ -126,26 +126,49 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    if (!body.hours || parseFloat(body.hours) <= 0) {
+    // Validate hours
+    if (!body.hours || body.hours === '') {
       return NextResponse.json({
         success: false,
-        error: 'Hours must be greater than 0'
+        error: 'Hours are required'
       }, { status: 400 })
     }
 
-    // Verify task exists
-    const task = await db.task.findUnique({
-      where: { id: body.taskId }
-    })
+    const hoursValue = parseFloat(body.hours)
 
-    if (!task) {
+    // Validate hours range (0 < hours <= 24)
+    if (isNaN(hoursValue) || hoursValue <= 0) {
       return NextResponse.json({
         success: false,
-        error: 'Task not found'
-      }, { status: 404 })
+        error: 'Hours must be a positive number'
+      }, { status: 400 })
     }
 
-    // Verify user has access to the task
+    if (hoursValue > 24) {
+      return NextResponse.json({
+        success: false,
+        error: 'Hours cannot exceed 24'
+      }, { status: 400 })
+    }
+
+    // Validate date
+    const entryDate = body.date ? new Date(body.date) : new Date()
+    if (isNaN(entryDate.getTime())) {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid date'
+      }, { status: 400 })
+    }
+
+    // Date cannot be in the future (unless for planning)
+    if (entryDate > new Date()) {
+      return NextResponse.json({
+        success: false,
+        error: 'Date cannot be in the future'
+      }, { status: 400 })
+    }
+
+    // Verify task exists and user has access to the task
     const task = await db.task.findUnique({
       where: { id: body.taskId },
       include: { project: true }
@@ -171,8 +194,8 @@ export async function POST(request: NextRequest) {
       data: {
         userId: userId,
         taskId: body.taskId,
-        date: body.date ? new Date(body.date) : new Date(),
-        hours: parseFloat(body.hours),
+        date: entryDate,
+        hours: hoursValue,
         description: body.description || null,
         billable: body.billable || false,
         hourlyRate: body.hourlyRate ? parseFloat(body.hourlyRate) : null,

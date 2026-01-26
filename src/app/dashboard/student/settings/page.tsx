@@ -220,31 +220,29 @@ export default function StudentSettingsPage() {
             </div>
             <div className="flex items-center gap-3">
               {quickActions.map(action => (
-                <>
-                  {action.href ? (
-                    <Link key={action.id} href={action.href}>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="hover:bg-white/5 dark:hover:bg-slate-100 transition-colors"
-                        title={action.label}
-                      >
-                        <action.icon className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  ) : (
+                action.href ? (
+                  <Link key={action.id} href={action.href}>
                     <Button
-                      key={action.id}
                       variant="ghost"
                       size="icon"
                       className="hover:bg-white/5 dark:hover:bg-slate-100 transition-colors"
-                      onClick={action.onClick}
                       title={action.label}
                     >
                       <action.icon className="h-4 w-4" />
                     </Button>
-                  )}
-                </>
+                  </Link>
+                ) : (
+                  <Button
+                    key={action.id}
+                    variant="ghost"
+                    size="icon"
+                    className="hover:bg-white/5 dark:hover:bg-slate-100 transition-colors"
+                    onClick={action.onClick}
+                    title={action.label}
+                  >
+                    <action.icon className="h-4 w-4" />
+                  </Button>
+                )
               ))}
             </div>
           </div>

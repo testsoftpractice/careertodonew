@@ -31,6 +31,7 @@ import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
+import { authFetch } from "@/lib/api-response"
 
 interface RoleRequirement {
   id: string
@@ -242,7 +243,7 @@ export default function CreateProjectPage() {
     setLoading(true)
 
     try {
-      const response = await fetch("/api/projects", {
+      const response = await authFetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

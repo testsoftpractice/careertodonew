@@ -138,7 +138,7 @@ export async function checkProjectAccess(
   projectId: string,
   requiredAccess?: string[]
 ): Promise<boolean> {
-  const authResult = await getAuthRequest(request)
+  const authResult = await getAuthUser(request)
 
   if (!authResult.success || !authResult.dbUser) {
     return false
@@ -174,11 +174,6 @@ export async function checkProjectAccess(
   }
 
   return true
-}
-
-// Helper for getting auth from request (reused above)
-async function getAuthRequest(request: NextRequest): Promise<AuthResult> {
-  return getAuthUser(request)
 }
 
 export class AuthError extends Error {

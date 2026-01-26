@@ -1,3 +1,9 @@
+  @@index([type])
+  @@index([createdAt])
+}
+}
+  @@unique([fromUserId, toUserId, type, projectId]) // Prevent duplicate ratings
+
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -6,9 +12,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
- directUrl = env("DIRECT_URL")
 }
 
 // ============================================
@@ -639,8 +644,6 @@ model Rating {
 
   @@index([fromUserId])
   @@index([toUserId])
-  @@index([type])
-}
 
 model Notification {
   id        String              @id @default(cuid())

@@ -12,7 +12,6 @@ export interface ApiResponse<T = any> {
     hasMore?: boolean
   }
 }
-
 export interface ApiError {
   statusCode: number
   message: string
@@ -83,4 +82,29 @@ export function validationError(errors: Array<{ field: string; message: string }
     },
     { status: 400 }
   )
+}
+
+/**
+ * Authenticated fetch wrapper - adds Authorization header with bearer token
+ * This should be used for all authenticated API requests
+ */
+export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const authHeader = localStorage.getItem('token')
+
+  const headers: HeadersInit = {
+    ...options.headers,
+    'Content-Type': 'application/json',
+  }
+
+  // Add Authorization header if token exists
+  if (authHeader) {
+    headers['Authorization'] = 'Bearer ' + authHeader
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  })
+
+  return response
 }

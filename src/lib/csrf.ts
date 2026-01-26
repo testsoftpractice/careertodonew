@@ -1,13 +1,18 @@
-import crypto from 'crypto'
-
 /**
  * Generate a CSRF token for a user session
  * @param sessionId - The user's session identifier
  * @returns CSRF token
  */
-export function generateCSRFToken(sessionId: string): string {
-  const data = `${sessionId}-${Date.now()}-${crypto.randomBytes(16).toString('hex')}`
-  return crypto.createHash('sha256').update(data).digest('hex')
+export async function generateCSRFToken(sessionId: string): Promise<string> {
+  const data = `${sessionId}-${Date.now()}-${crypto.randomUUID()}`
+  const encoder = new TextEncoder()
+  const dataBuffer = encoder.encode(data)
+
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+  return hashHex
 }
 
 /**
@@ -45,7 +50,7 @@ export function getCSRFTokenFromHeaders(headers: Headers): string | null {
  * Store it in database in a real implementation
  */
 export async function createCSRFSession(userId: string): Promise<string> {
-  const token = generateCSRFToken(userId)
+  const token = await generateCSRFToken(userId)
   // In a real implementation, store this in database:
   // await db.cSRFToken.create({
   //   data: {

@@ -1,21 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { experiences, users } from '@/lib/schema'
 import { getServerSession } from '@/lib/session'
-import { z } from 'zod'
 
 // GET /api/experiences - Get all experiences for a user
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = request.nextUrl.searchParams
+    // Require authentication
+    const authResult = await getServerSession(request)
+    if (!authResult.success) {
+      return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' }, { status: 401 })
+    }
+
+    const searchParams = request.nextUrl.searchParams
     const userId = searchParams.get('userId')
     const status = searchParams.get('status')
 
-    // Build where clause
-    const where: any = {}
-    if (userId) {
-      where.userId = userId
+    // Users can only view their own experiences (unless admin)
+    if (userId && userId !== authResult.user.id && authResult.user.role !== 'PLATFORM_ADMIN') {
+      return NextResponse.json({ success: false, error: 'Forbidden', message: 'You can only view your own experience records' }, { status: 403 })
     }
+
+    // Build where clause - use authenticated user's ID by default
+    const where: any = {}
+    where.userId = userId || authResult.user.id
     if (status) {
       where.current = status === 'true' ? false : true
     }
@@ -24,23 +31,6 @@ export async function GET(request: NextRequest) {
     const userExperiences = await db.experience.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: {
-            id: true,
-            title: true,
-            company: true,
-            location: true,
-            description: true,
-            startDate: true,
-            endDate: true,
-            current: true,
-            skills: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        },
-      },
     })
 
     return NextResponse.json({

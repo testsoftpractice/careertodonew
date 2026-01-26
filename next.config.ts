@@ -43,7 +43,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_APP_URL: process.env.NEXTAUTH_URL || 'http://localhost:3000',
   },
 
-  // Headers for security and caching
+  // Headers for security, CORS, and caching
   async headers() {
     return [
       {
@@ -68,6 +68,24 @@ const nextConfig: NextConfig = {
           {
             key: 'X-XSS-Protection',
             value: '1; mode=block'
+          },
+          {
+            key: 'Access-Control-Allow-Credentials',
+            value: 'true'
+          },
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: process.env.NODE_ENV === 'production' 
+              ? process.env.ALLOWED_ORIGINS || 'https://yourdomain.com'
+              : '*'
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, OPTIONS, POST, PUT, DELETE, PATCH'
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization, X-Requested-With, X-CSRF-Token'
           },
         ],
       },

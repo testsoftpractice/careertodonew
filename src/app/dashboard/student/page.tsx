@@ -14,6 +14,7 @@ import { toast } from '@/hooks/use-toast'
 import { logoutAndRedirect } from '@/lib/utils/logout'
 import { useAuth } from '@/contexts/auth-context'
 import { useRoleAccess } from '@/hooks/use-role-access'
+import { authFetch } from '@/lib/api-response'
 import {
   StatsCard,
   ActivityList,
@@ -38,7 +39,7 @@ import {
   LayoutDashboard,
   ListTodo,
   BarChart3,
-  Kanban,
+  Building,
   Zap,
   ArrowRight,
   Settings,
@@ -57,7 +58,11 @@ import {
   ClipboardList,
   MoreVertical,
   ChevronRight,
+  Trash2,
+  Building2,
 } from 'lucide-react'
+import ProfessionalKanbanBoard, { Task as KanbanTask } from '@/components/task/ProfessionalKanbanBoard'
+import TaskFormDialog from '@/components/task/TaskFormDialog'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 
@@ -88,15 +93,9 @@ function DashboardContent({ user }: { user: any }) {
     reason: '',
   })
 
-  // Task Creation State
-  const [showTaskDialog, setShowTaskDialog] = useState(false)
-  const [taskForm, setTaskForm] = useState({
-    title: '',
-    description: '',
-    priority: 'MEDIUM',
-    dueDate: '',
-    projectId: 'none',
-  })
+  // View type for Tasks tab: personal vs project
+  const [viewType, setViewType] = useState<'personal' | 'project'>('personal')
+  const [selectedProject, setSelectedProject] = useState<any | null>(null)
   const [availableProjects, setAvailableProjects] = useState<any[]>([])
 
   const [stats, setStats] = useState({
@@ -119,11 +118,43 @@ function DashboardContent({ user }: { user: any }) {
   const [projects, setProjects] = useState<any[]>([])
   const [tasks, setTasks] = useState<any[]>([])
 
+  // Personal tasks for Tasks tab
+  const [personalTasks, setPersonalTasks] = useState<any[]>([])
+  const [projectTasks, setProjectTasks] = useState<any[]>([])
+
   const [loading, setLoading] = useState({
     stats: false,
     projects: false,
     tasks: false,
     createTask: false,
+    updateTask: false,
+  })
+
+
+
+  // Kanban columns
+  const columns = [
+    { id: 'todo', title: 'To Do', status: 'TODO' },
+    { id: 'in-progress', title: 'In Progress', status: 'IN_PROGRESS' },
+    { id: 'review', title: 'Review', status: 'REVIEW' },
+    { id: 'done', title: 'Done', status: 'DONE' },
+  ]
+
+  const getColumnTasks = (columnId: string) => {
+    // Get tasks based on current view type
+    const currentTasks = viewType === 'personal' ? personalTasks : projectTasks
+    return currentTasks.filter(t => t.status === columns.find(c => c.id === columnId)?.status)
+  }
+
+  // Task dialog state
+  const [showTaskDialog, setShowTaskDialog] = useState(false)
+  const [editingTask, setEditingTask] = useState<KanbanTask | null>(null)
+  const [taskForm, setTaskForm] = useState({
+    title: '',
+    description: '',
+    priority: 'MEDIUM' as const,
+    dueDate: '',
+    projectId: 'none',
   })
 
   // Timer effect
@@ -161,7 +192,7 @@ function DashboardContent({ user }: { user: any }) {
       fetchAvailableProjects()
     } else if (activeTab === 'projects') {
       fetchProjects()
-    } else if (activeTab === 'tasks' || activeTab === 'kanban') {
+    } else if (activeTab === 'tasks') {
       fetchTasks()
       fetchAvailableProjects()
     } else if (activeTab === 'time-tracking') {
@@ -171,14 +202,21 @@ function DashboardContent({ user }: { user: any }) {
     } else if (activeTab === 'leave-management') {
       fetchLeaveRequests()
     }
-  }, [activeTab, user])
+  }, [activeTab, user, viewType])
+
+  // Fetch project tasks when project is selected (for Tasks tab)
+  useEffect(() => {
+    if (viewType === 'project' && selectedProject && activeTab === 'tasks') {
+      fetchProjectTasks(selectedProject.id)
+    }
+  }, [viewType, selectedProject, activeTab, user])
 
   const fetchStats = async () => {
     if (!user) return
 
     try {
       setLoading(prev => ({ ...prev, stats: true }))
-      const response = await fetch(`/api/dashboard/student/stats?userId=${user.id}`)
+      const response = await authFetch(`/api/dashboard/student/stats?userId=${user.id}`)
       const data = await response.json()
 
       if (data.success) {
@@ -196,7 +234,7 @@ function DashboardContent({ user }: { user: any }) {
 
     try {
       setLoading(prev => ({ ...prev, projects: true }))
-      const response = await fetch(`/api/projects?ownerId=${user.id}`)
+      const response = await authFetch(`/api/projects?ownerId=${user.id}`)
       const data = await response.json()
 
       if (data.success) {
@@ -214,14 +252,55 @@ function DashboardContent({ user }: { user: any }) {
 
     try {
       setLoading(prev => ({ ...prev, tasks: true }))
-      const response = await fetch(`/api/tasks?assigneeId=${user.id}`)
-      const data = await response.json()
 
-      if (data.success) {
-        setTasks(data.data || [])
-      }
+      // Fetch both personal tasks and assigned project tasks
+      const [personalResponse, projectResponse] = await Promise.all([
+        authFetch(`/api/tasks/personal?userId=${user.id}`),
+        authFetch(`/api/tasks?assigneeId=${user.id}`),
+      ])
+
+      const personalData = await personalResponse.json()
+      const projectData = await projectResponse.json()
+
+      setPersonalTasks(personalData.tasks || [])
+      setProjectTasks(projectData.data || [])
+      // Set combined tasks for backward compatibility
+      setTasks([...(personalData.tasks || []), ...(projectData.data || [])])
     } catch (error) {
       console.error('Fetch tasks error:', error)
+    } finally {
+      setLoading(prev => ({ ...prev, tasks: false }))
+    }
+  }
+
+  const fetchPersonalTasks = async () => {
+    if (!user) return
+
+    try {
+      setLoading(prev => ({ ...prev, tasks: true }))
+      const response = await authFetch(`/api/tasks/personal?userId=${user.id}`)
+      const data = await response.json()
+      setPersonalTasks(data.tasks || [])
+      // Also update combined tasks
+      setTasks([...(data.tasks || []), ...projectTasks])
+    } catch (error) {
+      console.error('Fetch personal tasks error:', error)
+    } finally {
+      setLoading(prev => ({ ...prev, tasks: false }))
+    }
+  }
+
+  const fetchProjectTasks = async (projectId: string) => {
+    if (!user) return
+
+    try {
+      setLoading(prev => ({ ...prev, tasks: true }))
+      const response = await authFetch(`/api/tasks?projectId=${projectId}`)
+      if (!response.ok) throw new Error('Failed to fetch project tasks')
+      const data = await response.json()
+      setProjectTasks(data.data || [])
+    } catch (error) {
+      console.error('Fetch project tasks error:', error)
     } finally {
       setLoading(prev => ({ ...prev, tasks: false }))
     }
@@ -231,7 +310,7 @@ function DashboardContent({ user }: { user: any }) {
     if (!user) return
 
     try {
-      const response = await fetch(`/api/projects?ownerId=${user.id}`)
+      const response = await authFetch('/api/projects')
       const data = await response.json()
 
       if (data.success) {
@@ -246,7 +325,7 @@ function DashboardContent({ user }: { user: any }) {
     if (!user) return
 
     try {
-      const response = await fetch(`/api/time-entries?userId=${user.id}`)
+      const response = await authFetch(`/api/time-entries?userId=${user.id}`)
       const data = await response.json()
 
       if (data.success) {
@@ -261,7 +340,7 @@ function DashboardContent({ user }: { user: any }) {
     if (!user) return
 
     try {
-      const response = await fetch(`/api/time-summary?userId=${user.id}`)
+      const response = await authFetch(`/api/time-summary?userId=${user.id}`)
       const data = await response.json()
 
       if (data.success) {
@@ -276,7 +355,7 @@ function DashboardContent({ user }: { user: any }) {
     if (!user) return
 
     try {
-      const response = await fetch(`/api/leave-requests?userId=${user.id}`)
+      const response = await authFetch(`/api/leave-requests?userId=${user.id}`)
       const data = await response.json()
 
       if (data.success) {
@@ -299,30 +378,61 @@ function DashboardContent({ user }: { user: any }) {
 
   const quickActions = [
     { id: 'create-project', label: 'New Project', icon: Plus, href: '/projects/create' },
-    { id: 'create-task', label: 'New Task', icon: Plus, href: '/tasks' },
+    { id: 'create-task', label: 'New Task', icon: Plus, onClick: () => { setActiveTab('tasks'); setTimeout(() => setShowTaskDialog(true), 100); } },
     { id: 'find-projects', label: 'Find Projects', icon: Search, href: '/projects' },
     { id: 'browse-jobs', label: 'Browse Jobs', icon: Briefcase, href: '/jobs' },
   ]
 
   // Timer functions
   const saveTimeEntry = async (stopTimerAfter = false) => {
-    if (!user || !selectedTaskForTimer || timerSeconds === 0) return
+    if (!user || !selectedTaskForTimer) return
+
+    // Don't save if no time has been tracked
+    if (timerSeconds === 0) {
+      if (stopTimerAfter) {
+        toast({ title: 'Info', description: 'No time to save' })
+      }
+      return
+    }
 
     try {
-      const hours = (timerSeconds / 3600).toFixed(2)
+      const hours = parseFloat((timerSeconds / 3600).toFixed(2))
 
-      const response = await fetch('/api/time-entries', {
+      // Ensure hours is a positive number
+      if (hours <= 0) {
+        toast({ title: 'Info', description: 'No time to save' })
+        return
+      }
+
+      const response = await authFetch('/api/time-entries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
           taskId: selectedTaskForTimer,
           hours,
+          date: new Date().toISOString().split('T')[0],
           description: 'Time tracking from dashboard timer',
         }),
       })
 
-      if (response.ok && stopTimerAfter) {
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Save time entry failed:', response.status, errorText)
+        toast({ title: 'Error', description: `Failed to save time entry (${response.status})`, variant: 'destructive' })
+        return
+      }
+
+      const data = await response.json()
+
+      if (!data.success) {
+        const errorMsg = data.error || data.message || 'Failed to save time entry'
+        console.error('Save time entry error:', data)
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
+        return
+      }
+
+      if (stopTimerAfter) {
         toast({ title: 'Success', description: 'Time entry saved successfully' })
         fetchTimeEntries()
         setTimerSeconds(0)
@@ -330,7 +440,7 @@ function DashboardContent({ user }: { user: any }) {
       }
     } catch (error) {
       console.error('Save time entry error:', error)
-      toast({ title: 'Error', description: 'Failed to save time entry', variant: 'destructive' })
+      toast({ title: 'Error', description: 'Failed to save time entry. Please try again.', variant: 'destructive' })
     }
   }
 
@@ -346,7 +456,7 @@ function DashboardContent({ user }: { user: any }) {
 
     try {
       // Create work session
-      const response = await fetch('/api/work-sessions', {
+      const response = await authFetch('/api/work-sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -354,25 +464,34 @@ function DashboardContent({ user }: { user: any }) {
         }),
       })
 
-      if (response.ok) {
-        const data = await response.json()
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Start timer failed:', response.status, errorText)
+        toast({ title: 'Error', description: `Failed to start timer (${response.status})`, variant: 'destructive' })
+        return
+      }
+
+      const data = await response.json()
+      if (data.success) {
         setCurrentWorkSessionId(data.data.id)
         setTimerRunning(true)
+        toast({ title: 'Success', description: 'Timer started successfully' })
+      } else {
+        const errorMsg = data.error || data.message || 'Failed to start timer'
+        console.error('Start timer error:', data)
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       }
     } catch (error) {
       console.error('Start timer error:', error)
-      toast({ title: 'Error', description: 'Failed to start timer', variant: 'destructive' })
+      toast({ title: 'Error', description: 'Failed to start timer. Please try again.', variant: 'destructive' })
     }
   }
 
   const pauseTimer = async () => {
     if (!currentWorkSessionId) return
 
-    // Save current time before pausing
-    await saveTimeEntry(true)
-
-    setTimerRunning(false)
-    setCurrentWorkSessionId(null)
+    // Save current time entry before pausing
+    await saveTimeEntry(true)  // true = stop timer after saving
   }
 
   const toggleTimer = () => {
@@ -394,15 +513,51 @@ function DashboardContent({ user }: { user: any }) {
   const handleCreateLeaveRequest = async () => {
     if (!user) return
 
+    // Validate form
+    if (!leaveForm.leaveType) {
+      toast({ title: 'Validation Error', description: 'Please select a leave type', variant: 'destructive' })
+      return
+    }
+
+    if (!leaveForm.startDate) {
+      toast({ title: 'Validation Error', description: 'Please select a start date', variant: 'destructive' })
+      return
+    }
+
+    if (!leaveForm.endDate) {
+      toast({ title: 'Validation Error', description: 'Please select an end date', variant: 'destructive' })
+      return
+    }
+
+    if (!leaveForm.reason) {
+      toast({ title: 'Validation Error', description: 'Please provide a reason for the leave', variant: 'destructive' })
+      return
+    }
+
+    if (new Date(leaveForm.startDate) >= new Date(leaveForm.endDate)) {
+      toast({ title: 'Validation Error', description: 'End date must be after start date', variant: 'destructive' })
+      return
+    }
+
     try {
-      const response = await fetch('/api/leave-requests', {
+      const response = await authFetch('/api/leave-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
-          ...leaveForm,
+          leaveType: leaveForm.leaveType,
+          startDate: leaveForm.startDate,
+          endDate: leaveForm.endDate,
+          reason: leaveForm.reason,
         }),
       })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Leave request failed:', response.status, errorText)
+        toast({ title: 'Error', description: `Failed to submit leave request (${response.status})`, variant: 'destructive' })
+        return
+      }
 
       const data = await response.json()
 
@@ -412,85 +567,241 @@ function DashboardContent({ user }: { user: any }) {
         setLeaveForm({ leaveType: '', startDate: '', endDate: '', reason: '' })
         fetchLeaveRequests()
       } else {
-        toast({ title: 'Error', description: data.message || 'Failed to submit leave request', variant: 'destructive' })
+        const errorMsg = data.error || data.message || 'Failed to submit leave request'
+        console.error('Leave request error:', data)
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to submit leave request', variant: 'destructive' })
+      console.error('Leave request submit error:', error)
+      toast({ title: 'Error', description: 'Failed to submit leave request. Please try again.', variant: 'destructive' })
     }
   }
 
-  // Task creation functions
-  const handleCreateTask = async () => {
+  // Task creation and editing functions
+  const handleCreateTask = async (taskData: any) => {
     if (!user) return
-
-    // Validate task form
-    if (!taskForm.title) {
-      toast({ title: 'Validation Error', description: 'Task title is required', variant: 'destructive' })
-      return
-    }
-
-    if (!taskForm.projectId || taskForm.projectId === 'none') {
-      toast({ title: 'Validation Error', description: 'Please select a project for the task', variant: 'destructive' })
-      return
-    }
 
     try {
       setLoading(prev => ({ ...prev, createTask: true }))
-      const response = await fetch('/api/tasks', {
+
+      const payload: any = {
+        title: taskData.title,
+        description: taskData.description || null,
+        priority: taskData.priority,
+      }
+
+      if (taskData.projectId && taskData.projectId !== 'none' && taskData.projectId !== '') {
+        payload.projectId = taskData.projectId
+        payload.assignedTo = user.id
+        payload.assignedBy = user.id
+        if (taskData.dueDate) {
+          payload.dueDate = new Date(taskData.dueDate).toISOString()
+        }
+      } else {
+        payload.userId = user.id
+        if (taskData.dueDate) {
+          payload.dueDate = new Date(taskData.dueDate).toISOString()
+        }
+      }
+
+      const url = payload.projectId ? '/api/tasks' : '/api/tasks/personal'
+
+      const response = await authFetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: taskForm.title,
-          description: taskForm.description,
-          priority: taskForm.priority,
-          dueDate: taskForm.dueDate,
-          assigneeId: user.id,
-          projectId: taskForm.projectId,
-        }),
+        body: JSON.stringify(payload),
       })
 
       const data = await response.json()
 
-      if (data.success) {
+      if (data.success || data.task) {
         toast({ title: 'Success', description: 'Task created successfully' })
+        // Refresh tasks
+        if (payload.projectId) {
+          fetchProjectTasks(payload.projectId)
+        } else {
+          await fetchPersonalTasks()
+        }
         setShowTaskDialog(false)
-        setTaskForm({ title: '', description: '', priority: 'MEDIUM', dueDate: '', projectId: '' })
-        fetchTasks()
       } else {
         toast({ title: 'Error', description: data.error || data.message || 'Failed to create task', variant: 'destructive' })
       }
-    } catch (error) {
+    } catch (err) {
       toast({ title: 'Error', description: 'Failed to create task', variant: 'destructive' })
+      throw err
     } finally {
       setLoading(prev => ({ ...prev, createTask: false }))
     }
   }
 
-  const handleViewTask = (taskId: string, projectId: string) => {
-    // Navigate to task edit/view page
-    if (projectId) {
-      // If task has a project, go to project's task management
-      window.location.href = `/projects/${projectId}/tasks`
-    } else {
-      // Otherwise go to task edit page
-      window.location.href = `/tasks/${taskId}`
+  const handleEditTaskSave = async (taskData: any) => {
+    if (!user || !editingTask) return
+
+    try {
+      setLoading(prev => ({ ...prev, updateTask: true }))
+
+      const payload: any = {
+        title: taskData.title,
+        description: taskData.description || null,
+        priority: taskData.priority,
+        status: taskData.status,
+      }
+
+      if (taskData.dueDate) {
+        payload.dueDate = new Date(taskData.dueDate).toISOString()
+      }
+
+      const url = editingTask.projectId ? `/api/tasks?id=${editingTask.id}` : `/api/tasks/personal?id=${editingTask.id}`
+      const body = { ...payload }
+      if (editingTask.projectId) {
+        body.projectId = editingTask.projectId
+      }
+
+      const response = await authFetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast({ title: 'Success', description: 'Task updated successfully' })
+        // Update local state immediately for instant feedback
+        const updatedTask = { ...editingTask, ...payload }
+        if (viewType === 'personal') {
+          setPersonalTasks(personalTasks.map(t => t.id === editingTask.id ? updatedTask : t))
+        } else {
+          setProjectTasks(projectTasks.map(t => t.id === editingTask.id ? updatedTask : t))
+        }
+        setEditingTask(null)
+        setShowTaskDialog(false)
+        // Refresh tasks in background
+        if (editingTask.projectId) {
+          fetchProjectTasks(editingTask.projectId)
+        } else {
+          await fetchPersonalTasks()
+        }
+      } else {
+        toast({ title: 'Error', description: data.error || data.message || 'Failed to update task', variant: 'destructive' })
+      }
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to update task', variant: 'destructive' })
+      throw err
+    } finally {
+      setLoading(prev => ({ ...prev, updateTask: false }))
     }
   }
 
-  const handleEditTask = (taskId: string, projectId: string) => {
-    // Navigate to task edit page
-    if (projectId) {
-      window.location.href = `/projects/${projectId}/tasks/${taskId}/edit`
-    } else {
-      window.location.href = `/tasks/${taskId}/edit`
+  const handleKanbanDragEnd = async (task: KanbanTask, newStatus: string) => {
+    if (!user || task.status === newStatus) return
+
+    try {
+      setLoading(prev => ({ ...prev, updateTask: true }))
+
+      // Determine endpoint and body based on task type
+      const isPersonalTask = !task.projectId
+      const url = isPersonalTask
+        ? `/api/tasks/personal?id=${task.id}`
+        : `/api/tasks?id=${task.id}`
+      const body = {
+        status: newStatus,
+        userId: user.id
+      }
+      if (!isPersonalTask) {
+        body.projectId = task.projectId
+      }
+
+      const response = await authFetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Update task status failed:', response.status, errorText)
+        toast({ title: 'Error', description: `Failed to update task status (${response.status})`, variant: 'destructive' })
+        setLoading(prev => ({ ...prev, updateTask: false }))
+        return
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast({ title: 'Success', description: `Task moved to ${newStatus.replace('_', ' ')}` })
+        // Update local state immediately for instant feedback
+        if (viewType === 'personal') {
+          setPersonalTasks(personalTasks.map(t => t.id === task.id ? { ...t, status: newStatus as any } : t))
+        } else {
+          setProjectTasks(projectTasks.map(t => t.id === task.id ? { ...t, status: newStatus as any } : t))
+        }
+      } else {
+        toast({ title: 'Error', description: data.error || data.message || 'Failed to update task status', variant: 'destructive' })
+      }
+    } catch (err) {
+      console.error('Drag and drop error:', err)
+      toast({ title: 'Error', description: 'Failed to update task status', variant: 'destructive' })
+    } finally {
+      setLoading(prev => ({ ...prev, updateTask: false }))
     }
+  }
+
+  const handleTaskDelete = async (task: KanbanTask) => {
+    if (!confirm('Are you sure you want to delete this task?')) return
+
+    if (!user) return
+
+    try {
+      setLoading(prev => ({ ...prev, updateTask: true }))
+
+      const url = task.projectId ? `/api/tasks/${task.id}` : `/api/tasks/personal?id=${task.id}&userId=${user.id}`
+
+      const response = await authFetch(url, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Delete task failed:', response.status, errorText)
+        toast({ title: 'Error', description: `Failed to delete task (${response.status})`, variant: 'destructive' })
+        return
+      }
+
+      const data = await response.json()
+
+      // Update local state immediately regardless of response for instant feedback
+      if (viewType === 'personal') {
+        setPersonalTasks(personalTasks.filter(t => t.id !== task.id))
+      } else {
+        setProjectTasks(projectTasks.filter(t => t.id !== task.id))
+      }
+
+      if (data.success) {
+        toast({ title: 'Success', description: 'Task deleted successfully' })
+      } else {
+        toast({ title: 'Error', description: data.error || data.message || 'Failed to delete task', variant: 'destructive' })
+      }
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to delete task', variant: 'destructive' })
+    } finally {
+      setLoading(prev => ({ ...prev, updateTask: false }))
+    }
+  }
+
+  const handleViewTask = (taskId: string, projectId: string) => {
+    // For now, just show a message
+    toast({
+      title: 'View Task',
+      description: 'Task details view - Coming soon!',
+    })
   }
 
   const handleDeleteLeaveRequest = async (id: string) => {
     if (!confirm('Are you sure you want to delete this leave request?')) return
 
     try {
-      const response = await fetch(`/api/leave-requests/${id}`, {
+      const response = await authFetch(`/api/leave-requests/${id}`, {
         method: 'DELETE',
       })
 
@@ -506,6 +817,8 @@ function DashboardContent({ user }: { user: any }) {
       toast({ title: 'Error', description: 'Failed to delete leave request', variant: 'destructive' })
     }
   }
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex flex-col">
@@ -570,12 +883,9 @@ function DashboardContent({ user }: { user: any }) {
                 <TabsTrigger
                   value="tasks"
                   className="text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-500 data-[state=active]:text-white rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 transition-all duration-300 whitespace-nowrap cursor-pointer font-medium"
-                  asChild
                 >
-                  <Link href="/tasks" className="flex items-center gap-2">
-                    <ListTodo className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
-                    <span className="hidden sm:inline">Tasks</span>
-                  </Link>
+                  <ListTodo className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
+                  <span className="hidden sm:inline">Tasks</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="projects"
@@ -672,68 +982,7 @@ function DashboardContent({ user }: { user: any }) {
               </CardContent>
             </Card>
 
-            <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
-              {/* Recent Tasks */}
-              <Card className="border-2 shadow-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <Zap className="h-5 w-5 text-amber-500" />
-                      Recent Tasks
-                    </CardTitle>
-                    <Button variant="ghost" size="sm" asChild className="cursor-pointer">
-                      <Link href="/tasks" className="flex items-center gap-1 text-sm">
-                        View All
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
-                    {tasks.slice(0, 4).map((task) => (
-                      <TaskCard
-                        key={task.id}
-                        id={task.id}
-                        title={task.title}
-                        description={task.description}
-                        priority={task.priority}
-                        status={task.status}
-                        dueDate={task.dueDate ? new Date(task.dueDate) : undefined}
-                        assignee={task.assignee}
-                        progress={task.progress || 0}
-                        projectId={task.project?.id}
-                        projectName={task.project?.name}
-                      />
-                    ))}
-                    {loading.tasks && (
-                      <div className="sm:col-span-2 flex items-center justify-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary border-t-transparent"></div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Recent Activity */}
-              <Card className="border-2 shadow-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="h-5 w-5 text-pink-500" />
-                    Recent Activity
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ActivityList
-                    title=""
-                    items={[]}
-                    maxItems={5}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Quick Actions */}
+              {/* Quick Actions */}
             <Card className="border-2 shadow-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -747,74 +996,6 @@ function DashboardContent({ user }: { user: any }) {
                   actions={quickActions}
                   layout="grid"
                 />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Tasks Tab */}
-          <TabsContent value="tasks" className="space-y-4 sm:space-y-6">
-            <Card className="border-2 shadow-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <ListTodo className="h-5 w-5 text-primary" />
-                    All Tasks
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() => setShowTaskDialog(true)}
-                      className="cursor-pointer"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Task
-                    </Button>
-                    <Button variant="outline" asChild className="cursor-pointer">
-                      <Link href="/tasks" className="flex items-center gap-1">
-                        View All
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
-                  {tasks.map((task) => (
-                    <TaskCard
-                      key={task.id}
-                      id={task.id}
-                      title={task.title}
-                      description={task.description}
-                      priority={task.priority}
-                      status={task.status}
-                      dueDate={task.dueDate ? new Date(task.dueDate) : undefined}
-                      assignee={task.assignee}
-                      progress={task.progress || 0}
-                      projectId={task.project?.id}
-                      projectName={task.project?.name}
-                      onView={() => handleViewTask(task.id, task.project?.id || '')}
-                      onEdit={() => handleEditTask(task.id, task.project?.id || '')}
-                    />
-                  ))}
-                  {loading.tasks && tasks.length === 0 && (
-                    <div className="sm:col-span-2 flex items-center justify-center py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary border-t-transparent"></div>
-                    </div>
-                  )}
-                  {!loading.tasks && tasks.length === 0 && (
-                    <div className="sm:col-span-2 flex flex-col items-center justify-center py-12 text-center">
-                      <ClipboardList className="h-12 w-12 text-muted-foreground mb-4" />
-                      <p className="text-muted-foreground">No tasks yet</p>
-                      <Button
-                        onClick={() => setShowTaskDialog(true)}
-                        className="mt-4 cursor-pointer"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Your First Task
-                      </Button>
-                    </div>
-                  )}
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -1121,116 +1302,104 @@ function DashboardContent({ user }: { user: any }) {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Tasks Tab */}
+          <TabsContent value="tasks" className="space-y-4 sm:space-y-6">
+            <Card className="border-2 shadow-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
+              <CardHeader>
+                <div className="flex items-center justify-between gap-4">
+                  <CardTitle className="flex items-center gap-2">
+                    <Building className="h-5 w-5 text-primary" />
+                    Tasks Board
+                  </CardTitle>
+                  {/* View Type Toggle */}
+                  <Tabs value={viewType} onValueChange={(val) => setViewType(val as 'personal' | 'project')} className="bg-muted/50">
+                    <TabsList className="bg-muted/50">
+                      <TabsTrigger value="personal" className="data-[state=active]:bg-background">
+                        <User className="h-4 w-4 mr-2" />
+                        Personal Tasks
+                      </TabsTrigger>
+                      <TabsTrigger value="project" className="data-[state=active]:bg-background">
+                        <Building className="h-4 w-4 mr-2" />
+                        Project Tasks
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+
+                  {/* Project Selector - only show for project view */}
+                  {viewType === 'project' && (
+                    <select
+                      className="px-3 py-1.5 text-sm border rounded-md bg-background"
+                      value={selectedProject?.id || ''}
+                      onChange={(e) => setSelectedProject(availableProjects.find(p => p.id === e.target.value) || null)}
+                    >
+                      <option value="">Select Project</option>
+                      {availableProjects.map((project: any) => (
+                        <option key={project.id} value={project.id}>
+                          {project.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  <Button
+                    onClick={() => setShowTaskDialog(true)}
+                    className="cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Task
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loading.tasks && (viewType === 'personal' ? personalTasks.length === 0 : projectTasks.length === 0) ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary border-t-transparent"></div>
+                  </div>
+                ) : (viewType === 'personal' ? personalTasks : projectTasks).length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <ClipboardList className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">No tasks yet</p>
+                    <Button
+                      onClick={() => setShowTaskDialog(true)}
+                      className="mt-4 cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Your First Task
+                    </Button>
+                  </div>
+                ) : (
+                  <ProfessionalKanbanBoard
+                    tasks={viewType === 'personal' ? personalTasks : projectTasks}
+                    onDragEnd={handleKanbanDragEnd}
+                    onTaskEdit={(task) => setEditingTask(task)}
+                    onTaskDelete={handleTaskDelete}
+                    loading={loading.updateTask}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
 
-      {/* Create Task Dialog */}
-      <Dialog open={showTaskDialog} onOpenChange={setShowTaskDialog}>
-        <DialogContent className="sm:max-w-[550px] bg-white dark:bg-slate-950 shadow-2xl">
-          <DialogHeader>
-            <DialogTitle>Create New Task</DialogTitle>
-            <div className="text-sm text-muted-foreground mt-1">
-              Fill in the details below to create a new task.
-            </div>
-          </DialogHeader>
-          <div className="space-y-6 py-2">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="task-title" className="font-medium">
-                  Title <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="task-title"
-                  value={taskForm.title}
-                  onChange={e => setTaskForm({ ...taskForm, title: e.target.value })}
-                  placeholder="Enter task title"
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <Label htmlFor="task-description">Description</Label>
-                <Textarea
-                  id="task-description"
-                  value={taskForm.description}
-                  onChange={e => setTaskForm({ ...taskForm, description: e.target.value })}
-                  placeholder="Enter task description"
-                  rows={3}
-                  className="w-full resize-none"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <Label htmlFor="task-priority">Priority</Label>
-                <Select value={taskForm.priority} onValueChange={(value) => setTaskForm({ ...taskForm, priority: value })}>
-                  <SelectTrigger id="task-priority" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="LOW">Low</SelectItem>
-                    <SelectItem value="MEDIUM">Medium</SelectItem>
-                    <SelectItem value="HIGH">High</SelectItem>
-                    <SelectItem value="CRITICAL">Critical</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-4">
-                <Label htmlFor="task-due-date">Due Date</Label>
-                <Input
-                  id="task-due-date"
-                  type="date"
-                  value={taskForm.dueDate}
-                  onChange={e => setTaskForm({ ...taskForm, dueDate: e.target.value })}
-                  className="w-full"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <Label htmlFor="task-project">Project (Optional)</Label>
-              <Select value={taskForm.projectId} onValueChange={(value) => setTaskForm({ ...taskForm, projectId: value })}>
-                <SelectTrigger id="task-project" className="w-full">
-                  <SelectValue placeholder="Select a project" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableProjects.length === 0 ? (
-                    <SelectItem value="none" disabled>No projects available</SelectItem>
-                  ) : (
-                    <>
-                      <SelectItem value="none">No project</SelectItem>
-                      {availableProjects.map((project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.name}
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowTaskDialog(false)
-                setTaskForm({ title: '', description: '', priority: 'MEDIUM', dueDate: '', projectId: 'none' })
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreateTask}
-              disabled={loading.createTask || !taskForm.title}
-            >
-              {loading.createTask ? 'Creating...' : 'Create Task'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Create/Edit Task Dialog */}
+      <TaskFormDialog
+        open={showTaskDialog || !!editingTask}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowTaskDialog(false)
+            setEditingTask(null)
+          } else {
+            setShowTaskDialog(true)
+          }
+        }}
+        onSave={editingTask ? handleEditTaskSave : handleCreateTask}
+        task={editingTask}
+        mode={editingTask ? 'edit' : 'create'}
+        projects={availableProjects}
+        loading={loading.createTask || loading.updateTask}
+      />
 
       {/* Create Leave Request Dialog */}
       <Dialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const projectId = params.id
+    const { id: projectId } = await params
     
     const milestones = await db.milestone.findMany({
       where: { projectId },
@@ -30,9 +30,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const projectId = params.id
+    const { id: projectId } = await params
     const body = await request.json()
     const { title, description, dueDate } = body
 
@@ -56,9 +56,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const milestoneId = params.id
+    const { id: milestoneId } = await params
     const body = await request.json()
     const updates: any = {}
 
@@ -150,9 +150,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const milestoneId = params.id
+    const { id: milestoneId } = await params
 
     await db.milestone.delete({
       where: { id: milestoneId }

@@ -92,7 +92,19 @@ export async function POST(request: NextRequest) {
 
     const data = validation.data
 
-    // Verify user is member of the project
+    // Check if user is project owner or member
+    const project = await db.project.findUnique({
+      where: { id: data.projectId },
+      select: { ownerId: true, id: true }
+    })
+
+    if (!project) {
+      return notFound('Project not found')
+    }
+
+    const isOwner = project.ownerId === authResult.dbUser.id
+
+    // Check if user is member of the project
     const memberCount = await db.projectMember.count({
       where: {
         projectId: data.projectId,
@@ -100,7 +112,10 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (memberCount === 0) {
+    const isMember = memberCount > 0
+
+    // Allow if owner or member
+    if (!isOwner && !isMember) {
       return forbidden('You are not a member of this project')
     }
 

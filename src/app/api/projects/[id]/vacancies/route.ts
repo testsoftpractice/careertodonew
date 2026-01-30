@@ -7,7 +7,7 @@ import { isFeatureEnabled, PROJECT_ROLES } from '@/lib/features/flags'
 // GET /api/projects/[id]/vacancies - Get all project vacancies
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!isFeatureEnabled(PROJECT_ROLES)) {
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })

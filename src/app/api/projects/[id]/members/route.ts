@@ -111,12 +111,7 @@ export async function POST(
     const body = await request.json()
     const validatedData = addMemberSchema.parse(body)
 
-    // Check if user has permission (project owner or university admin or platform admin)
-    if (user.role !== 'PLATFORM_ADMIN' && user.role !== 'UNIVERSITY_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden - Only admins can add members' }, { status: 403 })
-    }
-
-    // Get project
+    // Get project first
     const project = await db.project.findUnique({
       where: { id },
       select: { ownerId: true },
@@ -124,6 +119,12 @@ export async function POST(
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+
+    // Check if user has permission (project owner or university admin or platform admin)
+    const isProjectOwner = project.ownerId === user.id
+    if (user.role !== 'PLATFORM_ADMIN' && user.role !== 'UNIVERSITY_ADMIN' && !isProjectOwner) {
+      return NextResponse.json({ error: 'Forbidden - Only project owner or admins can add members' }, { status: 403 })
     }
 
     // Check if adding user is already a member

@@ -484,10 +484,6 @@ export default function ProfessionalKanbanBoard({
             <TaskCard
               id={activeTask.id}
               task={activeTask}
-              isDragging={true}
-              onTaskClick={undefined}
-              onTaskEdit={undefined}
-              onTaskDelete={undefined}
             />
           </div>
         )}

@@ -38,7 +38,7 @@ export const createTaskSchema = z.object({
   projectId: z.string().cuid('Invalid project ID'),
   assigneeId: z.string().cuid('Invalid assignee ID').optional(),
   dueDate: z.string().datetime('Invalid due date format').optional(),
-})
+}).strip()  // Strip unknown fields like 'assignedBy'
 
 export const updateTaskSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -55,7 +55,16 @@ export function validateRequest<T>(schema: z.ZodSchema<T>, data: unknown) {
   const result = schema.safeParse(data)
 
   if (!result.success) {
-    const errors = result.error.errors.map(err => ({
+    // Check if error object exists
+    const errorObj = result.error
+    if (!errorObj) {
+      return {
+        valid: false,
+        errors: [{ field: 'unknown', message: 'Validation failed' }],
+      }
+    }
+
+    const errors = errorObj.errors.map(err => ({
       field: err.path.join('.'),
       message: err.message,
     }))

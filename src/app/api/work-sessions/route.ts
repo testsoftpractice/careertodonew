@@ -36,6 +36,12 @@ export async function GET(request: NextRequest) {
             avatar: true,
             location: true,
           }
+        },
+        project: {
+          select: {
+            id: true,
+            name: true,
+          }
         }
       },
       orderBy: { startTime: 'desc' }
@@ -49,8 +55,8 @@ export async function GET(request: NextRequest) {
       checkInTime: session.startTime,
       checkOutTime: session.endTime,
       checkInLocation: session.user?.location || null,
-      notes: null,
-      type: 'WORK_SESSION',
+      notes: session.notes,
+      type: session.type,
       duration: session.duration ? (session.duration / 3600) : null,
     }))
 
@@ -79,6 +85,7 @@ export async function POST(request: NextRequest) {
     const workSession = await db.workSession.create({
       data: {
         userId: currentUser.id,
+        type: 'WORK_SESSION',
         startTime: new Date(),
       }
     })
@@ -117,6 +124,9 @@ export async function PATCH(request: NextRequest) {
     const updateData: {
       endTime?: Date
       duration?: number
+      projectId?: string
+      type?: string
+      notes?: string
     } = {
       endTime: new Date(),
     }
@@ -146,6 +156,18 @@ export async function PATCH(request: NextRequest) {
       updateData.duration = parseInt(body.duration)
     }
 
+    if (body.projectId) {
+      updateData.projectId = body.projectId
+    }
+
+    if (body.type) {
+      updateData.type = body.type
+    }
+
+    if (body.notes) {
+      updateData.notes = body.notes
+    }
+
     const workSession = await db.workSession.update({
       where: { id: sessionId },
       data: updateData
@@ -158,8 +180,8 @@ export async function PATCH(request: NextRequest) {
         checkInTime: workSession.startTime,
         checkOutTime: workSession.endTime,
         checkInLocation: workSession.user?.location || null,
-        notes: null,
-        type: 'WORK_SESSION',
+        notes: workSession.notes,
+        type: workSession.type,
         duration: workSession.duration ? (workSession.duration / 3600) : null,
       }
     })

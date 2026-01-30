@@ -191,7 +191,7 @@ export default function WorkSessionTimer({ taskId, onSessionComplete }: WorkSess
     try {
       const durationHours = elapsed / 3600
 
-      const response = await fetch(`/api/work-sessions/${activeSessionId}`, {
+      const response = await fetch(`/api/work-sessions?id=${activeSessionId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -11,6 +11,13 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   Users,
   Briefcase,
   Calendar,
@@ -58,7 +65,7 @@ interface Milestone {
   id: string
   title: string
   description: string
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'
+  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
   dueDate: string
   completedAt?: string
 }
@@ -79,7 +86,7 @@ interface Task {
 }
 
 function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const { id: projectId } = use(params)
   const searchParams = useSearchParams()
   const tabFromUrl = searchParams.get('tab')
@@ -108,8 +115,8 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
   const [newMilestone, setNewMilestone] = useState<Partial<Milestone>>({
     title: '',
     description: '',
-    status: 'PENDING',
-    dueDate: '',
+    status: 'NOT_STARTED',
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 30 days from now
   })
 
   const [newTask, setNewTask] = useState<Partial<Task>>({
@@ -119,6 +126,10 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
     dueDate: '',
   })
 
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false)
+  const [newMemberUserId, setNewMemberUserId] = useState('')
+  const [newMemberRole, setNewMemberRole] = useState<'OWNER' | 'PROJECT_MANAGER' | 'TEAM_LEAD' | 'TEAM_MEMBER' | 'VIEWER'>('TEAM_MEMBER')
+
   useEffect(() => {
     if (projectId) {
       fetchProjectData()
@@ -127,36 +138,51 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
 
   const fetchProjectData = async () => {
     try {
+      const headers: HeadersInit = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       // Fetch project details
-      const projectResponse = await fetch(`/api/projects/${projectId}`)
+      const projectResponse = await fetch(`/api/projects/${projectId}`, {
+        headers,
+      })
       const projectData = await projectResponse.json()
       if (projectData.success) {
         setProject(projectData.data)
       }
 
       // Fetch team members
-      const teamResponse = await fetch(`/api/projects/${projectId}/members`)
+      const teamResponse = await fetch(`/api/projects/${projectId}/members`, {
+        headers,
+      })
       const teamData = await teamResponse.json()
       if (teamData.success) {
         setTeamMembers(teamData.data || [])
       }
 
       // Fetch vacancies
-      const vacanciesResponse = await fetch(`/api/projects/${projectId}/vacancies`)
+      const vacanciesResponse = await fetch(`/api/projects/${projectId}/vacancies`, {
+        headers,
+      })
       const vacanciesData = await vacanciesResponse.json()
       if (vacanciesData.success) {
         setVacancies(vacanciesData.data || [])
       }
 
       // Fetch milestones
-      const milestonesResponse = await fetch(`/api/projects/${projectId}/milestones`)
+      const milestonesResponse = await fetch(`/api/projects/${projectId}/milestones`, {
+        headers,
+      })
       const milestonesData = await milestonesResponse.json()
       if (milestonesData.success) {
         setMilestones(milestonesData.data || [])
       }
 
       // Fetch tasks
-      const tasksResponse = await fetch(`/api/tasks?projectId=${projectId}`)
+      const tasksResponse = await fetch(`/api/tasks?projectId=${projectId}`, {
+        headers,
+      })
       const tasksData = await tasksResponse.json()
       if (tasksData.success) {
         setTasks(tasksData.data || [])
@@ -177,9 +203,16 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
     if (!project || !newVacancy.title) return
 
     try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const response = await fetch('/api/vacancies', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           projectId,
           ...newVacancy,
@@ -232,9 +265,16 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
     }
 
     try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const response = await fetch('/api/milestones', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           projectId,
           ...newMilestone,
@@ -255,8 +295,8 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
         setNewMilestone({
           title: '',
           description: '',
-          status: 'PENDING',
-          dueDate: '',
+          status: 'NOT_STARTED',
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         })
         setShowMilestoneModal(false)
         toast({
@@ -299,9 +339,16 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
     }
 
     try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const response = await fetch('/api/tasks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           title: newTask.title,
           description: newTask.description,
@@ -309,7 +356,6 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
           dueDate: newTask.dueDate,
           projectId,
           assigneeId: user.id,
-          assignedBy: user.id,
         }),
       })
 
@@ -353,13 +399,24 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
     if (!confirm('Are you sure you want to delete this task?')) return
 
     try {
+      const headers: HeadersInit = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const response = await fetch(`/api/tasks?taskId=${taskId}&projectId=${projectId}`, {
         method: 'DELETE',
+        headers,
       })
 
-      const data = await response.json()
+      let data
+      try {
+        data = await response.json()
+      } catch {
+        data = { success: response.ok }
+      }
 
-      if (data.success) {
+      if (data.success || response.ok) {
         setTasks(tasks.filter(t => t.id !== taskId))
         toast({
           title: 'Success',
@@ -384,9 +441,16 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
 
   const handleMoveTask = async (task: Task, newStatus: string) => {
     try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const response = await fetch('/api/tasks/move', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           taskId: task.id,
           newStepId: newStatus === 'TODO' ? '1' : newStatus === 'IN_PROGRESS' ? '2' : newStatus === 'REVIEW' ? '3' : '4',
@@ -437,9 +501,11 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
         return <Badge className="bg-emerald-500 hover:bg-emerald-600">Completed</Badge>
       case 'IN_PROGRESS':
         return <Badge className="bg-blue-500 hover:bg-blue-600">In Progress</Badge>
-      case 'PENDING':
+      case 'CANCELLED':
+        return <Badge className="bg-red-500 hover:bg-red-600">Cancelled</Badge>
+      case 'NOT_STARTED':
       default:
-        return <Badge className="bg-slate-500 hover:bg-slate-600">Pending</Badge>
+        return <Badge className="bg-slate-500 hover:bg-slate-600">Not Started</Badge>
     }
   }
 
@@ -702,7 +768,7 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
                   <Users className="h-5 w-5 text-blue-500" />
                   Team & Roles
                 </CardTitle>
-                <Button size="sm">
+                <Button size="sm" onClick={() => setShowAddMemberModal(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Team Member
                 </Button>
@@ -745,6 +811,68 @@ function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {/* Add Team Member Modal */}
+        {showAddMemberModal && (
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowAddMemberModal(false)}
+          >
+            <div
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold">Add Team Member</h3>
+                  <Button variant="ghost" size="icon" onClick={() => setShowAddMemberModal(false)}>
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="memberUserId">User ID *</Label>
+                    <Input
+                      id="memberUserId"
+                      value={newMemberUserId}
+                      onChange={(e) => setNewMemberUserId(e.target.value)}
+                      placeholder="Enter user ID"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      The user ID can be found in the user profile or user list
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="memberRole">Role *</Label>
+                    <Select
+                      value={newMemberRole}
+                      onValueChange={(value: any) => setNewMemberRole(value)}
+                    >
+                      <SelectTrigger id="memberRole">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="OWNER">Owner</SelectItem>
+                        <SelectItem value="PROJECT_MANAGER">Project Manager</SelectItem>
+                        <SelectItem value="TEAM_LEAD">Team Lead</SelectItem>
+                        <SelectItem value="TEAM_MEMBER">Team Member</SelectItem>
+                        <SelectItem value="VIEWER">Viewer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => setShowAddMemberModal(false)} className="flex-1">
+                      Cancel
+                    </Button>
+                    <Button onClick={handleAddTeamMember} className="flex-1">
+                      Add Member
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {activeTab === 'vacancies' && (

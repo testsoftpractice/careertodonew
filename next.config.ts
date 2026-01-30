@@ -12,9 +12,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
 
-  // Turbopack configuration (Next.js 16 default)
-  turbopack: {},
-
   // Image optimization settings
   images: {
     remotePatterns: [

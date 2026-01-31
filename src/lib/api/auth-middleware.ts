@@ -1,37 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { headers } from 'next/headers'
-import { JwtPayload, verifyToken } from '@/lib/auth/jwt'
+import { verifyToken, JwtPayload } from '@/lib/auth/jwt'
 
 /**
- * Get user information from request headers
- * This is used after middleware has set user information
+ * Get user information from Authorization header
+ * Extracts and verifies JWT token from Bearer token
  */
-export function getUserFromHeaders(request: NextRequest): JwtPayload | null {
+export function getUserFromRequest(request: NextRequest): JwtPayload | null {
   try {
-    const authHeader = request.headers.get('x-user-id')
-    const authEmail = request.headers.get('x-user-email')
-    const authRole = request.headers.get('x-user-role')
+    const authHeader = request.headers.get('authorization')
 
-    if (!authHeader || !authEmail || !authRole) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return null
     }
 
-    return {
-      userId: authHeader,
-      email: authEmail,
-      name: authEmail.split('@')[0], // Simple name extraction
-      role: authRole,
-    }
+    const token = authHeader.substring(7) // Remove 'Bearer ' prefix
+    const payload = verifyToken(token)
+
+    return payload
   } catch (error) {
+    console.error('[AUTH] Token verification failed:', error)
     return null
   }
+}
+
+/**
+ * Get user information from request headers (deprecated - kept for compatibility)
+ */
+export function getUserFromHeaders(request: NextRequest): JwtPayload | null {
+  return getUserFromRequest(request)
 }
 
 /**
  * Require authentication - returns 401 if no user
  */
 export function requireAuth(request: NextRequest): JwtPayload | NextResponse {
-  const user = getUserFromHeaders(request)
+  const user = getUserFromRequest(request)
 
   if (!user) {
     return NextResponse.json(
@@ -50,7 +53,7 @@ export function requireRole(
   request: NextRequest,
   allowedRoles: string[]
 ): boolean | NextResponse {
-  const user = getUserFromHeaders(request)
+  const user = getUserFromRequest(request)
 
   if (!user) {
     return NextResponse.json(

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { TaskStatus } from '@prisma/client'
+import { requireAuth } from '@/lib/auth/verify'
+import { forbidden, notFound, unauthorized } from '@/lib/api-response'
 
 // GET /api/tasks/[id] - Get a specific task
 export async function GET(
@@ -31,7 +33,6 @@ export async function GET(
           select: {
             id: true,
             name: true,
-            avatar: true,
           },
         },
         subTasks: {
@@ -65,6 +66,14 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Require authentication
+    const authResult = await requireAuth(request)
+    if ('status' in authResult) {
+      return authResult
+    }
+    
+    const currentUser = authResult.dbUser
+
     const { id } = await params
     const body = await request.json()
     const {
@@ -78,27 +87,86 @@ export async function PATCH(
       actualHours,
     } = body
 
-    const updatedTask = await db.task.update({
+    // Check if task exists
+    const existingTask = await db.task.findUnique({
       where: { id },
-      data: {
-        ...(title && { title }),
-        ...(description !== undefined && { description }),
-        ...(assigneeId !== undefined && { assignedTo: assigneeId }),
-        ...(status && { status: status as TaskStatus }),
-        ...(priority && { priority }),
-        ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
-        ...(estimatedHours !== undefined && { estimatedHours: estimatedHours ? parseFloat(estimatedHours) : null }),
-        ...(actualHours !== undefined && { actualHours: actualHours ? parseFloat(actualHours) : null }),
-        ...(status === TaskStatus.COMPLETED || status === TaskStatus.DONE ? { completedAt: new Date() } : {}),
-      },
       include: {
         project: {
           select: {
             id: true,
             name: true,
+            status: true,
           },
         },
         assignee: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        creator: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    })
+
+    if (!existingTask) {
+      return notFound('Task not found')
+    }
+
+    // Check if user has permission to update this task
+    const projectMember = await db.projectMember.findFirst({
+      where: {
+        projectId: existingTask.projectId!,
+        userId: currentUser.id,
+      },
+    })
+
+    const isOwner = existingTask.assignedBy === currentUser.id || existingTask.project!.ownerId === currentUser.id
+    const isProjectMember = !!projectMember
+    const isAssignee = existingTask.assignedTo === currentUser.id
+
+    // Allow owner, project member, or task assignee to update
+    if (!isOwner && !isProjectMember && !isAssignee) {
+      return forbidden('You do not have permission to update this task')
+    }
+
+    const updateData: any = {}
+
+    if (title !== undefined) updateData.title = title
+    if (description !== undefined) updateData.description = description
+    if (status !== undefined) {
+      updateData.status = status as TaskStatus
+      if (status === 'DONE' || status === 'COMPLETED') {
+        updateData.completedAt = new Date()
+      }
+    }
+    if (priority !== undefined) updateData.priority = priority
+    if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null
+    if (estimatedHours !== undefined) updateData.estimatedHours = estimatedHours ? parseFloat(estimatedHours) : null
+    if (actualHours !== undefined) updateData.actualHours = actualHours ? parseFloat(actualHours) : null
+
+    const updatedTask = await db.task.update({
+      where: { id },
+      data: updateData,
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+          },
+        },
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        creator: {
           select: {
             id: true,
             name: true,
@@ -108,11 +176,21 @@ export async function PATCH(
     })
 
     return NextResponse.json({
+      success: true,
       message: 'Task updated successfully',
-      task: updatedTask,
+      data: updatedTask,
     })
   } catch (error) {
     console.error('Update task error:', error)
+    
+    // Handle AuthError - return proper JSON response
+    if (error.name === 'AuthError' || error.statusCode) {
+      return NextResponse.json(
+        { error: error.message || 'Authentication required' },
+        { status: error.statusCode || 401 }
+      )
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -126,16 +204,58 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Require authentication
+    const authResult = await requireAuth(request)
+    if ('status' in authResult) {
+      return authResult
+    }
+    
+    const currentUser = authResult.dbUser
+
     const { id } = await params
+
+    // Check if task exists and user has permission
+    const existingTask = await db.task.findUnique({
+      where: { id },
+      include: { project: true },
+    })
+
+    if (!existingTask) {
+      return notFound('Task not found')
+    }
+
+    // Check permission
+    const isOwner = existingTask.assignedBy === currentUser.id || existingTask.project!.ownerId === currentUser.id
+    const projectMember = await db.projectMember.findFirst({
+      where: {
+        projectId: existingTask.projectId!,
+        userId: currentUser.id,
+      },
+    })
+
+    if (!isOwner && !projectMember) {
+      return forbidden('You do not have permission to delete this task')
+    }
+
     await db.task.delete({
       where: { id },
     })
 
     return NextResponse.json({
+      success: true,
       message: 'Task deleted successfully',
     })
   } catch (error) {
     console.error('Delete task error:', error)
+    
+    // Handle AuthError - return proper JSON response
+    if (error.name === 'AuthError' || error.statusCode) {
+      return NextResponse.json(
+        { error: error.message || 'Authentication required' },
+        { status: error.statusCode || 401 }
+      )
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

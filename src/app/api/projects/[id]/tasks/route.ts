@@ -1,162 +1,228 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import { requireAuth } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
-import { isFeatureEnabled, TASK_MANAGEMENT } from '@/lib/features/flags'
+import { TaskStatus } from '@prisma/client'
+import { requireAuth } from '@/lib/auth/verify'
+import { successResponse, errorResponse, forbidden, notFound, unauthorized } from '@/lib/api-response'
+import { z } from 'zod'
 
-// Validation schemas - note: dependsOn is accepted but will not be stored in DB
-const createTaskSchema = z.object({
-  title: z.string().min(5).max(200),
-  description: z.string().min(10).max(1000).optional(),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW']).default('TODO'),
+// Validation schema for project-specific tasks
+const projectTaskSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters'),
+  description: z.string().max(1000, 'description must be less than 1000 characters').optional(),
   priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).default('MEDIUM'),
-  assignedTo: z.string().optional(),
-  dueDate: z.string().datetime().optional(),
-  estimatedHours: z.number().min(1).max(1000).optional(),
-  projectId: z.string(),
-  dependsOn: z.array(z.string()).default([]), // Accepted but not stored - handled separately
+  dueDate: z.string().datetime('Invalid due date format').optional(),
+  estimatedHours: z.union([z.number().min(0).max(1000), z.string().transform(val => parseFloat(val))]).optional(),
+  assigneeId: z.string().cuid('Invalid assignee ID').optional(),
+  tags: z.array(z.string()).max(10).optional(),
 })
 
-const updateTaskSchema = z.object({
-  title: z.string().min(5).max(200).optional(),
-  description: z.string().min(10).max(1000).optional(),
-  status: z.enum(['BACKLOG', 'TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED', 'CANCELLED']).optional(),
-  priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).optional(),
-  assignedTo: z.string().optional(),
-  dueDate: z.string().datetime().optional(),
-  estimatedHours: z.number().min(1).max(1000).optional(),
-  actualHours: z.number().min(0).max(1000).optional(),
-  completedAt: z.string().datetime().optional(),
-  dependsOn: z.array(z.string()).optional(), // Accepted but not stored - handled separately
-})
-
-// POST /api/projects/[id]/tasks - Create task
-export async function POST(
+// GET /api/projects/[id]/tasks - Get project-specific tasks
+export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!isFeatureEnabled(TASK_MANAGEMENT)) {
-    return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
-  }
-
-  const auth = await requireAuth(request)
-  if ('status' in auth) return auth
-
-  const { id } = await params
-  const user = auth.user
-
   try {
-    const body = await request.json()
-    const validatedData = createTaskSchema.parse(body)
+    // Require authentication
+    const authResult = await requireAuth(request)
+    if ('status' in authResult) return authResult
 
-    // Check if user has permission to create task
-    const project = await db.project.findUnique({
-      where: { id },
-      select: { id: true, ownerId: true },
-    })
+    const { id: projectId } = await params
+    const currentUser = authResult.dbUser
 
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    const { searchParams } = new URL(request.url)
+    const status = searchParams.status as string | undefined
+    const priority = searchParams.priority as string | undefined
+
+    // Build where clause for project tasks
+    const where: Record<string, any> = {
+      projectId,
     }
 
-    // Note: canPerformAction logic would need to be reviewed
-    // For now, basic authorization
-    const isOwner = project.ownerId === user.id
-    const isProjectManager = true // Simplified for now
-    if (!isOwner && !isProjectManager) {
-      return NextResponse.json({ error: 'Forbidden - No permission to create task' }, { status: 403 })
+    // Add optional filters
+    if (status) {
+      where.status = status as any
     }
 
-    // Create task - using only fields that exist in schema
-    const task = await db.task.create({
-      data: {
-        projectId: id,
-        title: validatedData.title,
-        description: validatedData.description,
-        status: validatedData.status,
-        priority: validatedData.priority,
-        assignedTo: validatedData.assignedTo,
-        assignedBy: user.id,
-        dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : null,
-        estimatedHours: validatedData.estimatedHours,
-      },
-    })
+    if (priority) {
+      where.priority = priority as any
+    }
 
-    // Note: Task dependencies would need to be created separately using TaskDependency model
-    // For now, returning the created task
-    return NextResponse.json({
-      success: true,
-      data: {
-        task: {
-          id: task.id,
-          title: task.title,
-          status: task.status,
-          priority: task.priority,
-          assignedTo: task.assignedTo,
-          dueDate: task.dueDate,
-          estimatedHours: task.estimatedHours,
+    // Fetch tasks for this project only
+    const tasks = await db.task.findMany({
+      where,
+      include: {
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          }
+        },
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        project: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+          },
+        },
+        subTasks: {
+          orderBy: { sortOrder: 'asc' }
         },
       },
+      orderBy: [
+        { priority: 'desc' },
+        { dueDate: 'asc' },
+        { createdAt: 'desc' },
+      ],
     })
+
+    return successResponse(tasks, `Found ${tasks.length} project tasks`)
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
+    console.error('Get project tasks error:', error)
+
+    // Handle AuthError
+    if (error.name === 'AuthError' || error.statusCode) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
     }
-    console.error('Create task error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+
+    return errorResponse('Failed to fetch project tasks', 500)
   }
 }
 
-// PUT /api/projects/[id]/tasks/[taskId] - Update task
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; taskId: string }> }
-) {
-  if (!isFeatureEnabled(TASK_MANAGEMENT)) {
-    return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
-  }
-
-  const auth = await requireAuth(request)
-  if ('status' in auth) return auth
-
-  const { id, taskId } = await params
-  const user = auth.user
-
+// POST /api/projects/[id]/tasks - Create project task
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const body = await request.json()
-    const validatedData = updateTaskSchema.parse(body)
+    // Require authentication
+    const authResult = await requireAuth(request)
+    if ('status' in authResult) return authResult
 
-    // Get task
-    const task = await db.task.findUnique({
-      where: { id: taskId },
+    const { id: projectId } = await params
+    const currentUser = authResult.dbUser
+
+    const body = await request.json()
+
+    // Validate request body
+    const validation = projectTaskSchema.safeParse(body)
+
+    if (!validation.success) {
+      return errorResponse('Validation error', 400)
+    }
+
+    const data = validation.data
+
+    // Check if project exists
+    const project = await db.project.findUnique({
+      where: { id: projectId },
+      select: { ownerId: true }
     })
 
-    if (!task) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 })
+    if (!project) {
+      return notFound('Project not found')
     }
 
-    // Check if user has permission to update this task
-    // Simplified: owner or assignee can update
-    const isOwner = task.assignedBy === user.id
-    const isAssignee = task.assignedTo === user.id
-    if (!isOwner && !isAssignee) {
-      return NextResponse.json({ error: 'Forbidden - No permission to update task' }, { status: 403 })
+    // Check if user is owner or member
+    const isOwner = project.ownerId === currentUser.id
+
+    const memberCount = await db.projectMember.count({
+      where: {
+        projectId,
+        userId: currentUser.id,
+      },
+    })
+
+    const isMember = memberCount > 0
+
+    if (!isOwner && !isMember) {
+      return forbidden('You are not a member of this project')
     }
 
-    // Update task - using only fields that exist in schema
+    // Create task
+    const task = await db.task.create({
+      data: {
+        title: data.title,
+        description: data.description || null,
+        priority: data.priority,
+        projectId,
+        assignedTo: data.assigneeId || null,
+        assignedBy: currentUser.id,
+        dueDate: data.dueDate ? new Date(data.dueDate) : null,
+        estimatedHours: data.estimatedHours ? parseFloat(data.estimatedHours) : null,
+        status: 'TODO',
+        currentStepId: '1',
+      },
+    })
+
+    return successResponse(task, 'Task created successfully', { status: 201 })
+  } catch (error) {
+    console.error('Create project task error:', error)
+
+    // Handle AuthError - return proper JSON response
+    if (error.name === 'AuthError' || error.statusCode) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
+
+    return errorResponse('Failed to create task', 500)
+  }
+}
+
+// PATCH /api/projects/[id]/tasks/[id]/[status]/route.ts - Update task status
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string, status: string }> }
+) {
+  try {
+    // Require authentication
+    const authResult = await requireAuth(request)
+    if ('status' in authResult) return authResult
+
+    const currentUser = authResult.dbUser
+
+    const { id: taskId, status: newStatus } = await params
+    const body = await request.json()
+
+    // Check if task exists and belongs to project
+    const task = await db.task.findUnique({
+      where: { id: taskId },
+      include: {
+        project: true,
+      },
+    })
+
+    if (!task || task.projectId !== params.id) {
+      return notFound('Task not found')
+    }
+
+    // Check user has permission
+    const projectMember = await db.projectMember.findFirst({
+      where: {
+        projectId: task.projectId!,
+        userId: currentUser.id,
+      },
+    })
+
+    const isOwner = task.assignedBy === currentUser.id || task.project!.ownerId === currentUser.id
+    const isProjectMember = !!projectMember
+    const isAssignee = task.assignedTo === currentUser.id
+
+    if (!isOwner && !isProjectMember && !isAssignee) {
+      return forbidden('You do not have permission to update this task')
+    }
+
     const updateData: any = {}
-    if (validatedData.title) updateData.title = validatedData.title
-    if (validatedData.description) updateData.description = validatedData.description
-    if (validatedData.status) updateData.status = validatedData.status
-    if (validatedData.priority) updateData.priority = validatedData.priority
-    if (validatedData.assignedTo) updateData.assignedTo = validatedData.assignedTo
-    if (validatedData.dueDate) updateData.dueDate = validatedData.dueDate ? new Date(validatedData.dueDate) : null
-    if (validatedData.estimatedHours) updateData.estimatedHours = validatedData.estimatedHours
-    if (validatedData.actualHours) updateData.actualHours = validatedData.actualHours
 
-    // Set completedAt when status is DONE
-    if (validatedData.status === 'DONE' || validatedData.status === 'COMPLETED') {
-      updateData.completedAt = new Date()
+    if (newStatus) {
+      updateData.status = newStatus as TaskStatus
+      if (newStatus === 'DONE' || newStatus === 'COMPLETED') {
+        updateData.completedAt = new Date()
+      }
     }
 
     const updatedTask = await db.task.update({
@@ -164,72 +230,72 @@ export async function PUT(
       data: updateData,
     })
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        task: {
-          id: updatedTask.id,
-          title: updatedTask.title,
-          status: updatedTask.status,
-          priority: updatedTask.priority,
-        },
-      },
-    })
+    return successResponse(updatedTask, 'Task status updated successfully')
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
+    console.error('Update task status error:', error)
+
+    // Handle AuthError - return proper JSON response
+    if (error.name === 'AuthError' || error.statusCode) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
     }
-    console.error('Update task error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+
+    return errorResponse('Failed to update task status', 500)
   }
 }
 
-// DELETE /api/projects/[id]/tasks/[taskId] - Delete task
+// DELETE /api/projects/[id]/tasks/[id]/route.ts - Delete task
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; taskId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!isFeatureEnabled(TASK_MANAGEMENT)) {
-    return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
-  }
-
-  const auth = await requireAuth(request)
-  if ('status' in auth) return auth
-
-  const { taskId } = await params
-  const user = auth.user
-
   try {
-    // Get task
+    // Require authentication
+    const authResult = await requireAuth(request)
+    if ('status' in authResult) return authResult
+
+    const { id: taskId } = await params
+    const currentUser = authResult.dbUser
+
+    // Check if task exists
     const task = await db.task.findUnique({
       where: { id: taskId },
+      include: {
+        project: true,
+      },
     })
 
-    if (!task) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 })
+    if (!task || task.projectId !== params.id) {
+      return notFound('Task not found')
     }
 
-    // Check if user has permission to delete this task
-    // Simplified: owner or assignee can delete
-    const isOwner = task.assignedBy === user.id
-    const isAssignee = task.assignedTo === user.id
-    if (!isOwner && !isAssignee) {
-      return NextResponse.json({ error: 'Forbidden - No permission to delete task' }, { status: 403 })
+    // Check user has permission
+    const projectMember = await db.projectMember.findFirst({
+      where: {
+        projectId: task.projectId!,
+        userId: currentUser.id,
+      },
+    })
+
+    const isOwner = task.assignedBy === currentUser.id || task.project!.ownerId === currentUser.id
+    const isProjectMember = !!projectMember
+
+    if (!isOwner && !isProjectMember) {
+      return forbidden('You do not have permission to delete this task')
     }
 
-    // Delete task
     await db.task.delete({
       where: { id: taskId },
     })
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        message: 'Task deleted successfully',
-      },
-    })
+    return successResponse(null, 'Task deleted successfully')
   } catch (error) {
     console.error('Delete task error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+
+    // Handle AuthError - return proper JSON response
+    if (error.name === 'Error' || error.statusCode) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
+
+    return errorResponse('Failed to delete task', 500)
   }
 }

@@ -17,21 +17,16 @@ export async function GET(
   if ('status' in auth) return auth
 
   const { id } = await params
-  const user = auth.user
+  const userId = auth.userId
+  const userRole = auth.role
 
   try {
     // Get project
     const project = await db.project.findUnique({
       where: { id },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-          },
-        },
+      select: {
+        id: true,
+        ownerId: true,
       },
     })
 
@@ -40,8 +35,8 @@ export async function GET(
     }
 
     // Check if user has access
-    const isOwner = project.ownerId === user.id
-    const isAdmin = user.role === 'PLATFORM_ADMIN' || user.role === 'UNIVERSITY_ADMIN'
+    const isOwner = project.ownerId === userId
+    const isAdmin = userRole === 'PLATFORM_ADMIN' || userRole === 'UNIVERSITY_ADMIN'
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: 'Forbidden - Only project owner or admins can view vacancies' }, { status: 403 })

@@ -121,8 +121,7 @@ export default function ProjectTasksPage() {
         priority: taskData.priority,
         status: taskData.status || 'TODO',
         projectId: projectId,
-        assignedTo: user.id,
-        assignedBy: user.id,
+        assigneeId: undefined, // Don't auto-assign
         dueDate: taskData.dueDate ? new Date(taskData.dueDate).toISOString() : null,
       }
 
@@ -174,7 +173,7 @@ export default function ProjectTasksPage() {
         payload.dueDate = new Date(taskData.dueDate).toISOString()
       }
 
-      const response = await authFetch(`/api/tasks?id=${editingTask.id}`, {
+      const response = await authFetch(`/api/tasks/${editingTask.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -214,12 +213,11 @@ export default function ProjectTasksPage() {
     try {
       setLoading(prev => ({ ...prev, update: true }))
 
-      const response = await authFetch(`/api/tasks?id=${task.id}`, {
+      const response = await authFetch(`/api/tasks/${task.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: newStatus,
-          projectId: projectId,
         }),
       })
 

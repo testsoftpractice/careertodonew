@@ -38,6 +38,7 @@ export const createTaskSchema = z.object({
   projectId: z.string().cuid('Invalid project ID'),
   assigneeId: z.string().cuid('Invalid assignee ID').optional(),
   dueDate: z.string().datetime('Invalid due date format').optional(),
+  estimatedHours: z.union([z.number().min(0).max(1000), z.string().transform(val => parseFloat(val))]).optional(),
 }).strip()  // Strip unknown fields like 'assignedBy'
 
 export const updateTaskSchema = z.object({
@@ -64,8 +65,8 @@ export function validateRequest<T>(schema: z.ZodSchema<T>, data: unknown) {
       }
     }
 
-    const errors = errorObj.errors.map(err => ({
-      field: err.path.join('.'),
+    const errors = (errorObj.issues || errorObj.errors || []).map((err: any) => ({
+      field: Array.isArray(err.path) ? err.path.join('.') : 'unknown',
       message: err.message,
     }))
 

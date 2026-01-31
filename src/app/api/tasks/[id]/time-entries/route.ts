@@ -92,22 +92,33 @@ export async function POST(
   const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
-  const { taskId } = await params
+  const paramsResolved = await params
+  const taskId = paramsResolved.id
   const user = auth.user
 
   try {
-    // Check if user has access
+    // Check if user has access - allow task owner, task assignee, or project owner
     const task = await db.task.findUnique({
       where: { id: taskId },
-      select: { assignedTo: true },
+      select: { assignedTo: true, projectId: true, assignedBy: true },
     })
 
     if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
-    if (task.assignedTo !== user.id && !canPerformAction({ user, action: 'manage' })) {
-      return NextResponse.json({ error: 'Forbidden - No access to add time entries' }, { status: 403 })
+    // Get project to check ownership
+    const project = await db.project.findUnique({
+      where: { id: task.projectId! },
+      select: { ownerId: true },
+    })
+
+    const isTaskAssignee = task.assignedTo === user.userId
+    const isProjectOwner = project?.ownerId === user.userId
+
+    // Allow if task assignee or project owner
+    if (!isTaskAssignee && !isProjectOwner) {
+      return NextResponse.json({ error: 'Forbidden - No access to add time entries to this task' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -117,7 +128,7 @@ export async function POST(
     const timeEntry = await db.timeEntry.create({
       data: {
         taskId,
-        userId: user.id,
+        userId: user.userId,
         hours: validatedData.hours,
         description: validatedData.description,
         billable: validatedData.billable,

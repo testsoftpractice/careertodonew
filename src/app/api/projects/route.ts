@@ -124,16 +124,28 @@ export async function POST(request: NextRequest) {
       }, { status: 404 })
     }
 
+    // Create project with owner as member
     const project = await db.project.create({
       data: {
         name: body.name,
         description: body.description,
         ownerId: ownerId,
-        status: 'IDEA',
+        status: 'UNDER_REVIEW',
         startDate: body.startDate ? new Date(body.startDate) : null,
         endDate: body.endDate ? new Date(body.endDate) : null,
         budget: body.budget ? parseFloat(body.budget) : null,
         category: body.category,
+        members: {
+          create: {
+            userId: ownerId,
+            role: 'OWNER',
+            accessLevel: 'OWNER',
+            joinedAt: new Date(),
+          }
+        }
+      },
+      include: {
+        members: true,
       }
     })
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
+import { requireAuth } from '@/lib/auth/verify'
 import { unauthorized, forbidden } from '@/lib/api-response'
 
 // ==================== WORK SESSIONS API ====================
@@ -81,12 +81,18 @@ export async function POST(request: NextRequest) {
     const authResult = await requireAuth(request)
     const currentUser = authResult.dbUser
 
+    const body = await request.json()
+
     // Users can only create work sessions for themselves
     const workSession = await db.workSession.create({
       data: {
         userId: currentUser.id,
-        type: 'WORK_SESSION',
+        taskId: body.taskId,
+        projectId: body.projectId,
+        type: body.type || 'ONSITE',
         startTime: new Date(),
+        checkInLocation: body.checkInLocation,
+        notes: body.notes,
       }
     })
 
@@ -127,6 +133,7 @@ export async function PATCH(request: NextRequest) {
       projectId?: string
       type?: string
       notes?: string
+      checkOutLocation?: string
     } = {
       endTime: new Date(),
     }
@@ -152,8 +159,9 @@ export async function PATCH(request: NextRequest) {
     const durationSeconds = Math.floor((new Date().getTime() - new Date(existingSession.startTime).getTime()) / 1000)
     updateData.duration = durationSeconds
 
+    // Allow override of duration (frontend sends in hours, convert to seconds)
     if (body.duration) {
-      updateData.duration = parseInt(body.duration)
+      updateData.duration = Math.floor(parseFloat(body.duration) * 3600)
     }
 
     if (body.projectId) {
@@ -166,6 +174,10 @@ export async function PATCH(request: NextRequest) {
 
     if (body.notes) {
       updateData.notes = body.notes
+    }
+
+    if (body.checkOutLocation) {
+      updateData.checkOutLocation = body.checkOutLocation
     }
 
     const workSession = await db.workSession.update({

@@ -36,7 +36,8 @@ export async function GET(
   if ('status' in auth) return auth
 
   const { id } = await params
-  const user = auth.user
+  const currentUserId = auth.userId
+  const userRole = auth.role
 
   try {
     // Get project
@@ -50,8 +51,8 @@ export async function GET(
     }
 
     // Check if user has access to project
-    const isOwner = project.ownerId === user.id
-    const isUniversityAdmin = user.role === 'UNIVERSITY_ADMIN' || user.role === 'PLATFORM_ADMIN'
+    const isOwner = project.ownerId === currentUserId
+    const isUniversityAdmin = userRole === 'UNIVERSITY_ADMIN' || userRole === 'PLATFORM_ADMIN'
     const hasAccess = isOwner || isUniversityAdmin
 
     if (!hasAccess) {
@@ -105,7 +106,8 @@ export async function POST(
   if ('status' in auth) return auth
 
   const { id } = await params
-  const user = auth.user
+  const currentUserId = auth.userId
+  const userRole = auth.role
 
   try {
     const body = await request.json()
@@ -122,8 +124,8 @@ export async function POST(
     }
 
     // Check if user has permission (project owner or university admin or platform admin)
-    const isProjectOwner = project.ownerId === user.id
-    if (user.role !== 'PLATFORM_ADMIN' && user.role !== 'UNIVERSITY_ADMIN' && !isProjectOwner) {
+    const isProjectOwner = project.ownerId === currentUserId
+    if (userRole !== 'PLATFORM_ADMIN' && userRole !== 'UNIVERSITY_ADMIN' && !isProjectOwner) {
       return NextResponse.json({ error: 'Forbidden - Only project owner or admins can add members' }, { status: 403 })
     }
 
@@ -161,141 +163,6 @@ export async function POST(
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Add team member error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-// PUT /api/projects/[id]/members/[memberId] - Update member role
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; memberId: string }> }
-) {
-  if (!isFeatureEnabled(PROJECT_ROLES)) {
-    return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
-  }
-
-  const auth = await requireAuth(request)
-  if ('status' in auth) return auth
-
-  const { id, memberId } = await params
-  const user = auth.user
-
-  try {
-    const body = await request.json()
-    const validatedData = updateMemberRoleSchema.parse(body)
-
-    // Get project
-    const project = await db.project.findUnique({
-      where: { id },
-      select: { ownerId: true },
-    })
-
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-    }
-
-    // Get member
-    const member = await db.projectMember.findUnique({
-      where: { id: memberId },
-    })
-
-    if (!member) {
-      return NextResponse.json({ error: 'Member not found' }, { status: 404 })
-    }
-
-    // Check if user has permission to update roles
-    // Project owner, university admin, platform admin can update any role
-    if (user.role !== 'PLATFORM_ADMIN' && user.role !== 'UNIVERSITY_ADMIN' &&
-        project.ownerId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden - Only project owner or admins can update roles' }, { status: 403 })
-    }
-
-    // Update member role - using only fields that exist in schema
-    const updatedMember = await db.projectMember.update({
-      where: { id: memberId },
-      data: {
-        role: validatedData.role,
-        updatedAt: new Date(),
-      },
-    })
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        member: {
-          id: updatedMember.id,
-          role: updatedMember.role,
-        },
-        message: `Member role updated to ${validatedData.role}`,
-      },
-    })
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
-    }
-    console.error('Update member role error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-// DELETE /api/projects/[id]/members/[memberId] - Remove member
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; memberId: string }> }
-) {
-  if (!isFeatureEnabled(PROJECT_ROLES)) {
-    return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
-  }
-
-  const auth = await requireAuth(request)
-  if ('status' in auth) return auth
-
-  const { id, memberId } = await params
-  const user = auth.user
-
-  try {
-    // Get project
-    const project = await db.project.findUnique({
-      where: { id },
-      select: { ownerId: true },
-    })
-
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-    }
-
-    // Check if user has permission to remove members
-    // Project owner, university admin, or platform admin can remove members
-    if (user.role !== 'PLATFORM_ADMIN' && user.role !== 'UNIVERSITY_ADMIN' &&
-        project.ownerId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden - Only project owner or admins can remove members' }, { status: 403 })
-    }
-
-    // Get member
-    const member = await db.projectMember.findUnique({
-      where: { id: memberId },
-    })
-
-    if (!member) {
-      return NextResponse.json({ error: 'Member not found' }, { status: 404 })
-    }
-
-    // Delete member
-    await db.projectMember.delete({
-      where: { id: memberId },
-    })
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        member: {
-          id: memberId,
-        },
-        message: 'Team member removed successfully',
-      },
-    })
-  } catch (error) {
-    console.error('Remove member error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

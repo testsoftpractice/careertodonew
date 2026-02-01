@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { requireAuth } from '@/lib/auth/verify'
+import { requireAuth, AuthError } from '@/lib/auth/verify'
 import { unauthorized, forbidden } from '@/lib/api-response'
 
 // ==================== WORK SESSIONS API ====================
@@ -83,17 +83,31 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
 
-    // Users can only create work sessions for themselves
+    // Validate required fields
+    if (!currentUser?.id) {
+      return NextResponse.json({
+        success: false,
+        error: 'User ID is required'
+      }, { status: 400 })
+    }
+
+    // Create work session
+    const workSessionData: any = {
+      userId: currentUser.id,
+      type: body.type || 'WORK_SESSION',
+      startTime: new Date(),
+      checkInLocation: body.checkInLocation,
+      notes: body.notes,
+    }
+
+    // Only add projectId if task belongs to a project
+    // For personal tasks (no projectId), we don't create a work session
+    if (body.projectId) {
+      workSessionData.projectId = body.projectId
+    }
+
     const workSession = await db.workSession.create({
-      data: {
-        userId: currentUser.id,
-        taskId: body.taskId,
-        projectId: body.projectId,
-        type: body.type || 'ONSITE',
-        startTime: new Date(),
-        checkInLocation: body.checkInLocation,
-        notes: body.notes,
-      }
+      data: workSessionData
     })
 
     return NextResponse.json({
@@ -102,9 +116,23 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
   } catch (error) {
     console.error('Work Session creation error:', error)
+    
+    // Handle specific error types
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create work session'
+    
+    // Check for validation errors
+    if (error.message?.includes('Unknown argument')) {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid request: taskId is not supported. Please use projectId for project tasks.',
+        details: 'For personal tasks, time tracking cannot create a work session.',
+      }, { status: 400 })
+    }
+
     return NextResponse.json({
       success: false,
-      error: 'Failed to create work session'
+      error: errorMessage,
+      details: error instanceof Error ? error.message : String(error)
     }, { status: 500 })
   }
 }
@@ -152,7 +180,10 @@ export async function PATCH(request: NextRequest) {
 
     // Only allow updating own sessions or admin
     if (existingSession.userId !== currentUser.id && currentUser.role !== 'PLATFORM_ADMIN') {
-      return forbidden('You can only update your own work sessions')
+      return NextResponse.json({
+        success: false,
+        error: 'You can only update your own work sessions'
+      }, { status: 403 })
     }
 
     // Calculate duration if endTime is being set
@@ -198,10 +229,20 @@ export async function PATCH(request: NextRequest) {
       }
     })
   } catch (error) {
+    // Handle AuthError specifically
+    if (error instanceof AuthError) {
+      console.error('Authentication error:', error.message)
+      return NextResponse.json({
+        success: false,
+        error: error.message
+      }, { status: error.statusCode })
+    }
+
     console.error('Work Session update error:', error)
     return NextResponse.json({
       success: false,
-      error: 'Failed to update work session'
+      error: 'Failed to update work session',
+      details: error instanceof Error ? error.message : String(error)
     }, { status: 500 })
   }
 }

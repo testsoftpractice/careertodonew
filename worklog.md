@@ -873,3 +873,30 @@ Stage Summary:
 - UX improved with context-aware project selection in dialog
 
 ---
+---
+Task ID: 68
+Agent: Z.ai Code
+Task: Fix validation, authentication, and functionality issues
+
+Work Log:
+- Fixed time tracking restriction - removed check that prevented personal tasks from being tracked
+- Time tracking now works for both project tasks and personal tasks
+- Improved leave request error handling to show meaningful error messages instead of empty object
+- Enhanced task creation error handling with detailed validation and error messages
+- Fixed task edit/save error handling with proper error display
+- Improved drag and drop task status updates with better error handling
+- Enhanced task delete error handling with detailed error messages
+- Added assignee selection to TaskFormDialog component
+- Added Users icon import to TaskFormDialog
+- Updated project tasks page to fetch available users for assignment
+- Updated handleCreateTask to support assigneeId assignment
+- Updated handleEditTaskSave to support assignee updates
+- Passed availableUsers prop to TaskFormDialog in project tasks page
+- All error handlers now properly extract and display error messages from API responses
+
+Stage Summary:
+- Time tracking now works smoothly for all task types
+- Leave request errors now show meaningful messages instead of empty object
+- Task assignment functionality fully implemented with UI selector
+- All task operations (create, edit, delete, drag-drop) have improved error handling
+- Validation obstacles removed for smoother user experience

@@ -288,6 +288,3 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }
-
-// Force Node.js runtime since middleware uses jsonwebtoken
-export const runtime = 'nodejs'

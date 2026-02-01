@@ -63,16 +63,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Leave type is required',
-        message: 'Leave type is required',
-      })
+        details: 'Please select a leave type from the dropdown',
+      }, { status: 400 })
     }
 
     if (!body.startDate || !body.endDate) {
       return NextResponse.json({
         success: false,
         error: 'Start date and end date are required',
-        message: 'Start date and end date are required',
-      })
+        details: 'Please select both start and end dates',
+      }, { status: 400 })
     }
 
     // Validate date range
@@ -80,16 +80,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'End date must be after start date',
-        message: 'End date must be after start date',
-      })
+        details: 'Please select an end date that is after the start date',
+      }, { status: 400 })
     }
 
-    if (!body.reason) {
+    if (!body.reason || body.reason.trim().length === 0) {
       return NextResponse.json({
         success: false,
         error: 'Reason is required',
-        message: 'Reason is required',
-      })
+        details: 'Please provide a reason for your leave request',
+      }, { status: 400 })
     }
 
     // Create leave request
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
         leaveType: body.leaveType,
         startDate: new Date(body.startDate),
         endDate: new Date(body.endDate),
-        reason: body.reason,
+        reason: body.reason.trim(),
         status: 'PENDING',
       },
     })
@@ -111,10 +111,13 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('POST leave-requests error:', error)
+    
+    const errorMsg = error instanceof Error ? error.message : 'Failed to create leave request'
+    
     return NextResponse.json({
       success: false,
-      error: 'Failed to create leave request',
-      message: 'Failed to create leave request',
-    })
+      error: errorMsg,
+      details: error instanceof Error ? error.stack : String(error),
+    }, { status: 500 })
   }
 }

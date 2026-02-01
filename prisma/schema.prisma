@@ -61,6 +61,17 @@ enum EmploymentType {
   CONTRACT
 }
 
+enum ProjectStage {
+  IDEA
+  PROPOSAL
+  FUNDING
+  DEVELOPMENT
+  TESTING
+  DEPLOYMENT
+  COMPLETED
+  ON_HOLD
+}
+
 enum ProjectStatus {
   IDEA
   UNDER_REVIEW
@@ -382,10 +393,11 @@ model LeaveRequest {
 }
 
 model Project {
-  id                String       @id @default(cuid())
+  id                String        @id @default(cuid())
   name              String
   description       String?
   status            ProjectStatus @default(IDEA)
+  stage             ProjectStage  @default(IDEA)
 
   // Owner
   ownerId           String
@@ -396,9 +408,12 @@ model Project {
   endDate           DateTime?
   budget            Float?
   category          String?
+  tags              String?       // Comma-separated tags
+  imageUrl          String?       // Project cover image
+  progress          Float         @default(0) // 0-100 percentage
 
   // Relations
-  owner             User         @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  owner             User          @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   business          Business?     @relation("ProjectBusiness", fields: [businessId], references: [id], onDelete: SetNull)
   members           ProjectMember[]
   tasks             Task[]
@@ -410,12 +425,15 @@ model Project {
   workSessions      WorkSession[]
 
   // Timestamps
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   @@index([ownerId])
   @@index([businessId])
   @@index([status])
+  @@index([stage])
+  @@index([category])
+  @@index([progress])
 }
 
 model ProjectMember {

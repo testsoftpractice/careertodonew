@@ -34,6 +34,7 @@ import {
   Save,
   Loader2,
   Sparkles,
+  Users,
 } from 'lucide-react'
 import { Task } from './ProfessionalKanbanBoard'
 
@@ -44,6 +45,7 @@ interface TaskFormDialogProps {
   task?: Task | null
   mode?: 'create' | 'edit'
   projects?: Array<{ id: string; name: string }>
+  availableUsers?: Array<{ id: string; name: string; email?: string }>
   loading?: boolean
 }
 
@@ -54,6 +56,7 @@ interface FormData {
   status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE'
   dueDate: string
   projectId: string
+  assigneeId?: string
 }
 
 const priorityConfig = {
@@ -109,6 +112,7 @@ export default function TaskFormDialog({
   task,
   mode = 'create',
   projects = [],
+  availableUsers = [],
   loading = false,
 }: TaskFormDialogProps) {
   const [formData, setFormData] = useState<FormData>({
@@ -118,6 +122,7 @@ export default function TaskFormDialog({
     status: 'TODO',
     dueDate: '',
     projectId: '',
+    assigneeId: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
@@ -131,6 +136,7 @@ export default function TaskFormDialog({
         status: task.status || 'TODO',
         dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
         projectId: task.projectId || '',
+        assigneeId: task.assigneeId || '',
       })
     } else if (!task && mode === 'create') {
       setFormData({
@@ -140,6 +146,7 @@ export default function TaskFormDialog({
         status: 'TODO',
         dueDate: '',
         projectId: '',
+        assigneeId: '',
       })
     }
     setErrors({})
@@ -223,7 +230,7 @@ export default function TaskFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleCancel}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto z-[99999] shadow-2xl bg-background">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto z-[9999] shadow-2xl bg-white dark:bg-slate-900">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -378,6 +385,39 @@ export default function TaskFormDialog({
                 </div>
               )}
             </div>
+
+            {/* Assignee (For Project Tasks) */}
+            {mode === 'create' && availableUsers.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="assignee" className="text-sm font-semibold flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Assign to <span className="text-muted-foreground font-normal">(Optional)</span>
+                </Label>
+                <Select
+                  value={formData.assigneeId || 'none'}
+                  onValueChange={(value) => handleChange('assigneeId', value === 'none' ? '' : value)}
+                >
+                  <SelectTrigger id="assignee">
+                    <SelectValue placeholder="Unassigned" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Unassigned</SelectItem>
+                    {availableUsers.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{user.name}</span>
+                          {user.email && (
+                            <span className="text-xs text-muted-foreground">
+                              ({user.email})
+                            </span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Due Date */}
             <div className="space-y-2">

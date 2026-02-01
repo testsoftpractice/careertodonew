@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const universities = await db.university.findMany({
       where,
       include: {
-        students: {
+        users: {
           select: {
             id: true,
             name: true,
@@ -36,18 +36,9 @@ export async function GET(request: NextRequest) {
           },
           take: 5,
         },
-        projects: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-          },
-          take: 5,
-        },
         _count: {
           select: {
-            students: true,
-            projects: true,
+            users: true,
           },
         },
       },
@@ -59,9 +50,12 @@ export async function GET(request: NextRequest) {
 
     // Calculate reputation scores for each university
     const universitiesWithStats = universities.map(univ => {
-      const students = univ.students || []
+      const students = (univ.users || []).filter(u => u.role === 'STUDENT')
       const avgReputation = students.length > 0
-        ? students.reduce((sum, s) => sum + s.executionScore + s.collaborationScore + s.leadershipScore, 0) / students.length / 3
+        ? students.reduce((sum, s) => {
+            const score = (s.executionScore || 0) + (s.collaborationScore || 0) + (s.leadershipScore || 0)
+            return sum + score
+          }, 0) / students.length / 3
         : 0
 
       return {
@@ -69,14 +63,12 @@ export async function GET(request: NextRequest) {
         name: univ.name,
         code: univ.code,
         description: univ.description,
-        logo: univ.logo,
         website: univ.website,
         location: univ.location,
         verificationStatus: univ.verificationStatus,
         rankingScore: univ.rankingScore,
         rankingPosition: univ.rankingPosition,
-        totalStudents: univ._count.students,
-        totalProjects: univ._count.projects,
+        totalStudents: univ._count.users,
         avgReputation: parseFloat(avgReputation.toFixed(2)),
         recentStudents: students.slice(0, 3),
       }
@@ -122,7 +114,6 @@ export async function POST(request: NextRequest) {
         name,
         code,
         description,
-        logo,
         website,
         location,
         verificationStatus: VerificationStatus.PENDING,

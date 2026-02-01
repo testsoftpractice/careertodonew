@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   // React strict mode (recommended for production)
   reactStrictMode: process.env.NODE_ENV === "production",
 
+  // Turbopack configuration (Next.js 16 default)
+  turbopack: {},
+
   // TypeScript configuration
   typescript: {
     ignoreBuildErrors: true,
@@ -87,20 +90,6 @@ const nextConfig: NextConfig = {
         ],
       },
     ];
-  },
-
-  // Webpack configuration for better performance
-  webpack: (config, { isServer }) => {
-    // Optimize for production builds
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-      };
-    }
-    return config;
   },
 };
 

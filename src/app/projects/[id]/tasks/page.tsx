@@ -40,9 +40,11 @@ export default function ProjectTasksPage() {
 
   const [project, setProject] = useState<Project | null>(null)
   const [tasks, setTasks] = useState<KanbanTask[]>([])
+  const [availableUsers, setAvailableUsers] = useState<Array<{ id: string; name: string; email?: string }>>([])
   const [loading, setLoading] = useState({
     project: true,
     tasks: true,
+    users: true,
     update: false,
   })
   const [showTaskDialog, setShowTaskDialog] = useState(false)
@@ -52,6 +54,7 @@ export default function ProjectTasksPage() {
     if (projectId) {
       fetchProject()
       fetchProjectTasks()
+      fetchAvailableUsers()
     }
   }, [projectId])
 
@@ -109,20 +112,62 @@ export default function ProjectTasksPage() {
     }
   }
 
+  const fetchAvailableUsers = async () => {
+    try {
+      setLoading(prev => ({ ...prev, users: true }))
+      // Fetch project members
+      const response = await authFetch(`/api/projects/${projectId}/members`)
+      const data = await response.json()
+
+      if (data.success && data.data) {
+        const members = data.data.map((member: any) => ({
+          id: member.userId,
+          name: member.user?.name || member.user?.email || 'Unknown',
+          email: member.user?.email,
+        }))
+        setAvailableUsers(members)
+      } else {
+        // Fallback to all users if project members fetch fails
+        const allUsersResponse = await authFetch('/api/users')
+        const allUsersData = await allUsersResponse.json()
+        if (allUsersData.success) {
+          const users = allUsersData.data.map((u: any) => ({
+            id: u.id,
+            name: u.name || u.email,
+            email: u.email,
+          }))
+          setAvailableUsers(users)
+        }
+      }
+    } catch (error) {
+      console.error('Fetch available users error:', error)
+      // Don't show toast for this error, just log it
+      setAvailableUsers([])
+    } finally {
+      setLoading(prev => ({ ...prev, users: false }))
+    }
+  }
+
   const handleCreateTask = async (taskData: any) => {
     if (!user || !projectId) return
 
     try {
       setLoading(prev => ({ ...prev, update: true }))
 
-      const payload = {
+      const payload: any = {
         title: taskData.title,
         description: taskData.description || null,
         priority: taskData.priority,
         status: taskData.status || 'TODO',
         projectId: projectId,
-        assigneeId: undefined, // Don't auto-assign
         dueDate: taskData.dueDate ? new Date(taskData.dueDate).toISOString() : null,
+      }
+
+      // Only include assigneeId if a user is selected
+      if (taskData.assigneeId && taskData.assigneeId !== 'none' && taskData.assigneeId !== '') {
+        payload.assigneeId = taskData.assigneeId
+      } else {
+        payload.assigneeId = undefined // Don't auto-assign
       }
 
       const response = await authFetch('/api/tasks', {
@@ -134,7 +179,8 @@ export default function ProjectTasksPage() {
       if (!response.ok) {
         const errorText = await response.text()
         console.error('Create task failed:', response.status, errorText)
-        toast({ title: 'Error', description: `Failed to create task (${response.status})`, variant: 'destructive' })
+        const errorMsg = errorText || `Failed to create task (${response.status})`
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
         return
       }
 
@@ -145,10 +191,14 @@ export default function ProjectTasksPage() {
         setShowTaskDialog(false)
         fetchProjectTasks()
       } else {
-        toast({ title: 'Error', description: data.error || data.message || 'Failed to create task', variant: 'destructive' })
+        const errorMsg = data.error || data.message || data.details || 'Failed to create task'
+        console.error('Create task error:', data)
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       }
     } catch (err) {
-      toast({ title: 'Error', description: 'Failed to create task', variant: 'destructive' })
+      const errorMsg = err instanceof Error ? err.message : 'Failed to create task'
+      console.error('Create task exception:', err)
+      toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       throw err
     } finally {
       setLoading(prev => ({ ...prev, update: false }))
@@ -161,7 +211,7 @@ export default function ProjectTasksPage() {
     try {
       setLoading(prev => ({ ...prev, update: true }))
 
-      const payload = {
+      const payload: any = {
         title: taskData.title,
         description: taskData.description || null,
         priority: taskData.priority,
@@ -173,6 +223,11 @@ export default function ProjectTasksPage() {
         payload.dueDate = new Date(taskData.dueDate).toISOString()
       }
 
+      // Only include assigneeId if a user is selected
+      if (taskData.assigneeId && taskData.assigneeId !== 'none' && taskData.assigneeId !== '') {
+        payload.assigneeId = taskData.assigneeId
+      }
+
       const response = await authFetch(`/api/tasks/${editingTask.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -182,7 +237,8 @@ export default function ProjectTasksPage() {
       if (!response.ok) {
         const errorText = await response.text()
         console.error('Update task failed:', response.status, errorText)
-        toast({ title: 'Error', description: `Failed to update task (${response.status})`, variant: 'destructive' })
+        const errorMsg = errorText || `Failed to update task (${response.status})`
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
         return
       }
 
@@ -197,10 +253,14 @@ export default function ProjectTasksPage() {
         setShowTaskDialog(false)
         fetchProjectTasks()
       } else {
-        toast({ title: 'Error', description: data.error || data.message || 'Failed to update task', variant: 'destructive' })
+        const errorMsg = data.error || data.message || data.details || 'Failed to update task'
+        console.error('Update task error:', data)
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       }
     } catch (err) {
-      toast({ title: 'Error', description: 'Failed to update task', variant: 'destructive' })
+      const errorMsg = err instanceof Error ? err.message : 'Failed to update task'
+      console.error('Update task exception:', err)
+      toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       throw err
     } finally {
       setLoading(prev => ({ ...prev, update: false }))
@@ -221,6 +281,15 @@ export default function ProjectTasksPage() {
         }),
       })
 
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Update task status failed:', response.status, errorText)
+        const errorMsg = errorText || `Failed to update task status (${response.status})`
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
+        setLoading(prev => ({ ...prev, update: false }))
+        return
+      }
+
       const data = await response.json()
 
       if (data.success) {
@@ -228,10 +297,14 @@ export default function ProjectTasksPage() {
         // Update local state immediately for instant feedback
         setTasks(tasks.map(t => t.id === task.id ? { ...t, status: newStatus as any } : t))
       } else {
-        toast({ title: 'Error', description: data.error || data.message || 'Failed to update task status', variant: 'destructive' })
+        const errorMsg = data.error || data.message || data.details || 'Failed to update task status'
+        console.error('Update task status error:', data)
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       }
     } catch (err) {
-      toast({ title: 'Error', description: 'Failed to update task status', variant: 'destructive' })
+      const errorMsg = err instanceof Error ? err.message : 'Failed to update task status'
+      console.error('Drag and drop error:', err)
+      toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
     } finally {
       setLoading(prev => ({ ...prev, update: false }))
     }
@@ -252,7 +325,8 @@ export default function ProjectTasksPage() {
       if (!response.ok) {
         const errorText = await response.text()
         console.error('Delete task failed:', response.status, errorText)
-        toast({ title: 'Error', description: `Failed to delete task (${response.status})`, variant: 'destructive' })
+        const errorMsg = errorText || `Failed to delete task (${response.status})`
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
         return
       }
 
@@ -264,10 +338,14 @@ export default function ProjectTasksPage() {
       if (data.success) {
         toast({ title: 'Success', description: 'Task deleted successfully' })
       } else {
-        toast({ title: 'Error', description: data.error || data.message || 'Failed to delete task', variant: 'destructive' })
+        const errorMsg = data.error || data.message || data.details || 'Failed to delete task'
+        console.error('Delete task error:', data)
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       }
     } catch (err) {
-      toast({ title: 'Error', description: 'Failed to delete task', variant: 'destructive' })
+      const errorMsg = err instanceof Error ? err.message : 'Failed to delete task'
+      console.error('Delete task exception:', err)
+      toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
     } finally {
       setLoading(prev => ({ ...prev, update: false }))
     }
@@ -385,6 +463,7 @@ export default function ProjectTasksPage() {
         task={editingTask}
         mode={editingTask ? 'edit' : 'create'}
         loading={loading.update}
+        availableUsers={availableUsers}
       />
     </div>
   )

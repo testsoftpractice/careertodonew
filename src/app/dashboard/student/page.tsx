@@ -48,7 +48,7 @@ import {
   Play,
   Pause,
   Square,
-  Timer,
+  Timer,  MapPin,
   CalendarDays,
   LogOut,
   Edit3,
@@ -80,6 +80,9 @@ function DashboardContent({ user }: { user: any }) {
   const [timerSeconds, setTimerSeconds] = useState(0)
   const [selectedTaskForTimer, setSelectedTaskForTimer] = useState<string | null>(null)
   const [currentWorkSessionId, setCurrentWorkSessionId] = useState<string | null>(null)
+  const [sessionType, setSessionType] = useState<'ONSITE' | 'REMOTE' | 'HYBRID'>('ONSITE')
+  const [sessionLocation, setSessionLocation] = useState('')
+  const [sessionNotes, setSessionNotes] = useState('')
   const [timeEntries, setTimeEntries] = useState<any[]>([])
   const [timeSummary, setTimeSummary] = useState<any | null>(null)
 
@@ -97,6 +100,7 @@ function DashboardContent({ user }: { user: any }) {
   const [viewType, setViewType] = useState<'personal' | 'project'>('personal')
   const [selectedProject, setSelectedProject] = useState<any | null>(null)
   const [availableProjects, setAvailableProjects] = useState<any[]>([])
+  const [selectedProjectForTimeTracking, setSelectedProjectForTimeTracking] = useState<string>('')
 
   const [stats, setStats] = useState({
     activeProjects: 0,
@@ -262,10 +266,11 @@ function DashboardContent({ user }: { user: any }) {
       const personalData = await personalResponse.json()
       const projectData = await projectResponse.json()
 
-      setPersonalTasks(personalData.tasks || [])
+      // GET personal tasks returns { success: true, data: tasks[] }
+      setPersonalTasks(personalData.data || [])
       setProjectTasks(projectData.data || [])
       // Set combined tasks for backward compatibility
-      setTasks([...(personalData.tasks || []), ...(projectData.data || [])])
+      setTasks([...(personalData.data || []), ...(projectData.data || [])])
     } catch (error) {
       console.error('Fetch tasks error:', error)
     } finally {
@@ -280,9 +285,10 @@ function DashboardContent({ user }: { user: any }) {
       setLoading(prev => ({ ...prev, tasks: true }))
       const response = await authFetch(`/api/tasks/personal?userId=${user.id}`)
       const data = await response.json()
-      setPersonalTasks(data.tasks || [])
+      // GET personal tasks returns { success: true, data: tasks[] }
+      setPersonalTasks(data.data || [])
       // Also update combined tasks
-      setTasks([...(data.tasks || []), ...projectTasks])
+      setTasks([...(data.data || []), ...projectTasks])
     } catch (error) {
       console.error('Fetch personal tasks error:', error)
     } finally {
@@ -456,18 +462,44 @@ function DashboardContent({ user }: { user: any }) {
 
     try {
       // Create work session
+      // Filter out undefined/null values to prevent Prisma errors
+      const sessionPayload: any = {
+        userId: user?.id,
+      }
+      
+      // Add projectId if task is associated with a project
+      if (selectedTaskForTimer.projectId) {
+        sessionPayload.projectId = selectedTaskForTimer.projectId
+      } else if (selectedProjectForTimeTracking) {
+        sessionPayload.projectId = selectedProjectForTimeTracking.id
+      }
+      
+      // Always include type
+      if (sessionType) {
+        sessionPayload.type = sessionType
+      }
+      
+      // Only add checkInLocation if it has a value
+      if (sessionLocation) {
+        sessionPayload.checkInLocation = sessionLocation
+      }
+      
+      // Only add notes if it has a value
+      if (sessionNotes) {
+        sessionPayload.notes = sessionNotes
+      }
+      
       const response = await authFetch('/api/work-sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user?.id,
-        }),
+        body: JSON.stringify(sessionPayload),
       })
 
       if (!response.ok) {
         const errorText = await response.text()
         console.error('Start timer failed:', response.status, errorText)
-        toast({ title: 'Error', description: `Failed to start timer (${response.status})`, variant: 'destructive' })
+        const errorMsg = errorText || `Failed to start timer (${response.status})`
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
         return
       }
 
@@ -483,7 +515,8 @@ function DashboardContent({ user }: { user: any }) {
       }
     } catch (error) {
       console.error('Start timer error:', error)
-      toast({ title: 'Error', description: 'Failed to start timer. Please try again.', variant: 'destructive' })
+      const errorMsg = error instanceof Error ? error.message : 'Failed to start timer. Please try again.'
+      toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
     }
   }
 
@@ -568,12 +601,18 @@ function DashboardContent({ user }: { user: any }) {
         fetchLeaveRequests()
       } else {
         const errorMsg = data.error || data.message || 'Failed to submit leave request'
+        const errorDetails = data.details || data.validationErrors || ''
         console.error('Leave request error:', data)
-        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
+        toast({ 
+          title: 'Error', 
+          description: errorDetails ? `${errorMsg}: ${errorDetails}` : errorMsg, 
+          variant: 'destructive' 
+        })
       }
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to submit leave request. Please try again.'
       console.error('Leave request submit error:', error)
-      toast({ title: 'Error', description: 'Failed to submit leave request. Please try again.', variant: 'destructive' })
+      toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
     }
   }
 
@@ -584,10 +623,16 @@ function DashboardContent({ user }: { user: any }) {
     try {
       setLoading(prev => ({ ...prev, createTask: true }))
 
+      // Validate required fields
+      if (!taskData.title || taskData.title.trim().length === 0) {
+        toast({ title: 'Validation Error', description: 'Task title is required', variant: 'destructive' })
+        return
+      }
+
       const payload: any = {
-        title: taskData.title,
-        description: taskData.description || null,
-        priority: taskData.priority,
+        title: taskData.title.trim(),
+        description: taskData.description ? taskData.description.trim() : null,
+        priority: taskData.priority || 'MEDIUM',
       }
 
       if (taskData.projectId && taskData.projectId !== 'none' && taskData.projectId !== '') {
@@ -612,10 +657,31 @@ function DashboardContent({ user }: { user: any }) {
         body: JSON.stringify(payload),
       })
 
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Task creation failed:', response.status, errorText)
+        const errorMsg = errorText || `Failed to create task (${response.status})`
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
+        return
+      }
+
       const data = await response.json()
 
-      if (data.success || data.task) {
+      if (data.success) {
         toast({ title: 'Success', description: 'Task created successfully' })
+
+        // For personal tasks, add to local state immediately for instant feedback
+        if (!payload.projectId) {
+          const newPersonalTask = {
+            ...data.data,
+            dueDate: data.data.dueDate || null,
+            createdAt: data.data.createdAt || new Date().toISOString(),
+            updatedAt: data.data.updatedAt || new Date().toISOString(),
+            completedAt: data.data.completedAt || null,
+          }
+          setPersonalTasks([newPersonalTask, ...personalTasks])
+        }
+
         // Refresh tasks
         if (payload.projectId) {
           fetchProjectTasks(payload.projectId)
@@ -624,10 +690,14 @@ function DashboardContent({ user }: { user: any }) {
         }
         setShowTaskDialog(false)
       } else {
-        toast({ title: 'Error', description: data.error || data.message || 'Failed to create task', variant: 'destructive' })
+        const errorMsg = data.error || data.message || data.details || 'Failed to create task'
+        console.error('Task creation error:', data)
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       }
     } catch (err) {
-      toast({ title: 'Error', description: 'Failed to create task', variant: 'destructive' })
+      const errorMsg = err instanceof Error ? err.message : 'Failed to create task'
+      console.error('Task creation exception:', err)
+      toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       throw err
     } finally {
       setLoading(prev => ({ ...prev, createTask: false }))
@@ -640,11 +710,17 @@ function DashboardContent({ user }: { user: any }) {
     try {
       setLoading(prev => ({ ...prev, updateTask: true }))
 
+      // Validate required fields
+      if (!taskData.title || taskData.title.trim().length === 0) {
+        toast({ title: 'Validation Error', description: 'Task title is required', variant: 'destructive' })
+        return
+      }
+
       const payload: any = {
-        title: taskData.title,
-        description: taskData.description || null,
-        priority: taskData.priority,
-        status: taskData.status,
+        title: taskData.title.trim(),
+        description: taskData.description ? taskData.description.trim() : null,
+        priority: taskData.priority || 'MEDIUM',
+        status: taskData.status || 'TODO',
       }
 
       if (taskData.dueDate) {
@@ -662,6 +738,14 @@ function DashboardContent({ user }: { user: any }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Task update failed:', response.status, errorText)
+        const errorMsg = errorText || `Failed to update task (${response.status})`
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
+        return
+      }
 
       const data = await response.json()
 
@@ -683,10 +767,14 @@ function DashboardContent({ user }: { user: any }) {
           await fetchPersonalTasks()
         }
       } else {
-        toast({ title: 'Error', description: data.error || data.message || 'Failed to update task', variant: 'destructive' })
+        const errorMsg = data.error || data.message || data.details || 'Failed to update task'
+        console.error('Task update error:', data)
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       }
     } catch (err) {
-      toast({ title: 'Error', description: 'Failed to update task', variant: 'destructive' })
+      const errorMsg = err instanceof Error ? err.message : 'Failed to update task'
+      console.error('Task update exception:', err)
+      toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       throw err
     } finally {
       setLoading(prev => ({ ...prev, updateTask: false }))
@@ -721,7 +809,8 @@ function DashboardContent({ user }: { user: any }) {
       if (!response.ok) {
         const errorText = await response.text()
         console.error('Update task status failed:', response.status, errorText)
-        toast({ title: 'Error', description: `Failed to update task status (${response.status})`, variant: 'destructive' })
+        const errorMsg = errorText || `Failed to update task status (${response.status})`
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
         setLoading(prev => ({ ...prev, updateTask: false }))
         return
       }
@@ -737,11 +826,14 @@ function DashboardContent({ user }: { user: any }) {
           setProjectTasks(projectTasks.map(t => t.id === task.id ? { ...t, status: newStatus as any } : t))
         }
       } else {
-        toast({ title: 'Error', description: data.error || data.message || 'Failed to update task status', variant: 'destructive' })
+        const errorMsg = data.error || data.message || data.details || 'Failed to update task status'
+        console.error('Update task status error:', data)
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       }
     } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to update task status'
       console.error('Drag and drop error:', err)
-      toast({ title: 'Error', description: 'Failed to update task status', variant: 'destructive' })
+      toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
     } finally {
       setLoading(prev => ({ ...prev, updateTask: false }))
     }
@@ -764,7 +856,8 @@ function DashboardContent({ user }: { user: any }) {
       if (!response.ok) {
         const errorText = await response.text()
         console.error('Delete task failed:', response.status, errorText)
-        toast({ title: 'Error', description: `Failed to delete task (${response.status})`, variant: 'destructive' })
+        const errorMsg = errorText || `Failed to delete task (${response.status})`
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
         return
       }
 
@@ -780,10 +873,14 @@ function DashboardContent({ user }: { user: any }) {
       if (data.success) {
         toast({ title: 'Success', description: 'Task deleted successfully' })
       } else {
-        toast({ title: 'Error', description: data.error || data.message || 'Failed to delete task', variant: 'destructive' })
+        const errorMsg = data.error || data.message || data.details || 'Failed to delete task'
+        console.error('Delete task error:', data)
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       }
     } catch (err) {
-      toast({ title: 'Error', description: 'Failed to delete task', variant: 'destructive' })
+      const errorMsg = err instanceof Error ? err.message : 'Failed to delete task'
+      console.error('Delete task exception:', err)
+      toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
     } finally {
       setLoading(prev => ({ ...prev, updateTask: false }))
     }

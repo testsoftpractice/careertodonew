@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -21,7 +21,7 @@ export default function InvestorPortfolioDetailPage({ params }: { params: Promis
   const { user } = useAuth()
   const [investment, setInvestment] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const resolvedParams = React.use(params)
+  const resolvedParams = use(params)
 
   useEffect(() => {
     const fetchInvestment = async () => {

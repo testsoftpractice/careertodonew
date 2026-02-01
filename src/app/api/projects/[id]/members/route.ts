@@ -6,8 +6,7 @@ import { isFeatureEnabled, PROJECT_ROLES } from '@/lib/features/flags'
 
 // Validation schemas - using correct ProjectRole enum values from schema
 const addMemberSchema = z.object({
-  projectId: z.string(),
-  userId: z.string(),
+  userId: z.string().cuid('Invalid user ID'),
   role: z.enum(['OWNER', 'PROJECT_MANAGER', 'TEAM_LEAD', 'TEAM_MEMBER', 'VIEWER']),
 })
 

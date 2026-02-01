@@ -45,13 +45,6 @@ export async function GET(
     // Get all vacancies for this project
     const vacancies = await db.vacancy.findMany({
       where: { projectId: id },
-      include: {
-        _count: {
-          select: {
-            filled: true,
-          },
-        },
-      },
       orderBy: { createdAt: 'desc' },
     })
 
@@ -62,6 +55,99 @@ export async function GET(
     })
   } catch (error) {
     console.error('Get project vacancies error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// POST /api/projects/[id]/vacancies - Create vacancy for this project
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  if (!isFeatureEnabled(PROJECT_ROLES)) {
+    return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
+  }
+
+  const auth = await requireAuth(request)
+  if ('status' in auth) return auth
+
+  const { id } = await params
+  const userId = auth.userId
+  const userRole = auth.role
+
+  try {
+    const body = await request.json()
+    const {
+      title,
+      description,
+      type,
+      slots,
+      skills,
+      responsibilities,
+      requirements,
+      expertise,
+      salaryMin,
+      salaryMax,
+      location,
+      experience
+    } = body
+
+    // Get project
+    const project = await db.project.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        ownerId: true,
+      },
+    })
+
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+
+    // Check if user has access (owner or member)
+    const isOwner = project.ownerId === userId
+    const isAdmin = userRole === 'PLATFORM_ADMIN' || userRole === 'UNIVERSITY_ADMIN'
+
+    const member = await db.projectMember.findFirst({
+      where: {
+        projectId: id,
+        userId,
+      },
+    })
+
+    if (!isOwner && !isAdmin && !member) {
+      return NextResponse.json({ error: 'Forbidden - Only project owner or members can create vacancies' }, { status: 403 })
+    }
+
+    // Create vacancy
+    const vacancy = await db.vacancy.create({
+      data: {
+        projectId: id,
+        title,
+        description,
+        type: type || 'FULL_TIME',
+        slots: parseInt(slots) || 1,
+        skills: skills ? (Array.isArray(skills) ? skills.join(',') : skills) : null,
+        responsibilities: responsibilities || null,
+        requirements: requirements || null,
+        expertise: expertise || null,
+        salaryMin: salaryMin ? parseFloat(salaryMin) : null,
+        salaryMax: salaryMax ? parseFloat(salaryMax) : null,
+        location: location || null,
+        experience: experience || null,
+        status: 'OPEN',
+        filled: 0,
+      },
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: vacancy,
+      message: 'Vacancy created successfully',
+    })
+  } catch (error) {
+    console.error('Create vacancy error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

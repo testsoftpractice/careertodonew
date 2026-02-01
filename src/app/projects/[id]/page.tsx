@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import ProfessionalKanbanBoard from '@/components/task/ProfessionalKanbanBoard'
@@ -116,7 +117,20 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
   // Form states
   const [newMember, setNewMember] = useState({ userId: "", role: "TEAM_MEMBER" })
   const [newMilestone, setNewMilestone] = useState({ title: "", description: "", dueDate: "" })
-  const [newVacancy, setNewVacancy] = useState({ title: "", description: "", type: "FULL_TIME", slots: 1 })
+  const [newVacancy, setNewVacancy] = useState({
+    title: "",
+    description: "",
+    responsibilities: "",
+    requirements: "",
+    skills: "",
+    expertise: "",
+    type: "FULL_TIME",
+    slots: 1,
+    location: "",
+    salaryMin: "",
+    salaryMax: "",
+    experience: ""
+  })
 
   useEffect(() => {
     if (projectId2) {
@@ -254,13 +268,33 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
 
   const fetchAvailableUsers = async () => {
     try {
-      const response = await authFetch('/api/users')
+      // Fetch project members first
+      const response = await authFetch(`/api/projects/${projectId2}/members`)
       const data = await response.json()
-      if (data.success) {
-        setAvailableUsers(data.data || [])
+
+      if (data.success && data.data && data.data.members) {
+        const members = data.data.members.map((member: any) => ({
+          id: member.user?.id || member.userId,
+          name: member.user?.name || member.user?.email || 'Unknown',
+          email: member.user?.email,
+        }))
+        setAvailableUsers(members)
+      } else {
+        // Fallback to all users if project members fetch fails
+        const allUsersResponse = await authFetch('/api/users')
+        const allUsersData = await allUsersResponse.json()
+        if (allUsersData.success && allUsersData.data) {
+          const users = allUsersData.data.map((u: any) => ({
+            id: u.id,
+            name: u.name || u.email,
+            email: u.email,
+          }))
+          setAvailableUsers(users)
+        }
       }
     } catch (error) {
-      console.error('Fetch users error:', error)
+      console.error('Fetch available users error:', error)
+      setAvailableUsers([])
     }
   }
 
@@ -533,17 +567,25 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
 
     try {
       setLoading(prev => ({ ...prev, update: true }))
-      const response = await authFetch(`/api/vacancies`, {
+
+      const response = await authFetch(`/api/projects/${projectId2}/vacancies`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          projectId: projectId2,
           title: newVacancy.title,
-          description: newVacancy.description || undefined,
+          description: newVacancy.description,
+          responsibilities: newVacancy.responsibilities,
+          requirements: newVacancy.requirements,
+          expertise: newVacancy.expertise,
+          location: newVacancy.location,
+          salaryMin: newVacancy.salaryMin ? parseFloat(newVacancy.salaryMin) : undefined,
+          salaryMax: newVacancy.salaryMax ? parseFloat(newVacancy.salaryMax) : undefined,
           type: newVacancy.type,
+          skills: newVacancy.skills,
           slots: parseInt(newVacancy.slots.toString()),
+          experience: newVacancy.experience || 'Not specified',
         }),
       })
 
@@ -559,7 +601,20 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
 
       if (data.success) {
         await fetchVacancies()
-        setNewVacancy({ title: "", description: "", type: "FULL_TIME", slots: 1 })
+        setNewVacancy({
+          title: "",
+          description: "",
+          responsibilities: "",
+          requirements: "",
+          skills: "",
+          expertise: "",
+          type: "FULL_TIME",
+          slots: 1,
+          location: "",
+          salaryMin: "",
+          salaryMax: "",
+          experience: ""
+        })
         setShowAddVacancyDialog(false)
         toast({
           title: 'Success',
@@ -1008,53 +1063,144 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
 
       {/* Add Vacancy Dialog */}
       <Dialog open={showAddVacancyDialog} onOpenChange={setShowAddVacancyDialog}>
-        <DialogContent className="bg-white dark:bg-slate-950">
+        <DialogContent className="bg-white dark:bg-slate-950 max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add Vacancy</DialogTitle>
+            <DialogTitle>Create New Vacancy</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">Position Title *</Label>
               <Input
                 id="title"
                 value={newVacancy.title}
                 onChange={(e) => setNewVacancy({ ...newVacancy, title: e.target.value })}
-                placeholder="Enter vacancy title"
+                placeholder="e.g., Senior Software Engineer"
               />
             </div>
             <div>
-              <Label htmlFor="description">Description</Label>
-              <Input
+              <Label htmlFor="description">Overview *</Label>
+              <Textarea
                 id="description"
                 value={newVacancy.description}
                 onChange={(e) => setNewVacancy({ ...newVacancy, description: e.target.value })}
-                placeholder="Enter vacancy description"
+                placeholder="Brief overview of the role..."
+                rows={3}
               />
             </div>
             <div>
-              <Label htmlFor="type">Type</Label>
-              <Select value={newVacancy.type} onValueChange={(value) => setNewVacancy({ ...newVacancy, type: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="FULL_TIME">Full Time</SelectItem>
-                  <SelectItem value="PART_TIME">Part Time</SelectItem>
-                  <SelectItem value="INTERNSHIP">Internship</SelectItem>
-                  <SelectItem value="CONTRACT">Contract</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="responsibilities">Job Responsibilities *</Label>
+              <Textarea
+                id="responsibilities"
+                value={newVacancy.responsibilities}
+                onChange={(e) => setNewVacancy({ ...newVacancy, responsibilities: e.target.value })}
+                placeholder="• Lead development team&#10;• Design and implement features&#10;• Code reviews and mentoring"
+                rows={4}
+              />
             </div>
             <div>
-              <Label htmlFor="slots">Slots</Label>
-              <Input
-                id="slots"
-                type="number"
-                min="1"
-                value={newVacancy.slots}
-                onChange={(e) => setNewVacancy({ ...newVacancy, slots: parseInt(e.target.value) || 1 })}
-                placeholder="Number of positions"
+              <Label htmlFor="requirements">Requirements *</Label>
+              <Textarea
+                id="requirements"
+                value={newVacancy.requirements}
+                onChange={(e) => setNewVacancy({ ...newVacancy, requirements: e.target.value })}
+                placeholder="• 5+ years experience in React/Next.js&#10;• Strong TypeScript skills&#10;• Experience with PostgreSQL"
+                rows={4}
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="skills">Required Skills (comma-separated)</Label>
+                <Input
+                  id="skills"
+                  value={newVacancy.skills}
+                  onChange={(e) => setNewVacancy({ ...newVacancy, skills: e.target.value })}
+                  placeholder="React, TypeScript, Node.js, PostgreSQL"
+                />
+              </div>
+              <div>
+                <Label htmlFor="expertise">Area of Expertise</Label>
+                <Input
+                  id="expertise"
+                  value={newVacancy.expertise}
+                  onChange={(e) => setNewVacancy({ ...newVacancy, expertise: e.target.value })}
+                  placeholder="e.g., Frontend Development"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="experience">Experience Level</Label>
+                <Select value={newVacancy.experience} onValueChange={(value) => setNewVacancy({ ...newVacancy, experience: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select experience level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Entry Level">Entry Level</SelectItem>
+                    <SelectItem value="Mid Level">Mid Level</SelectItem>
+                    <SelectItem value="Senior Level">Senior Level</SelectItem>
+                    <SelectItem value="Lead">Lead / Manager</SelectItem>
+                    <SelectItem value="Executive">Executive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  value={newVacancy.location}
+                  onChange={(e) => setNewVacancy({ ...newVacancy, location: e.target.value })}
+                  placeholder="e.g., Remote, New York, NY"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="salaryMin">Minimum Salary</Label>
+                <Input
+                  id="salaryMin"
+                  type="number"
+                  value={newVacancy.salaryMin}
+                  onChange={(e) => setNewVacancy({ ...newVacancy, salaryMin: e.target.value })}
+                  placeholder="e.g., 50000"
+                />
+              </div>
+              <div>
+                <Label htmlFor="salaryMax">Maximum Salary</Label>
+                <Input
+                  id="salaryMax"
+                  type="number"
+                  value={newVacancy.salaryMax}
+                  onChange={(e) => setNewVacancy({ ...newVacancy, salaryMax: e.target.value })}
+                  placeholder="e.g., 80000"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="type">Employment Type *</Label>
+                <Select value={newVacancy.type} onValueChange={(value) => setNewVacancy({ ...newVacancy, type: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FULL_TIME">Full Time</SelectItem>
+                    <SelectItem value="PART_TIME">Part Time</SelectItem>
+                    <SelectItem value="INTERNSHIP">Internship</SelectItem>
+                    <SelectItem value="CONTRACT">Contract</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="slots">Number of Positions *</Label>
+                <Input
+                  id="slots"
+                  type="number"
+                  min="1"
+                  value={newVacancy.slots}
+                  onChange={(e) => setNewVacancy({ ...newVacancy, slots: parseInt(e.target.value) || 1 })}
+                  placeholder="Number of positions"
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>
@@ -1062,7 +1208,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
               Cancel
             </Button>
             <Button onClick={handleAddVacancy} disabled={loading.update}>
-              {loading.update ? 'Adding...' : 'Add'}
+              {loading.update ? 'Creating...' : 'Create Vacancy'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1132,6 +1278,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
         task={editingTask}
         mode={editingTask ? 'edit' : 'create'}
         projects={[{ id: projectId2, name: project?.name || '' }]}
+        availableUsers={availableUsers}
         loading={loading.update}
       />
 

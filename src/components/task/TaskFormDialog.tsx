@@ -145,13 +145,13 @@ export default function TaskFormDialog({
         priority: 'MEDIUM',
         status: 'TODO',
         dueDate: '',
-        projectId: '',
+        projectId: projects.length === 1 ? projects[0].id : '',
         assigneeId: '',
       })
     }
     setErrors({})
     setTouched({})
-  }, [task, mode, open])
+  }, [task, mode, open, projects])
 
   const handleChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))

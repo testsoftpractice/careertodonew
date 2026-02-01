@@ -7,12 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Clock, MapPin, Play, Square, CheckCircle2, AlertCircle, Calendar } from 'lucide-react'
+import { Clock, MapPin, Play, Square, CheckCircle2, AlertCircle, Calendar, Briefcase } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/api-response'
 
 interface WorkSessionTimerProps {
-  taskId?: string
   onSessionComplete?: () => void
 }
 
@@ -22,7 +22,15 @@ interface Project {
   description?: string
 }
 
-export default function WorkSessionTimer({ taskId, onSessionComplete }: WorkSessionTimerProps) {
+interface Task {
+  id: string
+  title: string
+  status: string
+  priority: string
+  projectId?: string | null
+}
+
+export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimerProps) {
   const { user } = useAuth()
 
   const [isTracking, setIsTracking] = useState(false)
@@ -30,16 +38,21 @@ export default function WorkSessionTimer({ taskId, onSessionComplete }: WorkSess
   const [elapsed, setElapsed] = useState(0)
   const [sessionType, setSessionType] = useState<'ONSITE' | 'REMOTE' | 'HYBRID'>('ONSITE')
   const [notes, setNotes] = useState('')
-  const [location, setLocation] = useState('')
+  const [checkInLocation, setCheckInLocation] = useState('')
+  const [checkOutLocation, setCheckOutLocation] = useState('')
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [projects, setProjects] = useState<Project[]>([])
   const [selectedProject, setSelectedProject] = useState<string>('')
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [selectedTask, setSelectedTask] = useState<string>('')
+  const [mode, setMode] = useState<'project' | 'personal'>('project')
   const timerRef = useRef<NodeJS.Timeout>()
 
   // Fetch projects on mount
   useEffect(() => {
     fetchProjects()
+    fetchTasks()
     fetchActiveSession()
     return () => {
       if (timerRef.current) {
@@ -67,11 +80,18 @@ export default function WorkSessionTimer({ taskId, onSessionComplete }: WorkSess
     }
   }, [isTracking, startTime])
 
+  // Fetch tasks when project changes
+  useEffect(() => {
+    if (selectedProject) {
+      fetchProjectTasks(selectedProject)
+    }
+  }, [selectedProject])
+
   const fetchProjects = async () => {
     if (!user) return
 
     try {
-      const response = await fetch(`/api/projects?projectLeadId=${user.id}`)
+      const response = await authFetch('/api/projects')
       const data = await response.json()
 
       if (data.success && data.data) {
@@ -87,11 +107,44 @@ export default function WorkSessionTimer({ taskId, onSessionComplete }: WorkSess
     }
   }
 
+  const fetchTasks = async () => {
+    if (!user) return
+
+    try {
+      const response = await authFetch('/api/tasks')
+      const data = await response.json()
+
+      if (data.success && data.data) {
+        // Filter tasks that are not completed and are assigned to user or personal
+        const userTasks = data.data.filter((task: Task) =>
+          task.assignedTo === user.id || (!task.projectId && !task.assignedTo)
+        )
+        setTasks(userTasks)
+      }
+    } catch (error) {
+      console.error('Fetch tasks error:', error)
+    }
+  }
+
+  const fetchProjectTasks = async (projectId: string) => {
+    try {
+      const response = await authFetch(`/api/projects/${projectId}/tasks`)
+      const data = await response.json()
+
+      if (data.success && data.data) {
+        const activeTasks = data.data.filter((task: Task) => task.status !== 'DONE')
+        setTasks(activeTasks)
+      }
+    } catch (error) {
+      console.error('Fetch project tasks error:', error)
+    }
+  }
+
   const fetchActiveSession = async () => {
     if (!user) return
 
     try {
-      const response = await fetch(`/api/work-sessions?userId=${user.id}`)
+      const response = await authFetch(`/api/work-sessions?userId=${user.id}`)
       const data = await response.json()
 
       if (data.success && data.data && data.data.length > 0) {
@@ -99,17 +152,42 @@ export default function WorkSessionTimer({ taskId, onSessionComplete }: WorkSess
         if (activeSession) {
           setActiveSessionId(activeSession.id)
           setIsTracking(true)
-          setStartTime(new Date(activeSession.checkInTime))
+          setStartTime(new Date(activeSession.startTime))
           setSessionType(activeSession.type)
           setNotes(activeSession.notes || '')
-          setLocation(activeSession.checkInLocation || '')
+          setCheckInLocation(activeSession.checkInLocation || '')
           if (activeSession.projectId) {
             setSelectedProject(activeSession.projectId)
+            setMode('project')
+          } else if (activeSession.taskId) {
+            setMode('personal')
+            setSelectedTask(activeSession.taskId)
+            // Fetch task to get its project
+            if (activeSession.task) {
+              const task = await fetchTaskById(activeSession.taskId)
+              if (task && task.projectId) {
+                setSelectedProject(task.projectId)
+                fetchProjectTasks(task.projectId)
+              }
+            }
+          } else {
+            setMode('personal')
           }
         }
       }
     } catch (error) {
       console.error('Fetch active session error:', error)
+    }
+  }
+
+  const fetchTaskById = async (taskId: string) => {
+    try {
+      const response = await authFetch(`/api/tasks/${taskId}`)
+      const data = await response.json()
+      return data.success ? data.data : null
+    } catch (error) {
+      console.error('Fetch task error:', error)
+      return null
     }
   }
 
@@ -123,10 +201,11 @@ export default function WorkSessionTimer({ taskId, onSessionComplete }: WorkSess
       return
     }
 
-    if (!selectedProject && projects.length > 0) {
+    // Validation: either project or task must be selected
+    if (mode === 'project' && !selectedProject) {
       toast({
         title: 'Validation Error',
-        description: 'Please select a project',
+        description: 'Please select a project for project-based time tracking',
         variant: 'destructive',
       })
       return
@@ -134,17 +213,22 @@ export default function WorkSessionTimer({ taskId, onSessionComplete }: WorkSess
 
     setLoading(true)
     try {
-      const response = await fetch('/api/work-sessions', {
+      const body: any = {
+        type: sessionType,
+        checkInLocation: checkInLocation || undefined,
+        notes: notes || undefined,
+      }
+
+      if (mode === 'project') {
+        body.projectId = selectedProject
+      } else if (mode === 'personal' && selectedTask) {
+        body.taskId = selectedTask
+      }
+
+      const response = await authFetch('/api/work-sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          taskId,
-          projectId: selectedProject || undefined,
-          type: sessionType,
-          checkInLocation: location || undefined,
-          notes: notes || undefined,
-        }),
+        body: JSON.stringify(body),
       })
 
       const data = await response.json()
@@ -190,13 +274,12 @@ export default function WorkSessionTimer({ taskId, onSessionComplete }: WorkSess
     setLoading(true)
     try {
       const durationHours = elapsed / 3600
-
-      const response = await fetch(`/api/work-sessions?id=${activeSessionId}`, {
+      const response = await authFetch(`/api/work-sessions?id=${activeSessionId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           duration: durationHours.toFixed(2),
-          checkOutLocation: location || undefined,
+          checkOutLocation: checkOutLocation || undefined,
           notes: notes || undefined,
         }),
       })
@@ -242,7 +325,7 @@ export default function WorkSessionTimer({ taskId, onSessionComplete }: WorkSess
     if (!user) return
 
     try {
-      await fetch('/api/points', {
+      await authFetch('/api/points', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -285,6 +368,26 @@ export default function WorkSessionTimer({ taskId, onSessionComplete }: WorkSess
         <CardDescription>Track your work sessions with automatic timing</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Mode Selection */}
+        <div className="flex gap-2 mb-4">
+          <Button
+            variant={mode === 'project' ? 'default' : 'outline'}
+            onClick={() => setMode('project')}
+            disabled={isTracking}
+          >
+            <Briefcase className="w-4 h-4 mr-2" />
+            Project Time
+          </Button>
+          <Button
+            variant={mode === 'personal' ? 'default' : 'outline'}
+            onClick={() => setMode('personal')}
+            disabled={isTracking}
+          >
+            <Square className="w-4 h-4 mr-2" />
+            Personal Task Time
+          </Button>
+        </div>
+
         {/* Session Status */}
         <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
           <div className="flex items-center gap-2">
@@ -305,34 +408,65 @@ export default function WorkSessionTimer({ taskId, onSessionComplete }: WorkSess
           </div>
         </div>
 
-        {/* Project Selection */}
-        <div className="space-y-2">
-          <Label className="flex items-center gap-2">
-            <Briefcase className="w-4 h-4" />
-            Project
-          </Label>
-          <Select
-            value={selectedProject}
-            onValueChange={setSelectedProject}
-            disabled={isTracking || projects.length === 0}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={projects.length === 0 ? "No projects available" : "Select a project"} />
-            </SelectTrigger>
-            <SelectContent>
-              {projects.map((project) => (
-                <SelectItem key={project.id} value={project.id}>
-                  {project.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {projects.length === 0 && (
-            <p className="text-xs text-muted-foreground">
-              Create a project to start tracking time
-            </p>
-          )}
-        </div>
+        {/* Project Selection (only for project mode) */}
+        {mode === 'project' && (
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Briefcase className="w-4 h-4" />
+              Project
+            </Label>
+            <Select
+              value={selectedProject}
+              onValueChange={setSelectedProject}
+              disabled={isTracking || projects.length === 0}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={projects.length === 0 ? "No projects available" : "Select a project"} />
+              </SelectTrigger>
+              <SelectContent>
+                {projects.map((project) => (
+                  <SelectItem key={project.id} value={project.id}>
+                    {project.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {projects.length === 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Create a project to start tracking time
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Task Selection (only for personal mode) */}
+        {mode === 'personal' && (
+          <div className="space-y-2">
+            <Label>Task (Optional)</Label>
+            <Select
+              value={selectedTask}
+              onValueChange={setSelectedTask}
+              disabled={isTracking}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a task (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No task selected</SelectItem>
+                {tasks.map((task) => (
+                  <SelectItem key={task.id} value={task.id}>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {task.priority}
+                      </Badge>
+                      <span>{task.title}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         {/* Session Type Selection */}
         <div className="space-y-2">
@@ -349,22 +483,26 @@ export default function WorkSessionTimer({ taskId, onSessionComplete }: WorkSess
               <SelectItem value="ONSITE">On-site</SelectItem>
               <SelectItem value="REMOTE">Remote</SelectItem>
               <SelectItem value="HYBRID">Hybrid</SelectItem>
+              <SelectItem value="BREAK">Break</SelectItem>
+              <SelectItem value="MEETING">Meeting</SelectItem>
+              <SelectItem value="TRAINING">Training</SelectItem>
+              <SelectItem value="RESEARCH">Research</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Location */}
+        {/* Location (check-in) */}
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
             <MapPin className="w-4 h-4" />
-            Location
+            Check-in Location
           </Label>
           <input
             type="text"
             className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white/50 dark:bg-slate-800/50"
             placeholder="Enter location (e.g., Office, Home, Library)"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
+            value={checkInLocation}
+            onChange={(e) => setCheckInLocation(e.target.value)}
             disabled={isTracking}
           />
         </div>
@@ -387,7 +525,7 @@ export default function WorkSessionTimer({ taskId, onSessionComplete }: WorkSess
           {!isTracking ? (
             <Button
               onClick={handleCheckIn}
-              disabled={loading || projects.length === 0}
+              disabled={loading || (mode === 'project' && !selectedProject && projects.length > 0)}
               className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 shadow-lg"
             >
               {loading ? (
@@ -403,23 +541,37 @@ export default function WorkSessionTimer({ taskId, onSessionComplete }: WorkSess
               )}
             </Button>
           ) : (
-            <Button
-              onClick={handleCheckOut}
-              disabled={loading}
-              className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-lg"
-            >
-              {loading ? (
-                <>
-                  <Clock className="w-4 h-4 mr-2 animate-spin" />
-                  Stopping...
-                </>
-              ) : (
-                <>
-                  <Square className="w-4 h-4 mr-2" />
-                  Check Out
-                </>
-              )}
-            </Button>
+            <>
+              {/* Check-out location input */}
+              <div className="flex-1 space-y-2">
+                <Label>Check-out Location</Label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Location when checking out (e.g., Office, Home)"
+                  value={checkOutLocation}
+                  onChange={(e) => setCheckOutLocation(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <Button
+                onClick={handleCheckOut}
+                disabled={loading}
+                className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-lg"
+              >
+                {loading ? (
+                  <>
+                    <Clock className="w-4 h-4 mr-2 animate-spin" />
+                    Stopping...
+                  </>
+                ) : (
+                  <>
+                    <Square className="w-4 h-4 mr-2" />
+                    Check Out
+                  </>
+                )}
+              </Button>
+            </>
           )}
         </div>
 
@@ -440,25 +592,5 @@ export default function WorkSessionTimer({ taskId, onSessionComplete }: WorkSess
         </Button>
       </CardContent>
     </Card>
-  )
-}
-
-function Briefcase({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <rect width="20" height="14" x="2" y="7" rx="2" ry="2" />
-      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-    </svg>
   )
 }

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         title: m.title,
         description: m.description,
         dueDate: m.dueDate.toISOString(),
-        completion: m.completion,
+        status: m.status,
         createdAt: m.createdAt.toISOString(),
         completedAt: m.completedAt?.toISOString() || null,
       })),
@@ -42,7 +42,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         title,
         description,
         dueDate: new Date(dueDate),
-        completion: 0,
       }
     })
 
@@ -60,16 +59,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { id: milestoneId } = await params
     const body = await request.json()
-    const updates: any = {}
-
-    if (body.title) updates.title = body.title
-    if (body.description) updates.description = body.description
-    if (body.dueDate) updates.dueDate = new Date(body.dueDate)
-    if (body.completion !== undefined) updates.completion = body.completion
-    if (body.completedAt !== undefined && body.completedAt === null) {
-      updates.completedAt = new Date()
-    }
-    if (body.status !== undefined) updates.status = body.status
 
     // Fetch existing milestone before updating
     const existingMilestone = await db.milestone.findUnique({
@@ -79,6 +68,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         status: true,
         projectId: true,
         title: true,
+        completedAt: true,
       },
     })
 
@@ -86,7 +76,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ success: false, error: "Milestone not found" }, { status: 404 })
     }
 
-    const isAchieving = body.status === 'ACHIEVED' && existingMilestone.status !== 'ACHIEVED'
+    const updates: any = {}
+
+    if (body.title) updates.title = body.title
+    if (body.description) updates.description = body.description
+    if (body.dueDate) updates.dueDate = new Date(body.dueDate)
+    if (body.status !== undefined) {
+      updates.status = body.status
+      if (body.status === 'COMPLETED' && !existingMilestone.completedAt) {
+        updates.completedAt = new Date()
+      }
+    }
+
+    const isAchieving = body.status === 'COMPLETED' && existingMilestone.status !== 'COMPLETED'
 
     // Update milestone in a transaction to also award points
     const updatedMilestone = await db.$transaction(async (tx) => {
@@ -98,18 +100,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
             select: {
               id: true,
               title: true,
-              projectLeadId: true,
+              ownerId: true,
             },
           },
         },
       })
 
       // Award points for milestone achievement
-      if (isAchieving && milestone.project?.projectLeadId) {
+      if (isAchieving && milestone.project?.ownerId) {
         try {
           await tx.pointTransaction.create({
             data: {
-              userId: milestone.project.projectLeadId,
+              userId: milestone.project.ownerId,
               points: 25, // MILESTONE_ACHIEVEMENT points
               source: 'MILESTONE_ACHIEVEMENT',
               description: `Achieved milestone: ${milestone.title}`,
@@ -124,7 +126,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
           // Update user's total points
           await tx.user.update({
-            where: { id: milestone.project.projectLeadId },
+            where: { id: milestone.project.ownerId },
             data: {
               totalPoints: {
                 increment: 25,

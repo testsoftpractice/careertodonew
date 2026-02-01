@@ -12,6 +12,14 @@ const createVacancySchema = z.object({
   skills: z.array(z.string()).default([]),
   slots: z.number().min(1, 'Slots must be at least 1'),
   filled: z.number().min(0, 'Filled must be at least 0').default(0),
+  // New fields for comprehensive vacancy
+  responsibilities: z.string().max(3000).optional(),
+  requirements: z.string().max(3000).optional(),
+  expertise: z.string().max(1000).optional(),
+  salaryMin: z.number().min(0).optional(),
+  salaryMax: z.number().min(0).optional(),
+  location: z.string().max(200).optional(),
+  experience: z.string().max(200).optional(),
 })
 
 // GET - Get vacancies for a project
@@ -54,7 +62,19 @@ export async function POST(request: NextRequest) {
 
     const data = validation.data
 
-    // Verify user is member of the project
+    // Get project to check ownership
+    const project = await db.project.findUnique({
+      where: { id: data.projectId },
+      select: { ownerId: true },
+    })
+
+    if (!project) {
+      return notFound('Project not found')
+    }
+
+    const isOwner = project.ownerId === authResult.dbUser.id
+
+    // Verify user is member of the project or owner
     const member = await db.projectMember.findFirst({
       where: {
         projectId: data.projectId,
@@ -62,7 +82,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (!member) {
+    if (!member && !isOwner) {
       return forbidden('You are not a member of this project')
     }
 
@@ -76,6 +96,14 @@ export async function POST(request: NextRequest) {
         skills: data.skills.join(',') || null,
         slots: data.slots,
         filled: data.filled,
+        responsibilities: data.responsibilities || null,
+        requirements: data.requirements || null,
+        expertise: data.expertise || null,
+        salaryMin: data.salaryMin || null,
+        salaryMax: data.salaryMax || null,
+        location: data.location || null,
+        experience: data.experience || null,
+        status: 'OPEN',
       },
       include: {
         project: {

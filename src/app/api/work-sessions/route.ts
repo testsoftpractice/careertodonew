@@ -2,27 +2,49 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth, AuthError } from '@/lib/auth/verify'
 import { unauthorized, forbidden } from '@/lib/api-response'
+import { z } from 'zod'
+
+// Validation schemas
+const createWorkSessionSchema = z.object({
+  projectId: z.string().optional(),
+  taskId: z.string().optional(),
+  type: z.enum(['ONSITE', 'REMOTE', 'HYBRID', 'BREAK', 'MEETING', 'TRAINING', 'RESEARCH']).default('ONSITE'),
+  checkInLocation: z.string().max(200).optional(),
+  checkOutLocation: z.string().max(200).optional(),
+  notes: z.string().max(1000).optional(),
+})
+
+const updateWorkSessionSchema = z.object({
+  endTime: z.date().optional(),
+  duration: z.number().min(0).optional(),
+  checkOutLocation: z.string().max(200).optional(),
+  notes: z.string().max(1000).optional(),
+})
 
 // ==================== WORK SESSIONS API ====================
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await verifyAuth(request)
-    if (!authResult.success) {
+    const authResult = await requireAuth(request)
+    if (!authResult.dbUser) {
       return unauthorized('Authentication required')
     }
 
     const { searchParams } = new URL(request.url)
     const userId = searchParams.userId as string | undefined
+    const currentUser = authResult.dbUser
 
-    const where: Record<string, string | undefined> = {}
+    const where: Record<string, any> = {}
 
     // If filtering by userId, only allow viewing own sessions or admin
     if (userId) {
-      if (userId !== authResult.user!.id && authResult.user!.role !== 'PLATFORM_ADMIN') {
+      if (userId !== currentUser.id && currentUser.role !== 'PLATFORM_ADMIN') {
         return forbidden('You can only view your own work sessions')
       }
       where.userId = userId
+    } else {
+      // By default, show current user's sessions
+      where.userId = currentUser.id
     }
 
     const workSessions = await db.workSession.findMany({
@@ -42,6 +64,14 @@ export async function GET(request: NextRequest) {
             id: true,
             name: true,
           }
+        },
+        task: {
+          select: {
+            id: true,
+            title: true,
+            priority: true,
+            status: true,
+          }
         }
       },
       orderBy: { startTime: 'desc' }
@@ -51,20 +81,29 @@ export async function GET(request: NextRequest) {
 
     // Map fields to match frontend expectations
     const mappedSessions = workSessions.map(session => ({
-      ...session,
-      checkInTime: session.startTime,
-      checkOutTime: session.endTime,
-      checkInLocation: session.user?.location || null,
-      notes: session.notes,
+      id: session.id,
+      userId: session.userId,
+      projectId: session.projectId,
+      taskId: session.taskId,
       type: session.type,
-      duration: session.duration ? (session.duration / 3600) : null,
+      startTime: session.startTime.toISOString(),
+      endTime: session.endTime?.toISOString(),
+      checkInTime: session.startTime.toISOString(),
+      checkOutTime: session.endTime?.toISOString(),
+      checkInLocation: session.checkInLocation,
+      checkOutLocation: session.checkOutLocation,
+      notes: session.notes,
+      duration: session.duration ? Math.round(session.duration / 3600 * 100) / 100 : null, // Convert to hours with 2 decimals
+      project: session.project,
+      task: session.task,
+      user: session.user,
     }))
 
     return NextResponse.json({
       success: true,
       data: mappedSessions,
       count: mappedSessions.length,
-      totalHours
+      totalHours: Math.round(totalHours * 100) / 100
     })
   } catch (error) {
     console.error('Work Sessions API error:', error)
@@ -83,51 +122,89 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
 
-    // Validate required fields
-    if (!currentUser?.id) {
+    // Validate request body
+    const validation = createWorkSessionSchema.safeParse(body)
+
+    if (!validation.success) {
       return NextResponse.json({
         success: false,
-        error: 'User ID is required'
+        error: 'Validation error',
+        details: validation.error.issues.map(issue => ({
+          field: issue.path[0] || 'unknown',
+          message: issue.message
+        }))
       }, { status: 400 })
     }
+
+    const data = validation.data!
 
     // Create work session
     const workSessionData: any = {
       userId: currentUser.id,
-      type: body.type || 'WORK_SESSION',
+      type: data.type || 'ONSITE',
       startTime: new Date(),
-      checkInLocation: body.checkInLocation,
-      notes: body.notes,
+      notes: data.notes,
+      checkInLocation: data.checkInLocation,
     }
 
-    // Only add projectId if task belongs to a project
-    // For personal tasks (no projectId), we don't create a work session
-    if (body.projectId) {
-      workSessionData.projectId = body.projectId
+    // Optional: Link to project
+    if (data.projectId) {
+      workSessionData.projectId = data.projectId
+    }
+
+    // Optional: Link to task (either projectId OR taskId can be used, but not both)
+    if (data.taskId) {
+      workSessionData.taskId = data.taskId
     }
 
     const workSession = await db.workSession.create({
-      data: workSessionData
+      data: workSessionData,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          }
+        },
+        project: {
+          select: {
+            id: true,
+            name: true,
+          }
+        },
+        task: {
+          select: {
+            id: true,
+            title: true,
+          }
+        }
+      }
     })
 
     return NextResponse.json({
       success: true,
-      data: workSession
+      data: {
+        id: workSession.id,
+        userId: workSession.userId,
+        projectId: workSession.projectId,
+        taskId: workSession.taskId,
+        type: workSession.type,
+        startTime: workSession.startTime.toISOString(),
+        checkInLocation: workSession.checkInLocation,
+        checkOutLocation: workSession.checkOutLocation,
+        notes: workSession.notes,
+        project: workSession.project,
+        task: workSession.task,
+        user: workSession.user,
+      }
     }, { status: 201 })
   } catch (error) {
     console.error('Work Session creation error:', error)
-    
+
     // Handle specific error types
     const errorMessage = error instanceof Error ? error.message : 'Failed to create work session'
-    
-    // Check for validation errors
-    if (error.message?.includes('Unknown argument')) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid request: taskId is not supported. Please use projectId for project tasks.',
-        details: 'For personal tasks, time tracking cannot create a work session.',
-      }, { status: 400 })
-    }
 
     return NextResponse.json({
       success: false,
@@ -153,19 +230,6 @@ export async function PATCH(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const body = await request.json()
-
-    const updateData: {
-      endTime?: Date
-      duration?: number
-      projectId?: string
-      type?: string
-      notes?: string
-      checkOutLocation?: string
-    } = {
-      endTime: new Date(),
-    }
-
     // Verify session ownership
     const existingSession = await db.workSession.findUnique({
       where: { id: sessionId }
@@ -186,46 +250,90 @@ export async function PATCH(request: NextRequest) {
       }, { status: 403 })
     }
 
+    const body = await request.json()
+
+    // Validate request body
+    const validation = updateWorkSessionSchema.safeParse(body)
+
+    if (!validation.success) {
+      return NextResponse.json({
+        success: false,
+        error: 'Validation error',
+        details: validation.error.issues.map(issue => ({
+          field: issue.path[0] || 'unknown',
+          message: issue.message
+        }))
+      }, { status: 400 })
+    }
+
+    const data = validation.data!
+
+    const updateData: any = {}
+
     // Calculate duration if endTime is being set
-    const durationSeconds = Math.floor((new Date().getTime() - new Date(existingSession.startTime).getTime()) / 1000)
-    updateData.duration = durationSeconds
-
-    // Allow override of duration (frontend sends in hours, convert to seconds)
-    if (body.duration) {
-      updateData.duration = Math.floor(parseFloat(body.duration) * 3600)
+    if (data.endTime) {
+      const durationSeconds = Math.floor((data.endTime.getTime() - new Date(existingSession.startTime).getTime()) / 1000)
+      updateData.duration = durationSeconds
     }
 
-    if (body.projectId) {
-      updateData.projectId = body.projectId
+    if (data.duration) {
+      updateData.duration = Math.floor(parseFloat(data.duration) * 3600)
     }
 
-    if (body.type) {
-      updateData.type = body.type
+    if (data.checkOutLocation) {
+      updateData.checkOutLocation = data.checkOutLocation
     }
 
-    if (body.notes) {
-      updateData.notes = body.notes
-    }
-
-    if (body.checkOutLocation) {
-      updateData.checkOutLocation = body.checkOutLocation
+    if (data.notes) {
+      updateData.notes = data.notes
     }
 
     const workSession = await db.workSession.update({
       where: { id: sessionId },
-      data: updateData
+      data: updateData,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          }
+        },
+        project: {
+          select: {
+            id: true,
+            name: true,
+          }
+        },
+        task: {
+          select: {
+            id: true,
+            title: true,
+          }
+        }
+      }
     })
 
     return NextResponse.json({
       success: true,
       data: {
-        ...workSession,
-        checkInTime: workSession.startTime,
-        checkOutTime: workSession.endTime,
-        checkInLocation: workSession.user?.location || null,
-        notes: workSession.notes,
+        id: workSession.id,
+        userId: workSession.userId,
+        projectId: workSession.projectId,
+        taskId: workSession.taskId,
         type: workSession.type,
-        duration: workSession.duration ? (workSession.duration / 3600) : null,
+        startTime: workSession.startTime.toISOString(),
+        endTime: workSession.endTime?.toISOString(),
+        checkInTime: workSession.startTime.toISOString(),
+        checkOutTime: workSession.endTime?.toISOString(),
+        checkInLocation: workSession.checkInLocation,
+        checkOutLocation: workSession.checkOutLocation,
+        notes: workSession.notes,
+        duration: workSession.duration ? Math.round(workSession.duration / 3600 * 100) / 100 : null,
+        project: workSession.project,
+        task: workSession.task,
+        user: workSession.user,
       }
     })
   } catch (error) {

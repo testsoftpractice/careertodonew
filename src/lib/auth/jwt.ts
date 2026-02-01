@@ -1,9 +1,11 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is not set')
+// Use a default JWT_SECRET for development if not set
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production-123456789'
+
+if (!process.env.JWT_SECRET) {
+  console.warn('JWT_SECRET environment variable is not set, using default for development')
 }
 
 const JWT_EXPIRES_IN = '1h' // 1 hour for access token

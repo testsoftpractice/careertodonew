@@ -184,7 +184,9 @@ enum TaskAccessLevel {
 }
 
 enum WorkSessionType {
-  WORK_SESSION
+  ONSITE
+  REMOTE
+  HYBRID
   BREAK
   MEETING
   TRAINING
@@ -481,6 +483,7 @@ model Task {
   creator       User        @relation("CreatedTasks", fields: [assignedBy], references: [id], onDelete: Cascade)
   subTasks      SubTask[]
   timeEntries   TimeEntry[]
+  workSessions  WorkSession[]   // Work sessions linked to this task
   dependencies  TaskDependency[] @relation("DependentTasks")
   blockers      TaskDependency[] @relation("BlockingTasks")
   steps         TaskStep[]
@@ -580,6 +583,16 @@ model Vacancy {
   slots       Int            @default(1)
   filled      Int            @default(0)
 
+  // Additional fields for comprehensive job posting
+  responsibilities String?       // Detailed job responsibilities
+  requirements    String?       // Job requirements (education, experience, etc.)
+  expertise       String?       // Required expertise areas
+  salaryMin      Float?        // Minimum salary
+  salaryMax      Float?        // Maximum salary
+  location       String?       // Job location (remote, onsite, etc.)
+  experience     String?       // Required experience level
+  status         String         @default("OPEN") // OPEN, CLOSED, FILLED
+
   // Relations
   project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -589,6 +602,7 @@ model Vacancy {
 
   @@index([projectId])
   @@index([type])
+  @@index([status])
 }
 
 model TimeEntry {
@@ -614,8 +628,11 @@ model WorkSession {
   id        String          @id @default(cuid())
   userId    String
   projectId String?
-  type      WorkSessionType @default(WORK_SESSION)
+  taskId    String?         // Optional: Link to specific task for time tracking
+  type      WorkSessionType @default(ONSITE)
   notes     String?
+  checkInLocation  String?  // Location when checking in (e.g., "Office", "Home")
+  checkOutLocation String?  // Location when checking out (e.g., "Office", "Home")
   startTime DateTime
   endTime   DateTime?
   duration  Int?           // in seconds
@@ -623,11 +640,12 @@ model WorkSession {
   // Relations
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   project   Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  task      Task?           @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([projectId])
+  @@index([taskId])
   @@index([startTime])
-  @@index([type])
 }
 
 model ProfessionalRecord {

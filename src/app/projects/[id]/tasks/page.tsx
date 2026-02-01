@@ -119,9 +119,9 @@ export default function ProjectTasksPage() {
       const response = await authFetch(`/api/projects/${projectId}/members`)
       const data = await response.json()
 
-      if (data.success && data.data) {
-        const members = data.data.map((member: any) => ({
-          id: member.userId,
+      if (data.success && data.data && data.data.members) {
+        const members = data.data.members.map((member: any) => ({
+          id: member.user?.id || member.userId,
           name: member.user?.name || member.user?.email || 'Unknown',
           email: member.user?.email,
         }))
@@ -130,7 +130,7 @@ export default function ProjectTasksPage() {
         // Fallback to all users if project members fetch fails
         const allUsersResponse = await authFetch('/api/users')
         const allUsersData = await allUsersResponse.json()
-        if (allUsersData.success) {
+        if (allUsersData.success && allUsersData.data) {
           const users = allUsersData.data.map((u: any) => ({
             id: u.id,
             name: u.name || u.email,

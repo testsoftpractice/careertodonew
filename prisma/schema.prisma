@@ -28,6 +28,7 @@ enum VerificationStatus {
   UNDER_REVIEW
   VERIFIED
   REJECTED
+  BANNED
 }
 
 enum SkillLevel {

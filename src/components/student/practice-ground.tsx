@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import {
   Dumbbell,
   Code,
-  Design,
+  PenTool,
   TrendingUp,
   Target,
   Zap,
@@ -28,7 +28,7 @@ const practiceAreas = [
   {
     title: 'Design Projects',
     description: 'Practice UI/UX design with real-world project scenarios',
-    icon: Design,
+    icon: PenTool,
     color: 'text-purple-500',
     bgColor: 'bg-purple-500/10',
   },

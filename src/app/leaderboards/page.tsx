@@ -48,11 +48,21 @@ interface StudentLeaderboard {
 
 interface UniversityLeaderboard {
   rank: number
+  id: string
   name: string
   code: string
-  students: number
-  projects: number
-  score: number
+  description?: string
+  website?: string
+  location?: string
+  verificationStatus: string
+  rankingScore: number
+  rankingPosition: number
+  totalStudents: number
+  studentCount: number
+  totalReputation: number
+  avgReputation: number
+  avgProgressionLevel: number
+  totalProjects: number
 }
 
 interface ProjectLeaderboard {
@@ -87,11 +97,11 @@ export default function LeaderboardsPage() {
           setStudentLeaderboard(studentData.data.users || [])
         }
 
-        // Fetch university leaderboard (using same API with category filter)
-        const universityRes = await fetch('/api/leaderboards?category=universities&limit=50')
+        // Fetch university leaderboard
+        const universityRes = await fetch('/api/leaderboards/universities?limit=50')
         const universityData = await universityRes.json()
         if (universityData.success) {
-          setUniversityLeaderboard(universityData.data.users || [])
+          setUniversityLeaderboard(universityData.data.universities || [])
         }
 
         // For projects, we'll use the projects API and sort by reputation
@@ -375,14 +385,14 @@ export default function LeaderboardsPage() {
                           <TableCell>
                             <div className="flex items-center gap-1">
                               <Users className="h-4 w-4 text-muted-foreground" />
-                              {uni.students}
+                              {uni.studentCount}
                             </div>
                           </TableCell>
-                          <TableCell>{uni.projects}</TableCell>
+                          <TableCell>{uni.totalProjects}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1 font-bold">
                               <Star className="h-4 w-4 text-yellow-500" />
-                              {uni.score.toFixed(1)}
+                              {uni.avgReputation.toFixed(1)}
                             </div>
                           </TableCell>
                         </TableRow>

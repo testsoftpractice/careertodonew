@@ -69,6 +69,7 @@ import { Badge } from '@/components/ui/badge'
 import { LeaderboardPreview } from '@/components/student/leaderboard-preview'
 import { NeedsPreview } from '@/components/student/needs-preview'
 import { PracticeGround } from '@/components/student/practice-ground'
+import { VerificationGate } from '@/components/verification-gate'
 
 function DashboardContent({ user }: { user: any }) {
   const searchParams = useSearchParams()
@@ -1554,7 +1555,9 @@ export default function StudentDashboard() {
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-primary border-r-transparent"></div>
       </div>
     }>
-      <DashboardContent user={user} />
+      <VerificationGate user={user} restrictActions={true} showBadge={true}>
+        <DashboardContent user={user} />
+      </VerificationGate>
     </Suspense>
   )
 }

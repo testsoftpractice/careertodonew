@@ -36,6 +36,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { useRoleAccess } from '@/hooks/use-role-access'
 import { toast } from '@/hooks/use-toast'
 import { logoutAndRedirect } from '@/lib/utils/logout'
+import { VerificationGate } from '@/components/verification-gate'
 
 interface DashboardStats {
   totalStudents: number
@@ -176,7 +177,8 @@ export default function UniversityDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
+    <VerificationGate user={user} restrictActions={true} showBadge={true}>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         <header className="mb-6 sm:mb-8">
           <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl shadow-xl border border-indigo-200 dark:border-slate-800 p-4 sm:p-6">
@@ -659,5 +661,6 @@ export default function UniversityDashboard() {
         </Tabs>
       </div>
     </div>
+    </VerificationGate>
   )
 }

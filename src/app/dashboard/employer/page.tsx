@@ -44,10 +44,9 @@ import { useAuth } from '@/contexts/auth-context'
 import { useRoleAccess } from '@/hooks/use-role-access'
 import { toast } from '@/hooks/use-toast'
 import { logoutAndRedirect } from '@/lib/utils/logout'
+import { VerificationGate } from '@/components/verification-gate'
 
-export default function EmployerDashboard() {
-  const { user } = useAuth()
-
+function DashboardContent({ user }: { user: any }) {
   useRoleAccess(['EMPLOYER', 'PLATFORM_ADMIN'])
 
   const [activeTab, setActiveTab] = useState('overview')
@@ -493,5 +492,15 @@ export default function EmployerDashboard() {
         </Tabs>
       </div>
     </div>
+  )
+}
+
+export default function EmployerDashboard() {
+  const { user } = useAuth()
+  
+  return (
+    <VerificationGate user={user} restrictActions={true} showBadge={true}>
+      <DashboardContent user={user} />
+    </VerificationGate>
   )
 }

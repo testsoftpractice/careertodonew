@@ -61,76 +61,2417 @@ async function main() {
 
     console.log('📚 Creating universities...')
     const universities = await Promise.all([
+      // === PUBLIC UNIVERSITIES ===
       prisma.university.create({
         data: {
-          name: 'Stanford University',
-          code: 'STAN001',
-          description: 'Private research university in California',
-          location: 'Stanford, CA',
-          website: 'https://stanford.edu',
+          name: 'University of Dhaka',
+          code: 'DU001',
+          description: 'Public research university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.du.ac.bd',
           rankingScore: 4.8,
+          rankingPosition: 1,
+          totalStudents: 35000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 120
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'University of Rajshahi',
+          code: 'RU001',
+          description: 'Public research university in Rajshahi',
+          location: 'Rajshahi, Bangladesh',
+          website: 'https://www.ru.ac.bd',
+          rankingScore: 4.6,
+          rankingPosition: 2,
+          totalStudents: 28000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 85
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Bangladesh Agricultural University',
+          code: 'BAU001',
+          description: 'Agricultural university in Mymensingh',
+          location: 'Mymensingh, Bangladesh',
+          website: 'https://www.bau.edu.bd',
+          rankingScore: 4.5,
           rankingPosition: 3,
-          totalStudents: 17000,
+          totalStudents: 6000,
           verificationStatus: 'VERIFIED',
           totalProjects: 45
         }
       }),
       prisma.university.create({
         data: {
-          name: 'Massachusetts Institute of Technology',
-          code: 'MIT001',
-          description: 'Private research university in Massachusetts',
-          location: 'Cambridge, MA',
-          website: 'https://mit.edu',
+          name: 'Bangladesh University of Engineering & Technology',
+          code: 'BUET001',
+          description: 'Premier engineering university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.buet.ac.bd',
           rankingScore: 4.9,
           rankingPosition: 1,
-          totalStudents: 11500,
+          totalStudents: 8000,
           verificationStatus: 'VERIFIED',
-          totalProjects: 32
+          totalProjects: 150
         }
       }),
       prisma.university.create({
         data: {
-          name: 'University of Pennsylvania',
-          code: 'UPENN001',
-          description: 'Private Ivy League university in Pennsylvania',
-          location: 'Philadelphia, PA',
-          website: 'https://upenn.edu',
+          name: 'University of Chittagong',
+          code: 'CU001',
+          description: 'Public research university in Chittagong',
+          location: 'Chittagong, Bangladesh',
+          website: 'https://www.cu.ac.bd',
+          rankingScore: 4.6,
+          rankingPosition: 4,
+          totalStudents: 22000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 78
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Jahangirnagar University',
+          code: 'JU001',
+          description: 'Public research university in Savar',
+          location: 'Savar, Dhaka, Bangladesh',
+          website: 'https://www.juniv.edu',
+          rankingScore: 4.7,
+          rankingPosition: 3,
+          totalStudents: 16000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 92
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Islamic University, Bangladesh',
+          code: 'IU001',
+          description: 'Public university in Kushtia',
+          location: 'Kushtia, Bangladesh',
+          website: 'https://www.iu.ac.bd',
+          rankingScore: 4.3,
+          rankingPosition: 8,
+          totalStudents: 12000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 42
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Shahjalal University of Science & Technology',
+          code: 'SUST001',
+          description: 'Public research university in Sylhet',
+          location: 'Sylhet, Bangladesh',
+          website: 'https://www.sust.edu',
           rankingScore: 4.7,
           rankingPosition: 5,
-          totalStudents: 25000,
+          totalStudents: 9000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 88
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Khulna University',
+          code: 'KU001',
+          description: 'Public research university in Khulna',
+          location: 'Khulna, Bangladesh',
+          website: 'https://www.ku.ac.bd',
+          rankingScore: 4.4,
+          rankingPosition: 7,
+          totalStudents: 6500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 55
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'National University',
+          code: 'NU001',
+          description: 'Largest public university network in Bangladesh',
+          location: 'Gazipur, Bangladesh',
+          website: 'https://www.nu.edu.bd',
+          rankingScore: 4.2,
+          rankingPosition: 10,
+          totalStudents: 2500000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 500
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Bangladesh Open University',
+          code: 'BOU001',
+          description: 'Open and distance learning university',
+          location: 'Gazipur, Bangladesh',
+          website: 'https://www.bou.ac.bd',
+          rankingScore: 4.1,
+          rankingPosition: 12,
+          totalStudents: 450000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 80
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Bangladesh Medical University',
+          code: 'BMU001',
+          description: 'Medical education and research university',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.bsmmu.ac.bd',
+          rankingScore: 4.6,
+          rankingPosition: 6,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 35
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Gazipur Agricultural University',
+          code: 'GAU001',
+          description: 'Agricultural university in Gazipur',
+          location: 'Gazipur, Bangladesh',
+          website: 'https://gau.edu.bd/',
+          rankingScore: 4.3,
+          rankingPosition: 9,
+          totalStudents: 4000,
           verificationStatus: 'VERIFIED',
           totalProjects: 38
         }
       }),
       prisma.university.create({
         data: {
-          name: 'University of California, Berkeley',
-          code: 'UCB001',
-          description: 'Public research university in California',
-          location: 'Berkeley, CA',
-          website: 'https://berkeley.edu',
-          rankingScore: 4.7,
-          rankingPosition: 4,
-          totalStudents: 45000,
+          name: 'Hajee Mohammad Danesh Science & Technology University',
+          code: 'HSTU001',
+          description: 'Science and technology university in Dinajpur',
+          location: 'Dinajpur, Bangladesh',
+          website: 'https://www.hstu.ac.bd',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 5500,
           verificationStatus: 'VERIFIED',
-          totalProjects: 67
+          totalProjects: 40
         }
       }),
       prisma.university.create({
         data: {
-          name: 'New York University',
-          code: 'NYU001',
-          description: 'Private research university in New York City',
-          location: 'New York, NY',
-          website: 'https://nyu.edu',
-          rankingScore: 4.6,
+          name: 'Mawlana Bhashani Science & Technology University',
+          code: 'MBSTU001',
+          description: 'Science and technology university in Tangail',
+          location: 'Tangail, Bangladesh',
+          website: 'https://www.mbstu.ac.bd',
+          rankingScore: 4.2,
+          rankingPosition: 12,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 36
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Patuakhali Science And Technology University',
+          code: 'PSTU001',
+          description: 'Science and technology university in Patuakhali',
+          location: 'Patuakhali, Bangladesh',
+          website: 'https://www.pstu.ac.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 3800,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 32
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Sher-e-Bangla Agricultural University',
+          code: 'SAU001',
+          description: 'Agricultural university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.sau.edu.bd',
+          rankingScore: 4.4,
           rankingPosition: 7,
-          totalStudents: 51000,
+          totalStudents: 5000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 48
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Chittagong University of Engineering & Technology',
+          code: 'CUET001',
+          description: 'Engineering university in Chittagong',
+          location: 'Chittagong, Bangladesh',
+          website: 'https://www.cuet.ac.bd',
+          rankingScore: 4.7,
+          rankingPosition: 5,
+          totalStudents: 6000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 72
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Rajshahi University of Engineering & Technology',
+          code: 'RUET001',
+          description: 'Engineering university in Rajshahi',
+          location: 'Rajshahi, Bangladesh',
+          website: 'https://www.ruet.ac.bd',
+          rankingScore: 4.6,
+          rankingPosition: 6,
+          totalStudents: 5500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 65
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Khulna University of Engineering & Technology',
+          code: 'KUET001',
+          description: 'Engineering university in Khulna',
+          location: 'Khulna, Bangladesh',
+          website: 'https://www.kuet.ac.bd',
+          rankingScore: 4.6,
+          rankingPosition: 6,
+          totalStudents: 5000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 58
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Dhaka University of Engineering & Technology',
+          code: 'DUET001',
+          description: 'Engineering university in Gazipur',
+          location: 'Gazipur, Bangladesh',
+          website: 'https://www.duet.ac.bd',
+          rankingScore: 4.5,
+          rankingPosition: 7,
+          totalStudents: 4500,
           verificationStatus: 'VERIFIED',
           totalProjects: 52
         }
-      })
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Noakhali Science & Technology University',
+          code: 'NSTU001',
+          description: 'Science and technology university in Noakhali',
+          location: 'Noakhali, Bangladesh',
+          website: 'https://www.nstu.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 15,
+          totalStudents: 4200,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 34
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Jagannath University',
+          code: 'JNU001',
+          description: 'Public university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.jnu.ac.bd',
+          rankingScore: 4.3,
+          rankingPosition: 9,
+          totalStudents: 15000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 62
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Comilla University',
+          code: 'COU001',
+          description: 'Public university in Comilla',
+          location: 'Comilla, Bangladesh',
+          website: 'https://www.cou.ac.bd',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 5000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 38
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Jatiya Kabi Kazi Nazrul Islam University',
+          code: 'JKKNIU001',
+          description: 'Arts and cultural university in Trishal',
+          location: 'Mymensingh, Bangladesh',
+          website: 'https://www.jkkniu.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 16,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Chittagong Veterinary and Animal Sciences University',
+          code: 'CVASU001',
+          description: 'Veterinary and animal sciences university',
+          location: 'Chittagong, Bangladesh',
+          website: 'https://www.cvasu.ac.bd',
+          rankingScore: 4.3,
+          rankingPosition: 9,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 32
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Sylhet Agricultural University',
+          code: 'SAUSY001',
+          description: 'Agricultural university in Sylhet',
+          location: 'Sylhet, Bangladesh',
+          website: 'https://www.sau.ac.bd',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 3800,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Jessore University of Science & Technology',
+          code: 'JUST001',
+          description: 'Science and technology university in Jessore',
+          location: 'Jessore, Bangladesh',
+          website: 'https://www.just.edu.bd',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 35
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Pabna University of Science and Technology',
+          code: 'PUST001',
+          description: 'Science and technology university in Pabna',
+          location: 'Pabna, Bangladesh',
+          website: 'https://www.pust.ac.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 4200,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 32
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Begum Rokeya University, Rangpur',
+          code: 'BRUR001',
+          description: 'Public university in Rangpur',
+          location: 'Rangpur, Bangladesh',
+          website: 'https://www.brur.ac.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 4800,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 36
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Bangladesh University of Professionals',
+          code: 'BUP001',
+          description: 'Public university for armed forces personnel',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.bup.edu.bd',
+          rankingScore: 4.4,
+          rankingPosition: 7,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 42
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Gopalganj Science & Technology University',
+          code: 'BSMRSTU001',
+          description: 'Science and technology university in Gopalganj',
+          location: 'Gopalganj, Bangladesh',
+          website: 'https://www.bsmrstu.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 17,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Bangladesh University of Textiles',
+          code: 'BUTEX001',
+          description: 'Textile engineering university',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.butex.edu.bd',
+          rankingScore: 4.3,
+          rankingPosition: 9,
+          totalStudents: 5000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 48
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'University of Barishal',
+          code: 'UBAR001',
+          description: 'Public university in Barishal',
+          location: 'Barishal, Bangladesh',
+          website: 'https://www.bu.ac.bd',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 6500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 42
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Rangamati Science and Technology University',
+          code: 'RMSTU001',
+          description: 'Science and technology university in Rangamati',
+          location: 'Rangamati, Bangladesh',
+          website: 'https://www.rmstu.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 25
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Bangladesh Maritime University',
+          code: 'BMMAR001',
+          description: 'Maritime education and training university',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://bmu.edu.bd/',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 2500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 22
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Islamic Arabic University',
+          code: 'IAU001',
+          description: 'Islamic studies university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.iau.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 8000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 35
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Chittagong Medical University',
+          code: 'CMU001',
+          description: 'Medical university in Chittagong',
+          location: 'Chittagong, Bangladesh',
+          website: 'https://www.cmu.edu.bd',
+          rankingScore: 4.5,
+          rankingPosition: 7,
+          totalStudents: 3000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Rajshahi Medical University',
+          code: 'RMUBD001',
+          description: 'Medical university in Rajshahi',
+          location: 'Rajshahi, Bangladesh',
+          website: 'https://www.rmu.edu.bd',
+          rankingScore: 4.4,
+          rankingPosition: 7,
+          totalStudents: 3200,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Rabindra University, Bangladesh',
+          code: 'RUB001',
+          description: 'Arts and cultural university in Kushtia',
+          location: 'Kushtia, Bangladesh',
+          website: 'https://www.rub.ac.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 3800,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'University of Frontier Technology, Bangladesh',
+          code: 'UFTB001',
+          description: 'Technology university in Rangamati',
+          location: 'Rangamati, Bangladesh',
+          website: 'https://www.uftb.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 2800,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 24
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Netrokona University',
+          code: 'SHU001',
+          description: 'Public university in Netrokona',
+          location: 'Netrokona, Bangladesh',
+          website: 'https://www.shu.edu.bd/',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3200,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 26
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Khulna Agricultural University',
+          code: 'KAU001',
+          description: 'Agricultural university in Khulna',
+          location: 'Khulna, Bangladesh',
+          website: 'https://www.kau.edu.bd',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 32
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Jamalpur Science and Technology University',
+          code: 'BSFMSTU001',
+          description: 'Science and technology university in Jamalpur',
+          location: 'Jamalpur, Bangladesh',
+          website: 'https://bsfmstu.ac.bd/',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 25
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Sylhet Medical University',
+          code: 'BSFMMU001',
+          description: 'Medical university in Sylhet',
+          location: 'Sylhet, Bangladesh',
+          website: 'https://www.bsfmmu.edu.bd',
+          rankingScore: 4.4,
+          rankingPosition: 7,
+          totalStudents: 2800,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 26
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Aviation And Aerospace University, Bangladesh',
+          code: 'AAUB001',
+          description: 'Aviation and aerospace university',
+          location: 'Kurmitola, Dhaka, Bangladesh',
+          website: 'https://www.aaub.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 2500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 22
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Chandpur Science and Technology University',
+          code: 'CSTU001',
+          description: 'Science and technology university in Chandpur',
+          location: 'Chandpur, Bangladesh',
+          website: 'https://www.cstu.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 24
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Kishoreganj University',
+          code: 'BSMRU001',
+          description: 'Public university in Kishoreganj',
+          location: 'Kishoreganj, Bangladesh',
+          website: 'https://bsmru.ac.bd.',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3200,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 26
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Hobiganj Agricultural University',
+          code: 'HAUBD001',
+          description: 'Agricultural university in Hobiganj',
+          location: 'Hobiganj, Bangladesh',
+          website: 'https://www.hau.ac.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 3000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 25
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Khulna Medical University',
+          code: 'SHMUBD001',
+          description: 'Medical university in Khulna',
+          location: 'Khulna, Bangladesh',
+          website: 'https://www.shmu.ac.bd',
+          rankingScore: 4.4,
+          rankingPosition: 7,
+          totalStudents: 3000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 27
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Kurigram Agricultural University',
+          code: 'KURIAU001',
+          description: 'Agricultural university in Kurigram',
+          location: 'Kurigram, Bangladesh',
+          website: 'https://www.kuriau.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 2800,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 24
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Sunamganj Science and Technology University',
+          code: 'SSTUBD001',
+          description: 'Science and technology university in Sunamganj',
+          location: 'Sunamganj, Bangladesh',
+          website: 'https://www.sstu.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 25
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Pirojpur Science & Technology University',
+          code: 'PRSTUBD001',
+          description: 'Science and technology university in Pirojpur',
+          location: 'Pirojpur, Bangladesh',
+          website: 'https://www.prstu.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 2800,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 23
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Naogaon University',
+          code: 'NAUBD001',
+          description: 'Public university in Naogaon',
+          location: 'Naogaon, Bangladesh',
+          website: '',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 24
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Meherpur University',
+          code: 'MEHUBD001',
+          description: 'Public university in Meherpur',
+          location: 'Meherpur, Bangladesh',
+          website: '',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 2800,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 23
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Bogra Science and Technology University',
+          code: 'BSTUBD001',
+          description: 'Science and technology university in Bogra',
+          location: 'Bogra, Bangladesh',
+          website: 'https://bstu.ac.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+
+      // === PRIVATE UNIVERSITIES ===
+      prisma.university.create({
+        data: {
+          name: 'North South University',
+          code: 'NSU001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.northsouth.edu',
+          rankingScore: 4.7,
+          rankingPosition: 2,
+          totalStudents: 15000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 95
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'University of Science & Technology Chittagong',
+          code: 'USTC001',
+          description: 'Private university in Chittagong',
+          location: 'Chittagong, Bangladesh',
+          website: 'https://www.ustc.edu.bd',
+          rankingScore: 4.3,
+          rankingPosition: 8,
+          totalStudents: 8000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 52
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Independent University, Bangladesh',
+          code: 'IUB001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.iub.edu.bd',
+          rankingScore: 4.6,
+          rankingPosition: 4,
+          totalStudents: 12000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 78
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: "Central Women's University",
+          code: 'CWU001',
+          description: "Women's university in Dhaka",
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.cwu.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'International University of Business Agriculture & Technology',
+          code: 'IUBAT001',
+          description: 'Private university in Dhaka',
+          location: 'Uttara, Dhaka, Bangladesh',
+          website: 'https://www.iubat.edu',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 8500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 48
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'International Islamic University Chittagong',
+          code: 'IIUC001',
+          description: 'Private university in Chittagong',
+          location: 'Chittagong, Bangladesh',
+          website: 'https://www.iiuc.ac.bd',
+          rankingScore: 4.3,
+          rankingPosition: 8,
+          totalStudents: 10000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 55
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: "Ahsanullah University of Science and Technology",
+          code: 'AUST001',
+          description: 'Private engineering university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.aust.edu',
+          rankingScore: 4.4,
+          rankingPosition: 6,
+          totalStudents: 8000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 62
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'American International University-Bangladesh',
+          code: 'AIUB001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.aiub.ac.bd',
+          rankingScore: 4.5,
+          rankingPosition: 5,
+          totalStudents: 18000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 88
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'East West University',
+          code: 'EWU001',
+          description: 'Private university in Dhaka',
+          location: 'Aftabnagar, Dhaka, Bangladesh',
+          website: 'https://www.ewubd.edu',
+          rankingScore: 4.5,
+          rankingPosition: 5,
+          totalStudents: 12000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 75
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'University of Asia Pacific',
+          code: 'UAP001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.uap-bd.edu',
+          rankingScore: 4.3,
+          rankingPosition: 8,
+          totalStudents: 9000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 58
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Gono Bishwabidyalay',
+          code: 'GB001',
+          description: 'Private university in Savar',
+          location: 'Savar, Dhaka, Bangladesh',
+          website: 'https://www.gonouniversity.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 6000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 38
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: "The People's University of Bangladesh",
+          code: 'PUB001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.pub.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 5000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 32
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Asian University of Bangladesh',
+          code: 'AUBBD001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.aub.ac.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 6500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 40
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Dhaka International University',
+          code: 'DIU001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.diu.ac',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 7500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 45
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Manarat International University',
+          code: 'MIU001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.manarat.ac.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 32
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'BRAC University',
+          code: 'BRACU001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.bracu.ac.bd',
+          rankingScore: 4.8,
+          rankingPosition: 1,
+          totalStudents: 16000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 102
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Bangladesh University',
+          code: 'BUBD001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.bu.edu.bd',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 7000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 42
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Leading University',
+          code: 'LUS001',
+          description: 'Private university in Sylhet',
+          location: 'Sylhet, Bangladesh',
+          website: 'https://www.lus.ac.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'BGC Trust University Bangladesh',
+          code: 'BGC001',
+          description: 'Private university in Chittagong',
+          location: 'Chittagong, Bangladesh',
+          website: 'https://www.bgctub.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Sylhet International University',
+          code: 'SIU001',
+          description: 'Private university in Sylhet',
+          location: 'Sylhet, Bangladesh',
+          website: 'https://www.siu.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3800,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 26
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'University of Development Alternative',
+          code: 'UODA001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.uoda.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 5000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 34
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Premier University',
+          code: 'PUC001',
+          description: 'Private university in Chittagong',
+          location: 'Chittagong, Bangladesh',
+          website: 'https://www.puc.ac.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 4200,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Southeast University',
+          code: 'SEU001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.seu.edu.bd',
+          rankingScore: 4.3,
+          rankingPosition: 8,
+          totalStudents: 11000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 62
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Daffodil International University',
+          code: 'DIUBD001',
+          description: 'Private university in Dhamondi, Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.daffodilvarsity.edu.bd',
+          rankingScore: 4.5,
+          rankingPosition: 5,
+          totalStudents: 20000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 95
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Stamford University Bangladesh',
+          code: 'SUBD001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.stamforduniversity.edu.bd',
+          rankingScore: 4.4,
+          rankingPosition: 6,
+          totalStudents: 14000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 72
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'State University of Bangladesh',
+          code: 'SUB001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.sub.ac.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 5500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 38
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'City University',
+          code: 'CITY001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.cityuniversity.ac.bd',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 8000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 48
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Prime University',
+          code: 'PRIME001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.primeuniversity.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 6500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 42
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Northern University Bangladesh',
+          code: 'NUB001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.nub.ac.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 7500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 45
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Southern University Bangladesh',
+          code: 'SOUTHBD001',
+          description: 'Private university in Chittagong',
+          location: 'Chittagong, Bangladesh',
+          website: 'https://www.southern.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 8500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 48
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Green University of Bangladesh',
+          code: 'GREEN001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.green.edu.bd',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 7000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 45
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Pundra University of Science & Technology',
+          code: 'PUSTBD001',
+          description: 'Private university in Bogra',
+          location: 'Bogra, Bangladesh',
+          website: 'https://www.pundrauniversity.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'World University of Bangladesh',
+          code: 'WUB001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.wub.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 5500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 36
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Shanto-Mariam University of Creative Technology',
+          code: 'SMUCT001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.smuct.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'The Millennium University',
+          code: 'TMU001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.themillenniumuniversity.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 5000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 34
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Eastern University',
+          code: 'EU001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.easternuni.edu.bd',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 6500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 42
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Metropolitan University',
+          code: 'METRO001',
+          description: 'Private university in Sylhet',
+          location: 'Sylhet, Bangladesh',
+          website: 'https://www.metrouni.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Uttara University',
+          code: 'UTTARA001',
+          description: 'Private university in Uttara, Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.uttarauniversity.edu.bd',
+          rankingScore: 4.3,
+          rankingPosition: 8,
+          totalStudents: 9500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 55
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'United International University',
+          code: 'UIU001',
+          description: 'Private university in Dhaka',
+          location: 'United City, Dhaka, Bangladesh',
+          website: 'https://www.uiu.ac.bd',
+          rankingScore: 4.5,
+          rankingPosition: 5,
+          totalStudents: 13000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 78
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'University of South Asia',
+          code: 'USA001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.southasiauni.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 5500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 35
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Victoria University of Bangladesh',
+          code: 'VUB001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.vub.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 5000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 32
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Bangladesh University of Business & Technology',
+          code: 'BUBT001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.bubt.edu.bd',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 7500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 42
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Presidency University',
+          code: 'PRES001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.presidency.edu.bd',
+          rankingScore: 4.3,
+          rankingPosition: 8,
+          totalStudents: 5500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 38
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'University of Information Technology & Sciences',
+          code: 'UITS001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.uits.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 6000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 36
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Primeasia University',
+          code: 'PRIMEASIA001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.primeasia.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Royal University of Dhaka',
+          code: 'RUD001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.royal.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 6000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 38
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'University of Liberal Arts Bangladesh',
+          code: 'ULAB001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.ulab.edu.bd',
+          rankingScore: 4.4,
+          rankingPosition: 6,
+          totalStudents: 7000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 52
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Atish Dipankar University of Science & Technology',
+          code: 'ADUST001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.adust.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Bangladesh Islami University',
+          code: 'BIUBD001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.biu.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'ASA University Bangladesh',
+          code: 'ASAUB001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.asaub.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 5500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 36
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'East Delta University',
+          code: 'EDU001',
+          description: 'Private university in Khulna',
+          location: 'Khulna, Bangladesh',
+          website: 'https://www.eastdelta.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'European University of Bangladesh',
+          code: 'EUB001',
+          description: 'Private university in Dhaka',
+          location: 'Gazipur, Bangladesh',
+          website: 'https://www.eub.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 6500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 38
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Varendra University',
+          code: 'VU001',
+          description: 'Private university in Rajshahi',
+          location: 'Rajshahi, Bangladesh',
+          website: 'https://www.vu.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 5000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 32
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Hamdard University Bangladesh',
+          code: 'HAMD001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.hamdarduniversity.edu.bd',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 6000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 40
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'BGMEA University of Fashion & Technology',
+          code: 'BUFT001',
+          description: 'Fashion and technology university',
+          location: 'Uttara, Dhaka, Bangladesh',
+          website: 'https://www.buft.edu.bd',
+          rankingScore: 4.3,
+          rankingPosition: 8,
+          totalStudents: 7000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 48
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'North East University Bangladesh',
+          code: 'NEUB001',
+          description: 'Private university in Sylhet',
+          location: 'Sylhet, Bangladesh',
+          website: 'https://www.neub.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'First Capital University of Bangladesh',
+          code: 'FCUB001',
+          description: 'Private university in Mymensingh',
+          location: 'Mymensingh, Bangladesh',
+          website: 'https://www.fcub.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Ishakha International University, Bangladesh',
+          code: 'ISHAKHA001',
+          description: 'Private university in Bhedergonj',
+          location: 'Narsingdi, Bangladesh',
+          website: 'https://www.ishakha.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 25
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Z.H Sikder University of Science & Technology',
+          code: 'ZHSUST001',
+          description: 'Private university in Madhabdi',
+          location: 'Narsingdi, Bangladesh',
+          website: 'https://www.zhsust.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Exim Bank Agricultural University, Bangladesh',
+          code: 'EBAUB001',
+          description: 'Agricultural university in Chapainawabganj',
+          location: 'Chapainawabganj, Bangladesh',
+          website: 'https://www.ebaub.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 25
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'North Western University',
+          code: 'NWU001',
+          description: 'Private university in Khulna',
+          location: 'Khulna, Bangladesh',
+          website: 'https://www.nwu.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Khwaja Yunus Ali University',
+          code: 'KYAU001',
+          description: 'Private university in Sirajganj',
+          location: 'Sirajganj, Bangladesh',
+          website: 'https://www.kyau.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3800,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 26
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Sonargaon University',
+          code: 'SUBD221',
+          description: 'Private university in Sonargaon',
+          location: 'Narayanganj, Bangladesh',
+          website: 'https://www.su.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Feni University',
+          code: 'FENI001',
+          description: 'Private university in Feni',
+          location: 'Feni, Bangladesh',
+          website: 'https://www.feniuniversity.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3800,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 26
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Britannia University',
+          code: 'BRIT001',
+          description: 'Private university in Comilla',
+          location: 'Comilla, Bangladesh',
+          website: 'https://www.britannia.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Port City International University',
+          code: 'PCIU001',
+          description: 'Private university in Chittagong',
+          location: 'Chittagong, Bangladesh',
+          website: 'https://www.portcity.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 5000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 35
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Bangladesh University of Health Sciences',
+          code: 'BUHS001',
+          description: 'Health sciences university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.buhs.ac.bd',
+          rankingScore: 4.4,
+          rankingPosition: 6,
+          totalStudents: 6000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 42
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Chittagong Independent University',
+          code: 'CIU001',
+          description: 'Private university in Chittagong',
+          location: 'Chittagong, Bangladesh',
+          website: 'https://www.ciu.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 5000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 35
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Notre Dame University Bangladesh',
+          code: 'NDUB001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.ndub.edu.bd',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 6000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 40
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Times University, Bangladesh',
+          code: 'TIMES001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'http://www.timesuniversitybd.com',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'North Bengal International University',
+          code: 'NBIU001',
+          description: 'Private university in Rangpur',
+          location: 'Rangpur, Bangladesh',
+          website: 'https://www.nbiu.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Fareast International University',
+          code: 'FIU001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.fiu.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Rajshahi Science & Technology University',
+          code: 'RSTU001',
+          description: 'Public university in Natore',
+          location: 'Natore, Bangladesh',
+          website: 'https://www.rstu.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 4200,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 32
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Brahmaputra International University',
+          code: 'BIU2001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.sfmu.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: "Cox's Bazar International University",
+          code: 'CBIU001',
+          description: 'Private university in Cox Bazar',
+          location: 'Cox Bazar, Bangladesh',
+          website: 'https://www.cbiu.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'R. P. Shaha University',
+          code: 'RPSU001',
+          description: 'Private university in Narayanganj',
+          location: 'Narayanganj, Bangladesh',
+          website: 'https://www.rpsu.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'German University Bangladesh',
+          code: 'GUB001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.gub.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 6000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 38
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Global University Bangladesh',
+          code: 'GUBBD001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.globaluniversity.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 5000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 32
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'CCN University of Science & Technology',
+          code: 'CCN001',
+          description: 'Private university in Khulna',
+          location: 'Khulna, Bangladesh',
+          website: 'https://www.ccnust.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Bangladesh Army University of Science and Technology',
+          code: 'BAUST001',
+          description: 'Army university in Saidpur',
+          location: 'Saidpur, Bangladesh',
+          website: 'https://www.baust.edu.bd',
+          rankingScore: 4.3,
+          rankingPosition: 8,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 35
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Bangladesh Army University of Engineering and Technology',
+          code: 'BAUET001',
+          description: 'Army engineering university in Qadirabad',
+          location: 'Qadirabad, Natore, Bangladesh',
+          website: 'https://www.bauet.ac.bd',
+          rankingScore: 4.3,
+          rankingPosition: 8,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 32
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Bangladesh Army International University of Science & Technology',
+          code: 'BAIUST001',
+          description: 'Army university in Comilla',
+          location: 'Comilla, Bangladesh',
+          website: 'https://www.baiust.ac.bd',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'University of Scholars',
+          code: 'US001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.ius.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Canadian University of Bangladesh',
+          code: 'CUB001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.cub.edu.bd',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 6500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 42
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'N.P.I University of Bangladesh',
+          code: 'NPIUB001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.npiub.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Northern University of Business & Technology, Khulna',
+          code: 'NUBTK001',
+          description: 'Private university in Khulna',
+          location: 'Khulna, Bangladesh',
+          website: 'https://www.nubtkhulna.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Rabindra Maitree University',
+          code: 'RMUKUS001',
+          description: 'Private university in Kushtia',
+          location: 'Kushtia, Bangladesh',
+          website: '',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 25
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'University of Creative Technology, Chittagong',
+          code: 'UCTC001',
+          description: 'Private university in Chittagong',
+          location: 'Chittagong, Bangladesh',
+          website: 'https://www.uctc.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 5000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 32
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Central University of Science and Technology',
+          code: 'CUST001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.cust.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 6000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 38
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Tagore University of Creative Arts',
+          code: 'TUCA001',
+          description: 'Arts university in Uttara, Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.tuca.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'University of Global Village',
+          code: 'UGV001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.ugv.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 5000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 32
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Rupayan A.K.M Shamsuzzoha University',
+          code: 'RAKMS001',
+          description: 'Private university in Gopalganj',
+          location: 'Gopalganj, Bangladesh',
+          website: '',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 22
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Anwer Khan Modern University',
+          code: 'AKMU001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.akmu.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'ZNRF University of Management Sciences',
+          code: 'ZUMS001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.zums.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 25
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Ahsania Mission University of Science and Technology',
+          code: 'AMUST001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.amust.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Khulna Khan Bahadur Ahsanullah University',
+          code: 'KKBUBD001',
+          description: 'Private university in Khulna',
+          location: 'Khulna, Bangladesh',
+          website: 'https://www.kkbau.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Bandarban University',
+          code: 'BUBBD001',
+          description: 'Private university in Bandarban',
+          location: 'Bandarban, Bangladesh',
+          website: 'https://www.bubban.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 25
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Shah Makhdum Management University',
+          code: 'SMMU001',
+          description: 'Private university in Rajshahi',
+          location: 'Rajshahi, Bangladesh',
+          website: '',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 25
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Trust University, Barishal',
+          code: 'TRUST001',
+          description: 'Private university in Barishal',
+          location: 'Barishal, Bangladesh',
+          website: 'https://www.trustuniversity.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'International Standard University',
+          code: 'ISU001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.isu.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'University of Brahmanbaria',
+          code: 'UOBBD001',
+          description: 'Private university in Brahmanbaria',
+          location: 'Brahmanbaria, Bangladesh',
+          website: 'https://www.uob.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'University of Skill Enrichment and Technology',
+          code: 'USET001',
+          description: 'Private university in Narsingdi',
+          location: 'Narsingdi, Bangladesh',
+          website: 'https://www.uset.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Microland University of Science and Technology',
+          code: 'MUSTBD001',
+          description: 'Private university in Tangail',
+          location: 'Tangail, Bangladesh',
+          website: '',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 25
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'R.T.M Al-Kabir Technical University',
+          code: 'RTM001',
+          description: 'Technical university in Tangail',
+          location: 'Tangail, Bangladesh',
+          website: 'https://www.rtm-aktu.edu.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Dr. Momtaz Begum University of Science and Technology',
+          code: 'MUST001',
+          description: 'Private university in Rangpur',
+          location: 'Rangpur, Bangladesh',
+          website: 'https://www.must.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Chattogram BGMEA University of Fashion and Technology',
+          code: 'CBUFT001',
+          description: 'Fashion and technology university',
+          location: 'Chattogram, Bangladesh',
+          website: 'https://www.cbuft.edu.bd',
+          rankingScore: 4.1,
+          rankingPosition: 14,
+          totalStudents: 5000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 32
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Bangladesh Army University of Science and Technology, Khulna',
+          code: 'BAUSTK001',
+          description: 'Army university in Khulna',
+          location: 'Khulna, Bangladesh',
+          website: 'https://www.baustkhulna.ac.bd',
+          rankingScore: 4.2,
+          rankingPosition: 11,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 30
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Teesta University, Rangpur',
+          code: 'TEESTA001',
+          description: 'Private university in Rangpur',
+          location: 'Rangpur, Bangladesh',
+          website: 'https://www.teestauniversity.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'International Islami University of Science and Technology Bangladesh',
+          code: 'IIUSTB001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: 'https://www.iiustb.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Lalon University of Science and Arts',
+          code: 'LUSA001',
+          description: 'Private university in Kushtia',
+          location: 'Kushtia, Bangladesh',
+          website: 'https://lusa.ac.bd',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 25
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Justice Abu Zafar Siddiquie Science and Technology University',
+          code: 'JAZ001',
+          description: 'Public university in Kushtia',
+          location: 'Kushtia, Bangladesh',
+          website: '',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 25
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Grameen University',
+          code: 'GRAMEEN001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: '',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'IBAIS University',
+          code: 'IBAIS001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: '',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'The University of Comilla',
+          code: 'UCOM001',
+          description: 'Private university in Comilla',
+          location: 'Comilla, Bangladesh',
+          website: '',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 25
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'Queens University',
+          code: 'QUEENS001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: '',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 4000,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 28
+        }
+      }),
+      prisma.university.create({
+        data: {
+          name: 'America Bangladesh University',
+          code: 'AMERBD001',
+          description: 'Private university in Dhaka',
+          location: 'Dhaka, Bangladesh',
+          website: '',
+          rankingScore: 4.0,
+          rankingPosition: 18,
+          totalStudents: 3500,
+          verificationStatus: 'VERIFIED',
+          totalProjects: 25
+        }
+      }),
     ])
 
     console.log('✅ Created', universities.length, 'universities')

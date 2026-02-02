@@ -244,7 +244,7 @@ export default function UniversityApprovals() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => {
-                                    window.open(`/businesses/${business.id}`, '_blank')
+                                    window.open(`/projects/${business.id}`, '_blank')
                                   }}
                                 >
                                   <Eye className="h-4 w-4 mr-1" />
@@ -340,7 +340,7 @@ export default function UniversityApprovals() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
-                                  window.open(`/businesses/${business.id}`, '_blank')
+                                  window.open(`/projects/${business.id}`, '_blank')
                                 }}
                               >
                                 <Eye className="h-4 w-4 mr-1" />

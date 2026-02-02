@@ -252,10 +252,14 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json()
 
+    console.log('[WorkSessions PATCH] Request body:', body)
+    console.log('[WorkSessions PATCH] Session ID:', sessionId)
+
     // Validate request body
     const validation = updateWorkSessionSchema.safeParse(body)
 
     if (!validation.success) {
+      console.error('[WorkSessions PATCH] Validation failed:', validation.error)
       return NextResponse.json({
         success: false,
         error: 'Validation error',
@@ -268,12 +272,23 @@ export async function PATCH(request: NextRequest) {
 
     const data = validation.data!
 
+    console.log('[WorkSessions PATCH] Validated data:', data)
+
     const updateData: any = {}
 
-    // Calculate duration if endTime is being set
+    // Set endTime to current time if not provided
     if (data.endTime) {
+      updateData.endTime = data.endTime
+    } else if (!data.duration) {
+      // If neither endTime nor duration provided, use current time
+      updateData.endTime = new Date()
+    }
+
+    // Calculate duration if endTime is being set
+    if (data.endTime && !data.duration) {
       const durationSeconds = Math.floor((data.endTime.getTime() - new Date(existingSession.startTime).getTime()) / 1000)
       updateData.duration = durationSeconds
+      console.log('[WorkSessions PATCH] Calculated duration from endTime:', durationSeconds)
     }
 
     if (data.duration) {

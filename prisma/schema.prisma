@@ -413,6 +413,7 @@ model Project {
   tags              String?       // Comma-separated tags
   imageUrl          String?       // Project cover image
   progress          Float         @default(0) // 0-100 percentage
+  seekingInvestment Boolean       @default(false)
 
   // Relations
   owner             User          @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
@@ -425,6 +426,7 @@ model Project {
   ratings           Rating[]
   agreements        Agreement[]
   workSessions      WorkSession[]
+  investments       Investment[]  @relation("InvestmentProject")
 
   // Timestamps
   createdAt         DateTime      @default(now())
@@ -779,9 +781,13 @@ model Investment {
   amount      Float
   type        String
   status      String  @default("PENDING")
+  equity      Float?
+  projectedReturn Float?
+  investedAt  DateTime?
 
   // Relations
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project     Project? @relation("InvestmentProject", fields: [projectId], references: [id], onDelete: SetNull)
 
   // Timestamps
   createdAt   DateTime @default(now())
@@ -789,6 +795,7 @@ model Investment {
 
   @@index([userId])
   @@index([status])
+  @@index([projectId])
 }
 
 model Business {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
 import { verifyToken } from '@/lib/auth/jwt'
+import { db } from '@/lib/db'
 
 // GET /api/dashboard/investor/financial - Get investor's financial metrics
 export async function GET(request: NextRequest) {
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     // Get investor's investments
     const investments = await db.investment.findMany({
       where: {
-        investorId: decoded.userId
+        userId: decoded.userId
       },
       orderBy: { investedAt: 'desc' },
       take: 20
@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
       const monthRevenue = currentRevenue * (0.8 + Math.random() * 0.4)
       const monthExpenses = currentExpenses * (0.8 + Math.random() * 0.4)
       const monthProfit = monthRevenue - monthExpenses
+      const monthInvested = totalInvested / 6
 
       const date = new Date()
       date.setMonth(date.getMonth() - (5 - i))
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
         revenue: monthRevenue,
         expenses: monthExpenses,
         profit: monthProfit,
-        roi: ((monthProfit / monthInvested) * 100)
+        roi: monthInvested > 0 ? ((monthProfit / monthInvested) * 100) : 0
       }
     })
 
@@ -71,7 +72,7 @@ export async function GET(request: NextRequest) {
       revenue: currentRevenue,
       expenses: currentExpenses,
       profit: currentProfit,
-      roi: ((currentProfit / totalInvested) * 100)
+      roi: totalInvested > 0 ? ((currentProfit / totalInvested) * 100) : 0
     }
 
     const previousMetrics = {
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest) {
       revenue: previousRevenue,
       expenses: previousExpenses,
       profit: previousProfit,
-      roi: ((previousProfit / totalInvested) * 100)
+      roi: totalInvested > 0 ? ((previousProfit / totalInvested) * 100) : 0
     }
 
     return NextResponse.json({

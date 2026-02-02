@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
@@ -30,6 +30,8 @@ import {
   AlertTriangle,
   CircleDot,
   CheckCircle2,
+  Edit3,
+  Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -112,11 +114,14 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
   // Dialog states
   const [showAddMemberDialog, setShowAddMemberDialog] = useState(false)
   const [showAddMilestoneDialog, setShowAddMilestoneDialog] = useState(false)
+  const [showEditMilestoneDialog, setShowEditMilestoneDialog] = useState(false)
   const [showAddVacancyDialog, setShowAddVacancyDialog] = useState(false)
+  const [showEditVacancyDialog, setShowEditVacancyDialog] = useState(false)
 
   // Form states
   const [newMember, setNewMember] = useState({ userId: "", role: "TEAM_MEMBER" })
   const [newMilestone, setNewMilestone] = useState({ title: "", description: "", dueDate: "" })
+  const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null)
   const [newVacancy, setNewVacancy] = useState({
     title: "",
     description: "",
@@ -131,6 +136,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
     salaryMax: "",
     experience: ""
   })
+  const [editingVacancy, setEditingVacancy] = useState<Vacancy | null>(null)
 
   useEffect(() => {
     if (projectId2) {
@@ -297,6 +303,11 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
       setAvailableUsers([])
     }
   }
+
+  // Memoize projects array to prevent infinite re-renders
+  const projectsForDialog = useMemo(() => {
+    return [{ id: projectId2, name: project?.name || '' }]
+  }, [projectId2, project?.name])
 
   const handleCreateTask = async (taskData: any) => {
     if (!project || !taskData.title || !user) return
@@ -555,6 +566,123 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
     }
   }
 
+  const handleEditMilestone = async (milestone: Milestone) => {
+    setEditingMilestone(milestone)
+    setNewMilestone({
+      title: milestone.title,
+      description: milestone.description || "",
+      dueDate: milestone.dueDate,
+    })
+    setShowEditMilestoneDialog(true)
+  }
+
+  const handleUpdateMilestone = async () => {
+    if (!editingMilestone || !user) return
+
+    try {
+      setLoading(prev => ({ ...prev, update: true }))
+      const response = await authFetch(`/api/milestones/${editingMilestone.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: newMilestone.title,
+          description: newMilestone.description || undefined,
+          dueDate: newMilestone.dueDate,
+          status: editingMilestone.status,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Update milestone failed:', response.status, errorText)
+        const errorMsg = errorText || `Failed to update milestone (${response.status})`
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
+        return
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        await fetchMilestones()
+        setShowEditMilestoneDialog(false)
+        setEditingMilestone(null)
+        setNewMilestone({ title: "", description: "", dueDate: "" })
+        toast({
+          title: 'Success',
+          description: 'Milestone updated successfully',
+        })
+      } else {
+        const errorMsg = data.error || data.message || 'Failed to update milestone'
+        console.error('Update milestone error:', data)
+        toast({
+          title: 'Error',
+          description: errorMsg,
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to update milestone'
+      console.error('Update milestone exception:', error)
+      toast({
+        title: 'Error',
+        description: errorMsg,
+        variant: 'destructive',
+      })
+    } finally {
+      setLoading(prev => ({ ...prev, update: false }))
+    }
+  }
+
+  const handleDeleteMilestone = async (milestone: Milestone) => {
+    if (!confirm('Are you sure you want to delete this milestone?')) return
+    if (!user) return
+
+    try {
+      setLoading(prev => ({ ...prev, update: true }))
+      const response = await authFetch(`/api/milestones/${milestone.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Delete milestone failed:', response.status, errorText)
+        const errorMsg = errorText || `Failed to delete milestone (${response.status})`
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
+        return
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast({
+          title: 'Success',
+          description: 'Milestone deleted successfully',
+        })
+        await fetchMilestones()
+      } else {
+        const errorMsg = data.error || data.message || 'Failed to delete milestone'
+        console.error('Delete milestone error:', data)
+        toast({
+          title: 'Error',
+          description: errorMsg,
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to delete milestone'
+      console.error('Delete milestone exception:', error)
+      toast({
+        title: 'Error',
+        description: errorMsg,
+        variant: 'destructive',
+      })
+    } finally {
+      setLoading(prev => ({ ...prev, update: false }))
+    }
+  }
+
   const handleAddVacancy = async () => {
     if (!newVacancy.title || !newVacancy.slots) {
       toast({
@@ -632,6 +760,153 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to create vacancy'
       console.error('Create vacancy exception:', error)
+      toast({
+        title: 'Error',
+        description: errorMsg,
+        variant: 'destructive',
+      })
+    } finally {
+      setLoading(prev => ({ ...prev, update: false }))
+    }
+  }
+
+  const handleEditVacancy = async (vacancy: Vacancy) => {
+    setEditingVacancy(vacancy)
+    setNewVacancy({
+      title: vacancy.title,
+      description: vacancy.description || "",
+      responsibilities: vacancy.responsibilities || "",
+      requirements: vacancy.requirements || "",
+      skills: vacancy.skills || "",
+      expertise: vacancy.expertise || "",
+      type: vacancy.type,
+      slots: vacancy.slots,
+      location: vacancy.location || "",
+      salaryMin: vacancy.salaryMin ? vacancy.salaryMin.toString() : "",
+      salaryMax: vacancy.salaryMax ? vacancy.salaryMax.toString() : "",
+      experience: vacancy.experience || "",
+    })
+    setShowEditVacancyDialog(true)
+  }
+
+  const handleUpdateVacancy = async () => {
+    if (!editingVacancy || !user) return
+
+    try {
+      setLoading(prev => ({ ...prev, update: true }))
+      const response = await authFetch(`/api/vacancies/${editingVacancy.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: newVacancy.title,
+          description: newVacancy.description || undefined,
+          responsibilities: newVacancy.responsibilities || undefined,
+          requirements: newVacancy.requirements || undefined,
+          expertise: newVacancy.expertise || undefined,
+          location: newVacancy.location || undefined,
+          salaryMin: newVacancy.salaryMin ? parseFloat(newVacancy.salaryMin) : undefined,
+          salaryMax: newVacancy.salaryMax ? parseFloat(newVacancy.salaryMax) : undefined,
+          type: newVacancy.type,
+          skills: newVacancy.skills || undefined,
+          slots: parseInt(newVacancy.slots.toString()),
+          experience: newVacancy.experience || undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Update vacancy failed:', response.status, errorText)
+        const errorMsg = errorText || `Failed to update vacancy (${response.status})`
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
+        return
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        await fetchVacancies()
+        setShowEditVacancyDialog(false)
+        setEditingVacancy(null)
+        setNewVacancy({
+          title: "",
+          description: "",
+          responsibilities: "",
+          requirements: "",
+          skills: "",
+          expertise: "",
+          type: "FULL_TIME",
+          slots: 1,
+          location: "",
+          salaryMin: "",
+          salaryMax: "",
+          experience: ""
+        })
+        toast({
+          title: 'Success',
+          description: 'Vacancy updated successfully',
+        })
+      } else {
+        const errorMsg = data.error || data.message || 'Failed to update vacancy'
+        console.error('Update vacancy error:', data)
+        toast({
+          title: 'Error',
+          description: errorMsg,
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to update vacancy'
+      console.error('Update vacancy exception:', error)
+      toast({
+        title: 'Error',
+        description: errorMsg,
+        variant: 'destructive',
+      })
+    } finally {
+      setLoading(prev => ({ ...prev, update: false }))
+    }
+  }
+
+  const handleDeleteVacancy = async (vacancy: Vacancy) => {
+    if (!confirm('Are you sure you want to delete this vacancy?')) return
+    if (!user) return
+
+    try {
+      setLoading(prev => ({ ...prev, update: true }))
+      const response = await authFetch(`/api/vacancies/${vacancy.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Delete vacancy failed:', response.status, errorText)
+        const errorMsg = errorText || `Failed to delete vacancy (${response.status})`
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
+        return
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast({
+          title: 'Success',
+          description: 'Vacancy deleted successfully',
+        })
+        await fetchVacancies()
+      } else {
+        const errorMsg = data.error || data.message || 'Failed to delete vacancy'
+        console.error('Delete vacancy error:', data)
+        toast({
+          title: 'Error',
+          description: errorMsg,
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to delete vacancy'
+      console.error('Delete vacancy exception:', error)
       toast({
         title: 'Error',
         description: errorMsg,
@@ -906,9 +1181,27 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
                               <p className="text-sm text-muted-foreground mt-1">{milestone.description}</p>
                             )}
                           </div>
-                          <Badge variant={milestone.status === 'COMPLETED' ? 'default' : 'secondary'}>
-                            {milestone.status}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={milestone.status === 'COMPLETED' ? 'default' : 'secondary'}>
+                              {milestone.status}
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 hover:bg-accent"
+                              onClick={() => handleEditMilestone(milestone)}
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => handleDeleteMilestone(milestone)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
                         </div>
                         <div className="mt-2 text-xs text-muted-foreground">
                           Due: {formatDate(milestone.dueDate)}
@@ -1004,6 +1297,24 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
                               <Badge variant="secondary">{vacancy.filled}/{vacancy.slots}</Badge>
                             </div>
                           </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 hover:bg-accent"
+                              onClick={() => handleEditVacancy(vacancy)}
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => handleDeleteVacancy(vacancy)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -1056,6 +1367,63 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
             </Button>
             <Button onClick={handleAddMilestone} disabled={loading.update}>
               {loading.update ? 'Adding...' : 'Add'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Milestone Dialog */}
+      <Dialog open={showEditMilestoneDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowEditMilestoneDialog(false)
+          setEditingMilestone(null)
+          setNewMilestone({ title: "", description: "", dueDate: "" })
+        }
+      }}>
+        <DialogContent className="bg-white dark:bg-slate-950">
+          <DialogHeader>
+            <DialogTitle>Edit Milestone</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-title">Title</Label>
+              <Input
+                id="edit-title"
+                value={newMilestone.title}
+                onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
+                placeholder="Enter milestone title"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                value={newMilestone.description}
+                onChange={(e) => setNewMilestone({ ...newMilestone, description: e.target.value })}
+                placeholder="Enter milestone description"
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-dueDate">Due Date</Label>
+              <Input
+                id="edit-dueDate"
+                type="date"
+                value={newMilestone.dueDate}
+                onChange={(e) => setNewMilestone({ ...newMilestone, dueDate: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowEditMilestoneDialog(false)
+              setEditingMilestone(null)
+              setNewMilestone({ title: "", description: "", dueDate: "" })
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateMilestone} disabled={loading.update}>
+              {loading.update ? 'Updating...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1214,6 +1582,187 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
         </DialogContent>
       </Dialog>
 
+      {/* Edit Vacancy Dialog */}
+      <Dialog open={showEditVacancyDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowEditVacancyDialog(false)
+          setEditingVacancy(null)
+          setNewVacancy({
+            title: "",
+            description: "",
+            responsibilities: "",
+            requirements: "",
+            skills: "",
+            expertise: "",
+            type: "FULL_TIME",
+            slots: 1,
+            location: "",
+            salaryMin: "",
+            salaryMax: "",
+            experience: ""
+          })
+        }
+      }}>
+        <DialogContent className="bg-white dark:bg-slate-950 max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Vacancy</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-title">Position Title *</Label>
+              <Input
+                id="edit-title"
+                value={newVacancy.title}
+                onChange={(e) => setNewVacancy({ ...newVacancy, title: e.target.value })}
+                placeholder="e.g., Senior Software Engineer"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                value={newVacancy.description}
+                onChange={(e) => setNewVacancy({ ...newVacancy, description: e.target.value })}
+                placeholder="Describe the role and responsibilities..."
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-responsibilities">Responsibilities</Label>
+              <Textarea
+                id="edit-responsibilities"
+                value={newVacancy.responsibilities}
+                onChange={(e) => setNewVacancy({ ...newVacancy, responsibilities: e.target.value })}
+                placeholder="List key responsibilities"
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-requirements">Requirements</Label>
+              <Textarea
+                id="edit-requirements"
+                value={newVacancy.requirements}
+                onChange={(e) => setNewVacancy({ ...newVacancy, requirements: e.target.value })}
+                placeholder="Education, experience, skills needed..."
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-expertise">Expertise Areas</Label>
+              <Input
+                id="edit-expertise"
+                value={newVacancy.expertise}
+                onChange={(e) => setNewVacancy({ ...newVacancy, expertise: e.target.value })}
+                placeholder="e.g., Frontend, Backend, AI/ML"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-location">Location</Label>
+              <Input
+                id="edit-location"
+                value={newVacancy.location}
+                onChange={(e) => setNewVacancy({ ...newVacancy, location: e.target.value })}
+                placeholder="e.g., Remote, On-site, Hybrid"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-type">Employment Type *</Label>
+                <Select value={newVacancy.type} onValueChange={(value) => setNewVacancy({ ...newVacancy, type: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FULL_TIME">Full Time</SelectItem>
+                    <SelectItem value="PART_TIME">Part Time</SelectItem>
+                    <SelectItem value="INTERNSHIP">Internship</SelectItem>
+                    <SelectItem value="CONTRACT">Contract</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit-slots">Number of Positions *</Label>
+                <Input
+                  id="edit-slots"
+                  type="number"
+                  min="1"
+                  value={newVacancy.slots}
+                  onChange={(e) => setNewVacancy({ ...newVacancy, slots: parseInt(e.target.value) || 1 })}
+                  placeholder="Number of positions"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-salary-min">Min Salary</Label>
+                <Input
+                  id="edit-salary-min"
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={newVacancy.salaryMin}
+                  onChange={(e) => setNewVacancy({ ...newVacancy, salaryMin: e.target.value })}
+                  placeholder="e.g., 50000"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-salary-max">Max Salary</Label>
+                <Input
+                  id="edit-salary-max"
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={newVacancy.salaryMax}
+                  onChange={(e) => setNewVacancy({ ...newVacancy, salaryMax: e.target.value })}
+                  placeholder="e.g., 100000"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="edit-experience">Experience Level</Label>
+              <Select value={newVacancy.experience} onValueChange={(value) => setNewVacancy({ ...newVacancy, experience: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Entry Level">Entry Level</SelectItem>
+                  <SelectItem value="1-2 years">1-2 years</SelectItem>
+                  <SelectItem value="2-4 years">2-4 years</SelectItem>
+                  <SelectItem value="3-5 years">3-5 years</SelectItem>
+                  <SelectItem value="5+ years">5+ years</SelectItem>
+                  <SelectItem value="Not specified">Not specified</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowEditVacancyDialog(false)
+              setEditingVacancy(null)
+              setNewVacancy({
+                title: "",
+                description: "",
+                responsibilities: "",
+                requirements: "",
+                skills: "",
+                expertise: "",
+                type: "FULL_TIME",
+                slots: 1,
+                location: "",
+                salaryMin: "",
+                salaryMax: "",
+                experience: ""
+              })
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateVacancy} disabled={loading.update}>
+              {loading.update ? 'Updating...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Add Member Dialog */}
       <Dialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog}>
         <DialogContent className="bg-white dark:bg-slate-950">
@@ -1277,7 +1826,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
         onSave={editingTask ? handleEditTaskSave : handleCreateTask}
         task={editingTask}
         mode={editingTask ? 'edit' : 'create'}
-        projects={[{ id: projectId2, name: project?.name || '' }]}
+        projects={projectsForDialog}
         availableUsers={availableUsers}
         loading={loading.update}
       />

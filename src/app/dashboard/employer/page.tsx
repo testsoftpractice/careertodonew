@@ -102,7 +102,7 @@ export default function EmployerDashboard() {
 
     try {
       setLoading(prev => ({ ...prev, requests: true }))
-      const response = await fetch(`/api/verification?requesterId=${user.id}`)
+      const response = await fetch(`/api/verification-requests?requesterId=${user.id}`)
       const data = await response.json()
 
       if (data.success) {

@@ -27,7 +27,12 @@ export async function GET(request: NextRequest) {
     // Get investor's deals (from investments)
     const investments = await db.investment.findMany({
       where: {
-        investorId: decoded.userId
+        userId: decoded.userId
+      },
+      include: {
+        project: {
+          select: { id: true, name: true, status: true }
+        }
       },
       orderBy: { investedAt: 'desc' },
       take: 10
@@ -37,7 +42,7 @@ export async function GET(request: NextRequest) {
     const projects = await db.project.findMany({
       where: {
         seekingInvestment: true,
-        status: 'ACTIVE'
+        status: { in: ['IDEA', 'FUNDING', 'IN_PROGRESS'] }
       },
       orderBy: { createdAt: 'desc' },
       take: 5
@@ -50,19 +55,22 @@ export async function GET(request: NextRequest) {
 
     // Transform to deal format
     const deals = investments.slice(0, 5).map((inv, index) => {
+      const amount = inv.amount || 0
+      const equity = inv.equity || 5
+
       return {
         id: inv.id,
-        startupName: `Startup ${index + 1}`,
+        startupName: inv.project?.name || `Startup ${index + 1}`,
         industry: 'Technology',
         stage: ['seed' as const, 'series_a' as const, 'series_b' as const][index % 3],
-        amount: inv.amount || 0,
-        equity: inv.equity || 5,
+        amount: amount,
+        equity: equity,
         status: inv.status === 'ACTIVE' ? 'negotiating' as const :
                 inv.status === 'COMPLETED' ? 'closed' as const :
                 'diligence' as const,
-        valuation: (inv.amount || 0) * 2,
+        valuation: amount * 2,
         expectedROI: 20 + Math.random() * 30,
-        createdAt: inv.investedAt
+        createdAt: inv.investedAt || inv.createdAt
       }
     })
 

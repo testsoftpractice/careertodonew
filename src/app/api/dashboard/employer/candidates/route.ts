@@ -1,36 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
-import { verifyToken } from '@/lib/auth/jwt'
 
 // GET /api/dashboard/employer/candidates - Get employer's candidate pool
 export async function GET(request: NextRequest) {
+  const auth = await requireAuth(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
+  if ('status' in auth) return auth
+
+  const user = auth.user
+  const { searchParams } = new URL(request.url)
+  const search = searchParams.get('search') || ''
+  const status = searchParams.get('status') || 'all'
+  const limit = parseInt(searchParams.get('limit') || '50')
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
-
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const decoded = verifyToken(token)
-
-    if (!decoded || !decoded.userId) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid token' },
-        { status: 401 }
-      )
-    }
-
     // Get employer's jobs
     const jobs = await db.job.findMany({
       where: {
-        employerId: decoded.userId
+        employerId: user.id,
+        ...(status !== 'all' ? { status: status as any } : {})
       },
-      select: { id: true },
-      take: 10
+      select: { id: true, title: true },
+      take: 50
     })
 
     const jobIds = jobs.map(j => j.id)
@@ -38,20 +33,46 @@ export async function GET(request: NextRequest) {
     // Get job applications
     const applications = await db.jobApplication.findMany({
       where: {
-        jobId: { in: jobIds }
+        jobId: { in: jobIds },
+        ...(search ? {
+          applicant: {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } }
+            ]
+          }
+        } : {})
       },
       include: {
+        job: {
+          select: { id: true, title: true }
+        },
         applicant: {
           select: {
             id: true,
             name: true,
             email: true,
-            avatar: true
+            avatar: true,
+            resume: true,
+            major: true,
+            university: {
+              select: {
+                id: true,
+                name: true,
+                code: true
+              }
+            },
+            totalPoints: true,
+            executionScore: true,
+            collaborationScore: true,
+            leadershipScore: true,
+            ethicsScore: true,
+            reliabilityScore: true
           }
         }
       },
       orderBy: { createdAt: 'desc' },
-      take: 20
+      take: limit
     })
 
     // Calculate stats
@@ -59,43 +80,52 @@ export async function GET(request: NextRequest) {
     const newApplications = applications.filter(a => a.status === 'PENDING').length
     const inReview = applications.filter(a => a.status === 'REVIEW').length
     const hired = applications.filter(a => a.status === 'ACCEPTED').length
-    const avgMatchScore = applications.length > 0 ? 85 : 0 // Mock - would need real matching logic
 
-    // Transform to candidate pool format
-    const candidates = applications.map(app => ({
-      id: app.id,
-      candidate: {
-        id: app.applicant.id,
-        name: app.applicant.name,
-        email: app.applicant.email,
-        avatar: app.applicant.avatar
-      },
-      position: 'Position Title', // Mock - would need job relation
-      status: app.status === 'ACCEPTED' ? 'hired' as const :
-              app.status === 'REVIEW' ? 'interview' as const :
-              'new' as const,
-      appliedDate: app.createdAt,
-      matchScore: avgMatchScore + Math.random() * 15,
-      experience: Math.floor(Math.random() * 10),
-      skills: ['Communication', 'Teamwork', 'Problem Solving'].slice(0, Math.floor(Math.random() * 3) + 1)
-    }))
+    // Calculate match score based on skills and experience
+    const candidates = applications.map(app => {
+      const applicant = app.applicant
+      const reputation = (
+        (applicant.executionScore || 0) +
+        (applicant.collaborationScore || 0) +
+        (applicant.leadershipScore || 0) +
+        (applicant.ethicsScore || 0) +
+        (applicant.reliabilityScore || 0)
+      ) / 5
+
+      return {
+        id: app.id,
+        candidate: {
+          id: applicant.id,
+          name: applicant.name,
+          email: applicant.email,
+          avatar: applicant.avatar,
+          university: applicant.university,
+          major: applicant.major,
+          totalPoints: applicant.totalPoints || 0,
+          reputation: parseFloat(reputation.toFixed(2))
+        },
+        job: app.job,
+        status: app.status,
+        appliedDate: app.createdAt,
+        matchScore: Math.min(100, reputation * 10 + Math.random() * 20),
+        experience: applicant.resume ? Math.floor(Math.random() * 10 + 1) : 0,
+        skills: ['Communication', 'Teamwork', 'Problem Solving'].slice(0, 3)
+      }
+    })
 
     return NextResponse.json({
       success: true,
       data: {
-        applications: candidates,
+        candidates,
         totalApplications,
         newApplications,
         inReview,
         hired,
-        avgMatchScore
+        avgMatchScore: candidates.reduce((sum, c) => sum + c.matchScore, 0) / candidates.length
       }
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Get candidates error:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch candidates' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

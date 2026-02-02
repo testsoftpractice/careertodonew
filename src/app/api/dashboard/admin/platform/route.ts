@@ -24,14 +24,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    const todayStart = new Date(new Date().setHours(0, 0, 0, 0))
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
     // Get platform statistics
     const [totalUsers, activeUsers, newUsersToday, newUsersThisMonth, allUsers, notifications] = await Promise.all([
       db.user.count(),
-      db.user.count({ where: { lastLoginAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } }),
-      db.user.count({ where: { createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } } }),
-      db.user.count({ where: { createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } }),
+      db.user.count({ where: { lastLoginAt: { gte: thirtyDaysAgo } } }),
+      db.user.count({ where: { createdAt: { gte: todayStart } } }),
+      db.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
       db.user.findMany({ take: 100 }),
-      db.notification.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } })
+      db.notification.count({ where: { createdAt: { gte: sevenDaysAgo } } })
     ])
 
     // Calculate role breakdown

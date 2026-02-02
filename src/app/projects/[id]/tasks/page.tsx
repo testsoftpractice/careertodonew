@@ -115,32 +115,59 @@ export default function ProjectTasksPage() {
   const fetchAvailableUsers = async () => {
     try {
       setLoading(prev => ({ ...prev, users: true }))
-      // Fetch project members
-      const response = await authFetch(`/api/projects/${projectId}/members`)
-      const data = await response.json()
 
-      if (data.success && data.data && data.data.members) {
-        const members = data.data.members.map((member: any) => ({
-          id: member.user?.id || member.userId,
-          name: member.user?.name || member.user?.email || 'Unknown',
-          email: member.user?.email,
-        }))
-        setAvailableUsers(members)
-      } else {
-        // Fallback to all users if project members fetch fails
-        const allUsersResponse = await authFetch('/api/users')
-        const allUsersData = await allUsersResponse.json()
-        if (allUsersData.success && allUsersData.data) {
-          const users = allUsersData.data.map((u: any) => ({
-            id: u.id,
-            name: u.name || u.email,
-            email: u.email,
+      // First, try to fetch project members
+      let members: any[] = []
+
+      try {
+        const response = await authFetch(`/api/projects/${projectId}/members`)
+        const data = await response.json()
+        console.log('[fetchAvailableUsers] Project members response:', data)
+
+        if (data.success && data.data && data.data.members) {
+          members = data.data.members.map((member: any) => ({
+            id: member.user?.id || member.userId,
+            name: member.user?.name || member.user?.email || 'Unknown',
+            email: member.user?.email,
           }))
-          setAvailableUsers(users)
+          console.log('[fetchAvailableUsers] Project members:', members)
         }
+      } catch (error) {
+        console.log('[fetchAvailableUsers] Project members fetch failed, will use all users instead:', error)
+      }
+
+      // Always fetch all users as fallback or to add more options
+      const allUsersResponse = await authFetch('/api/users')
+      const allUsersData = await allUsersResponse.json()
+      console.log('[fetchAvailableUsers] All users response:', allUsersData)
+
+      if (allUsersData.success && allUsersData.data) {
+        const allUsers = allUsersData.data.map((u: any) => ({
+          id: u.id,
+          name: u.name || u.email,
+          email: u.email,
+        }))
+
+        console.log('[fetchAvailableUsers] All users:', allUsers)
+
+        // Combine and deduplicate users
+        const uniqueUsers = new Map()
+        members.forEach(user => uniqueUsers.set(user.id, user))
+        allUsers.forEach(user => uniqueUsers.set(user.id, user))
+
+        const finalUsers = Array.from(uniqueUsers.values())
+        setAvailableUsers(finalUsers)
+        console.log('[fetchAvailableUsers] Final users after deduplication:', finalUsers)
+      } else if (members.length > 0) {
+        // If all users fetch failed but we have project members, use them
+        setAvailableUsers(members)
+        console.log('[fetchAvailableUsers] Using project members only:', members)
+      } else {
+        setAvailableUsers([])
+        console.log('[fetchAvailableUsers] No users available')
       }
     } catch (error) {
-      console.error('Fetch available users error:', error)
+      console.error('[fetchAvailableUsers] Error:', error)
       // Don't show toast for this error, just log it
       setAvailableUsers([])
     } finally {
@@ -206,7 +233,23 @@ export default function ProjectTasksPage() {
   }
 
   const handleEditTaskSave = async (taskData: any) => {
-    if (!user || !editingTask) return
+    if (!user || !editingTask) {
+      console.error('[handleEditTaskSave] No user or editing task', { user, editingTask })
+      return
+    }
+
+    console.log('[handleEditTaskSave] Starting edit...', { taskData, editingTask })
+    console.log('[handleEditTaskSave] Task ID:', editingTask.id)
+
+    // Validate task ID
+    if (!editingTask.id) {
+      toast({
+        title: 'Error',
+        description: 'Task ID is missing. Please try again.',
+        variant: 'destructive',
+      })
+      return
+    }
 
     try {
       setLoading(prev => ({ ...prev, update: true }))
@@ -228,21 +271,28 @@ export default function ProjectTasksPage() {
         payload.assigneeId = taskData.assigneeId
       }
 
-      const response = await authFetch(`/api/tasks/${editingTask.id}`, {
+      const taskUrl = `/api/tasks/${editingTask.id}`
+      console.log('[handleEditTaskSave] Sending PATCH request to:', taskUrl)
+      console.log('[handleEditTaskSave] Payload:', payload)
+
+      const response = await authFetch(taskUrl, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
 
+      console.log('[handleEditTaskSave] Response status:', response.status)
+
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('Update task failed:', response.status, errorText)
+        console.error('[handleEditTaskSave] Update task failed:', response.status, errorText)
         const errorMsg = errorText || `Failed to update task (${response.status})`
         toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
         return
       }
 
       const data = await response.json()
+      console.log('[handleEditTaskSave] Update response:', data)
 
       if (data.success) {
         toast({ title: 'Success', description: 'Task updated successfully' })
@@ -254,12 +304,12 @@ export default function ProjectTasksPage() {
         fetchProjectTasks()
       } else {
         const errorMsg = data.error || data.message || data.details || 'Failed to update task'
-        console.error('Update task error:', data)
+        console.error('[handleEditTaskSave] Update error:', data)
         toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to update task'
-      console.error('Update task exception:', err)
+      console.error('[handleEditTaskSave] Update task exception:', err)
       toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       throw err
     } finally {
@@ -439,7 +489,10 @@ export default function ProjectTasksPage() {
               <ProfessionalKanbanBoard
                 tasks={tasks}
                 onDragEnd={handleKanbanDragEnd}
-                onTaskEdit={(task) => setEditingTask(task)}
+                onTaskEdit={(task) => {
+                  setEditingTask(task)
+                  setShowTaskDialog(true)
+                }}
                 onTaskDelete={handleTaskDelete}
                 loading={loading.update}
               />

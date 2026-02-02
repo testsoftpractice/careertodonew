@@ -1,45 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
-import { verifyToken } from '@/lib/auth/jwt'
 
 // GET /api/dashboard/employer/pipeline - Get employer's hiring pipeline
 export async function GET(request: NextRequest) {
+  const auth = await requireAuth(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
+  if ('status' in auth) return auth
+
+  const user = auth.user
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
-
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const decoded = verifyToken(token)
-
-    if (!decoded || !decoded.userId) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid token' },
-        { status: 401 }
-      )
-    }
-
-    // Get employer's jobs
+    // Get employer's jobs with application counts
     const jobs = await db.job.findMany({
-      where: {
-        employerId: decoded.userId
+      where: { employerId: user.id },
+      include: {
+        _count: {
+          select: { applications: true }
+        }
       },
-      select: { id: true },
-      take: 10
+      orderBy: { createdAt: 'desc' }
     })
 
     const jobIds = jobs.map(j => j.id)
 
-    // Get job applications
+    // Get all applications
     const applications = await db.jobApplication.findMany({
-      where: {
-        jobId: { in: jobIds }
-      },
+      where: { jobId: { in: jobIds } },
       orderBy: { createdAt: 'desc' }
     })
 
@@ -48,18 +38,33 @@ export async function GET(request: NextRequest) {
     const review = applications.filter(a => a.status === 'REVIEW').length
     const interview = applications.filter(a => a.status === 'INTERVIEW').length
     const offer = applications.filter(a => a.status === 'OFFER').length
-    const closed = applications.filter(a => a.status === 'ACCEPTED').length
+    const closed = applications.filter(a => a.status === 'ACCEPTED' || a.status === 'REJECTED').length
 
     const totalCandidates = applications.length
-    const avgTimeToHire = 14 // Mock days
-    const offerAcceptanceRate = applications.length > 0 ? ((closed / (offer + closed)) * 100) : 80
+
+    // Calculate average time to hire (from first applied to accepted)
+    const hiredApplications = applications.filter(a => a.status === 'ACCEPTED')
+    let avgTimeToHire = 0
+    if (hiredApplications.length > 0) {
+      const timeToHireTotal = hiredApplications.reduce((sum, app) => {
+        const appliedDate = new Date(app.createdAt)
+        const hiredDate = new Date(app.updatedAt || app.createdAt)
+        const daysDiff = Math.ceil((hiredDate.getTime() - appliedDate.getTime()) / (1000 * 60 * 60 * 24))
+        return sum + daysDiff
+      }, 0)
+      avgTimeToHire = Math.round(timeToHireTotal / hiredApplications.length)
+    }
+
+    // Calculate offer acceptance rate
+    const totalOffers = offer + closed
+    const offerAcceptanceRate = totalOffers > 0 ? Math.round((offer / totalOffers) * 100) : 0
 
     const stages = [
-      { name: 'Applied', count: pending, percentage: totalCandidates > 0 ? (pending / totalCandidates) * 100 : 0, avgTime: '1 day' },
-      { name: 'Screening', count: review, percentage: totalCandidates > 0 ? (review / totalCandidates) * 100 : 0, avgTime: '2 days' },
-      { name: 'Interview', count: interview, percentage: totalCandidates > 0 ? (interview / totalCandidates) * 100 : 0, avgTime: '5 days' },
-      { name: 'Offer', count: offer, percentage: totalCandidates > 0 ? (offer / totalCandidates) * 100 : 0, avgTime: '3 days' },
-      { name: 'Hired', count: closed, percentage: totalCandidates > 0 ? (closed / totalCandidates) * 100 : 0, avgTime: '1 day' }
+      { name: 'Applied', count: pending, percentage: totalCandidates > 0 ? Math.round((pending / totalCandidates) * 100) : 0, avgTime: 'Pending review' },
+      { name: 'Screening', count: review, percentage: totalCandidates > 0 ? Math.round((review / totalCandidates) * 100) : 0, avgTime: 'Under review' },
+      { name: 'Interview', count: interview, percentage: totalCandidates > 0 ? Math.round((interview / totalCandidates) * 100) : 0, avgTime: 'Interviewing' },
+      { name: 'Offer', count: offer, percentage: totalCandidates > 0 ? Math.round((offer / totalCandidates) * 100) : 0, avgTime: `${avgTimeToHire} days to hire avg` },
+      { name: 'Hired', count: offer, percentage: totalCandidates > 0 ? Math.round((offer / totalCandidates) * 100) : 0, avgTime: `${avgTimeToHire} days to hire avg` }
     ]
 
     return NextResponse.json({
@@ -71,11 +76,8 @@ export async function GET(request: NextRequest) {
         offerAcceptanceRate
       }
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Get pipeline error:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch pipeline' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

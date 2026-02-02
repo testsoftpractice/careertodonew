@@ -31,6 +31,7 @@ import {
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
 import Link from 'next/link'
+import { UniversityProfileEnhanced } from '@/components/student/university-profile-enhanced'
 
 interface Experience {
   id: string
@@ -594,6 +595,9 @@ export default function StudentProfile() {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Left Column - Experiences and Education */}
           <div className="lg:col-span-2 space-y-6">
+            {/* University Profile */}
+            <UniversityProfileEnhanced userId={user?.id} />
+
             {/* Experiences Section */}
             <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800">
               <CardHeader>

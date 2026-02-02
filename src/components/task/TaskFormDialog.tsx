@@ -126,32 +126,49 @@ export default function TaskFormDialog({
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   useEffect(() => {
-    if (task && mode === 'edit') {
-      setFormData({
-        title: task.title || '',
-        description: task.description || '',
-        priority: task.priority || 'MEDIUM',
-        status: task.status || 'TODO',
-        dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
-        projectId: task.projectId || '',
-        assigneeId: task.assigneeId || '',
-      })
-    } else if (!task && mode === 'create') {
-      setFormData({
-        title: '',
-        description: '',
-        priority: 'MEDIUM',
-        status: 'TODO',
-        dueDate: '',
-        projectId: projects.length === 1 ? projects[0].id : '',
-        assigneeId: '',
-      })
+    if (open && !isInitialized) {
+      // First initialization
+      if (task && mode === 'edit') {
+        const newFormData = {
+          title: task.title || '',
+          description: task.description || '',
+          priority: task.priority || 'MEDIUM',
+          status: task.status || 'TODO',
+          dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+          projectId: task.projectId || '',
+          assigneeId: task.assigneeId || task.assignedTo || '', // Support both field names
+        }
+        console.log('[TaskFormDialog] Initializing edit mode with task:', task)
+        console.log('[TaskFormDialog] Form data set to:', newFormData)
+        setFormData(newFormData)
+      } else if (!task && mode === 'create') {
+        const newFormData = {
+          title: '',
+          description: '',
+          priority: 'MEDIUM',
+          status: 'TODO',
+          dueDate: '',
+          projectId: projects.length === 1 ? projects[0].id : '',
+          assigneeId: '',
+        }
+        console.log('[TaskFormDialog] Initializing create mode')
+        console.log('[TaskFormDialog] Form data set to:', newFormData)
+        setFormData(newFormData)
+      }
+      setIsInitialized(true)
+      setErrors({})
+      setTouched({})
+    } else if (!open) {
+      // Reset when dialog closes
+      setIsInitialized(false)
+      setIsSubmitting(false)
     }
-    setErrors({})
-    setTouched({})
-  }, [task, mode, open, projects])
+  }, [task, mode, open, isInitialized, projects.length === 1 && projects[0]?.id])
 
   const handleChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -197,14 +214,20 @@ export default function TaskFormDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!validate()) {
+    console.log('[TaskFormDialog] Submitting form...', { mode, formData, errors })
+
+    if (!validate() || isSubmitting) {
+      console.log('[TaskFormDialog] Validation failed or already submitting', { errors, isSubmitting })
       return
     }
+
+    setIsSubmitting(true)
 
     try {
       await onSave(formData)
       onOpenChange(false)
-      // Reset form after successful save
+      // Reset form and submitting state after successful save
+      setIsSubmitting(false)
       if (mode === 'create') {
         setFormData({
           title: '',
@@ -216,7 +239,8 @@ export default function TaskFormDialog({
         })
       }
     } catch (error) {
-      console.error('Error saving task:', error)
+      console.error('[TaskFormDialog] Error saving task:', error)
+      setIsSubmitting(false)
     }
   }
 
@@ -229,7 +253,7 @@ export default function TaskFormDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleCancel}>
+    <Dialog open={open} onOpenChange={handleCancel} modal={true}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto z-[9999] shadow-2xl bg-white dark:bg-slate-900">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -325,12 +349,20 @@ export default function TaskFormDialog({
                 </Label>
                 <Select
                   value={formData.priority}
-                  onValueChange={(value: any) => handleChange('priority', value)}
+                  onValueChange={(value: any) => {
+                    handleChange('priority', value)
+                    setErrors(prev => ({ ...prev, priority: undefined }))
+                  }}
+                  onOpenChange={(open: boolean) => {
+                    if (open) {
+                      setTouched(prev => ({ ...prev, priority: true }))
+                    }
+                  }}
                 >
-                  <SelectTrigger id="priority">
+                  <SelectTrigger id="priority" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[100001]">
                     {Object.entries(priorityConfig).map(([key, config]) => (
                       <SelectItem key={key} value={key}>
                         <div className="flex items-center gap-2">
@@ -368,10 +400,10 @@ export default function TaskFormDialog({
                     value={formData.status}
                     onValueChange={(value: any) => handleChange('status', value)}
                   >
-                    <SelectTrigger id="status">
+                    <SelectTrigger id="status" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[100001]">
                       {Object.entries(statusConfig).map(([key, config]) => (
                         <SelectItem key={key} value={key}>
                           <div className="flex items-center gap-2">
@@ -387,7 +419,7 @@ export default function TaskFormDialog({
             </div>
 
             {/* Assignee (For Project Tasks) */}
-            {mode === 'create' && availableUsers.length > 0 && (
+            {(mode === 'create' || mode === 'edit') && availableUsers.length > 0 && (
               <div className="space-y-2">
                 <Label htmlFor="assignee" className="text-sm font-semibold flex items-center gap-2">
                   <Users className="w-4 h-4" />
@@ -397,10 +429,10 @@ export default function TaskFormDialog({
                   value={formData.assigneeId || 'none'}
                   onValueChange={(value) => handleChange('assigneeId', value === 'none' ? '' : value)}
                 >
-                  <SelectTrigger id="assignee">
+                  <SelectTrigger id="assignee" className="w-full">
                     <SelectValue placeholder="Unassigned" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[100001]">
                     <SelectItem value="none">Unassigned</SelectItem>
                     {availableUsers.map((user) => (
                       <SelectItem key={user.id} value={user.id}>
@@ -461,10 +493,10 @@ export default function TaskFormDialog({
                   value={formData.projectId || 'none'}
                   onValueChange={(value) => handleChange('projectId', value === 'none' ? '' : value)}
                 >
-                  <SelectTrigger id="project">
+                  <SelectTrigger id="project" className="w-full">
                     <SelectValue placeholder="No project selected" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[100001]">
                     <SelectItem value="none">No project</SelectItem>
                     {projects.map((project) => (
                       <SelectItem key={project.id} value={project.id}>
@@ -484,7 +516,7 @@ export default function TaskFormDialog({
                 type="button"
                 variant="outline"
                 onClick={handleCancel}
-                disabled={loading}
+                disabled={loading || isSubmitting}
                 className="gap-2"
               >
                 <X className="w-4 h-4" />
@@ -492,7 +524,7 @@ export default function TaskFormDialog({
               </Button>
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || isSubmitting}
                 className="gap-2 min-w-[120px]"
               >
                 {loading ? (

@@ -66,12 +66,12 @@ export async function GET(request: NextRequest) {
         id: user.id,
         name: user.name,
         avatar: user.avatar,
-        role: 'Team Member',
-        department: 'Operations',
-        projects: Math.floor(Math.random() * 5),
-        performance,
-        hireDate: user.createdAt || new Date(),
-        status: 'active' as const
+        role: user.role,
+        department: user.department || 'General',
+        projects: user.projectLeads?.length || 0,
+        performance: performance.toFixed(1),
+        hireDate: user.createdAt,
+        status: user.verificationStatus === 'VERIFIED' ? 'active' : 'inactive'
       }
     })
 

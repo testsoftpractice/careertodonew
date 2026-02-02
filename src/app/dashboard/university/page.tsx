@@ -100,7 +100,7 @@ export default function UniversityDashboard() {
 
     try {
       setLoading(prev => ({ ...prev, students: true }))
-      const response = await fetch(`/api/users?universityId=${user.university?.id || user.universityId}&role=STUDENT&limit=20`)
+      const response = await fetch(`/api/dashboard/university/students?limit=20`)
 
       if (!response.ok) {
         throw new Error('Failed to fetch students')
@@ -109,7 +109,7 @@ export default function UniversityDashboard() {
       const data = await response.json()
 
       if (data.success) {
-        setStudents(data.data.users || [])
+        setStudents(data.data.students || [])
       } else {
         throw new Error(data.error || 'Failed to fetch students')
       }
@@ -130,7 +130,7 @@ export default function UniversityDashboard() {
 
     try {
       setLoading(prev => ({ ...prev, projects: true }))
-      const response = await fetch(`/api/projects?universityId=${user.university?.id || user.universityId}`)
+      const response = await fetch(`/api/dashboard/university/projects`)
 
       if (!response.ok) {
         throw new Error('Failed to fetch projects')

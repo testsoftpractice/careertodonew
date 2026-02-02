@@ -51,19 +51,19 @@ export default function EmployerProfilePage() {
       if (!user?.id) return
 
       try {
-        const response = await fetch(`/api/users/${user.id}`)
+        const response = await fetch(`/api/employer/profile`)
         const data = await response.json()
 
-        if (data.user) {
-          setUserData(data.user)
+        if (data.success) {
+          setUserData(data.data)
           setProfile({
-            name: data.user.name || '',
-            email: data.user.email || '',
-            bio: data.user.bio || '',
-            avatar: data.user.avatar || '',
-            location: data.user.location || '',
-            linkedinUrl: data.user.linkedinUrl || '',
-            websiteUrl: data.user.portfolioUrl || '',
+            name: data.data.name || '',
+            email: data.data.email || '',
+            bio: data.data.bio || '',
+            avatar: data.data.avatar || '',
+            location: data.data.location || '',
+            linkedinUrl: data.data.linkedinUrl || '',
+            websiteUrl: data.data.websiteUrl || '',
             companySize: '',
             industry: '',
           })
@@ -86,7 +86,7 @@ export default function EmployerProfilePage() {
 
     try {
       setLoading(true)
-      const response = await fetch(`/api/users/${user.id}`, {
+      const response = await fetch(`/api/employer/profile`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profile),
@@ -94,11 +94,14 @@ export default function EmployerProfilePage() {
 
       const data = await response.json()
 
-      if (data.message) {
+      if (data.success) {
         toast({
           title: 'Success',
-          description: 'Profile updated successfully',
+          description: data.message || 'Profile updated successfully',
         })
+
+        // Refresh user data
+        fetchUserData()
       } else {
         toast({
           title: 'Error',

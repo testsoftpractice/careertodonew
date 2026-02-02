@@ -28,7 +28,7 @@ import { toast } from '@/hooks/use-toast'
 interface LeaveRequest {
   id: string
   userId: string
-  leaveType: 'SICK' | 'VACATION' | 'PERSONAL' | 'BEREAVEMENT' | 'OTHER'
+  leaveType: 'SICK_LEAVE' | 'PERSONAL_LEAVE' | 'VACATION' | 'EMERGENCY' | 'BEREAVEMENT' | 'MATERNITY' | 'PATERNITY'
   startDate: string
   endDate: string
   reason: string
@@ -51,7 +51,7 @@ export default function LeaveManagement({ userId, compact = false }: LeaveManage
   const [showForm, setShowForm] = useState(false)
   const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL')
   const [formData, setFormData] = useState({
-    leaveType: 'SICK' as LeaveRequest['leaveType'],
+    leaveType: 'SICK_LEAVE' as LeaveRequest['leaveType'],
     startDate: '',
     endDate: '',
     reason: '',
@@ -139,7 +139,7 @@ export default function LeaveManagement({ userId, compact = false }: LeaveManage
         })
         setShowForm(false)
         setFormData({
-          leaveType: 'SICK',
+          leaveType: 'SICK_LEAVE',
           startDate: '',
           endDate: '',
           reason: '',
@@ -214,25 +214,33 @@ export default function LeaveManagement({ userId, compact = false }: LeaveManage
 
   const getLeaveTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      SICK: 'Sick Leave',
+      SICK_LEAVE: 'Sick Leave',
+      PERSONAL_LEAVE: 'Personal Leave',
       VACATION: 'Vacation',
-      PERSONAL: 'Personal',
+      EMERGENCY: 'Emergency',
       BEREAVEMENT: 'Bereavement',
-      OTHER: 'Other',
+      MATERNITY: 'Maternity Leave',
+      PATERNITY: 'Paternity Leave',
     }
     return labels[type] || type
   }
 
   const getLeaveTypeIcon = (type: string) => {
     switch (type) {
-      case 'SICK':
+      case 'SICK_LEAVE':
         return <AlertCircle className="w-4 h-4 text-red-500" />
       case 'VACATION':
         return <MapPin className="w-4 h-4 text-blue-500" />
-      case 'PERSONAL':
+      case 'PERSONAL_LEAVE':
         return <FileText className="w-4 h-4 text-purple-500" />
+      case 'EMERGENCY':
+        return <AlertCircle className="w-4 h-4 text-amber-500" />
       case 'BEREAVEMENT':
         return <AlertCircle className="w-4 h-4 text-slate-500" />
+      case 'MATERNITY':
+        return <AlertCircle className="w-4 h-4 text-pink-500" />
+      case 'PATERNITY':
+        return <AlertCircle className="w-4 h-4 text-cyan-500" />
       default:
         return <FileText className="w-4 h-4 text-amber-500" />
     }
@@ -340,11 +348,13 @@ export default function LeaveManagement({ userId, compact = false }: LeaveManage
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="SICK">Sick Leave</SelectItem>
+                        <SelectItem value="SICK_LEAVE">Sick Leave</SelectItem>
                         <SelectItem value="VACATION">Vacation</SelectItem>
-                        <SelectItem value="PERSONAL">Personal</SelectItem>
+                        <SelectItem value="PERSONAL_LEAVE">Personal Leave</SelectItem>
+                        <SelectItem value="EMERGENCY">Emergency</SelectItem>
                         <SelectItem value="BEREAVEMENT">Bereavement</SelectItem>
-                        <SelectItem value="OTHER">Other</SelectItem>
+                        <SelectItem value="MATERNITY">Maternity Leave</SelectItem>
+                        <SelectItem value="PATERNITY">Paternity Leave</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -632,11 +642,13 @@ export default function LeaveManagement({ userId, compact = false }: LeaveManage
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="SICK">Sick Leave</SelectItem>
+                      <SelectItem value="SICK_LEAVE">Sick Leave</SelectItem>
                       <SelectItem value="VACATION">Vacation</SelectItem>
-                      <SelectItem value="PERSONAL">Personal</SelectItem>
+                      <SelectItem value="PERSONAL_LEAVE">Personal Leave</SelectItem>
+                      <SelectItem value="EMERGENCY">Emergency</SelectItem>
                       <SelectItem value="BEREAVEMENT">Bereavement</SelectItem>
-                      <SelectItem value="OTHER">Other</SelectItem>
+                      <SelectItem value="MATERNITY">Maternity Leave</SelectItem>
+                      <SelectItem value="PATERNITY">Paternity Leave</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

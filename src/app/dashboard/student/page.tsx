@@ -62,9 +62,13 @@ import {
   Building2,
 } from 'lucide-react'
 import ProfessionalKanbanBoard, { Task as KanbanTask } from '@/components/task/ProfessionalKanbanBoard'
+import WorkSessionTimer from '@/components/time-tracking/work-session-timer'
 import TaskFormDialog from '@/components/task/TaskFormDialog'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
+import { LeaderboardPreview } from '@/components/student/leaderboard-preview'
+import { NeedsPreview } from '@/components/student/needs-preview'
+import { PracticeGround } from '@/components/student/practice-ground'
 
 function DashboardContent({ user }: { user: any }) {
   const searchParams = useSearchParams()
@@ -727,7 +731,7 @@ function DashboardContent({ user }: { user: any }) {
         payload.dueDate = new Date(taskData.dueDate).toISOString()
       }
 
-      const url = editingTask.projectId ? `/api/tasks?id=${editingTask.id}` : `/api/tasks/personal?id=${editingTask.id}`
+      const url = editingTask.projectId ? `/api/tasks?id=${editingTask.id}` : `/api/tasks/personal?id=${editingTask.id}&userId=${user.id}`
       const body = { ...payload }
       if (editingTask.projectId) {
         body.projectId = editingTask.projectId
@@ -787,18 +791,13 @@ function DashboardContent({ user }: { user: any }) {
     try {
       setLoading(prev => ({ ...prev, updateTask: true }))
 
-      // Determine endpoint and body based on task type
-      const isPersonalTask = !task.projectId
-      const url = isPersonalTask
-        ? `/api/tasks/personal?id=${task.id}`
-        : `/api/tasks?id=${task.id}`
+      // Use REST API endpoint with task ID in path
+      const url = `/api/tasks/${task.id}`
       const body = {
         status: newStatus,
-        userId: user.id
       }
-      if (!isPersonalTask) {
-        body.projectId = task.projectId
-      }
+
+      console.log('[handleKanbanDragEnd] Updating task:', { taskId: task.id, newStatus, url })
 
       const response = await authFetch(url, {
         method: 'PATCH',
@@ -806,9 +805,11 @@ function DashboardContent({ user }: { user: any }) {
         body: JSON.stringify(body),
       })
 
+      console.log('[handleKanbanDragEnd] Response status:', response.status)
+
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('Update task status failed:', response.status, errorText)
+        console.error('[handleKanbanDragEnd] Update task status failed:', response.status, errorText)
         const errorMsg = errorText || `Failed to update task status (${response.status})`
         toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
         setLoading(prev => ({ ...prev, updateTask: false }))
@@ -816,15 +817,20 @@ function DashboardContent({ user }: { user: any }) {
       }
 
       const data = await response.json()
+      console.log('[handleKanbanDragEnd] Response data:', data)
 
       if (data.success) {
         toast({ title: 'Success', description: `Task moved to ${newStatus.replace('_', ' ')}` })
+
         // Update local state immediately for instant feedback
+        const updatedTask = { ...task, status: newStatus as any }
         if (viewType === 'personal') {
-          setPersonalTasks(personalTasks.map(t => t.id === task.id ? { ...t, status: newStatus as any } : t))
+          setPersonalTasks(personalTasks.map(t => t.id === task.id ? updatedTask : t))
         } else {
-          setProjectTasks(projectTasks.map(t => t.id === task.id ? { ...t, status: newStatus as any } : t))
+          setProjectTasks(projectTasks.map(t => t.id === task.id ? updatedTask : t))
         }
+        // Also update combined tasks
+        setTasks(tasks.map(t => t.id === task.id ? updatedTask : t))
       } else {
         const errorMsg = data.error || data.message || data.details || 'Failed to update task status'
         console.error('Update task status error:', data)
@@ -1095,6 +1101,18 @@ function DashboardContent({ user }: { user: any }) {
                 />
               </CardContent>
             </Card>
+
+            {/* New Features Section */}
+            <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+              {/* Leaderboards */}
+              <LeaderboardPreview compact={true} />
+
+              {/* Project Needs */}
+              <NeedsPreview compact={true} />
+
+              {/* Practice Ground */}
+              <PracticeGround compact={true} />
+            </div>
           </TabsContent>
 
           {/* Projects Tab */}
@@ -1152,60 +1170,8 @@ function DashboardContent({ user }: { user: any }) {
 
           {/* Time Tracking Tab */}
           <TabsContent value="time-tracking" className="space-y-4 sm:space-y-6">
-            {/* Timer Card */}
-            <Card className="border-2 shadow-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Timer className="h-5 w-5 text-orange-500" />
-                  Time Tracker
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center">
-                  <div className="text-4xl sm:text-6xl font-mono font-bold mb-4">
-                    {formatTime(timerSeconds)}
-                  </div>
-                  <div className="flex justify-center gap-2 flex-wrap">
-                    <Button
-                      onClick={toggleTimer}
-                      disabled={!selectedTaskForTimer}
-                      className={`cursor-pointer ${timerRunning ? 'bg-orange-500 hover:bg-orange-600' : 'bg-primary hover:bg-primary/90'}`}
-                    >
-                      {timerRunning ? (
-                        <>
-                          <Pause className="h-4 w-4 mr-2" />
-                          Pause
-                        </>
-                      ) : (
-                        <>
-                          <Play className="h-4 w-4 mr-2" />
-                          Start
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="border-t pt-4">
-                  <Label htmlFor="task-select" className="mb-2 block">Select Task</Label>
-                  <Select
-                    value={selectedTaskForTimer || ''}
-                    onValueChange={setSelectedTaskForTimer}
-                  >
-                    <SelectTrigger id="task-select" className="cursor-pointer">
-                      <SelectValue placeholder="Choose a task to track time..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tasks.map((task) => (
-                        <SelectItem key={task.id} value={task.id} className="cursor-pointer">
-                          {task.title} {task.project && `- ${task.project.name}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
+            {/* New Work Session Timer with Pause/Resume and all session types */}
+            <WorkSessionTimer onSessionComplete={() => { fetchTimeEntries(); fetchTimeSummary(); }} />
 
             {/* Time Entries */}
             <Card className="border-2 shadow-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">

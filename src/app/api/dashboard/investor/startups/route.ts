@@ -1,62 +1,88 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
-import { verifyToken } from '@/lib/auth/jwt'
 
 // GET /api/dashboard/investor/startups - Get investor's startup tracker
 export async function GET(request: NextRequest) {
+  const auth = await requireAuth(request, ['INVESTOR', 'PLATFORM_ADMIN'])
+  if ('status' in auth) return auth
+
+  const user = auth.user
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
-
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const decoded = verifyToken(token)
-
-    if (!decoded || !decoded.userId) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid token' },
-        { status: 401 }
-      )
-    }
-
-    // Get investor's investments as startups
+    // Get investments made by this investor
     const investments = await db.investment.findMany({
-      where: {
-        investorId: decoded.userId
+      where: { userId: user.id },
+      include: {
+        project: {
+          select: { id: true, name: true, status: true, businessId: true }
+        }
       },
-      orderBy: { investedAt: 'desc' },
-      take: 10
+      orderBy: { investedAt: 'desc' }
     })
 
-    // Calculate stats
-    const totalInvested = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0)
-    const totalCurrentValue = totalInvested * (1 + Math.random() * 0.4)
-    const avgROI = investments.length > 0 ? 25 : 0
+    // Get unique projects from investments
+    const projectIds = investments
+      .filter(inv => inv.project)
+      .map(inv => inv.project!.id)
 
-    // Transform to startup format
-    const startups = investments.slice(0, 5).map((inv, index) => {
-      const invested = inv.amount || 0
-      const currentValue = invested * (0.8 + Math.random() * 0.6)
-      const roi = ((currentValue - invested) / invested) * 100
+    // Get businesses for projects
+    const businesses = await db.business.findMany({
+      where: {
+        id: {
+          in: investments
+            .filter(inv => inv.project?.businessId)
+            .map(inv => inv.project!.businessId!)
+        }
+      }
+    })
+
+    const totalInvested = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0)
+    const totalValue = investments.reduce((sum, inv) => sum + ((inv.amount || 0) * 0.8 + Math.random() * 0.4), 0)
+
+    // Group by project to create startup list
+    const startupsByProject = new Map<string, any>()
+    investments.forEach(inv => {
+      if (!inv.project) return
+
+      const projectId = inv.project.id
+      if (!startupsByProject.has(projectId)) {
+        startupsByProject.set(projectId, {
+          id: projectId,
+          name: inv.project.name,
+          investments: [],
+          totalInvested: 0
+        })
+      }
+
+      startupsByProject.get(projectId).investments.push(inv)
+      startupsByProject.get(projectId).totalInvested += (inv.amount || 0)
+    })
+
+    const startups = Array.from(startupsByProject.values()).slice(0, 10).map((startup, index) => {
+      const business = businesses.find(b => startup.name.toLowerCase().includes(b.name.toLowerCase()))
+      const totalInvested = startup.totalInvested
+      const currentValue = totalInvested * (1 + Math.random() * 0.4)
+      const roi = currentValue > totalInvested ? ((currentValue - totalInvested) / totalInvested) * 100 : 0
+
+      const employees = Math.floor(Math.random() * 50) + 5
+      const monthlyGrowth = Math.floor(Math.random() * 5 + (Math.random() * 2)) - 2
+      const foundedYear = 2018 + Math.floor(Math.random() * 6)
 
       return {
-        id: inv.id,
-        name: `Startup ${index + 1}`,
-        industry: 'Technology',
-        stage: ['seed' as const, 'series_a' as const, 'series_b' as const, 'series_c' as const, 'ipo' as const][index % 5],
-        investment: invested,
+        id: startup.id,
+        name: startup.name,
+        industry: business?.industry || 'Technology',
+        foundedYear,
+        employees,
+        monthlyGrowth,
+        totalInvested,
         currentValue,
-        roi,
-        monthlyGrowth: (Math.random() * 10) - 2,
-        employees: Math.floor(Math.random() * 50) + 5,
-        foundedYear: 2018 + Math.floor(Math.random() * 6),
-        lastFunding: inv.investedAt,
-        status: roi > 30 ? 'performing' as const : roi > 0 ? 'neutral' as const : 'underperforming' as const
+        roi: parseFloat(roi.toFixed(2))
       }
     })
 
@@ -64,16 +90,13 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         startups,
-        totalInvested,
-        totalCurrentValue,
-        avgROI
+        totalInvested: totalInvested.toFixed(2),
+        totalValue: totalValue.toFixed(2),
+        avgROI: startups.length > 0 ? startups.reduce((sum, s) => sum + s.roi, 0) / startups.length : 0
       }
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Get startup tracker error:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch startup tracker' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

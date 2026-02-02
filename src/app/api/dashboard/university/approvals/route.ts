@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         universityId,
       },
       include: {
-        projectLead: {
+        owner: {
           select: {
             id: true,
             name: true,
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
     const business = await db.project.findUnique({
       where: { id: body.businessId },
       include: {
-        projectLead: {
+        owner: {
           select: {
             id: true,
             name: true,

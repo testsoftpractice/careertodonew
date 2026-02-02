@@ -38,7 +38,7 @@ export default function UniversityProjectsPage() {
 
       try {
         setLoading(true)
-        const response = await fetch(`/api/projects?universityId=${user.universityId}`)
+        const response = await fetch(`/api/dashboard/university/projects`)
 
         if (!response.ok) {
           throw new Error('Failed to fetch projects')

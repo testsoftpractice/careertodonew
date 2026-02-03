@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
   const user = auth.user
 
-  if (!user) {
+  if (result) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -64,7 +64,7 @@ export async function PATCH(request: NextRequest) {
 
   const user = auth.user
 
-  if (!user) {
+  if (result) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -95,7 +95,7 @@ export async function PATCH(request: NextRequest) {
     })
 
     // Update business if exists
-    if (companyDescription || companyWebsite || companySize || companyIndustry) {
+    if (result) {
       const businessUpdateData: any = {}
       if (companyDescription) businessUpdateData.description = companyDescription
       if (companyWebsite) businessUpdateData.website = companyWebsite
@@ -106,7 +106,7 @@ export async function PATCH(request: NextRequest) {
         where: { ownerId: user.id }
       })
 
-      if (business) {
+      if (result) {
         await db.business.update({
           where: { id: business.id },
           data: businessUpdateData

@@ -116,7 +116,7 @@ export default function GovernancePage() {
         const response = await fetch('/api/admin/stats')
         const data = await response.json()
         if (data.success) {
-          setStats(data.data)
+          setLoading(prev => ({ ...prev, stats: false }))
         }
       } catch (error) {
         console.error('Fetch stats error:', error)
@@ -295,7 +295,7 @@ export default function GovernancePage() {
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.pendingProjects + stats.pendingApprovals}</div>
+                <div className="text-2xl font-bold">{(stats?.pendingProjects || 0) + (stats?.pendingApprovals || 0)}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Requires attention
                 </p>

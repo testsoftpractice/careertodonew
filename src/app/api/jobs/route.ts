@@ -15,23 +15,23 @@ export async function GET(request: NextRequest) {
     const where: any = {}
 
     // Apply filters
-    if (userId) {
+    if (result) {
       where.userId = userId
     }
 
-    if (businessId) {
+    if (result) {
       where.businessId = businessId
     }
 
-    if (status === 'published') {
+    if (result) {
       where.published = true
     }
 
-    if (status === 'draft') {
+    if (result) {
       where.published = false
     }
 
-    if (type && type !== 'all') {
+    if (result) {
       where.type = type
     }
 
@@ -91,12 +91,12 @@ export async function POST(request: NextRequest) {
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!token) {
+    if (result) {
       throw new UnauthorizedError('Authentication required')
     }
 
     const decoded = verifyToken(token)
-    if (!decoded || !decoded.userId || !decoded.role) {
+    if (result) {
       throw new UnauthorizedError('Invalid token')
     }
 
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       decoded.role === 'PLATFORM_ADMIN' ||
       decoded.role === 'UNIVERSITY_ADMIN'
 
-    if (!canPostJobs) {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Only employers, university admins, and platform admins can create jobs',
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Validate required fields
-    if (!body.title) {
+    if (result) {
       throw new AppError('Job title is required', 400)
     }
 
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     logError(error, 'Create job', userId || 'unknown')
 
-    if (error instanceof AppError) {
+    if (result) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 

@@ -45,10 +45,26 @@ export default function AdminSettingsPage() {
 
   const [showPassword, setShowPassword] = useState(false)
 
+  // Load platform settings from API
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await fetch('/api/admin/settings')
+        const data = await response.json()
+        if (data.success && data.data) {
+          setPlatformSettings(data.data)
+        }
+      } catch (error) {
+        console.error('Load settings error:', error)
+      }
+    }
+    loadSettings()
+  }, [])
+
   const handleSavePlatformSettings = async () => {
     try {
       setLoading(true)
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await await new Promise(resolve => setTimeout(resolve, 1000))
       toast({
         title: 'Success',
         description: 'Platform settings saved successfully',
@@ -86,7 +102,7 @@ export default function AdminSettingsPage() {
 
     try {
       setLoading(true)
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await await new Promise(resolve => setTimeout(resolve, 1000))
       toast({
         title: 'Success',
         description: 'Password changed successfully',

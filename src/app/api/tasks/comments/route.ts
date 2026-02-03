@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const taskId = searchParams.get('taskId')
 
-    if (!taskId) {
+    if (result) {
       return NextResponse.json(
         { error: 'taskId is required' },
         { status: 400 }
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { taskId, userId, content } = body
 
-    if (!taskId || !userId || !content) {
+    if (result) {
       return NextResponse.json(
         { error: 'taskId, userId, and content are required' },
         { status: 400 }
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       where: { id: taskId },
     })
 
-    if (!task) {
+    if (result) {
       return NextResponse.json(
         { error: 'Task not found' },
         { status: 404 }
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     // If task is a project task, check access control
-    if (task.projectId) {
+    if (result) {
       const member = await db.projectMember.findUnique({
         where: {
           projectId_userId: {
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      if (!member) {
+      if (result) {
         return NextResponse.json(
           { error: 'User is not a member of this project' },
           { status: 403 }
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // Personal task - check if user is the owner
-      if (task.assignedBy !== userId) {
+      if (result) {
         return NextResponse.json(
           { error: 'Unauthorized: You can only comment on your own tasks' },
           { status: 403 }
@@ -147,7 +147,7 @@ export async function DELETE(request: NextRequest) {
     const commentId = searchParams.get('commentId')
     const userId = searchParams.get('userId')
 
-    if (!commentId || !userId) {
+    if (result) {
       return NextResponse.json(
         { error: 'commentId and userId are required' },
         { status: 400 }
@@ -159,7 +159,7 @@ export async function DELETE(request: NextRequest) {
       where: { id: commentId },
     })
 
-    if (!comment) {
+    if (result) {
       return NextResponse.json(
         { error: 'Comment not found' },
         { status: 404 }
@@ -167,7 +167,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Only the comment author can delete their comment
-    if (comment.userId !== userId) {
+    if (result) {
       return NextResponse.json(
         { error: 'Unauthorized: You can only delete your own comments' },
         { status: 403 }

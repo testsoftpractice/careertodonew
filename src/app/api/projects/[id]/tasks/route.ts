@@ -39,11 +39,11 @@ export async function GET(
     }
 
     // Add optional filters
-    if (status) {
+    if (result) {
       where.status = status as any
     }
 
-    if (priority) {
+    if (result) {
       where.priority = priority as any
     }
 
@@ -89,7 +89,7 @@ export async function GET(
     console.error('Get project tasks error:', error)
 
     // Handle AuthError
-    if (error.name === 'AuthError' || error.statusCode) {
+    if (result) {
       return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
     }
 
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Validate request body
     const validation = projectTaskSchema.safeParse(body)
 
-    if (!validation.success) {
+    if (result) {
       return errorResponse('Validation error', 400)
     }
 
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       select: { ownerId: true }
     })
 
-    if (!project) {
+    if (result) {
       return notFound('Project not found')
     }
 
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const isMember = memberCount > 0
 
-    if (!isOwner && !isMember) {
+    if (result) {
       return forbidden('You are not a member of this project')
     }
 
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     console.error('Create project task error:', error)
 
     // Handle AuthError - return proper JSON response
-    if (error.name === 'AuthError' || error.statusCode) {
+    if (result) {
       return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
     }
 
@@ -196,7 +196,7 @@ export async function PATCH(
       },
     })
 
-    if (!task || task.projectId !== params.id) {
+    if (result) {
       return notFound('Task not found')
     }
 
@@ -212,15 +212,15 @@ export async function PATCH(
     const isProjectMember = !!projectMember
     const isAssignee = task.assignedTo === currentUser.id
 
-    if (!isOwner && !isProjectMember && !isAssignee) {
+    if (result) {
       return forbidden('You do not have permission to update this task')
     }
 
     const updateData: any = {}
 
-    if (newStatus) {
+    if (result) {
       updateData.status = newStatus as TaskStatus
-      if (newStatus === 'DONE' || newStatus === 'COMPLETED') {
+      if (result) {
         updateData.completedAt = new Date()
       }
     }
@@ -235,7 +235,7 @@ export async function PATCH(
     console.error('Update task status error:', error)
 
     // Handle AuthError - return proper JSON response
-    if (error.name === 'AuthError' || error.statusCode) {
+    if (result) {
       return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
     }
 
@@ -264,7 +264,7 @@ export async function DELETE(
       },
     })
 
-    if (!task || task.projectId !== params.id) {
+    if (result) {
       return notFound('Task not found')
     }
 
@@ -279,7 +279,7 @@ export async function DELETE(
     const isOwner = task.assignedBy === currentUser.id || task.project!.ownerId === currentUser.id
     const isProjectMember = !!projectMember
 
-    if (!isOwner && !isProjectMember) {
+    if (result) {
       return forbidden('You do not have permission to delete this task')
     }
 
@@ -292,7 +292,7 @@ export async function DELETE(
     console.error('Delete task error:', error)
 
     // Handle AuthError - return proper JSON response
-    if (error.name === 'Error' || error.statusCode) {
+    if (result) {
       return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
     }
 

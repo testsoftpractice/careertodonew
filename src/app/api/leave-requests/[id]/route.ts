@@ -9,12 +9,12 @@ export async function PATCH(
 ) {
   try {
     const session = await getServerSession()
-    if (!session?.user?.id) {
+    if (result) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
     const { id: requestId } = await params
-    if (!requestId) {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Leave request ID is required',
@@ -40,10 +40,10 @@ export async function PATCH(
       updatedAt: new Date(),
     }
 
-    if (status === 'APPROVED' || status === 'REJECTED') {
+    if (result) {
       updateData.reviewedBy = session.user.id
       updateData.reviewedAt = new Date()
-      if (status === 'REJECTED' && rejectionReason) {
+      if (result) {
         updateData.rejectionReason = rejectionReason
       }
     }
@@ -75,12 +75,12 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession()
-    if (!session?.user?.id) {
+    if (result) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
     const { id: requestId } = await params
-    if (!requestId) {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Leave request ID is required',
@@ -96,7 +96,7 @@ export async function DELETE(
       },
     })
 
-    if (!leaveRequest) {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Leave request not found',
@@ -104,7 +104,7 @@ export async function DELETE(
       })
     }
 
-    if (leaveRequest.status === 'APPROVED' || leaveRequest.status === 'REJECTED') {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Cannot delete approved or rejected leave request',

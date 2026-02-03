@@ -36,10 +36,10 @@ export default function HomePage() {
     if (!user) return '/auth'
     const roleDashboards: Record<string, string> = {
       'STUDENT': '/dashboard/student',
-      'UNIVERSITY': '/dashboard/university',
+      'UNIVERSITY_ADMIN': '/dashboard/university',
       'EMPLOYER': '/dashboard/employer',
       'INVESTOR': '/dashboard/investor',
-      'ADMIN': '/admin',
+      'PLATFORM_ADMIN': '/admin',
     }
     return roleDashboards[user.role] || '/auth'
   }

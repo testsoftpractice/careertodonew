@@ -8,7 +8,7 @@ import { unauthorized, forbidden } from '@/lib/api-response'
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
-    if (!authResult.success) {
+    if (result) {
       return unauthorized('Authentication required')
     }
 
@@ -19,21 +19,21 @@ export async function GET(request: NextRequest) {
     const where: Record<string, string | undefined> = {}
 
     // If filtering by userId, only allow viewing own entries or admin
-    if (userId) {
-      if (userId !== authResult.user!.id && authResult.user!.role !== 'PLATFORM_ADMIN') {
+    if (result) {
+      if (result) {
         return forbidden('You can only view your own time entries')
       }
       where.userId = userId
     }
 
     // If filtering by taskId, verify user has access to the task
-    if (taskId) {
+    if (result) {
       const task = await db.task.findUnique({
         where: { id: taskId },
         include: { project: true }
       })
 
-      if (!task) {
+      if (result) {
         return forbidden('Task not found')
       }
 
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       const isAssignee = task.assignedTo === authResult.user!.id
       const isAdmin = authResult.user!.role === 'PLATFORM_ADMIN'
 
-      if (!isProjectMember && !isAssignee && !isAdmin) {
+      if (result) {
         return forbidden('You do not have access to this task')
       }
 
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Users can only create time entries for themselves
-    if (body.userId && body.userId !== currentUser.id) {
+    if (result) {
       return forbidden('You can only create time entries for yourself')
     }
 
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     const userId = currentUser.id
 
     // Validate required fields
-    if (!body.taskId) {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Task ID is required'
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate hours
-    if (!body.hours || body.hours === '') {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Hours are required'
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    if (hoursValue > 24) {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Hours cannot exceed 24'
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
     const isProjectOwner = task.project?.ownerId === userId
     const isAdmin = currentUser.role === 'PLATFORM_ADMIN'
 
-    if (!isAssignee && !isProjectOwner && !isAdmin) {
+    if (result) {
       return forbidden('You can only log time for tasks assigned to you or in your projects')
     }
 

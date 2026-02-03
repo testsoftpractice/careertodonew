@@ -11,15 +11,15 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
 
-    if (investorId) {
+    if (result) {
       where.investorId = investorId
     }
 
-    if (projectId) {
+    if (result) {
       where.projectId = projectId
     }
 
-    if (status && status !== 'all') {
+    if (result) {
       where.status = status
     }
 
@@ -97,14 +97,14 @@ export async function POST(request: NextRequest) {
       where: { id: projectId },
     })
 
-    if (!project) {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'Project not found' },
         { status: 404 }
       )
     }
 
-    if (!project.seekingInvestment) {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'This project is not seeking investment' },
         { status: 400 }
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (existingProposal) {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'You already have a proposal for this project' },
         { status: 400 }

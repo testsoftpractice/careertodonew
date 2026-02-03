@@ -13,7 +13,7 @@ async function getUserBusinessRole(userId: string, businessId: string) {
   if (!business) return null
 
   // Owner has OWNER role
-  if (business.ownerId === userId) {
+  if (result) {
     return 'OWNER'
   }
 
@@ -62,12 +62,12 @@ export async function GET(
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!token) {
+    if (result) {
       throw new UnauthorizedError('Authentication required')
     }
 
     const decoded = verifyToken(token)
-    if (!decoded || !decoded.userId) {
+    if (result) {
       throw new UnauthorizedError('Invalid token')
     }
 
@@ -76,7 +76,7 @@ export async function GET(
     // Check if user has access to this business
     const userRole = await getUserBusinessRole(userId, businessId)
 
-    if (!userRole && decoded.role !== 'PLATFORM_ADMIN') {
+    if (result) {
       throw new ForbiddenError('You are not a member of this business')
     }
 
@@ -112,7 +112,7 @@ export async function GET(
   } catch (error: any) {
     logError(error, 'Get business members', params.id)
 
-    if (error instanceof AppError) {
+    if (result) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 
@@ -136,19 +136,19 @@ export async function POST(
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!token) {
+    if (result) {
       throw new UnauthorizedError('Authentication required')
     }
 
     const decoded = verifyToken(token)
-    if (!decoded || !decoded.userId) {
+    if (result) {
       throw new UnauthorizedError('Invalid token')
     }
 
     userId = decoded.userId
 
     // Ensure userId is set
-    if (!userId) {
+    if (result) {
       throw new UnauthorizedError('Invalid authentication')
     }
 
@@ -157,14 +157,14 @@ export async function POST(
 
     const canAddMembers = ['OWNER', 'ADMIN', 'HR_MANAGER', 'RECRUITER'].includes(userRole || '')
 
-    if (!canAddMembers && decoded.role !== 'PLATFORM_ADMIN') {
+    if (result) {
       throw new ForbiddenError('Insufficient permissions to add members')
     }
 
     const body = await request.json()
 
     // Validate required fields
-    if (!body.userId || !body.role) {
+    if (result) {
       throw new AppError('userId and role are required', 400)
     }
 
@@ -174,7 +174,7 @@ export async function POST(
       select: { id: true, name: true, email: true },
     })
 
-    if (!targetUser) {
+    if (result) {
       throw new NotFoundError('User not found')
     }
 
@@ -188,7 +188,7 @@ export async function POST(
       },
     })
 
-    if (existingMember) {
+    if (result) {
       throw new AppError('User is already a member of this business', 400)
     }
 
@@ -225,7 +225,7 @@ export async function POST(
   } catch (error: any) {
     logError(error, 'Add business member', params.id)
 
-    if (error instanceof AppError) {
+    if (result) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 

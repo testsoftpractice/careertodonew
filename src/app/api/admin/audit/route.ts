@@ -5,15 +5,41 @@ export async function GET(request: NextRequest) {
   try {
     const limit = parseInt(request.nextUrl.searchParams.get("limit") || "50")
     const sort = request.nextUrl.searchParams.get("sort") || "desc"
+    const actionFilter = request.nextUrl.searchParams.get("action")
+    const entityTypeFilter = request.nextUrl.searchParams.get("entityType")
+    const startDateStr = request.nextUrl.searchParams.get("startDate")
+    const endDateStr = request.nextUrl.searchParams.get("endDate")
+
+    // Build where clause
+    const where: any = {}
+
+    if (actionFilter) {
+      where.action = actionFilter
+    }
+
+    if (entityTypeFilter) {
+      where.entity = entityTypeFilter
+    }
+
+    if (startDateStr || endDateStr) {
+      where.createdAt = {}
+      if (startDateStr) {
+        where.createdAt.gte = new Date(startDateStr)
+      }
+      if (endDateStr) {
+        where.createdAt.lte = new Date(endDateStr)
+      }
+    }
 
     const logs = await db.auditLog.findMany({
+      where,
       orderBy: {
         createdAt: sort as 'asc' | 'desc',
       },
       take: limit,
     })
 
-    const totalCount = await db.auditLog.count()
+    const totalCount = await db.auditLog.count({ where })
 
     return NextResponse.json({
       success: true,

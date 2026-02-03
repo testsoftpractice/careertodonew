@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import {
   Popover,
   PopoverContent,
@@ -21,6 +22,7 @@ import {
   Loader2,
   ChevronDown,
   Users,
+  X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -65,8 +67,8 @@ export function UniversitySelector({
   // Fetch universities when search query changes
   useEffect(() => {
     const fetchUniversities = async () => {
-      if (searchQuery.length < 2) {
-        setUniversities([])
+      if (searchQuery.length < 1) {
+        // Don't clear - show initial list or all universities
         return
       }
 
@@ -89,16 +91,16 @@ export function UniversitySelector({
     return () => clearTimeout(debounceTimer)
   }, [searchQuery])
 
-  // Load initial universities (top ones)
+  // Load initial universities (top ones by ranking)
   useEffect(() => {
     const fetchInitialUniversities = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/universities')
+        const response = await fetch('/api/universities?sortBy=rankingPosition&sortOrder=asc&limit=50')
         const data = await response.json()
 
         if (data.universities) {
-          setUniversities(data.universities.slice(0, 10))
+          setUniversities(data.universities.slice(0, 50))
         }
       } catch (error) {
         console.error('Fetch universities error:', error)
@@ -110,15 +112,26 @@ export function UniversitySelector({
     fetchInitialUniversities()
   }, [])
 
+  // Filter universities based on search query (client-side for instant feedback)
+  const filteredUniversities = universities.filter(univ => {
+    if (searchQuery.length < 1) return true
+    const searchLower = searchQuery.toLowerCase()
+    return (
+      univ.name.toLowerCase().includes(searchLower) ||
+      univ.code.toLowerCase().includes(searchLower) ||
+      (univ.location && univ.location.toLowerCase().includes(searchLower))
+    )
+  })
+
   // Update selected university when value prop changes
   useEffect(() => {
     if (value && selectedUniversity?.id !== value) {
-      // Find the university in the list or fetch it
+      // Find the university in the list
       const found = universities.find(u => u.id === value)
       if (found) {
         setSelectedUniversity(found)
-      } else {
-        // Could fetch specific university by ID here
+      } else if (value) {
+        // Try to fetch specific university by ID
         fetchUniversityById(value)
       }
     } else if (!value && selectedUniversity) {
@@ -180,7 +193,7 @@ export function UniversitySelector({
                     <Building2 className="h-5 w-5 text-blue-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">{selectedUniversity.name}</p>
+                    <p className="font-semibold truncate text-foreground">{selectedUniversity.name}</p>
                     {selectedUniversity.location && (
                       <p className="text-xs text-muted-foreground truncate">
                         {selectedUniversity.location}
@@ -199,52 +212,74 @@ export function UniversitySelector({
           </Button>
         </PopoverTrigger>
 
-        <PopoverContent className="w-[400px] p-0" align="start">
+        <PopoverContent
+          className="w-[600px] p-0 z-50 backdrop-blur-md bg-white/95 dark:bg-gray-900/95"
+          align="start"
+          sideOffset={4}
+        >
           <Command>
             <CommandInput
-              placeholder="Search universities by name or code..."
+              placeholder="Search universities by name, code, or location (e.g., Dhaka, du)..."
               value={searchQuery}
               onValueChange={setSearchQuery}
-              className="border-none focus:ring-0"
+              className="border-none focus:ring-0 h-12 text-base"
             />
-            <CommandList>
-              {loading && searchQuery.length >= 2 && (
-                <div className="flex items-center justify-center py-4">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <CommandList className="max-h-96 overflow-y-auto">
+              {loading && searchQuery.length >= 1 && (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               )}
 
-              {!loading && universities.length === 0 && (
-                <CommandEmpty>No universities found.</CommandEmpty>
+              {!loading && filteredUniversities.length === 0 && (
+                <CommandEmpty>
+                  <div className="flex flex-col items-center gap-2 py-8">
+                    <Search className="h-8 w-8 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">No universities found</p>
+                    <p className="text-xs text-muted-foreground">Try searching for city name or university code</p>
+                  </div>
+                </CommandEmpty>
               )}
 
               <CommandGroup heading="Universities">
-                {universities.map((university) => (
+                {filteredUniversities.map((university) => (
                   <CommandItem
                     key={university.id}
                     value={university.id}
                     onSelect={() => handleSelect(university)}
-                    className="cursor-pointer"
+                    className="cursor-pointer py-3"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="shrink-0 w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-                        <Building2 className="h-4 w-4 text-blue-600" />
+                      <div className="shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/10 to-cyan-500/10 flex items-center justify-center border border-blue-200/20">
+                        <Building2 className="h-5 w-5 text-blue-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{university.name}</p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <p className="font-medium truncate text-foreground text-base">{university.name}</p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                           {university.code && (
-                            <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                            <span className="font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md font-semibold text-xs">
                               {university.code}
                             </span>
                           )}
                           {university.location && (
-                            <span className="truncate">{university.location}</span>
+                            <>
+                              <span className="text-muted-foreground/50">•</span>
+                              <span className="truncate">{university.location}</span>
+                            </>
+                          )}
+                          {university.rankingPosition && (
+                            <>
+                              <span className="text-muted-foreground/50">•</span>
+                              <Badge variant="secondary" className="text-xs">
+                                <GraduationCap className="h-3 w-3 mr-1" />
+                                #{university.rankingPosition}
+                              </Badge>
+                            </>
                           )}
                         </div>
                       </div>
                       {selectedUniversity?.id === university.id && (
-                        <Check className="h-4 w-4 text-primary shrink-0" />
+                        <Check className="h-5 w-5 text-primary shrink-0" />
                       )}
                     </div>
                   </CommandItem>
@@ -256,24 +291,27 @@ export function UniversitySelector({
       </Popover>
 
       {selectedUniversity && (
-        <Card className="bg-gradient-to-r from-blue-50/50 to-cyan-50/50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200 dark:border-blue-900">
-          <CardContent className="p-4">
+        <Card className="bg-gradient-to-r from-blue-50/50 to-cyan-50/50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200 dark:border-blue-900 shadow-sm">
+          <CardContent className="p-5">
             <div className="flex items-start gap-4">
-              <div className="shrink-0 w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
-                <Building2 className="h-6 w-6 text-blue-600" />
+              <div className="shrink-0 w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+                <Building2 className="h-7 w-7 text-white" />
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div>
-                    <h4 className="font-semibold">{selectedUniversity.name}</h4>
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-bold text-lg text-foreground">{selectedUniversity.name}</h4>
                     {selectedUniversity.location && (
-                      <p className="text-sm text-muted-foreground">{selectedUniversity.location}</p>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                        <Globe className="h-3 w-3" />
+                        {selectedUniversity.location}
+                      </p>
                     )}
                   </div>
                   {selectedUniversity.rankingPosition && (
                     <div className="shrink-0">
-                      <Badge variant="secondary" className="flex items-center gap-1">
+                      <Badge variant="secondary" className="flex items-center gap-1 text-sm px-3 py-1">
                         <GraduationCap className="h-3 w-3" />
                         Rank #{selectedUniversity.rankingPosition}
                       </Badge>
@@ -282,16 +320,17 @@ export function UniversitySelector({
                 </div>
 
                 {selectedUniversity.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3 leading-relaxed">
                     {selectedUniversity.description}
                   </p>
                 )}
 
                 <div className="flex items-center gap-4 text-sm">
                   {selectedUniversity.totalStudents && (
-                    <div className="flex items-center gap-1 text-muted-foreground">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Users className="h-4 w-4" />
-                      <span>{selectedUniversity.totalStudents.toLocaleString()} students</span>
+                      <span className="font-medium">{selectedUniversity.totalStudents.toLocaleString()}</span>
+                      <span className="text-muted-foreground/70">students</span>
                     </div>
                   )}
 
@@ -299,17 +338,17 @@ export function UniversitySelector({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-auto p-0 text-blue-600 hover:text-blue-700"
+                      className="h-auto p-0 text-blue-600 hover:text-blue-700 font-medium"
                       asChild
                     >
                       <a
                         href={selectedUniversity.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1"
+                        className="flex items-center gap-1.5"
                       >
                         <Globe className="h-4 w-4" />
-                        <span className="hidden sm:inline">Visit Website</span>
+                        <span>Visit Website</span>
                         <ExternalLink className="h-3 w-3" />
                       </a>
                     </Button>
@@ -317,16 +356,14 @@ export function UniversitySelector({
                 </div>
               </div>
 
-              {selectedUniversity && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleClear}
-                  className="shrink-0 h-8 w-8"
-                >
-                  ×
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleClear}
+                className="shrink-0 h-8 w-8 hover:bg-red-50 hover:text-red-600 text-muted-foreground"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           </CardContent>
         </Card>

@@ -7,7 +7,7 @@ import { unauthorized, forbidden } from '@/lib/api-response'
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
-    if (!authResult.success) {
+    if (result) {
       return unauthorized('Authentication required')
     }
 
@@ -19,23 +19,23 @@ export async function GET(request: NextRequest) {
 
     const where: Record<string, string | undefined> = {}
 
-    if (projectId) {
+    if (result) {
       where.projectId = projectId
     }
 
     // If filtering by userId, only allow viewing own investments or admin
-    if (userId) {
-      if (userId !== authResult.user!.id && authResult.user!.role !== 'PLATFORM_ADMIN') {
+    if (result) {
+      if (result) {
         return forbidden('You can only view your own investments')
       }
       where.userId = userId
     }
 
-    if (status && status !== 'all') {
+    if (result) {
       where.status = status
     }
 
-    if (type && type !== 'all') {
+    if (result) {
       where.type = type
     }
 
@@ -104,15 +104,13 @@ export async function POST(request: NextRequest) {
     const currentUser = authResult.dbUser
 
     const body = await request.json()
-    const {
-      userId,
+    const { userId,
       projectId,
       type,
-      amount,
-    } = body
+      amount, } = body
 
     // Users can only create investments for themselves
-    if (userId !== currentUser.id) {
+    if (result) {
       return forbidden('You can only create investments for yourself')
     }
 
@@ -121,7 +119,7 @@ export async function POST(request: NextRequest) {
       where: { id: userId },
     })
 
-    if (!user) {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
@@ -138,7 +136,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (!project) {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'Project not found' },
         { status: 404 }
@@ -153,7 +151,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (existingInvestment) {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'You already have an investment in this project' },
         { status: 400 }

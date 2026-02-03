@@ -47,7 +47,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const token = request.nextUrl.searchParams.get("token")
     
-    if (!token) {
+    if (result) {
       return NextResponse.json({ success: false, error: "Share token required" }, { status: 400 })
     }
 
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     })
 
-    if (!record) {
+    if (result) {
       return NextResponse.json({ success: false, error: "Invalid or expired share link" }, { status: 404 })
     }
 

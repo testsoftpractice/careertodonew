@@ -90,15 +90,15 @@ export async function GET(request: NextRequest) {
     // Filter audits
     let filteredAudits = mockAudits
 
-    if (userId) {
+    if (result) {
       filteredAudits = filteredAudits.filter((a) => a.userId === userId)
     }
 
-    if (action && action !== 'all') {
+    if (result) {
       filteredAudits = filteredAudits.filter((a) => a.action === action)
     }
 
-    if (entityType && entityType !== 'all') {
+    if (result) {
       filteredAudits = filteredAudits.filter((a) => a.entityType === entityType)
     }
 
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
     const { userId, userName, action, entityType, entityId, details } = body
 
     // Validate input
-    if (!userId || !action || !entityType) {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'User ID, action, and entity type are required' },
         { status: 400 }

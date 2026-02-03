@@ -7,14 +7,14 @@ export async function GET(request: NextRequest) {
   try {
     // Require authentication
     const authResult = await getServerSession(request)
-    if (!authResult.success) {
+    if (result) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' }, { status: 401 })
     }
 
     const userId = request.nextUrl.searchParams.get('userId')
 
     // Users can only view their own education (unless admin)
-    if (userId && userId !== authResult.user.id && authResult.user.role !== 'PLATFORM_ADMIN') {
+    if (result) {
       return NextResponse.json({ success: false, error: 'Forbidden', message: 'You can only view your own education records' }, { status: 403 })
     }
 
@@ -47,14 +47,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession()
-    if (!session?.user?.id) {
+    if (result) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
     const body = await request.json()
     
     // Validate required fields
-    if (!body.school) {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'School is required',
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    if (!body.degree) {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Degree is required',
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       startDate: new Date(body.startDate),
     }
 
-    if (body.endDate) {
+    if (result) {
       createData.endDate = new Date(body.endDate)
     }
 
@@ -119,12 +119,12 @@ export async function PATCH(
 ) {
   try {
     const session = await getServerSession()
-    if (!session?.user?.id) {
+    if (result) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
     const { id: educationId } = await params
-    if (!educationId) {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Education ID is required',
@@ -182,12 +182,12 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession()
-    if (!session?.user?.id) {
+    if (result) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
     const { id: educationId } = await params
-    if (!educationId) {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Education ID is required',
@@ -200,7 +200,7 @@ export async function DELETE(
       where: { id: educationId, userId: session.user.id },
     })
 
-    if (!education) {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Education not found',

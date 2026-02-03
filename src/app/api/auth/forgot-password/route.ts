@@ -7,7 +7,7 @@ const generateResetToken = (email: string) => {
   const data = `${email}:${timestamp}`
   const token = Buffer.from(data).toString('base64').slice(0, 32)
   const expiresAt = new Date(timestamp + 24 * 60 * 60 * 1000)
-  
+
   return { token, expiresAt }
 }
 
@@ -50,14 +50,14 @@ export async function POST(request: NextRequest) {
     // Uncomment this code for production email sending:
     /*
     const sgMail = require('@sendgrid/mail')
-    
+
     const msg = {
       to: email,
       from: process.env.SENDGRID_FROM_EMAIL || 'noreply@careertodo.com',
       subject: 'Reset Your Password - CareerToDo Platform',
       html: '<!DOCTYPE html><html><body><div style="font-family: Arial, sans-serif; padding: 20px;"><h1>Reset Your Password</h1><p>Click the link below to reset your password:</p><a href="' + resetUrl + '">Reset Password</a></div></body></html>',
     }
-    
+
     await sgMail.send(msg)
     */
 

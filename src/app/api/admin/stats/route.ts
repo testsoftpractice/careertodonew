@@ -20,15 +20,15 @@ export async function GET(request: NextRequest) {
 
     const stats = {
       totalUsers,
-      inProgressProjects,
-      underReviewProjects,
+      activeProjects: inProgressProjects,
+      pendingProjects: underReviewProjects,
       completedProjects,
       totalProjects,
       todayActive,
       todayCompleted,
       todaySubmissions,
       pendingApprovals,
-      cancelledProjects,
+      rejectedProjects: cancelledProjects,
       complianceScore,
       systemHealth,
       lastAudit,

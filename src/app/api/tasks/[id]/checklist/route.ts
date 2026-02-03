@@ -40,7 +40,7 @@ export async function GET(
       where: { id: taskId },
     })
 
-    if (!task) {
+    if (result) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
@@ -117,7 +117,7 @@ export async function POST(
       },
     })
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (result) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Add checklist item error:', error)
@@ -149,7 +149,7 @@ export async function PUT(
       where: { id: itemId },
     })
 
-    if (!checklistItem) {
+    if (result) {
       return NextResponse.json({ error: 'Checklist item not found' }, { status: 404 })
     }
 
@@ -176,7 +176,7 @@ export async function PUT(
       },
     })
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (result) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Update checklist item error:', error)
@@ -205,7 +205,7 @@ export async function DELETE(
       where: { id: itemId },
     })
 
-    if (!checklistItem) {
+    if (result) {
       return NextResponse.json({ error: 'Checklist item not found' }, { status: 404 })
     }
 

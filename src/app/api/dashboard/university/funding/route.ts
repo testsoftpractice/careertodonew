@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!token) {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     const decoded = verifyToken(token)
 
-    if (!decoded || !decoded.userId) {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
         { status: 401 }
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       select: { universityId: true }
     })
 
-    if (!user?.universityId) {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'No university associated' },
         { status: 400 }

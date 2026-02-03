@@ -17,9 +17,9 @@ export async function GET(request: NextRequest) {
     let authenticatedUserId: string | null = null
     let userRole: string | null = null
 
-    if (token) {
+    if (result) {
       const decoded = verifyToken(token)
-      if (decoded && decoded.userId) {
+      if (result) {
         authenticatedUserId = decoded.userId
         userRole = decoded.role
       }
@@ -28,12 +28,12 @@ export async function GET(request: NextRequest) {
     // Build query
     const where: any = {}
 
-    if (status) {
+    if (result) {
       where.status = status
     }
 
     // If requesting specific user's businesses, filter by owner
-    if (userId) {
+    if (result) {
       where.ownerId = userId
     }
 
@@ -99,12 +99,12 @@ export async function POST(request: NextRequest) {
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!token) {
+    if (result) {
       throw new UnauthorizedError('Authentication required')
     }
 
     const decoded = verifyToken(token)
-    if (!decoded || !decoded.userId) {
+    if (result) {
       throw new UnauthorizedError('Invalid token')
     }
 
@@ -112,19 +112,19 @@ export async function POST(request: NextRequest) {
     userRole = decoded.role
 
     // Authorization - Only employers and platform admins can create businesses
-    if (userRole !== 'EMPLOYER' && userRole !== 'PLATFORM_ADMIN') {
+    if (result) {
       throw new ForbiddenError('Only employers and platform admins can create businesses')
     }
 
     const body = await request.json()
 
     // Validate required fields
-    if (!body.name) {
+    if (result) {
       throw new AppError('Business name is required', 400)
     }
 
     // Ensure userId is set
-    if (!userId) {
+    if (result) {
       throw new UnauthorizedError('Invalid authentication')
     }
 
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     logError(error, 'Create business', userId || 'unknown')
 
-    if (error instanceof AppError) {
+    if (result) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 

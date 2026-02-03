@@ -65,7 +65,7 @@ export async function GET(
       },
     })
 
-    if (!project) {
+    if (result) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
@@ -73,7 +73,7 @@ export async function GET(
     const hasAccess = project.projectLeadId === user.id ||
                        project.projectMembers.some((m: any) => m.userId === user.id)
 
-    if (!hasAccess && user.userRole !== 'PLATFORM_ADMIN' && user.userRole !== 'UNIVERSITY_ADMIN') {
+    if (result) {
       return NextResponse.json({ error: 'Forbidden - No access to this project' }, { status: 403 })
     }
 
@@ -133,7 +133,7 @@ export async function POST(
       select: { projectLeadId: true },
     })
 
-    if (!project) {
+    if (result) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
@@ -141,7 +141,7 @@ export async function POST(
                              user.userRole === 'PLATFORM_ADMIN' ||
                              user.userRole === 'UNIVERSITY_ADMIN'
 
-    if (!canManageLifecycle) {
+    if (result) {
       return NextResponse.json({ error: 'Forbidden - Only project lead can manage lifecycle' }, { status: 403 })
     }
 
@@ -193,7 +193,7 @@ export async function PUT(
   try {
     const { lifecycleId } = await request.json()
 
-    if (!lifecycleId) {
+    if (result) {
       return NextResponse.json({ error: 'Lifecycle entry ID is required' }, { status: 400 })
     }
 
@@ -202,7 +202,7 @@ export async function PUT(
       where: { id: lifecycleId },
     })
 
-    if (!lifecycleEntry) {
+    if (result) {
       return NextResponse.json({ error: 'Lifecycle entry not found' }, { status: 404 })
     }
 
@@ -216,7 +216,7 @@ export async function PUT(
                      user.userRole === 'PLATFORM_ADMIN' ||
                      user.userRole === 'UNIVERSITY_ADMIN'
 
-    if (!canEdit) {
+    if (result) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -263,7 +263,7 @@ export async function DELETE(
   try {
     const { lifecycleId } = await request.json()
 
-    if (!lifecycleId) {
+    if (result) {
       return NextResponse.json({ error: 'Lifecycle entry ID is required' }, { status: 400 })
     }
 
@@ -272,7 +272,7 @@ export async function DELETE(
       where: { id: lifecycleId },
     })
 
-    if (!lifecycleEntry) {
+    if (result) {
       return NextResponse.json({ error: 'Lifecycle entry not found' }, { status: 404 })
     }
 
@@ -286,7 +286,7 @@ export async function DELETE(
                      user.userRole === 'PLATFORM_ADMIN' ||
                      user.userRole === 'UNIVERSITY_ADMIN'
 
-    if (!canDelete) {
+    if (result) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

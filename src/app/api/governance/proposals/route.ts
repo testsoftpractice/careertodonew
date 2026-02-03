@@ -43,28 +43,28 @@ export async function POST(request: NextRequest) {
     const validatedData = createProposalSchema.parse(body)
 
     // Check if university ID exists
-    if (!user.universityId) {
+    if (result) {
       return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
     }
 
     // Validate related entities
-    if (validatedData.projectId) {
+    if (result) {
       const project = await db.project.findUnique({ where: { id: validatedData.projectId } })
-      if (!project) {
+      if (result) {
         return NextResponse.json({ error: 'Project not found' }, { status: 404 })
       }
     }
 
-    if (validatedData.studentId) {
+    if (result) {
       const student = await db.user.findUnique({ where: { id: validatedData.studentId } })
-      if (!student) {
+      if (result) {
         return NextResponse.json({ error: 'Student not found' }, { status: 404 })
       }
     }
 
-    if (validatedData.contentId) {
+    if (result) {
       const content = await db.content.findUnique({ where: { id: validatedData.contentId } })
-      if (!content) {
+      if (result) {
         return NextResponse.json({ error: 'Content not found' }, { status: 404 })
       }
     }
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (result) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Create governance proposal error:', error)

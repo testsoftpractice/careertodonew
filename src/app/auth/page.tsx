@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import PublicHeader from '@/components/public-header'
+import { UniversitySelector } from '@/components/student/university-selector'
 
 export default function AuthPage() {
   const router = useRouter()
@@ -13,6 +14,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [selectedUniversity, setSelectedUniversity] = useState<any>(null)
 
   const [signupData, setSignupData] = useState({
     firstName: '',
@@ -40,6 +42,8 @@ export default function AuthPage() {
     firmName: '',
     investmentFocus: '',
   })
+
+  const [universitySignupMode, setUniversitySignupMode] = useState<'existing' | 'new'>('new')
 
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
@@ -121,8 +125,8 @@ export default function AuthPage() {
             router.push('/marketplace')
           } else if (data.user.role === 'INVESTOR') {
             router.push('/marketplace')
-          } else if (data.user.role === 'ADMIN') {
-            router.push('/admin/governance')
+          } else if (data.user.role === 'PLATFORM_ADMIN') {
+            router.push('/admin')
           }
         }, 1000)
       } else {
@@ -249,35 +253,21 @@ export default function AuthPage() {
                     {/* Role-specific Fields */}
                     {selectedRole === 'STUDENT' && (
                       <>
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div className="space-y-2">
-                            <label htmlFor="university" className="block text-sm font-medium mb-2">University</label>
-                            <input
-                              id="university"
-                              name="university"
-                              type="text"
-                              placeholder="e.g., Stanford University"
-                              value={signupData.university}
-                              onChange={(e) => setSignupData({ ...signupData, university: e.target.value })}
-                              disabled={loading}
-                              required
-                              className="w-full px-4 py-2 border rounded-md"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label htmlFor="universityId" className="block text-sm font-medium mb-2">University ID</label>
-                            <input
-                              id="universityId"
-                              name="universityId"
-                              type="text"
-                              placeholder="e.g., STAN001"
-                              value={signupData.universityId}
-                              onChange={(e) => setSignupData({ ...signupData, universityId: e.target.value })}
-                              disabled={loading}
-                              required
-                              className="w-full px-4 py-2 border rounded-md"
-                            />
-                          </div>
+                        <div className="space-y-4">
+                          <UniversitySelector
+                            value={selectedUniversity?.id || null}
+                            onChange={(university) => {
+                              setSelectedUniversity(university)
+                              setSignupData({
+                                ...signupData,
+                                university: university?.name || '',
+                                universityId: university?.id || '',
+                              })
+                            }}
+                            disabled={loading}
+                            label="University"
+                            placeholder="Search and select your university..."
+                          />
                         </div>
                         <div className="space-y-2">
                           <label htmlFor="major" className="block text-sm font-medium mb-2">Major</label>
@@ -315,48 +305,97 @@ export default function AuthPage() {
 
                     {selectedRole === 'UNIVERSITY' && (
                       <>
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div className="space-y-2">
-                            <label htmlFor="universityName" className="block text-sm font-medium mb-2">University Name</label>
-                            <input
-                              id="universityName"
-                              name="universityName"
-                              type="text"
-                              placeholder="e.g., Stanford University"
-                              value={signupData.universityName}
-                              onChange={(e) => setSignupData({ ...signupData, universityName: e.target.value })}
+                        <div className="space-y-4">
+                          <div className="flex gap-4 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setUniversitySignupMode('existing')
+                                setSelectedUniversity(null)
+                              }}
                               disabled={loading}
-                              required
-                              className="w-full px-4 py-2 border rounded-md"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label htmlFor="universityCode" className="block text-sm font-medium mb-2">University Code</label>
-                            <input
-                              id="universityCode"
-                              name="universityCode"
-                              type="text"
-                              placeholder="e.g., STAN"
-                              value={signupData.universityCode}
-                              onChange={(e) => setSignupData({ ...signupData, universityCode: e.target.value })}
+                              className={`flex-1 py-2 px-4 rounded-md transition-all ${universitySignupMode === 'existing' ? 'bg-white dark:bg-gray-700 shadow font-medium' : 'text-gray-600 dark:text-gray-400'}`}
+                            >
+                              Join Existing University
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setUniversitySignupMode('new')
+                                setSelectedUniversity(null)
+                              }}
                               disabled={loading}
-                              required
-                              className="w-full px-4 py-2 border rounded-md"
-                            />
+                              className={`flex-1 py-2 px-4 rounded-md transition-all ${universitySignupMode === 'new' ? 'bg-white dark:bg-gray-700 shadow font-medium' : 'text-gray-600 dark:text-gray-400'}`}
+                            >
+                              Create New University
+                            </button>
                           </div>
-                        </div>
-                        <div className="space-y-2">
-                          <label htmlFor="website" className="block text-sm font-medium mb-2">Website</label>
-                          <input
-                            id="website"
-                            name="website"
-                            type="url"
-                            placeholder="https://university.edu"
-                            value={signupData.website}
-                            onChange={(e) => setSignupData({ ...signupData, website: e.target.value })}
-                            disabled={loading}
-                            className="w-full px-4 py-2 border rounded-md"
-                          />
+
+                          {universitySignupMode === 'existing' ? (
+                            <UniversitySelector
+                              value={selectedUniversity?.id || null}
+                              onChange={(university) => {
+                                setSelectedUniversity(university)
+                                setSignupData({
+                                  ...signupData,
+                                  universityName: university?.name || '',
+                                  universityId: university?.id || '',
+                                  universityCode: university?.code || '',
+                                  website: university?.website || '',
+                                })
+                              }}
+                              disabled={loading}
+                              label="Select University"
+                              placeholder="Search and select your university to join..."
+                              showWebsite={false}
+                            />
+                          ) : (
+                            <>
+                              <div className="grid gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                  <label htmlFor="universityName" className="block text-sm font-medium mb-2">University Name</label>
+                                  <input
+                                    id="universityName"
+                                    name="universityName"
+                                    type="text"
+                                    placeholder="e.g., Stanford University"
+                                    value={signupData.universityName}
+                                    onChange={(e) => setSignupData({ ...signupData, universityName: e.target.value })}
+                                    disabled={loading}
+                                    required={universitySignupMode === 'new'}
+                                    className="w-full px-4 py-2 border rounded-md"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <label htmlFor="universityCode" className="block text-sm font-medium mb-2">University Code</label>
+                                  <input
+                                    id="universityCode"
+                                    name="universityCode"
+                                    type="text"
+                                    placeholder="e.g., STAN"
+                                    value={signupData.universityCode}
+                                    onChange={(e) => setSignupData({ ...signupData, universityCode: e.target.value })}
+                                    disabled={loading}
+                                    required={universitySignupMode === 'new'}
+                                    className="w-full px-4 py-2 border rounded-md"
+                                  />
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <label htmlFor="website" className="block text-sm font-medium mb-2">Website</label>
+                                <input
+                                  id="website"
+                                  name="website"
+                                  type="url"
+                                  placeholder="https://university.edu"
+                                  value={signupData.website}
+                                  onChange={(e) => setSignupData({ ...signupData, website: e.target.value })}
+                                  disabled={loading}
+                                  className="w-full px-4 py-2 border rounded-md"
+                                />
+                              </div>
+                            </>
+                          )}
                         </div>
                       </>
                     )}

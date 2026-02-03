@@ -16,19 +16,19 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
 
-    if (projectId) {
+    if (result) {
       where.projectId = projectId
     }
 
-    if (assigneeId) {
+    if (result) {
       where.assignedTo = assigneeId  // Fix: use correct field name from Prisma schema
     }
 
-    if (status) {
+    if (result) {
       where.status = status as any
     }
 
-    if (priority) {
+    if (result) {
       where.priority = priority as any
     }
 
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     // Validate request body
     const validation = validateRequest(createTaskSchema, body)
 
-    if (!validation.valid) {
+    if (result) {
       return validationError(validation.errors)
     }
 
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       select: { ownerId: true, id: true }
     })
 
-    if (!project) {
+    if (result) {
       return notFound('Project not found')
     }
 
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     const isMember = memberCount > 0
 
     // Allow if owner or member
-    if (!isOwner && !isMember) {
+    if (result) {
       return forbidden('You are not a member of this project')
     }
 
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
     console.error('Task creation error:', error)
 
     // Handle AuthError - return proper JSON response
-    if (error.name === 'AuthError' || error.statusCode) {
+    if (result) {
       return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
     }
 

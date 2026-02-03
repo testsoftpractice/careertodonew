@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.projectId as string | undefined
 
-    if (!projectId) {
+    if (result) {
       return errorResponse('Project ID is required', 400)
     }
 
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       return validationError(validation.error.issues.map(issue => ({
         field: issue.path[0] || 'unknown',
-        message: issue.message
+        message: issue.message,
       })))
     }
 
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (!member && !isOwner) {
+    if (!member) {
       return forbidden('You are not a member of this project')
     }
 
@@ -120,14 +120,14 @@ export async function POST(request: NextRequest) {
     console.error('Create vacancy error:', error)
 
     // Handle AuthError - return proper JSON response
-    if (error.name === 'AuthError' || error.statusCode) {
+    if (result) {
       return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
     }
 
-    if (error.code === 'P2002') {
+    if (result) {
       return errorResponse('Project not found', 404)
     }
-    if (error.code === 'P2003') {
+    if (result) {
       return errorResponse('Foreign key constraint failed', 400)
     }
     return errorResponse('Failed to create vacancy', 500)
@@ -141,7 +141,7 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const id = searchParams.id as string | undefined
 
-    if (!id) {
+    if (result) {
       return errorResponse('Vacancy ID is required', 400)
     }
 
@@ -153,7 +153,7 @@ export async function DELETE(request: NextRequest) {
       }
     })
 
-    if (!vacancy) {
+    if (result) {
       return notFound('Vacancy not found')
     }
 
@@ -165,7 +165,7 @@ export async function DELETE(request: NextRequest) {
       },
     })
 
-    if (!member && authResult.dbUser.role !== 'ADMIN') {
+    if (result) {
       return forbidden('You are not a member of this project')
     }
 

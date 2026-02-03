@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // TODO: In production, validate token against database
     // For now, basic validation (token should be 32 chars)
-    if (typeof token !== 'string' || token.length !== 32) {
+    if (!token || token.length !== 32) {
       return NextResponse.json(
         { success: false, error: 'Invalid or expired token' },
         { status: 400 }

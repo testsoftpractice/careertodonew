@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
     
-    if (search) {
+    if (result) {
       where.OR = [
         { title: { contains: search, mode: "insensitive" } },
         { description: { contains: search, mode: "insensitive" } },
@@ -23,19 +23,19 @@ export async function GET(request: NextRequest) {
       ]
     }
     
-    if (category) {
+    if (result) {
       where.category = category
     }
     
-    if (university) {
+    if (result) {
       where.university = { name: { contains: university, mode: "insensitive" } }
     }
     
-    if (status) {
+    if (result) {
       where.status = status
     }
     
-    if (reputationMin && reputationMax) {
+    if (result) {
       where.rating = {
         _avg: {
           execution: { gte: reputationMin, lte: reputationMax },

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { VerificationStatus } from '@prisma/client'
+import { UniversityVerificationStatus } from '@prisma/client'
 
 // GET /api/universities - List universities with filters
 export async function GET(request: NextRequest) {
@@ -13,8 +13,8 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
 
-    if (status && status !== 'all') {
-      where.verificationStatus = status as VerificationStatus
+    if (status) {
+      where.verificationStatus = status as UniversityVerificationStatus
     }
 
     if (search) {
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
         description,
         website,
         location,
-        verificationStatus: VerificationStatus.PENDING,
+        verificationStatus: UniversityVerificationStatus.PENDING,
         totalStudents: 0,
         totalProjects: 0,
         rankingScore: 0,

@@ -17,14 +17,14 @@ export async function GET(request: NextRequest) {
     const approvedStatuses = status ? status.split(',') : ['IN_PROGRESS', 'FUNDING', 'COMPLETED']
     where.status = { in: approvedStatuses }
 
-    if (search) {
+    if (result) {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
         { description: { contains: search, mode: "insensitive" } },
       ]
     }
 
-    if (category) {
+    if (result) {
       where.category = category
     }
 

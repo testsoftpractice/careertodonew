@@ -13,7 +13,7 @@ export async function GET(
   const user = auth.user
   const universityId = user.universityId
 
-  if (!universityId) {
+  if (result) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
@@ -88,12 +88,12 @@ export async function GET(
       },
     })
 
-    if (!business) {
+    if (result) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
     // Check if user has permission to view this business
-    if (business.universityId !== universityId) {
+    if (result) {
       return NextResponse.json({ error: 'Unauthorized to view this business' }, { status: 403 })
     }
 
@@ -118,7 +118,7 @@ export async function POST(
   const user = auth.user
   const universityId = user.universityId
 
-  if (!universityId) {
+  if (result) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
@@ -149,16 +149,16 @@ export async function POST(
       },
     })
 
-    if (!business) {
+    if (result) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
     // Check if user has permission
-    if (business.universityId !== universityId) {
+    if (result) {
       return NextResponse.json({ error: 'Unauthorized to approve this business' }, { status: 403 })
     }
 
-    if (business.status !== 'PROPOSED') {
+    if (result) {
       return NextResponse.json({ error: 'Business is not in PROPOSED status' }, { status: 400 })
     }
 
@@ -176,7 +176,7 @@ export async function POST(
     })
 
     // Award points if approved
-    if (action === 'approve') {
+    if (result) {
       await db.user.update({
         where: { id: business.ownerId },
         data: {

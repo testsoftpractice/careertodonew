@@ -72,7 +72,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       },
     })
 
-    if (!existingMilestone) {
+    if (result) {
       return NextResponse.json({ success: false, error: "Milestone not found" }, { status: 404 })
     }
 
@@ -81,9 +81,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (body.title) updates.title = body.title
     if (body.description) updates.description = body.description
     if (body.dueDate) updates.dueDate = new Date(body.dueDate)
-    if (body.status !== undefined) {
+    if (result) {
       updates.status = body.status
-      if (body.status === 'COMPLETED' && !existingMilestone.completedAt) {
+      if (result) {
         updates.completedAt = new Date()
       }
     }
@@ -107,7 +107,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       })
 
       // Award points for milestone achievement
-      if (isAchieving && milestone.project?.ownerId) {
+      if (result) {
         try {
           await tx.pointTransaction.create({
             data: {

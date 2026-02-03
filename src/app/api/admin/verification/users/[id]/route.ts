@@ -21,7 +21,7 @@ export async function PATCH(
 
     const decoded = verifyToken(token)
 
-    if (!decoded || !decoded.userId || decoded.role !== 'PLATFORM_ADMIN') {
+    if (!decoded || decoded.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin access required' },
         { status: 401 }

@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { ArrowLeft, Shield, Mail, Lock, Eye, UserPlus, RefreshCw, Loader2, Search } from 'lucide-react'
+import { ArrowLeft, Shield, Mail, Lock, Eye, UserPlus, RefreshCw, Loader2, Search, CheckCircle2, X } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from '@/hooks/use-toast'
 
@@ -24,6 +24,7 @@ interface User {
   status?: string
   joinedAt: string
   reputation: number
+  verificationStatus?: string
 }
 
 export default function AdminUsersPage() {
@@ -82,7 +83,7 @@ export default function AdminUsersPage() {
 
   const filteredUsers = users.filter(user => {
     const matchesRole = roleFilter === 'all' || user.role === roleFilter
-    const matchesVerification = verificationFilter === 'all' || user.status === verificationFilter
+    const matchesVerification = verificationFilter === 'all' || user.verificationStatus === verificationFilter || user.status === verificationFilter
     return matchesRole && matchesVerification
   })
 
@@ -100,6 +101,58 @@ export default function AdminUsersPage() {
         {role.replace(/_/g, ' ')}
       </Badge>
     )
+  }
+
+  const getVerificationBadge = (status?: string) => {
+    if (!status) return null
+    const statusColors: Record<string, string> = {
+      PENDING: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
+      UNDER_REVIEW: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+      VERIFIED: 'bg-green-500/10 text-green-500 border-green-500/20',
+      REJECTED: 'bg-red-500/10 text-red-500 border-red-500/20',
+    }
+    return (
+      <Badge className={statusColors[status] || 'bg-gray-500/10 text-gray-500'}>
+        {status.replace(/_/g, ' ')}
+      </Badge>
+    )
+  }
+
+  const handleApproveReject = async (userId: string, action: 'approve' | 'reject') => {
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          verificationStatus: action === 'approve' ? 'VERIFIED' : 'REJECTED'
+        })
+      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        toast({
+          title: 'Success',
+          description: `User ${action === 'approve' ? 'approved' : 'rejected'} successfully`,
+        })
+        // Refresh the users list
+        window.location.reload()
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to update user',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update user',
+        variant: 'destructive'
+      })
+    }
   }
 
   return (
@@ -216,9 +269,10 @@ export default function AdminUsersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="ACTIVE">Active</SelectItem>
-                  <SelectItem value="INACTIVE">Inactive</SelectItem>
-                  <SelectItem value="SUSPENDED">Suspended</SelectItem>
+                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
+                  <SelectItem value="VERIFIED">Verified</SelectItem>
+                  <SelectItem value="REJECTED">Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -259,7 +313,8 @@ export default function AdminUsersPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       {getRoleBadge(user.role)}
-                      {user.status && (
+                      {getVerificationBadge(user.verificationStatus || user.status)}
+                      {user.status && !user.verificationStatus && (
                         <Badge variant={user.status === 'ACTIVE' ? 'default' : 'secondary'}>
                           {user.status}
                         </Badge>
@@ -267,9 +322,31 @@ export default function AdminUsersPage() {
                       <div className="text-sm text-muted-foreground">
                         {user.reputation} pts
                       </div>
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        {(user.verificationStatus === 'PENDING' || user.status === 'PENDING') && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              onClick={() => handleApproveReject(user.id, 'approve')}
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleApproveReject(user.id, 'reject')}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}

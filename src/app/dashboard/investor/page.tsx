@@ -6,15 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Users, Wallet, TrendingUp, DollarSign, ArrowRight, LogOut } from 'lucide-react'
+import { Users, Wallet, TrendingUp, DollarSign, ArrowRight, LogOut, Target } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
+import { useRoleAccess } from '@/hooks/use-role-access'
 import { toast } from '@/hooks/use-toast'
 import { VerificationGate } from '@/components/verification-gate'
 
 export default function InvestorDashboard() {
   const { user } = useAuth()
-  const hasAccess = useRoleAccess(['INVESTOR', 'PLATFORM_ADMIN'])
+  useRoleAccess(['INVESTOR', 'PLATFORM_ADMIN'])
 
   const [activeTab, setActiveTab] = useState<'portfolio' | 'opportunities'>('portfolio')
   const [stats, setStats] = useState({
@@ -134,7 +135,6 @@ export default function InvestorDashboard() {
         fetchOpportunities()
       }
     }
-    }
   }, [user, activeTab])
 
   const handleLogout = async () => {
@@ -154,23 +154,6 @@ export default function InvestorDashboard() {
     }
   }
 
-  if (!hasAccess) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-          <div className="text-center">
-            <p className="text-muted-foreground">Access Denied</p>
-            <p className="text-sm mt-2">You don't have permission to view this page</p>
-            <p className="text-xs text-muted-foreground mt-4">Only verified investors can access this dashboard</p>
-            <Button onClick={() => window.location.href = '/'}>
-              Return Home
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
@@ -182,7 +165,8 @@ export default function InvestorDashboard() {
                   <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white font-bold text-lg">
                     <span>{user?.name?.[0] || 'I'}</span>
                   </AvatarFallback>
-                  <div className="flex-1 min-w-0">
+                </Avatar>
+                <div className="flex-1 min-w-0">
                     <div>
                       <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
                         Investor Dashboard
@@ -198,13 +182,13 @@ export default function InvestorDashboard() {
                         <ArrowRight className="h-4 w-4" />
                       Home
                       </Button>
-                    <Link>
+                    </Link>
                     <Button onClick={handleLogout} variant="ghost" size="sm">
                       <LogOut className="h-4 w-4" />
                       Logout
                     </Button>
                   </div>
-                </div>
+                  </div>
               </div>
             </div>
           </header>
@@ -288,7 +272,6 @@ export default function InvestorDashboard() {
                             {project.description}
                           </p>
                         </div>
-                        </div>
                         <Badge variant={project.status === 'IN_PROGRESS' ? 'default' : 'outline'} className="text-xs">
                           {project.status}
                         </Badge>
@@ -305,5 +288,4 @@ export default function InvestorDashboard() {
         </div>
       </div>
     )
-  )
-}
+  }

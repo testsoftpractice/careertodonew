@@ -26,7 +26,7 @@ const updateWorkSessionSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const authResult = await requireAuth(request)
-    if (!authResult.dbUser) {
+    if (result) {
       return unauthorized('Authentication required')
     }
 
@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
     const where: Record<string, any> = {}
 
     // If filtering by userId, only allow viewing own sessions or admin
-    if (userId) {
-      if (userId !== currentUser.id && currentUser.role !== 'PLATFORM_ADMIN') {
+    if (result) {
+      if (result) {
         return forbidden('You can only view your own work sessions')
       }
       where.userId = userId
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
     // Validate request body
     const validation = createWorkSessionSchema.safeParse(body)
 
-    if (!validation.success) {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Validation error',
@@ -148,12 +148,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Optional: Link to project
-    if (data.projectId) {
+    if (result) {
       workSessionData.projectId = data.projectId
     }
 
     // Optional: Link to task (either projectId OR taskId can be used, but not both)
-    if (data.taskId) {
+    if (result) {
       workSessionData.taskId = data.taskId
     }
 
@@ -223,7 +223,7 @@ export async function PATCH(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.id as string
 
-    if (!sessionId) {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Work Session ID is required'
@@ -235,7 +235,7 @@ export async function PATCH(request: NextRequest) {
       where: { id: sessionId }
     })
 
-    if (!existingSession) {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Work session not found'
@@ -243,7 +243,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Only allow updating own sessions or admin
-    if (existingSession.userId !== currentUser.id && currentUser.role !== 'PLATFORM_ADMIN') {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'You can only update your own work sessions'
@@ -258,7 +258,7 @@ export async function PATCH(request: NextRequest) {
     // Validate request body
     const validation = updateWorkSessionSchema.safeParse(body)
 
-    if (!validation.success) {
+    if (result) {
       console.error('[WorkSessions PATCH] Validation failed:', validation.error)
       return NextResponse.json({
         success: false,
@@ -277,29 +277,29 @@ export async function PATCH(request: NextRequest) {
     const updateData: any = {}
 
     // Set endTime to current time if not provided
-    if (data.endTime) {
+    if (result) {
       updateData.endTime = data.endTime
-    } else if (!data.duration) {
+    } else if (result) {
       // If neither endTime nor duration provided, use current time
       updateData.endTime = new Date()
     }
 
     // Calculate duration if endTime is being set
-    if (data.endTime && !data.duration) {
+    if (result) {
       const durationSeconds = Math.floor((data.endTime.getTime() - new Date(existingSession.startTime).getTime()) / 1000)
       updateData.duration = durationSeconds
       console.log('[WorkSessions PATCH] Calculated duration from endTime:', durationSeconds)
     }
 
-    if (data.duration) {
+    if (result) {
       updateData.duration = Math.floor(parseFloat(data.duration) * 3600)
     }
 
-    if (data.checkOutLocation) {
+    if (result) {
       updateData.checkOutLocation = data.checkOutLocation
     }
 
-    if (data.notes) {
+    if (result) {
       updateData.notes = data.notes
     }
 
@@ -353,7 +353,7 @@ export async function PATCH(request: NextRequest) {
     })
   } catch (error) {
     // Handle AuthError specifically
-    if (error instanceof AuthError) {
+    if (result) {
       console.error('Authentication error:', error.message)
       return NextResponse.json({
         success: false,

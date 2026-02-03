@@ -18,12 +18,12 @@ export async function PATCH(
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!token) {
+    if (result) {
       throw new UnauthorizedError('Authentication required')
     }
 
     const decoded = verifyToken(token)
-    if (!decoded || !decoded.userId || !decoded.role) {
+    if (result) {
       throw new UnauthorizedError('Invalid token')
     }
 
@@ -34,12 +34,12 @@ export async function PATCH(
       where: { id },
     })
 
-    if (!notification) {
+    if (result) {
       throw new NotFoundError('Notification not found')
     }
 
     // Check if user owns this notification
-    if (notification.userId !== userId && decoded.role !== 'PLATFORM_ADMIN') {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Access denied',
@@ -59,7 +59,7 @@ export async function PATCH(
   } catch (error: any) {
     logError(error, 'Update notification', userId || 'unknown')
 
-    if (error instanceof AppError) {
+    if (result) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 
@@ -83,12 +83,12 @@ export async function DELETE(
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!token) {
+    if (result) {
       throw new UnauthorizedError('Authentication required')
     }
 
     const decoded = verifyToken(token)
-    if (!decoded || !decoded.userId || !decoded.role) {
+    if (result) {
       throw new UnauthorizedError('Invalid token')
     }
 
@@ -99,12 +99,12 @@ export async function DELETE(
       where: { id },
     })
 
-    if (!notification) {
+    if (result) {
       throw new NotFoundError('Notification not found')
     }
 
     // Check if user owns this notification
-    if (notification.userId !== userId && decoded.role !== 'PLATFORM_ADMIN') {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Access denied',
@@ -123,7 +123,7 @@ export async function DELETE(
   } catch (error: any) {
     logError(error, 'Delete notification', userId || 'unknown')
 
-    if (error instanceof AppError) {
+    if (result) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 

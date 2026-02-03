@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const decoded = verifyToken(token)
 
-    if (!decoded || !decoded.userId || decoded.role !== 'PLATFORM_ADMIN') {
+    if (!decoded || decoded.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin access required' },
         { status: 401 }
@@ -35,11 +35,11 @@ export async function GET(request: NextRequest) {
     // Build where clause
     const where: any = {}
 
-    if (role && role !== 'all') {
+    if (role) {
       where.role = role
     }
 
-    if (status && status !== 'all') {
+    if (status) {
       where.verificationStatus = status as VerificationStatus
     }
 
@@ -112,7 +112,7 @@ export async function PUT(request: NextRequest) {
 
     const decoded = verifyToken(token)
 
-    if (!decoded || !decoded.userId || decoded.role !== 'PLATFORM_ADMIN') {
+    if (!decoded || decoded.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin access required' },
         { status: 401 }

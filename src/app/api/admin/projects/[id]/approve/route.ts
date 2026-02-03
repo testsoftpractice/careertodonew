@@ -12,7 +12,7 @@ export async function POST(
     const user = authResult.dbUser
 
     // Check if user is platform admin or university admin
-    if (user.role !== 'PLATFORM_ADMIN' && user.role !== 'UNIVERSITY_ADMIN') {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: "Forbidden: Admin access required"
@@ -47,7 +47,7 @@ export async function POST(
       }
     })
 
-    if (!project) {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: "Project not found"
@@ -63,7 +63,7 @@ export async function POST(
     })
 
     // Create notification for project owner
-    if (project.ownerId) {
+    if (result) {
       await db.notification.create({
         data: {
           userId: project.ownerId,
@@ -85,7 +85,7 @@ export async function POST(
     console.error("Approve project error:", error)
 
     // Handle AuthError
-    if (error.name === 'AuthError' || error.statusCode) {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: error.message || 'Authentication required'

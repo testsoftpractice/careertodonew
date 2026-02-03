@@ -22,7 +22,7 @@ export async function GET(
       },
     })
 
-    if (!supplier) {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'Supplier not found' },
         { status: 404 }

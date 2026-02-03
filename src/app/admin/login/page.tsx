@@ -10,7 +10,7 @@ export default function AdminLoginPage() {
   useEffect(() => {
     // Auto-redirect to admin dashboard without authentication
     const timer = setTimeout(() => {
-      router.push('/admin/governance')
+      router.push('/admin')
     }, 100)
 
     return () => clearTimeout(timer)

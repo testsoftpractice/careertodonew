@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     // const resetToken = await db.passwordResetToken.findUnique({
     //   where: { token },
     // })
-    // 
+    //
     // if (!resetToken) {
     //   return NextResponse.json(
     //     { success: false, error: 'Invalid or expired token' },
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     // }
 
     // For now, basic validation (token should be 32 chars base64)
-    if (typeof token !== 'string' || token.length !== 32) {
+    if (!token || token.length !== 32) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
         { status: 400 }
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Validate token format
-  if (typeof token !== 'string' || token.length !== 32) {
+  if (!token || token.length !== 32) {
     return NextResponse.json(
       { success: false, error: 'Invalid token format' },
       { status: 400 }

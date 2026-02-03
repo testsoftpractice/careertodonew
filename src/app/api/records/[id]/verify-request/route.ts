@@ -7,7 +7,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const body = await request.json()
     const { employerId, type, purpose, accessDuration, autoAccept } = body
 
-    if (!employerId) {
+    if (result) {
       return NextResponse.json({ success: false, error: "Employer ID is required" }, { status: 400 })
     }
 

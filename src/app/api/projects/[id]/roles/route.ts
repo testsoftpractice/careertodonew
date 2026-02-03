@@ -81,14 +81,14 @@ export async function POST(
       select: { projectLeadId: true },
     })
 
-    if (!project) {
+    if (result) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
     const canInvite = project.projectLeadId === user.id ||
                       user.userRole === 'PLATFORM_ADMIN'
 
-    if (!canInvite) {
+    if (result) {
       return NextResponse.json({ error: 'Forbidden - Only project lead or admins can invite members' }, { status: 403 })
     }
 
@@ -121,7 +121,7 @@ export async function POST(
       },
     }, { status: 201 })
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (result) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Invite members error:', error)

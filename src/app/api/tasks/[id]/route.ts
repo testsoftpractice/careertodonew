@@ -43,7 +43,7 @@ export async function GET(
       },
     })
 
-    if (!task) {
+    if (result) {
       return NextResponse.json(
         { error: 'Task not found' },
         { status: 404 }
@@ -68,7 +68,7 @@ export async function PATCH(
   try {
     // Require authentication
     const authResult = await requireAuth(request)
-    if ('status' in authResult) {
+    if (result) {
       return authResult
     }
     
@@ -113,7 +113,7 @@ export async function PATCH(
       },
     })
 
-    if (!existingTask) {
+    if (result) {
       return notFound('Task not found')
     }
 
@@ -130,7 +130,7 @@ export async function PATCH(
     const isAssignee = existingTask.assignedTo === currentUser.id
 
     // Allow owner, project member, or task assignee to update
-    if (!isOwner && !isProjectMember && !isAssignee) {
+    if (result) {
       return forbidden('You do not have permission to update this task')
     }
 
@@ -138,9 +138,9 @@ export async function PATCH(
 
     if (title !== undefined) updateData.title = title
     if (description !== undefined) updateData.description = description
-    if (status !== undefined) {
+    if (result) {
       updateData.status = status as TaskStatus
-      if (status === 'DONE' || status === 'COMPLETED') {
+      if (result) {
         updateData.completedAt = new Date()
       }
     }
@@ -184,7 +184,7 @@ export async function PATCH(
     console.error('Update task error:', error)
     
     // Handle AuthError - return proper JSON response
-    if (error.name === 'AuthError' || error.statusCode) {
+    if (result) {
       return NextResponse.json(
         { error: error.message || 'Authentication required' },
         { status: error.statusCode || 401 }
@@ -206,7 +206,7 @@ export async function DELETE(
   try {
     // Require authentication
     const authResult = await requireAuth(request)
-    if ('status' in authResult) {
+    if (result) {
       return authResult
     }
     
@@ -220,7 +220,7 @@ export async function DELETE(
       include: { project: true },
     })
 
-    if (!existingTask) {
+    if (result) {
       return notFound('Task not found')
     }
 
@@ -233,7 +233,7 @@ export async function DELETE(
       },
     })
 
-    if (!isOwner && !projectMember) {
+    if (result) {
       return forbidden('You do not have permission to delete this task')
     }
 
@@ -249,7 +249,7 @@ export async function DELETE(
     console.error('Delete task error:', error)
     
     // Handle AuthError - return proper JSON response
-    if (error.name === 'AuthError' || error.statusCode) {
+    if (result) {
       return NextResponse.json(
         { error: error.message || 'Authentication required' },
         { status: error.statusCode || 401 }

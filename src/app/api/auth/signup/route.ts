@@ -48,11 +48,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log('[SIGNUP] Received body:', JSON.stringify(body, null, 2))
 
-    const { email, password, firstName, lastName, role = 'STUDENT', universityCode } = body
+    const { email, password, firstName, lastName, role = 'STUDENT', universityId } = body
 
     console.log('[SIGNUP] Email:', email)
     console.log('[SIGNUP] Original role:', role)
-    console.log('[SIGNUP] University code:', universityCode)
+    console.log('[SIGNUP] University ID:', universityId)
 
     // Normalize/validate role - map invalid values to valid ones
     const validRoles = ['STUDENT', 'EMPLOYER', 'INVESTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN']
@@ -141,32 +141,31 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await hashPassword(password)
     console.log('[SIGNUP] Password hashed successfully')
 
-    // Handle university association/claiming
-    let universityId = null
-    let universityData = null
+    // Handle university association
+    let finalUniversityId = null
 
-    if (universityCode) {
-      console.log('[SIGNUP] Looking up university with code:', universityCode)
-      universityData = await db.university.findUnique({
-        where: { code: universityCode.toUpperCase() }
+    if (universityId) {
+      console.log('[SIGNUP] Looking up university with ID:', universityId)
+      const universityData = await db.university.findUnique({
+        where: { id: universityId }
       })
 
       if (!universityData) {
-        console.log('[SIGNUP] ERROR: University not found with code:', universityCode)
+        console.log('[SIGNUP] ERROR: University not found with ID:', universityId)
         return NextResponse.json(
-          { success: false, error: 'University not found with the provided code' },
+          { success: false, error: 'University not found with the provided ID' },
           { status: 400 }
         )
       }
 
-      universityId = universityData.id
+      finalUniversityId = universityData.id
       console.log('[SIGNUP] University found:', universityData.name)
 
       // If UNIVERSITY_ADMIN and university already has an admin, reject
       if (normalizedRole === 'UNIVERSITY_ADMIN') {
         const existingAdmin = await db.user.findFirst({
           where: {
-            universityId,
+            universityId: finalUniversityId,
             role: UserRole.UNIVERSITY_ADMIN,
             verificationStatus: { in: [VerificationStatus.PENDING, VerificationStatus.UNDER_REVIEW, VerificationStatus.VERIFIED] }
           }
@@ -183,7 +182,7 @@ export async function POST(request: NextRequest) {
         // Update university status to UNDER_REVIEW when claimed
         console.log('[SIGNUP] Updating university status to UNDER_REVIEW')
         await db.university.update({
-          where: { id: universityId },
+          where: { id: finalUniversityId },
           data: { verificationStatus: VerificationStatus.UNDER_REVIEW }
         })
       }
@@ -198,15 +197,15 @@ export async function POST(request: NextRequest) {
         role: normalizedRole as UserRole,
         verificationStatus: VerificationStatus.PENDING,
         password: hashedPassword,
-        ...(universityId && { universityId }),
+        ...(finalUniversityId && { universityId: finalUniversityId }),
       },
     })
     console.log('[SIGNUP] User created successfully. ID:', user.id)
     console.log('[SIGNUP] User email:', user.email)
     console.log('[SIGNUP] User name:', user.name)
     console.log('[SIGNUP] User role:', user.role)
-    if (universityData) {
-      console.log('[SIGNUP] User linked to university:', universityData.name)
+    if (finalUniversityId) {
+      console.log('[SIGNUP] User linked to university')
     }
 
     // Generate token

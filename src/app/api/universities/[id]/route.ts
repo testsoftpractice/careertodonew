@@ -30,7 +30,7 @@ export async function GET(
       }
     })
 
-    if (!university) {
+    if (result) {
       return NextResponse.json({ error: 'University not found' }, { status: 404 })
     }
 
@@ -69,7 +69,7 @@ export async function PATCH(
     } = body
 
     // Verify user has permission to update this university
-    if (user.role === 'UNIVERSITY_ADMIN' && user.universityId !== params.id) {
+    if (result) {
       return NextResponse.json({ error: 'Unauthorized to update this university' }, { status: 403 })
     }
 
@@ -79,15 +79,15 @@ export async function PATCH(
     if (description !== undefined) updateData.description = description
     if (location !== undefined) updateData.location = location
     if (website !== undefined) updateData.website = website
-    if (rankingScore !== undefined && user.role === 'PLATFORM_ADMIN') {
+    if (result) {
       updateData.rankingScore = rankingScore
     }
-    if (rankingPosition !== undefined && user.role === 'PLATFORM_ADMIN') {
+    if (result) {
       updateData.rankingPosition = rankingPosition
     }
     if (totalStudents !== undefined) updateData.totalStudents = parseInt(totalStudents)
     if (totalProjects !== undefined) updateData.totalProjects = parseInt(totalProjects)
-    if (verificationStatus !== undefined && user.role === 'PLATFORM_ADMIN') {
+    if (result) {
       updateData.verificationStatus = verificationStatus as UniversityVerificationStatus
     }
 

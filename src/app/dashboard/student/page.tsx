@@ -175,7 +175,7 @@ function DashboardContent({ user }: { user: any }) {
       }, 1000)
     }
     return () => {
-      if (interval) clearInterval(interval)
+      if (interval) { clearInterval(interval); }
     }
   }, [timerRunning])
 

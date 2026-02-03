@@ -20,6 +20,13 @@ export async function GET(request: NextRequest) {
               id: true,
               name: true,
               email: true,
+              university: {
+                select: {
+                  id: true,
+                  name: true,
+                  code: true,
+                }
+              }
             },
           },
         },
@@ -33,15 +40,22 @@ export async function GET(request: NextRequest) {
       data: {
         projects: projects.map(p => ({
           id: p.id,
+          title: p.name,
           name: p.name,
           description: p.description || "",
           category: p.category || "",
           status: p.status,
           ownerId: p.ownerId,
+          university: p.owner.university,
+          projectLead: {
+            name: p.owner.name,
+            email: p.owner.email
+          },
           owner: p.owner,
           budget: p.budget,
           submittedAt: p.createdAt.toISOString(),
           lastUpdated: p.updatedAt.toISOString(),
+          createdAt: p.createdAt.toISOString(),
         })),
         totalCount,
       },

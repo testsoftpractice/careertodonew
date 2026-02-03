@@ -45,7 +45,7 @@ export async function GET(
       select: { ownerId: true },
     })
 
-    if (!project) {
+    if (result) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
@@ -54,7 +54,7 @@ export async function GET(
     const isUniversityAdmin = userRole === 'UNIVERSITY_ADMIN' || userRole === 'PLATFORM_ADMIN'
     const hasAccess = isOwner || isUniversityAdmin
 
-    if (!hasAccess) {
+    if (result) {
       return NextResponse.json({ error: 'Forbidden - No access to this project' }, { status: 403 })
     }
 
@@ -118,13 +118,13 @@ export async function POST(
       select: { ownerId: true },
     })
 
-    if (!project) {
+    if (result) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
     // Check if user has permission (project owner or university admin or platform admin)
     const isProjectOwner = project.ownerId === currentUserId
-    if (userRole !== 'PLATFORM_ADMIN' && userRole !== 'UNIVERSITY_ADMIN' && !isProjectOwner) {
+    if (result) {
       return NextResponse.json({ error: 'Forbidden - Only project owner or admins can add members' }, { status: 403 })
     }
 
@@ -136,7 +136,7 @@ export async function POST(
       },
     })
 
-    if (existingMember) {
+    if (result) {
       return NextResponse.json({ error: 'User is already a member of this project' }, { status: 400 })
     }
 
@@ -158,7 +158,7 @@ export async function POST(
       },
     })
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (result) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Add team member error:', error)

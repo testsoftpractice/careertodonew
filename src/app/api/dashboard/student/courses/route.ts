@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!token) {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const decoded = verifyToken(token)
 
-    if (!decoded || !decoded.userId) {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
         { status: 401 }
@@ -40,7 +40,9 @@ export async function GET(request: NextRequest) {
     // Transform education records into course data
     const courses = education.map(edu => {
       const progress = edu.endDate
-        ? new Date() > new Date(edu.endDate) ? 100 : Math.round(((new Date().getTime() - new Date(edu.startDate).getTime()) / (new Date(edu.endDate).getTime() - new Date(edu.startDate).getTime())) * 100)
+        ? new Date() > new Date(edu.endDate)
+          ? 100
+          : Math.round(((new Date().getTime() - new Date(edu.startDate).getTime()) / (new Date(edu.endDate).getTime() - new Date(edu.startDate).getTime())) * 100)
         : Math.round(((new Date().getTime() - new Date(edu.startDate).getTime()) / (365 * 24 * 60 * 60 * 1000)) * 100)
 
       const status = edu.endDate

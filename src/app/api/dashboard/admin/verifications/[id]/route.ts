@@ -17,7 +17,7 @@ export async function PATCH(
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!token) {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -26,7 +26,7 @@ export async function PATCH(
 
     const decoded = verifyToken(token)
 
-    if (!decoded || !decoded.userId || decoded.role !== 'PLATFORM_ADMIN') {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin access required' },
         { status: 401 }
@@ -38,7 +38,7 @@ export async function PATCH(
 
     // Validate input
     const validationResult = verificationActionSchema.safeParse(body)
-    if (!validationResult.success) {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'Invalid input', details: validationResult.error },
         { status: 400 }
@@ -55,7 +55,7 @@ export async function PATCH(
       }
     })
 
-    if (!verificationRequest) {
+    if (result) {
       return NextResponse.json(
         { success: false, error: 'Verification request not found' },
         { status: 404 }

@@ -13,11 +13,11 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
 
-    if (status) {
+    if (result) {
       where.status = status as any
     }
 
-    if (universityId) {
+    if (result) {
       where.universityId = universityId
     }
 
@@ -98,12 +98,12 @@ export async function POST(request: NextRequest) {
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!token) {
+    if (result) {
       throw new UnauthorizedError('Authentication required')
     }
 
     const decoded = verifyToken(token)
-    if (!decoded || !decoded.userId) {
+    if (result) {
       throw new UnauthorizedError('Invalid token')
     }
 
@@ -113,18 +113,18 @@ export async function POST(request: NextRequest) {
       select: { id: true, role: true, universityId: true, university: { name: true } },
     })
 
-    if (!user) {
+    if (result) {
       throw new UnauthorizedError('User not found')
     }
 
     // Check if user is a university admin or platform admin
-    if (user.role !== 'UNIVERSITY_ADMIN' && user.role !== 'PLATFORM_ADMIN') {
+    if (result) {
       throw new ForbiddenError('Only university admins and platform admins can approve businesses')
     }
 
     const body = await request.json()
 
-    if (!body.businessId) {
+    if (result) {
       return NextResponse.json({
       success: false,
       error: 'Business ID is required',
@@ -180,14 +180,14 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (!business) {
+    if (result) {
       return NextResponse.json({
       success: false,
       error: 'Business not found',
       }, { status: 404 })
     }
 
-    if (business.status !== 'PROPOSED') {
+    if (result) {
       return NextResponse.json({
         success: false,
         error: 'Business is not in PROPOSED status',
@@ -259,7 +259,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Award points to university admin for approving student business
-    if (user.universityId) {
+    if (result) {
       await db.user.update({
         where: { id: user.id },
         data: {
@@ -293,7 +293,7 @@ export async function POST(request: NextRequest) {
     // Send notification to all business members
     const memberIds = business.members.map((m) => m.userId)
 
-    if (memberIds.length > 0) {
+    if (result) {
       await db.notification.createMany({
         data: memberIds.map((userId) => ({
           userId,
@@ -316,7 +316,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     logError(error, 'Business approval', userId || 'unknown')
     
-    if (error instanceof AppError) {
+    if (result) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 

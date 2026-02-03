@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
 // GET /api/dashboard/university/approvals/[id] - Get a specific pending approval
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAuth(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
   if ('status' in auth) return auth
@@ -110,7 +110,7 @@ export async function GET(
 // POST /api/dashboard/university/approvals/[id] - Approve or reject a business
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAuth(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
   if ('status' in auth) return auth

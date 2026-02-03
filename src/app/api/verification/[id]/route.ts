@@ -5,7 +5,7 @@ import { VerificationRequestStatus } from '@prisma/client'
 // GET /api/verification/[id] - Get a specific verification request
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const verificationRequest = await db.verificationRequest.findUnique({
@@ -95,7 +95,7 @@ export async function GET(
 // PATCH /api/verification/[id] - Update verification request (approve/reject)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json()

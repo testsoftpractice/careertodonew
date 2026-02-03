@@ -61,7 +61,7 @@ async function canManageBusiness(userId: string, businessId: string, requiredRol
 // GET /api/businesses/[id] - Get business details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const businessId = params.id
@@ -178,7 +178,7 @@ export async function GET(
 // PATCH /api/businesses/[id] - Update business
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   let userId: string | null = null
   try {
@@ -262,7 +262,7 @@ export async function PATCH(
 // DELETE /api/businesses/[id] - Delete business
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   let userId: string | null = null
   try {

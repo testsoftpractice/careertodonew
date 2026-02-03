@@ -9,15 +9,15 @@ const createDependencySchema = z.object({
   dependsOnId: z.string(),
 })
 
-// GET /api/tasks/[taskId]/dependencies - Get task dependencies
+// GET /api/tasks/[id]/dependencies - Get task dependencies
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ taskId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
-  const { taskId } = await params
+  const { id: taskId } = await params
 
   try {
     const dependencies = await db.taskDependency.findMany({
@@ -51,15 +51,15 @@ export async function GET(
   }
 }
 
-// POST /api/tasks/[taskId]/dependencies - Add task dependency
+// POST /api/tasks/[id]/dependencies - Add task dependency
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ taskId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
-  const { taskId } = await params
+  const { id: taskId } = await params
   const user = auth.user
 
   try {
@@ -72,7 +72,7 @@ export async function POST(
       select: { projectId: true, assignedBy: true },
     })
 
-    if (!result) {
+    if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
@@ -94,7 +94,7 @@ export async function POST(
       select: { projectId: true },
     })
 
-    if (!result) {
+    if (!dependsOnTask) {
       return NextResponse.json({ error: 'Dependency task not found' }, { status: 404 })
     }
 
@@ -106,7 +106,7 @@ export async function POST(
       },
     })
 
-    if (!result) {
+    if (existingReverse) {
       return NextResponse.json({
         error: 'Circular dependency detected',
       }, { status: 400 })
@@ -120,7 +120,7 @@ export async function POST(
       },
     })
 
-    if (!result) {
+    if (existingDep) {
       return NextResponse.json({
         error: 'Dependency already exists',
       }, { status: 400 })
@@ -141,7 +141,7 @@ export async function POST(
       },
     }, { status: 201 })
   } catch (error) {
-    if (!result) {
+    if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Add task dependency error:', error)
@@ -152,23 +152,30 @@ export async function POST(
   }
 }
 
-// DELETE /api/tasks/[taskId]/dependencies/[depId] - Remove task dependency
+// DELETE /api/tasks/[id]/dependencies - Remove task dependency
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ taskId: string; depId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
-  const { taskId, depId } = await params
+  const { id: taskId } = await params
   const user = auth.user
 
   try {
+    const body = await request.json()
+    const { depId } = body
+
+    if (!depId) {
+      return NextResponse.json({ error: 'Dependency ID is required' }, { status: 400 })
+    }
+
     const dependency = await db.taskDependency.findUnique({
       where: { id: depId },
     })
 
-    if (!result) {
+    if (!dependency) {
       return NextResponse.json({ error: 'Dependency not found' }, { status: 404 })
     }
 

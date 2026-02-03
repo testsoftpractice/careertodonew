@@ -94,10 +94,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PATCH /api/admin/governance/proposals/[id] - Update proposal status
+// PATCH /api/admin/governance/proposals - Update proposal status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{}> }
 ) {
   try {
     // Verify admin authentication
@@ -120,9 +120,8 @@ export async function PATCH(
       )
     }
 
-    const { id } = params
     const body = await request.json()
-    const { status, reviewNote } = body
+    const { id, status, reviewNote } = body
 
     // Update verification request
     const updated = await db.verificationRequest.update({

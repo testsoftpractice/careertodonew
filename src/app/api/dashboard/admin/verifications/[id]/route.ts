@@ -11,13 +11,13 @@ const verificationActionSchema = z.object({
 // PATCH /api/dashboard/admin/verifications/[id] - Approve or reject verification
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!result) {
+    if (!token) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -26,19 +26,19 @@ export async function PATCH(
 
     const decoded = verifyToken(token)
 
-    if (!result) {
+    if (!decoded || decoded.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin access required' },
         { status: 401 }
       )
     }
 
-    const verificationId = params.id
+    const { id: verificationId } = await params
     const body = await request.json()
 
     // Validate input
     const validationResult = verificationActionSchema.safeParse(body)
-    if (!result) {
+    if (!validationResult.success) {
       return NextResponse.json(
         { success: false, error: 'Invalid input', details: validationResult.error },
         { status: 400 }
@@ -55,7 +55,7 @@ export async function PATCH(
       }
     })
 
-    if (!result) {
+    if (!verificationRequest) {
       return NextResponse.json(
         { success: false, error: 'Verification request not found' },
         { status: 404 }

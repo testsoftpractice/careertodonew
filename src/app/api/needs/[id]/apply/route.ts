@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 // POST /api/needs/[id]/apply - Apply to a need
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = params

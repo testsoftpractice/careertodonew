@@ -44,18 +44,25 @@ export default function AdminPage() {
       color: 'from-blue-500 to-blue-600',
     },
     {
+      title: 'University Management',
+      description: 'Manage all registered universities',
+      icon: Building2,
+      href: '/admin/universities',
+      color: 'from-emerald-500 to-emerald-600',
+    },
+    {
       title: 'Audit & Compliance',
       description: 'Monitor platform activity and ensure compliance',
       icon: FileText,
       href: '/admin/audit',
-      color: 'from-emerald-500 to-emerald-600',
+      color: 'from-purple-500 to-purple-600',
     },
     {
       title: 'Content Management',
       description: 'Approve and moderate user-generated content',
       icon: FileText,
       href: '/admin/content',
-      color: 'from-purple-500 to-purple-600',
+      color: 'from-pink-500 to-pink-600',
     },
     {
       title: 'Governance',
@@ -69,7 +76,7 @@ export default function AdminPage() {
       description: 'Monitor and manage all platform projects',
       icon: Database,
       href: '/admin/projects',
-      color: 'from-pink-500 to-pink-600',
+      color: 'from-cyan-500 to-cyan-600',
     },
     {
       title: 'Analytics',
@@ -159,7 +166,7 @@ export default function AdminPage() {
               </Card>
             </Link>
 
-            <Link href="/admin/governance">
+            <Link href="/admin/universities">
               <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
                 <CardContent className="p-4 sm:p-6 text-center">
                   <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-3 rounded-xl mb-3">
@@ -191,6 +198,18 @@ export default function AdminPage() {
                   </div>
                   <div className="text-2xl sm:text-3xl font-bold mt-2">24h Activity</div>
                   <p className="text-sm text-muted-foreground">Platform engagement</p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/admin/leaderboards">
+              <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
+                <CardContent className="p-4 sm:p-6 text-center">
+                  <div className="bg-gradient-to-br from-rose-500 to-rose-600 text-white p-3 rounded-xl mb-3">
+                    <TrendingUp className="h-8 w-8" />
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-bold mt-2">Leaderboards</div>
+                  <p className="text-sm text-muted-foreground">View rankings</p>
                 </CardContent>
               </Card>
             </Link>
@@ -243,10 +262,10 @@ export default function AdminPage() {
                     View Audits
                   </Button>
                 </Link>
-                <Link href="/admin/governance" className="block">
+                <Link href="/admin/leaderboards" className="block">
                   <Button variant="outline" className="w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-800">
-                    <ShieldCheck className="h-4 w-4 mr-2" />
-                    Governance
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Leaderboards
                   </Button>
                 </Link>
                 <Link href="/admin/settings" className="block">

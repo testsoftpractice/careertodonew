@@ -6,7 +6,7 @@ import { VerificationStatus } from '@prisma/client'
 // PATCH /api/admin/verification/users/[id] - Update individual user verification status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const sessionCookie = request.cookies.get('session')
@@ -28,7 +28,7 @@ export async function PATCH(
       )
     }
 
-    const userId = params.id
+    const { id: userId } = await params
     const body = await request.json()
     const { status, reason } = body
 

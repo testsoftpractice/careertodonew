@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { requireAuth } from '@/lib/auth/verify'
+import { requireAuth, AuthError } from '@/lib/auth/verify'
 import { notFound, forbidden, unauthorized } from '@/lib/api-response'
 
 /**
@@ -13,10 +13,6 @@ export async function PATCH(
   try {
     // Require authentication
     const authResult = await requireAuth(request)
-    if (!result) {
-      return authResult
-    }
-
     const currentUser = authResult.dbUser
     const { id } = await params
 
@@ -35,35 +31,35 @@ export async function PATCH(
       },
     })
 
-    if (!result) {
+    if (!existingMilestone) {
       return notFound('Milestone not found')
     }
 
     // Check if user has permission to update this milestone
     const isOwner = existingMilestone.project!.ownerId === currentUser.id
 
-    if (!result) {
+    if (!isOwner) {
       return forbidden('You do not have permission to update this milestone')
     }
 
     const updateData: any = {}
 
-    if (!result) {
+    if (body.title !== undefined) {
       updateData.title = body.title
     }
-    if (!result) {
+    if (body.description !== undefined) {
       updateData.description = body.description
     }
-    if (!result) {
+    if (body.status !== undefined) {
       updateData.status = body.status
-      if (!result) {
+      if (body.status === 'COMPLETED') {
         updateData.completedAt = new Date()
       }
     }
-    if (!result) {
+    if (body.dueDate !== undefined) {
       updateData.dueDate = new Date(body.dueDate)
     }
-    if (!result) {
+    if (body.metrics !== undefined) {
       updateData.metrics = body.metrics
     }
 
@@ -81,7 +77,7 @@ export async function PATCH(
     console.error('Update milestone error:', error)
 
     // Handle AuthError - return proper JSON response
-    if (!result) {
+    if (error instanceof AuthError) {
       return NextResponse.json(
         { error: error.message || 'Authentication required' },
         { status: error.statusCode || 401 }
@@ -105,10 +101,6 @@ export async function DELETE(
   try {
     // Require authentication
     const authResult = await requireAuth(request)
-    if (!result) {
-      return authResult
-    }
-
     const currentUser = authResult.dbUser
     const { id } = await params
 
@@ -124,14 +116,14 @@ export async function DELETE(
       },
     })
 
-    if (!result) {
+    if (!existingMilestone) {
       return notFound('Milestone not found')
     }
 
     // Check if user has permission to delete this milestone
     const isOwner = existingMilestone.project!.ownerId === currentUser.id
 
-    if (!result) {
+    if (!isOwner) {
       return forbidden('You do not have permission to delete this milestone')
     }
 
@@ -147,7 +139,7 @@ export async function DELETE(
     console.error('Delete milestone error:', error)
 
     // Handle AuthError - return proper JSON response
-    if (!result) {
+    if (error instanceof AuthError) {
       return NextResponse.json(
         { error: error.message || 'Authentication required' },
         { status: error.statusCode || 401 }

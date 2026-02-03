@@ -95,10 +95,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PATCH /api/admin/content/[id] - Update content status
+// PATCH /api/admin/content - Update content status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{}> }
 ) {
   try {
     const sessionCookie = request.cookies.get('session')
@@ -121,7 +121,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { action, reason } = body
+    const { id, action, reason } = body
 
     // Validate action
     const validActions = ['approved', 'rejected', 'removed']
@@ -138,7 +138,7 @@ export async function PATCH(
       success: true,
       message: `Content ${action} successfully`,
       data: {
-        id: params.id,
+        id,
         action,
         reason: reason || '',
         updatedAt: new Date().toISOString(),

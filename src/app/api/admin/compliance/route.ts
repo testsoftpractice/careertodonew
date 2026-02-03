@@ -115,10 +115,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PATCH /api/admin/compliance/[id] - Update compliance status
+// PATCH /api/admin/compliance - Update compliance status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{}> }
 ) {
   try {
     const sessionCookie = request.cookies.get('session')
@@ -141,7 +141,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { action, notes } = body
+    const { id, action, notes } = body
 
     // Validate action
     const validActions = ['reviewed', 'resolved', 'escalated']
@@ -158,7 +158,7 @@ export async function PATCH(
       success: true,
       message: `Compliance item ${action} successfully`,
       data: {
-        id: params.id,
+        id,
         action,
         notes: notes || '',
         updatedAt: new Date().toISOString(),

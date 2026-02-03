@@ -53,7 +53,7 @@ function hasHigherRoleOrEqual(userRole: string, targetRole: string): boolean {
 // GET /api/businesses/[id]/members - Get all members of a business
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const businessId = params.id
@@ -126,7 +126,7 @@ export async function GET(
 // POST /api/businesses/[id]/members - Add a member to the business
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   let userId: string | null = null
   try {

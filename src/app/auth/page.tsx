@@ -20,6 +20,7 @@ export default function AuthPage() {
     firstName: '',
     lastName: '',
     email: '',
+    mobileNumber: '',
     password: '',
     confirmPassword: '',
     role: '',
@@ -246,6 +247,20 @@ export default function AuthPage() {
                         onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                         disabled={loading}
                         required
+                        className="w-full px-4 py-2 border rounded-md"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="mobileNumber" className="block text-sm font-medium mb-2">Mobile Number</label>
+                      <input
+                        id="mobileNumber"
+                        name="mobileNumber"
+                        type="tel"
+                        placeholder="+1 234 567 8900"
+                        value={signupData.mobileNumber}
+                        onChange={(e) => setSignupData({ ...signupData, mobileNumber: e.target.value })}
+                        disabled={loading}
                         className="w-full px-4 py-2 border rounded-md"
                       />
                     </div>

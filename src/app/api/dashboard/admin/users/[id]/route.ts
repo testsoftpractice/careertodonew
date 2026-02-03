@@ -14,13 +14,13 @@ const updateUserSchema = z.object({
 // PATCH /api/dashboard/admin/users/[id] - Update user (for admin)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!result) {
+    if (!token) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -29,21 +29,21 @@ export async function PATCH(
 
     const decoded = verifyToken(token)
 
-    if (!result) {
+    if (!decoded || decoded.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin access required' },
         { status: 401 }
       )
     }
 
-    const userId = params.id
+    const { id: userId } = await params
 
     // Check if user exists
     const existingUser = await db.user.findUnique({
       where: { id: userId }
     })
 
-    if (!result) {
+    if (!existingUser) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
@@ -51,7 +51,7 @@ export async function PATCH(
     }
 
     // Prevent admin from changing themselves
-    if (!result) {
+    if (decoded.id === userId) {
       return NextResponse.json(
         { success: false, error: 'Cannot modify your own account' },
         { status: 400 }
@@ -62,7 +62,7 @@ export async function PATCH(
 
     // Validate input
     const validationResult = updateUserSchema.safeParse(body)
-    if (!result) {
+    if (!validationResult.success) {
       return NextResponse.json(
         { success: false, error: 'Invalid input', details: validationResult.error },
         { status: 400 }
@@ -74,21 +74,25 @@ export async function PATCH(
     // Build update object
     const updateData: any = {}
 
-    if (!result) {
+    if (role) {
       updateData.role = role
     }
 
-    if (!result) {
+    if (verificationStatus) {
       updateData.verificationStatus = verificationStatus
     }
 
-    if (!result) {
-      if (!result) {
-        updateData.loginAttempts = 9999 // Effectively ban the user
+    if (isBanned !== undefined) {
+      if (isBanned) {
+        updateData.loginAttempts = 9999 // Effectively ban user
+        updateData.verificationStatus = 'BANNED'
         updateData.banReason = banReason || 'Banned by administrator'
       } else {
-        updateData.loginAttempts = 0 // Unban the user
+        updateData.loginAttempts = 0 // Unban user
         updateData.banReason = null
+        if (existingUser.verificationStatus === 'BANNED') {
+          updateData.verificationStatus = 'PENDING'
+        }
       }
     }
 
@@ -115,13 +119,13 @@ export async function PATCH(
 // DELETE /api/dashboard/admin/users/[id] - Delete user (for admin)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!result) {
+    if (!token) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -130,17 +134,17 @@ export async function DELETE(
 
     const decoded = verifyToken(token)
 
-    if (!result) {
+    if (!decoded || decoded.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin access required' },
         { status: 401 }
       )
     }
 
-    const userId = params.id
+    const { id: userId } = await params
 
     // Prevent admin from deleting themselves
-    if (!result) {
+    if (decoded.id === userId) {
       return NextResponse.json(
         { success: false, error: 'Cannot delete your own account' },
         { status: 400 }

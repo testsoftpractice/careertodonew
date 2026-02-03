@@ -160,10 +160,10 @@ export async function POST(
   }
 }
 
-// PUT /api/students/[id]/tags/[tagId] - Update student tag
+// PUT /api/students/[id]/tags - Update student tag
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; tagId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!isFeatureEnabled(STUDENT_TAGGING)) {
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
@@ -172,24 +172,28 @@ export async function PUT(
   const auth = await requireAuth(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
   if ('status' in auth) return auth
 
-  const { id: studentId, tagId } = await params
+  const { id: studentId } = await params
   const user = auth.user
   const universityId = user.universityId
 
-  if (!result) {
+  if (!universityId) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
   try {
     const body = await request.json()
-    const validatedData = updateTagSchema.parse(body)
+    const { tagId, ...validatedData } = updateTagSchema.parse(body)
+
+    if (!tagId) {
+      return NextResponse.json({ error: 'Tag ID is required' }, { status: 400 })
+    }
 
     // Get student tag
     const tag = await db.studentTag.findUnique({
       where: { id: tagId, studentId, universityId },
     })
 
-    if (!result) {
+    if (!tag) {
       return NextResponse.json({ error: 'Student tag not found' }, { status: 404 })
     }
 
@@ -215,7 +219,7 @@ export async function PUT(
       },
     })
   } catch (error) {
-    if (!result) {
+    if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Update student tag error:', error)
@@ -223,10 +227,10 @@ export async function PUT(
   }
 }
 
-// DELETE /api/students/[id]/tags/[tagId] - Delete student tag
+// DELETE /api/students/[id]/tags - Delete student tag
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; tagId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!isFeatureEnabled(STUDENT_TAGGING)) {
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
@@ -235,21 +239,28 @@ export async function DELETE(
   const auth = await requireAuth(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
   if ('status' in auth) return auth
 
-  const { tagId } = await params
+  const { id: studentId } = await params
   const user = auth.user
   const universityId = user.universityId
 
-  if (!result) {
+  if (!universityId) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
   try {
+    const body = await request.json()
+    const { tagId } = body
+
+    if (!tagId) {
+      return NextResponse.json({ error: 'Tag ID is required' }, { status: 400 })
+    }
+
     // Get student tag
     const tag = await db.studentTag.findUnique({
       where: { id: tagId, universityId },
     })
 
-    if (!result) {
+    if (!tag) {
       return NextResponse.json({ error: 'Student tag not found' }, { status: 404 })
     }
 

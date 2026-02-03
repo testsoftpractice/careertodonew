@@ -118,15 +118,15 @@ function getDealStage(status: string): string {
   }
 }
 
-// PUT /api/investments/deals/[id] - Update deal status
+// PUT /api/investments/deals - Update deal status
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{}> }
 ) {
   try {
-    const dealId = params.id
     const body = await request.json()
-    const { status, terms, agreementId } = body
+    const { id, status, terms, agreementId } = body
+    const dealId = id
 
     // Check if deal exists
     const deal = await db.investment.findUnique({
@@ -137,7 +137,7 @@ export async function PUT(
       },
     })
 
-    if (!result) {
+    if (!deal) {
       return NextResponse.json(
         { success: false, error: 'Deal not found' },
         { status: 404 }
@@ -178,7 +178,7 @@ export async function PUT(
     })
 
     // Create notifications based on status change
-    if (!result) {
+    if (status === 'UNDER_REVIEW') {
       await db.notification.create({
         data: {
           userId: deal.investorId,
@@ -188,7 +188,7 @@ export async function PUT(
           link: `/dashboard/investor/deals/${dealId}`,
         },
       })
-    } else if (!result) {
+    } else if (status === 'AGREED') {
       // Notify both parties
       await db.notification.create({
         data: {
@@ -209,7 +209,7 @@ export async function PUT(
           link: `/projects/${deal.projectId}/deals/${dealId}`,
         },
       })
-    } else if (!result) {
+    } else if (status === 'FUNDED') {
       await db.notification.create({
         data: {
           userId: deal.investorId,

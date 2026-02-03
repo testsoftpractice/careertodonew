@@ -31,7 +31,7 @@ export async function GET(
   const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
-  const { taskId } = await params
+  const { id: taskId } = await params
   const user = auth.user
 
   try {
@@ -41,7 +41,7 @@ export async function GET(
       select: { assignedTo: true },
     })
 
-    if (!result) {
+    if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
@@ -103,7 +103,7 @@ export async function POST(
       select: { assignedTo: true, projectId: true, assignedBy: true },
     })
 
-    if (!result) {
+    if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
@@ -117,7 +117,7 @@ export async function POST(
     const isProjectOwner = project?.ownerId === user.userId
 
     // Allow if task assignee or project owner
-    if (!result) {
+    if (!isTaskAssignee && !isProjectOwner) {
       return NextResponse.json({ error: 'Forbidden - No access to add time entries to this task' }, { status: 403 })
     }
 
@@ -150,7 +150,7 @@ export async function POST(
       },
     })
   } catch (error) {
-    if (!result) {
+    if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Create time entry error:', error)
@@ -158,10 +158,10 @@ export async function POST(
   }
 }
 
-// PUT /api/tasks/[id]/time-entries/[entryId] - Update time entry
+// PUT /api/tasks/[id]/time-entries - Update time entry
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; entryId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!isFeatureEnabled(TASK_MANAGEMENT)) {
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
@@ -170,19 +170,23 @@ export async function PUT(
   const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
-  const { entryId } = await params
+  const { id } = await params
   const user = auth.user
 
   try {
     const body = await request.json()
-    const validatedData = updateTimeEntrySchema.parse(body)
+    const { entryId, ...validatedData } = updateTimeEntrySchema.parse(body)
+
+    if (!entryId) {
+      return NextResponse.json({ error: 'Entry ID is required' }, { status: 400 })
+    }
 
     // Get time entry
     const timeEntry = await db.timeEntry.findUnique({
       where: { id: entryId },
     })
 
-    if (!result) {
+    if (!timeEntry) {
       return NextResponse.json({ error: 'Time entry not found' }, { status: 404 })
     }
 
@@ -213,7 +217,7 @@ export async function PUT(
       },
     })
   } catch (error) {
-    if (!result) {
+    if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Update time entry error:', error)
@@ -221,10 +225,10 @@ export async function PUT(
   }
 }
 
-// DELETE /api/tasks/[id]/time-entries/[entryId] - Delete time entry
+// DELETE /api/tasks/[id]/time-entries - Delete time entry
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; entryId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!isFeatureEnabled(TASK_MANAGEMENT)) {
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
@@ -233,16 +237,23 @@ export async function DELETE(
   const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
-  const { entryId } = await params
+  const { id } = await params
   const user = auth.user
 
   try {
+    const body = await request.json()
+    const { entryId } = body
+
+    if (!entryId) {
+      return NextResponse.json({ error: 'Entry ID is required' }, { status: 400 })
+    }
+
     // Get time entry
     const timeEntry = await db.timeEntry.findUnique({
       where: { id: entryId },
     })
 
-    if (!result) {
+    if (!timeEntry) {
       return NextResponse.json({ error: 'Time entry not found' }, { status: 404 })
     }
 

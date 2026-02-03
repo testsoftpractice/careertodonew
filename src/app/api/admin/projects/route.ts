@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
             category: p.category || "",
             status: mappedStatus,
             ownerId: p.ownerId,
-            university: p.owner.university,
+            university: p.owner.university?.name || "No University",
             projectLead: {
               name: p.owner.name,
               email: p.owner.email

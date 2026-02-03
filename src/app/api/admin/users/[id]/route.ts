@@ -5,7 +5,7 @@ import { verifyToken } from '@/lib/auth/jwt'
 // PATCH /api/admin/users/[id] - Update user (approve/reject)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const sessionCookie = request.cookies.get('session')
@@ -27,7 +27,7 @@ export async function PATCH(
       )
     }
 
-    const userId = params.id
+    const { id: userId } = await params
     const body = await request.json()
     const { verificationStatus, role } = body
 

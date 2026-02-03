@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log('[SIGNUP] Received body:', JSON.stringify(body, null, 2))
 
-    const { email, password, firstName, lastName, role = 'STUDENT', universityId } = body
+    const { email, password, firstName, lastName, mobileNumber, role = 'STUDENT', universityId } = body
 
     console.log('[SIGNUP] Email:', email)
     console.log('[SIGNUP] Original role:', role)
@@ -197,6 +197,7 @@ export async function POST(request: NextRequest) {
         role: normalizedRole as UserRole,
         verificationStatus: VerificationStatus.PENDING,
         password: hashedPassword,
+        mobileNumber: mobileNumber || null,
         ...(finalUniversityId && { universityId: finalUniversityId }),
       },
     })

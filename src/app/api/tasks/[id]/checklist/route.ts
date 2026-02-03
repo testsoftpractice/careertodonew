@@ -125,10 +125,10 @@ export async function POST(
   }
 }
 
-// PUT /api/tasks/[id]/checklist/[itemId] - Update checklist item
+// PUT /api/tasks/[id]/checklist - Update checklist item
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; itemId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!isFeatureEnabled(TASK_MANAGEMENT)) {
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
@@ -137,19 +137,23 @@ export async function PUT(
   const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
-  const { id, itemId } = await params
+  const { id } = await params
   const user = auth.user
 
   try {
     const body = await request.json()
-    const validatedData = updateChecklistItemSchema.parse(body)
+    const { itemId, ...validatedData } = updateChecklistItemSchema.parse(body)
+
+    if (!itemId) {
+      return NextResponse.json({ error: 'Item ID is required' }, { status: 400 })
+    }
 
     // Get checklist item
     const checklistItem = await db.taskChecklist.findUnique({
       where: { id: itemId },
     })
 
-    if (!result) {
+    if (!checklistItem) {
       return NextResponse.json({ error: 'Checklist item not found' }, { status: 404 })
     }
 
@@ -176,7 +180,7 @@ export async function PUT(
       },
     })
   } catch (error) {
-    if (!result) {
+    if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Update checklist item error:', error)
@@ -184,10 +188,10 @@ export async function PUT(
   }
 }
 
-// DELETE /api/tasks/[id]/checklist/[itemId] - Delete checklist item
+// DELETE /api/tasks/[id]/checklist - Delete checklist item
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; itemId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!isFeatureEnabled(TASK_MANAGEMENT)) {
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
@@ -196,16 +200,23 @@ export async function DELETE(
   const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
-  const { id, itemId } = await params
+  const { id } = await params
   const user = auth.user
 
   try {
+    const body = await request.json()
+    const { itemId } = body
+
+    if (!itemId) {
+      return NextResponse.json({ error: 'Item ID is required' }, { status: 400 })
+    }
+
     // Get checklist item
     const checklistItem = await db.taskChecklist.findUnique({
       where: { id: itemId },
     })
 
-    if (!result) {
+    if (!checklistItem) {
       return NextResponse.json({ error: 'Checklist item not found' }, { status: 404 })
     }
 

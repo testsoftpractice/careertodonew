@@ -89,10 +89,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT /api/stages/[id] - Update stage template
+// PUT /api/stages - Update stage template
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{}> }
 ) {
   if (!isFeatureEnabled(STAGE_MANAGEMENT)) {
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
@@ -101,13 +101,13 @@ export async function PUT(
   const auth = await requireAuth(request, ['PLATFORM_ADMIN'])
   if ('status' in auth) return auth
 
-  const { id } = await params
   const user = auth.user
 
   try {
     const body = await request.json()
+    const { id } = body
 
-    if (!result) {
+    if (!id) {
       return NextResponse.json({ error: 'Stage ID is required' }, { status: 400 })
     }
 
@@ -127,7 +127,7 @@ export async function PUT(
       },
     })
   } catch (error) {
-    if (!result) {
+    if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Update stage error:', error)
@@ -135,10 +135,10 @@ export async function PUT(
   }
 }
 
-// DELETE /api/stages/[id] - Delete stage template
+// DELETE /api/stages - Delete stage template
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{}> }
 ) {
   if (!isFeatureEnabled(STAGE_MANAGEMENT)) {
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
@@ -147,10 +147,16 @@ export async function DELETE(
   const auth = await requireAuth(request, ['PLATFORM_ADMIN'])
   if ('status' in auth) return auth
 
-  const { id } = await params
   const user = auth.user
 
   try {
+    const body = await request.json()
+    const { id } = body
+
+    if (!id) {
+      return NextResponse.json({ error: 'Stage ID is required' }, { status: 400 })
+    }
+
     // Delete stage template
     // Note: In production, this would delete from database
 

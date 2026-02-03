@@ -241,6 +241,7 @@ model User {
   portfolioUrl          String?
   emailVerified         Boolean            @default(false)
   emailVerifiedAt       DateTime?
+  mobileNumber          String?
 
   // University specific fields
   university            University?        @relation(fields: [universityId], references: [id], onDelete: SetNull)

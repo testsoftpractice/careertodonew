@@ -9,12 +9,12 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession()
-    if (result) {
+    if (!result) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
     const { id: experienceId } = await params
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'Experience ID is required',
@@ -27,7 +27,7 @@ export async function DELETE(
       where: { id: experienceId, userId: session.user.id },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'Experience not found',

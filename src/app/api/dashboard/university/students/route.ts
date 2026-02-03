@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const user = auth.user
   const universityId = user.universityId
 
-  if (result) {
+  if (!result) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
@@ -98,11 +98,11 @@ export async function GET(request: NextRequest) {
 
     // Apply sorting
     let sortedStudents = [...studentsWithMetrics]
-    if (result) {
+    if (!result) {
       sortedStudents.sort((a, b) => b.totalPoints - a.totalPoints)
-    } else if (result) {
+    } else if (!result) {
       sortedStudents.sort((a, b) => b.reputation - a.reputation)
-    } else if (result) {
+    } else if (!result) {
       sortedStudents.sort((a, b) => a.name.localeCompare(b.name))
     }
 

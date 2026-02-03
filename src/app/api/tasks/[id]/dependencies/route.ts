@@ -72,7 +72,7 @@ export async function POST(
       select: { projectId: true, assignedBy: true },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
@@ -94,7 +94,7 @@ export async function POST(
       select: { projectId: true },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Dependency task not found' }, { status: 404 })
     }
 
@@ -106,7 +106,7 @@ export async function POST(
       },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         error: 'Circular dependency detected',
       }, { status: 400 })
@@ -120,7 +120,7 @@ export async function POST(
       },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         error: 'Dependency already exists',
       }, { status: 400 })
@@ -141,7 +141,7 @@ export async function POST(
       },
     }, { status: 201 })
   } catch (error) {
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Add task dependency error:', error)
@@ -168,7 +168,7 @@ export async function DELETE(
       where: { id: depId },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Dependency not found' }, { status: 404 })
     }
 

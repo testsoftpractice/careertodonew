@@ -6,7 +6,16 @@ $ next dev
 - Environments: .env
 
 ✓ Starting...
-⨯ Unable to acquire lock at /home/z/my-project/.next/dev/lock, is another instance of next dev running?
-  Suggestion: If you intended to restart next dev, terminate the other process, and then try again.
-[?25h
-error: script "dev" exited with code 1
+✓ Ready in 741ms
+Persisting failed: Unable to open static sorted file referenced from 00000552.meta
+
+Caused by:
+    0: Unable to open static sorted file 00000551.sst
+    1: No such file or directory (os error 2)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)

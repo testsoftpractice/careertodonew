@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
 
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { success: false, error: 'User ID is required' },
         { status: 400 }

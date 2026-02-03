@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const user = auth.user
   const universityId = user.universityId
 
-  if (result) {
+  if (!result) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 

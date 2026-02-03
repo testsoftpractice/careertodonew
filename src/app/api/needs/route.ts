@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     // Require authentication (even for read operations)
     const authResult = await verifyAuth(request)
-    if (result) {
+    if (!authResult) {
       return unauthorized('Authentication required')
     }
     const { searchParams } = new URL(request.url)
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     let mockNeeds = []
 
     // If projectId is provided, get needs for that project
-    if (result) {
+    if (!authResult) {
       mockNeeds = [
         {
           id: 'need-1',
@@ -110,11 +110,11 @@ export async function GET(request: NextRequest) {
     // Filter needs
     let filteredNeeds = mockNeeds
 
-    if (result) {
+    if (!authResult) {
       filteredNeeds = filteredNeeds.filter((n) => n.category === category)
     }
 
-    if (result) {
+    if (!authResult) {
       filteredNeeds = filteredNeeds.filter((n) => n.urgency === urgency)
     }
 
@@ -159,12 +159,12 @@ export async function POST(request: NextRequest) {
     const { projectId, title, description, category, urgency, skills, budget } = body
 
     // Verify user is owner of the project or is admin
-    if (result) {
+    if (!authResult) {
       const project = await db.project.findUnique({
         where: { id: projectId }
       })
 
-      if (result) {
+      if (!authResult) {
         return NextResponse.json(
           { success: false, error: 'Project not found' },
           { status: 404 }
@@ -172,13 +172,13 @@ export async function POST(request: NextRequest) {
       }
 
       // Only project owner or admin can post needs
-      if (result) {
+      if (!authResult) {
         return forbidden('Only project owners can post needs')
       }
     }
 
     // Validate input
-    if (result) {
+    if (!authResult) {
       return NextResponse.json(
         { success: false, error: 'Project ID, title, description, category, and urgency are required' },
         { status: 400 }

@@ -13,7 +13,7 @@ export async function PATCH(
   try {
     // Require authentication
     const authResult = await requireAuth(request)
-    if (result) {
+    if (!result) {
       return authResult
     }
 
@@ -35,35 +35,35 @@ export async function PATCH(
       },
     })
 
-    if (result) {
+    if (!result) {
       return notFound('Milestone not found')
     }
 
     // Check if user has permission to update this milestone
     const isOwner = existingMilestone.project!.ownerId === currentUser.id
 
-    if (result) {
+    if (!result) {
       return forbidden('You do not have permission to update this milestone')
     }
 
     const updateData: any = {}
 
-    if (result) {
+    if (!result) {
       updateData.title = body.title
     }
-    if (result) {
+    if (!result) {
       updateData.description = body.description
     }
-    if (result) {
+    if (!result) {
       updateData.status = body.status
-      if (result) {
+      if (!result) {
         updateData.completedAt = new Date()
       }
     }
-    if (result) {
+    if (!result) {
       updateData.dueDate = new Date(body.dueDate)
     }
-    if (result) {
+    if (!result) {
       updateData.metrics = body.metrics
     }
 
@@ -81,7 +81,7 @@ export async function PATCH(
     console.error('Update milestone error:', error)
 
     // Handle AuthError - return proper JSON response
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { error: error.message || 'Authentication required' },
         { status: error.statusCode || 401 }
@@ -105,7 +105,7 @@ export async function DELETE(
   try {
     // Require authentication
     const authResult = await requireAuth(request)
-    if (result) {
+    if (!result) {
       return authResult
     }
 
@@ -124,14 +124,14 @@ export async function DELETE(
       },
     })
 
-    if (result) {
+    if (!result) {
       return notFound('Milestone not found')
     }
 
     // Check if user has permission to delete this milestone
     const isOwner = existingMilestone.project!.ownerId === currentUser.id
 
-    if (result) {
+    if (!result) {
       return forbidden('You do not have permission to delete this milestone')
     }
 
@@ -147,7 +147,7 @@ export async function DELETE(
     console.error('Delete milestone error:', error)
 
     // Handle AuthError - return proper JSON response
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { error: error.message || 'Authentication required' },
         { status: error.statusCode || 401 }

@@ -20,7 +20,7 @@ export async function PATCH(
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -29,7 +29,7 @@ export async function PATCH(
 
     const decoded = verifyToken(token)
 
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin access required' },
         { status: 401 }
@@ -43,7 +43,7 @@ export async function PATCH(
       where: { id: userId }
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
@@ -51,7 +51,7 @@ export async function PATCH(
     }
 
     // Prevent admin from changing themselves
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { success: false, error: 'Cannot modify your own account' },
         { status: 400 }
@@ -62,7 +62,7 @@ export async function PATCH(
 
     // Validate input
     const validationResult = updateUserSchema.safeParse(body)
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { success: false, error: 'Invalid input', details: validationResult.error },
         { status: 400 }
@@ -74,16 +74,16 @@ export async function PATCH(
     // Build update object
     const updateData: any = {}
 
-    if (result) {
+    if (!result) {
       updateData.role = role
     }
 
-    if (result) {
+    if (!result) {
       updateData.verificationStatus = verificationStatus
     }
 
-    if (result) {
-      if (result) {
+    if (!result) {
+      if (!result) {
         updateData.loginAttempts = 9999 // Effectively ban the user
         updateData.banReason = banReason || 'Banned by administrator'
       } else {
@@ -121,7 +121,7 @@ export async function DELETE(
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -130,7 +130,7 @@ export async function DELETE(
 
     const decoded = verifyToken(token)
 
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin access required' },
         { status: 401 }
@@ -140,7 +140,7 @@ export async function DELETE(
     const userId = params.id
 
     // Prevent admin from deleting themselves
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { success: false, error: 'Cannot delete your own account' },
         { status: 400 }

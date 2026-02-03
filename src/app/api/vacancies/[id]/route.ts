@@ -30,7 +30,7 @@ export async function PATCH(
   try {
     // Require authentication
     const authResult = await requireAuth(request)
-    if (result) {
+    if (!result) {
       return unauthorized()
     }
 
@@ -40,7 +40,7 @@ export async function PATCH(
 
     // Validate request body
     const validation = updateVacancySchema.safeParse(body)
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'Validation error',
@@ -66,14 +66,14 @@ export async function PATCH(
       },
     })
 
-    if (result) {
+    if (!result) {
       return notFound('Vacancy not found')
     }
 
     // Check if user has permission to update this vacancy
     const isOwner = existingVacancy.project!.ownerId === currentUser.id
 
-    if (result) {
+    if (!result) {
       return forbidden('You do not have permission to update this vacancy')
     }
 
@@ -124,7 +124,7 @@ export async function DELETE(
   try {
     // Require authentication
     const authResult = await requireAuth(request)
-    if (result) {
+    if (!result) {
       return unauthorized()
     }
 
@@ -143,14 +143,14 @@ export async function DELETE(
       },
     })
 
-    if (result) {
+    if (!result) {
       return notFound('Vacancy not found')
     }
 
     // Check if user has permission to delete this vacancy
     const isOwner = existingVacancy.project!.ownerId === currentUser.id
 
-    if (result) {
+    if (!result) {
       return forbidden('You do not have permission to delete this vacancy')
     }
 

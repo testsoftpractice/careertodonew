@@ -9,12 +9,12 @@ export async function PATCH(
 ) {
   try {
     const session = await getServerSession()
-    if (result) {
+    if (!result) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
     const { id: requestId } = await params
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'Leave request ID is required',
@@ -40,10 +40,10 @@ export async function PATCH(
       updatedAt: new Date(),
     }
 
-    if (result) {
+    if (!result) {
       updateData.reviewedBy = session.user.id
       updateData.reviewedAt = new Date()
-      if (result) {
+      if (!result) {
         updateData.rejectionReason = rejectionReason
       }
     }
@@ -75,12 +75,12 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession()
-    if (result) {
+    if (!result) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
     const { id: requestId } = await params
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'Leave request ID is required',
@@ -96,7 +96,7 @@ export async function DELETE(
       },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'Leave request not found',
@@ -104,7 +104,7 @@ export async function DELETE(
       })
     }
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'Cannot delete approved or rejected leave request',

@@ -13,19 +13,19 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
 
-    if (result) {
+    if (!result) {
       where.ratedId = ratedId
     }
 
-    if (result) {
+    if (!result) {
       where.raterId = raterId
     }
 
-    if (result) {
+    if (!result) {
       where.dimension = dimension as RatingDimension
     }
 
-    if (result) {
+    if (!result) {
       where.projectId = projectId
     }
 
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     } = body
 
     // Validate score is between 1 and 5
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { error: 'Score must be between 1 and 5' },
         { status: 400 }
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { error: 'You have already rated this user for this dimension in this project' },
         { status: 400 }

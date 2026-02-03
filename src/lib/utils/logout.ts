@@ -12,11 +12,11 @@ export async function handleLogout() {
     localStorage.removeItem('token')
 
     // Clear all cookies as well
-    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    document.cookie = 'session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    document.cookie = 'token=; domain=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    document.cookie = 'user=; domain=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    const cookies = ['session', 'token', 'user']
+    cookies.forEach(cookie => {
+      document.cookie = `${cookie}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`
+      document.cookie = `${cookie}=; domain=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`
+    })
 
     return true
   } catch (error) {
@@ -34,6 +34,20 @@ export async function logoutAndRedirect() {
   // Force page reload to ensure clean state
   setTimeout(() => {
     window.location.href = '/auth'
+  }, 100)
+
+  return success
+}
+
+/**
+ * Perform logout and redirect to admin login page
+ */
+export async function adminLogoutAndRedirect() {
+  const success = await handleLogout()
+
+  // Force page reload to ensure clean state
+  setTimeout(() => {
+    window.location.href = '/admin/login'
   }, 100)
 
   return success

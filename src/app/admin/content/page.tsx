@@ -92,7 +92,7 @@ export default function AdminContentPage() {
             </div>
             <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
               <Button variant="ghost" size="sm" asChild className="text-primary-foreground hover:bg-primary/80">
-                <Link href="/admin/governance">
+                <Link href="/admin">
                   <ArrowLeft className="h-4 w-4" />
                   <span className="hidden sm:inline ml-2">Back to Admin</span>
                   <span className="sm:hidden">Back</span>
@@ -217,7 +217,7 @@ export default function AdminContentPage() {
 
           <div className="text-center pt-6 sm:pt-8">
             <Button variant="outline" className="text-sm sm:text-base" asChild>
-              <Link href="/admin/governance">
+              <Link href="/admin">
                 Back to Admin Dashboard
               </Link>
             </Button>

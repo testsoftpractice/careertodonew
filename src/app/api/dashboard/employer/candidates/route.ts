@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const status = searchParams.get('status') || 'all'
   const limit = parseInt(searchParams.get('limit') || '50')
 
-  if (result) {
+  if (!result) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

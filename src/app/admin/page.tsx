@@ -26,13 +26,13 @@ import {
   Activity,
 } from 'lucide-react'
 import Link from 'next/link'
-import { logoutAndRedirect } from '@/lib/utils/logout'
+import { logoutAndRedirect, adminLogoutAndRedirect } from '@/lib/utils/logout'
 
 export default function AdminPage() {
   const router = useRouter()
 
   const handleLogout = async () => {
-    await logoutAndRedirect()
+    await adminLogoutAndRedirect()
   }
 
   const adminModules = [
@@ -75,7 +75,7 @@ export default function AdminPage() {
       title: 'Analytics',
       description: 'View platform statistics and metrics',
       icon: BarChart3,
-      href: '/admin',
+      href: '/admin/governance',
       color: 'from-indigo-500 to-indigo-600',
     },
     {
@@ -147,45 +147,53 @@ export default function AdminPage() {
 
           {/* Quick Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
-              <CardContent className="p-4 sm:p-6 text-center">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-3 rounded-xl mb-3">
-                  <Users className="h-8 w-8" />
-                </div>
-                <div className="text-2xl sm:text-3xl font-bold mt-2">Active Users</div>
-                <p className="text-sm text-muted-foreground">Total registered users</p>
-              </CardContent>
-            </Card>
+            <Link href="/admin/users">
+              <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
+                <CardContent className="p-4 sm:p-6 text-center">
+                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-3 rounded-xl mb-3">
+                    <Users className="h-8 w-8" />
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-bold mt-2">Active Users</div>
+                  <p className="text-sm text-muted-foreground">Total registered users</p>
+                </CardContent>
+              </Card>
+            </Link>
 
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
-              <CardContent className="p-4 sm:p-6 text-center">
-                <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-3 rounded-xl mb-3">
-                  <Building2 className="h-8 w-8" />
-                </div>
-                <div className="text-2xl sm:text-3xl font-bold mt-2">Universities</div>
-                <p className="text-sm text-muted-foreground">Registered institutions</p>
-              </CardContent>
-            </Card>
+            <Link href="/admin/governance">
+              <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
+                <CardContent className="p-4 sm:p-6 text-center">
+                  <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-3 rounded-xl mb-3">
+                    <Building2 className="h-8 w-8" />
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-bold mt-2">Universities</div>
+                  <p className="text-sm text-muted-foreground">Registered institutions</p>
+                </CardContent>
+              </Card>
+            </Link>
 
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
-              <CardContent className="p-4 sm:p-6 text-center">
-                <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-3 rounded-xl mb-3">
-                  <Database className="h-8 w-8" />
-                </div>
-                <div className="text-2xl sm:text-3xl font-bold mt-2">Projects</div>
-                <p className="text-sm text-muted-foreground">Active projects</p>
-              </CardContent>
-            </Card>
+            <Link href="/admin/projects">
+              <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
+                <CardContent className="p-4 sm:p-6 text-center">
+                  <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-3 rounded-xl mb-3">
+                    <Database className="h-8 w-8" />
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-bold mt-2">Projects</div>
+                  <p className="text-sm text-muted-foreground">Active projects</p>
+                </CardContent>
+              </Card>
+            </Link>
 
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
-              <CardContent className="p-4 sm:p-6 text-center">
-                <div className="bg-gradient-to-br from-amber-500 to-amber-600 text-white p-3 rounded-xl mb-3">
-                  <Activity className="h-8 w-8" />
-                </div>
-                <div className="text-2xl sm:text-3xl font-bold mt-2">24h Activity</div>
-                <p className="text-sm text-muted-foreground">Platform engagement</p>
-              </CardContent>
-            </Card>
+            <Link href="/admin/audit">
+              <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
+                <CardContent className="p-4 sm:p-6 text-center">
+                  <div className="bg-gradient-to-br from-amber-500 to-amber-600 text-white p-3 rounded-xl mb-3">
+                    <Activity className="h-8 w-8" />
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-bold mt-2">24h Activity</div>
+                  <p className="text-sm text-muted-foreground">Platform engagement</p>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
 
           {/* Admin Modules */}

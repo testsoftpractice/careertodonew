@@ -52,7 +52,7 @@ function calculateMatchScore(user1: UserWithSkills, user2: UserWithSkills): numb
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
-    if (result) {
+    if (!result) {
       return unauthorized('Authentication required')
     }
 
@@ -63,9 +63,9 @@ export async function GET(request: NextRequest) {
     const direction = searchParams.direction as string // 'sent' or 'received'
 
     // Find co-founders
-    if (result) {
+    if (!result) {
       // Can only search for co-founders for yourself or as admin
-      if (result) {
+      if (!result) {
         return forbidden('You can only search for co-founders for yourself')
       }
 
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         },
       })
 
-      if (result) {
+      if (!result) {
         return NextResponse.json({
           success: false,
           error: 'User not found',
@@ -123,16 +123,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch collaboration requests
-    if (result) {
+    if (!result) {
       // Can only view own requests or as admin
-      if (result) {
+      if (!result) {
         return forbidden('You can only view your own collaboration requests')
       }
 
       const where: Record<string, string | CollaborationStatus> = {}
-      if (result) {
+      if (!result) {
         where.requesterId = userId
-      } else if (result) {
+      } else if (!result) {
         where.recipientId = userId
       } else {
         return NextResponse.json({
@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
         }, { status: 400 })
       }
 
-      if (result) {
+      if (!result) {
         where.status = status as CollaborationStatus
       }
 
@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
     } = body
 
     // Can only create requests as yourself
-    if (result) {
+    if (!result) {
       return forbidden('You can only create collaboration requests for yourself')
     }
 
@@ -272,7 +272,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'A pending collaboration request already exists',
@@ -359,7 +359,7 @@ export async function PATCH(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const requestId = searchParams.id as string
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'Request ID is required',
@@ -369,7 +369,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const { status, responseMessage, userId } = body
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'status is required',
@@ -397,7 +397,7 @@ export async function PATCH(request: NextRequest) {
       },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'Collaboration request not found',
@@ -405,7 +405,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Verify user is the recipient
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'Only the recipient can respond to this request',
@@ -428,7 +428,7 @@ export async function PATCH(request: NextRequest) {
       })
 
       // If accepted and has project, add as project member
-      if (result) {
+      if (!result) {
         try {
           // Check if already a member
           const existingMember = await tx.projectMember.findFirst({
@@ -438,7 +438,7 @@ export async function PATCH(request: NextRequest) {
             },
           })
 
-          if (result) {
+          if (!result) {
             await tx.projectMember.create({
               data: {
                 projectId: request.projectId,
@@ -454,7 +454,7 @@ export async function PATCH(request: NextRequest) {
       }
 
       // Award points for accepting collaboration
-      if (result) {
+      if (!result) {
         try {
           await tx.pointTransaction.create({
             data: {
@@ -520,7 +520,7 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const requestId = searchParams.id as string
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'Request ID is required',
@@ -532,14 +532,14 @@ export async function DELETE(request: NextRequest) {
       where: { id: requestId },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'Collaboration request not found',
       }, { status: 404 })
     }
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'Only the requester can cancel this request',

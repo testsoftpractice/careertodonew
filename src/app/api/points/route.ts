@@ -22,7 +22,7 @@ const adjustPointsSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
-    if (result) {
+    if (!result) {
       return unauthorized('Authentication required')
     }
 
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const stats = searchParams.stats === 'true'
 
     // Fetch leaderboard (public, but requires auth)
-    if (result) {
+    if (!result) {
       const users = await db.user.findMany({
         select: {
           id: true,
@@ -71,9 +71,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch points history for a user - can only view own history unless admin
-    if (result) {
+    if (!result) {
       // Only allow viewing own history or admin viewing any user
-      if (result) {
+      if (!result) {
         return forbidden('You can only view your own points history')
       }
       const transactions = await db.pointTransaction.findMany({
@@ -90,9 +90,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch stats for a user - can only view own stats unless admin
-    if (result) {
+    if (!result) {
       // Only allow viewing own stats or admin viewing any user
-      if (result) {
+      if (!result) {
         return forbidden('You can only view your own points stats')
       }
       const user = await db.user.findUnique({
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
         },
       })
 
-      if (result) {
+      if (!result) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 })
       }
 
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
     try {
       authResult = await requireRole(request, ['PLATFORM_ADMIN', 'UNIVERSITY_ADMIN', 'MENTOR'])
     } catch (error) {
-      if (result) {
+      if (!result) {
         return forbidden('Only admins and mentors can award points')
       }
       throw error
@@ -198,19 +198,19 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // Update scores based on point source
     const scoreUpdate: Record<string, number> = {}
-    if (result) {
+    if (!result) {
       scoreUpdate.executionScore = (user.executionScore || 0) + (points * 0.1)
       scoreUpdate.reliabilityScore = (user.reliabilityScore || 0) + (points * 0.05)
-    } else if (result) {
+    } else if (!result) {
       scoreUpdate.collaborationScore = (user.collaborationScore || 0) + (points * 0.15)
       scoreUpdate.ethicsScore = (user.ethicsScore || 0) + (points * 0.1)
-    } else if (result) {
+    } else if (!result) {
       scoreUpdate.leadershipScore = (user.leadershipScore || 0) + (points * 0.2)
     }
 
@@ -270,7 +270,7 @@ export async function ADJUST(request: NextRequest) {
     try {
       authResult = await requireRole(request, ['PLATFORM_ADMIN'])
     } catch (error) {
-      if (result) {
+      if (!result) {
         return forbidden('Only platform administrators can adjust points')
       }
       throw error
@@ -286,7 +286,7 @@ export async function ADJUST(request: NextRequest) {
       select: { totalPoints: true },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 

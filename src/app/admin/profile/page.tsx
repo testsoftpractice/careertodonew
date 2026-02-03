@@ -342,7 +342,7 @@ export default function AdminProfilePage() {
                   </Link>
                 </Button>
                 <Button variant="outline" className="justify-start" asChild>
-                  <Link href="/admin/governance">
+                  <Link href="/admin/settings">
                     <Settings className="h-4 w-4 mr-2" />
                     Platform Settings
                   </Link>

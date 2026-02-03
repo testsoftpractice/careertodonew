@@ -22,11 +22,9 @@ import {
   Users,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
 
 export default function AdminSettingsPage() {
-  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('platform')
 
@@ -64,11 +62,23 @@ export default function AdminSettingsPage() {
   const handleSavePlatformSettings = async () => {
     try {
       setLoading(true)
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      toast({
-        title: 'Success',
-        description: 'Platform settings saved successfully',
+      const response = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(platformSettings),
       })
+      const data = await response.json()
+
+      if (data.success) {
+        toast({
+          title: 'Success',
+          description: 'Platform settings saved successfully',
+        })
+      } else {
+        throw new Error(data.error || 'Failed to save settings')
+      }
     } catch (error) {
       console.error('Save settings error:', error)
       toast({

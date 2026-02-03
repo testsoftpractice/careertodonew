@@ -1,8 +1,29 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { verifyToken } from "@/lib/auth/jwt"
 
 export async function GET(request: NextRequest) {
   try {
+    // Verify admin authentication
+    const sessionCookie = request.cookies.get('session')
+    const token = sessionCookie?.value
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const decoded = verifyToken(decodeURIComponent(token))
+
+    if (!decoded || decoded.role !== 'PLATFORM_ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized - Admin access required' },
+        { status: 401 }
+      )
+    }
+
     const limit = parseInt(request.nextUrl.searchParams.get("limit") || "50")
     const sort = request.nextUrl.searchParams.get("sort") || "desc"
     const actionFilter = request.nextUrl.searchParams.get("action")
@@ -37,6 +58,15 @@ export async function GET(request: NextRequest) {
         createdAt: sort as 'asc' | 'desc',
       },
       take: limit,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     })
 
     const totalCount = await db.auditLog.count({ where })
@@ -47,11 +77,10 @@ export async function GET(request: NextRequest) {
         logs: logs.map(log => ({
           id: log.id,
           action: log.action,
-          userId: log.userId,
-          timestamp: log.createdAt.toISOString(),
           entity: log.entity,
-          entityId: log.entityId,
+          performedBy: log.user ? { name: log.user.name } : undefined,
           details: log.details,
+          createdAt: log.createdAt.toISOString(),
         })),
         totalCount,
         currentPage: 1,

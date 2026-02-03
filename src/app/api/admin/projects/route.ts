@@ -1,14 +1,47 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { ProjectStatus } from "@prisma/client"
+import { verifyToken } from "@/lib/auth/jwt"
 
 export async function GET(request: NextRequest) {
   try {
+    // Verify admin authentication
+    const sessionCookie = request.cookies.get('session')
+    const token = sessionCookie?.value
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const decoded = verifyToken(decodeURIComponent(token))
+
+    if (!decoded || decoded.role !== 'PLATFORM_ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized - Admin access required' },
+        { status: 401 }
+      )
+    }
+
     const searchParams = request.nextUrl.searchParams
-    const status = searchParams.get("status") || null
+    const statusParam = searchParams.get("status") || null
     const limit = parseInt(searchParams.get("limit") || "20")
 
-    const where = status ? { status: status as ProjectStatus } : {}
+    // Map PENDING to UNDER_REVIEW for backward compatibility
+    let status: ProjectStatus | null = null
+    if (statusParam) {
+      if (statusParam === "PENDING") {
+        status = "UNDER_REVIEW" as ProjectStatus
+      } else if (statusParam === "PROPOSED") {
+        status = "IDEA" as ProjectStatus
+      } else {
+        status = statusParam as ProjectStatus
+      }
+    }
+
+    const where = status ? { status } : {}
 
     const [projects, totalCount] = await Promise.all([
       db.project.findMany({
@@ -38,25 +71,35 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        projects: projects.map(p => ({
-          id: p.id,
-          title: p.name,
-          name: p.name,
-          description: p.description || "",
-          category: p.category || "",
-          status: p.status,
-          ownerId: p.ownerId,
-          university: p.owner.university,
-          projectLead: {
-            name: p.owner.name,
-            email: p.owner.email
-          },
-          owner: p.owner,
-          budget: p.budget,
-          submittedAt: p.createdAt.toISOString(),
-          lastUpdated: p.updatedAt.toISOString(),
-          createdAt: p.createdAt.toISOString(),
-        })),
+        projects: projects.map(p => {
+          // Map backend status to frontend-friendly status
+          let mappedStatus = p.status
+          if (p.status === "UNDER_REVIEW") {
+            mappedStatus = "PENDING" as any
+          } else if (p.status === "IDEA") {
+            mappedStatus = "PROPOSED" as any
+          }
+
+          return {
+            id: p.id,
+            title: p.name,
+            name: p.name,
+            description: p.description || "",
+            category: p.category || "",
+            status: mappedStatus,
+            ownerId: p.ownerId,
+            university: p.owner.university,
+            projectLead: {
+              name: p.owner.name,
+              email: p.owner.email
+            },
+            owner: p.owner,
+            budget: p.budget,
+            submittedAt: p.createdAt.toISOString(),
+            lastUpdated: p.updatedAt.toISOString(),
+            createdAt: p.createdAt.toISOString(),
+          }
+        }),
         totalCount,
       },
     })

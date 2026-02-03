@@ -1,8 +1,29 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { verifyToken } from "@/lib/auth/jwt"
 
 export async function GET(request: NextRequest) {
   try {
+    // Verify admin authentication
+    const sessionCookie = request.cookies.get('session')
+    const token = sessionCookie?.value
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const decoded = verifyToken(decodeURIComponent(token))
+
+    if (!decoded || decoded.role !== 'PLATFORM_ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized - Admin access required' },
+        { status: 401 }
+      )
+    }
+
     const totalUsers = await db.user.count()
     const inProgressProjects = await db.project.count({ where: { status: "IN_PROGRESS" } })
     const underReviewProjects = await db.project.count({ where: { status: "UNDER_REVIEW" } })

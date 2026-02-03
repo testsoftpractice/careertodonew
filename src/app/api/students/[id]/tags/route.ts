@@ -46,7 +46,7 @@ export async function GET(
   const user = auth.user
   const universityId = user.universityId
 
-  if (result) {
+  if (!result) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
@@ -102,7 +102,7 @@ export async function POST(
   const user = auth.user
   const universityId = user.universityId
 
-  if (result) {
+  if (!result) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
@@ -115,7 +115,7 @@ export async function POST(
       where: { id: studentId },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 })
     }
 
@@ -152,7 +152,7 @@ export async function POST(
       },
     })
   } catch (error) {
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Create student tag error:', error)
@@ -176,7 +176,7 @@ export async function PUT(
   const user = auth.user
   const universityId = user.universityId
 
-  if (result) {
+  if (!result) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
@@ -189,7 +189,7 @@ export async function PUT(
       where: { id: tagId, studentId, universityId },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Student tag not found' }, { status: 404 })
     }
 
@@ -215,7 +215,7 @@ export async function PUT(
       },
     })
   } catch (error) {
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Update student tag error:', error)
@@ -239,7 +239,7 @@ export async function DELETE(
   const user = auth.user
   const universityId = user.universityId
 
-  if (result) {
+  if (!result) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
@@ -249,7 +249,7 @@ export async function DELETE(
       where: { id: tagId, universityId },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Student tag not found' }, { status: 404 })
     }
 

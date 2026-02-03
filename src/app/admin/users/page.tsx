@@ -162,9 +162,9 @@ export default function AdminUsersPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link href="/admin/governance" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
+              <Link href="/admin" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="h-5 w-5" />
-                <span className="font-semibold">Back to Governance</span>
+                <span className="font-semibold">Back to Admin Dashboard</span>
               </Link>
               <div className="h-6 w-px bg-border" />
               <div>

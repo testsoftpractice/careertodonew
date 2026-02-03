@@ -11,12 +11,12 @@ export async function GET(request: NextRequest) {
     const orderBy: any = category ? { rating: { _avg: { [category]: 'desc' } } } : { reputation: 'desc' }
 
     const where: any = {}
-    
-    if (result) {
+
+    if (category) {
       where.rating = { _avg: { [category]: { gt: 0 } } }
     }
-    
-    if (result) {
+
+    if (university) {
       where.user = { university: { name: { contains: university, mode: 'insensitive' } } }
     }
 

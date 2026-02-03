@@ -141,7 +141,7 @@ export default function AdminLoginPage() {
 
             <div className="mt-6 text-center space-y-4">
               <p className="text-sm text-muted-foreground">
-                <strong>Demo Credentials:</strong> admin@careertodo.com / adminpassword123
+                <strong>Demo Credentials:</strong> admin@careertodo.com / Password123!
               </p>
               <p className="text-xs text-muted-foreground">
                 In production, use proper admin credentials from the database.

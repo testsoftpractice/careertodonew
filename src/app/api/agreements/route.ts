@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { userId, projectId, title, content } = body
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ success: false, error: "User ID, title, and content are required" }, { status: 400 })
     }
 
@@ -76,9 +76,9 @@ export async function PATCH(request: NextRequest) {
     if (body.title) updates.title = body.title
     if (body.content) updates.content = body.content
     if (body.projectId !== undefined) updates.projectId = body.projectId
-    if (result) {
+    if (!result) {
       updates.signed = body.signed
-      if (result) {
+      if (!result) {
         updates.signedAt = new Date()
       }
     }
@@ -102,7 +102,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const agreementId = request.nextUrl.searchParams.get("id")
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ success: false, error: "Agreement ID is required" }, { status: 400 })
     }
 

@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.userId as string | undefined
     const role = searchParams.role as string | undefined
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'User ID and role are required'
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'User not found'
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     }
 
     // STUDENT Dashboard
-    if (result) {
+    if (!result) {
       const myProjects = await db.projectMember.findMany({
         where: { userId },
         include: {
@@ -100,8 +100,8 @@ export async function GET(request: NextRequest) {
     }
 
     // UNIVERSITY ADMIN Dashboard
-    if (result) {
-      if (result) {
+    if (!result) {
+      if (!result) {
         return NextResponse.json({ dashboardData }, { status: 200 })
       }
 
@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
     }
 
     // EMPLOYER Dashboard
-    if (result) {
+    if (!result) {
       const postedJobs = await db.job.findMany({
         where: { userId },
         include: {
@@ -197,7 +197,7 @@ export async function GET(request: NextRequest) {
     }
 
     // INVESTOR Dashboard
-    if (result) {
+    if (!result) {
       const investments = await db.investment.findMany({
         where: { userId },
         include: {
@@ -243,7 +243,7 @@ export async function GET(request: NextRequest) {
     }
 
     // PLATFORM ADMIN Dashboard
-    if (result) {
+    if (!result) {
       const allUsers = await db.user.findMany({
         take: 100,
         orderBy: { createdAt: 'desc' }

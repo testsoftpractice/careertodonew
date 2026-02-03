@@ -15,15 +15,15 @@ export async function GET(request: NextRequest) {
       },
     }
 
-    if (result) {
+    if (!result) {
       where.investorId = investorId
     }
 
-    if (result) {
+    if (!result) {
       where.projectId = projectId
     }
 
-    if (result) {
+    if (!result) {
       where.status = status
     }
 
@@ -137,7 +137,7 @@ export async function PUT(
       },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { success: false, error: 'Deal not found' },
         { status: 404 }
@@ -178,7 +178,7 @@ export async function PUT(
     })
 
     // Create notifications based on status change
-    if (result) {
+    if (!result) {
       await db.notification.create({
         data: {
           userId: deal.investorId,
@@ -188,7 +188,7 @@ export async function PUT(
           link: `/dashboard/investor/deals/${dealId}`,
         },
       })
-    } else if (result) {
+    } else if (!result) {
       // Notify both parties
       await db.notification.create({
         data: {
@@ -209,7 +209,7 @@ export async function PUT(
           link: `/projects/${deal.projectId}/deals/${dealId}`,
         },
       })
-    } else if (result) {
+    } else if (!result) {
       await db.notification.create({
         data: {
           userId: deal.investorId,

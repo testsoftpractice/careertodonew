@@ -158,7 +158,7 @@ export default function GovernancePage() {
     const fetchAuditLogs = async () => {
       try {
         setLoading(prev => ({ ...prev, audits: true }))
-        const response = await fetch('/api/audits')
+        const response = await fetch('/api/admin/audit')
         const data = await response.json()
         if (data.success) {
           setAuditLogs(data.data?.logs || [])
@@ -180,7 +180,7 @@ export default function GovernancePage() {
     const fetchProposals = async () => {
       try {
         setLoading(prev => ({ ...prev, proposals: true }))
-        const response = await fetch('/api/governance/proposals')
+        const response = await fetch('/api/admin/governance/proposals')
         const data = await response.json()
         if (data.success) {
           setProposals(data.data?.proposals || [])

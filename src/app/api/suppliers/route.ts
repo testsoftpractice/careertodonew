@@ -12,11 +12,11 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
 
-    if (result) {
+    if (!result) {
       where.category = category
     }
 
-    if (result) {
+    if (!result) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
@@ -99,14 +99,14 @@ export async function POST(request: NextRequest) {
     const supplierName = businessName || name
 
     // Validate input
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { success: false, error: 'Name, category, and description are required' },
         { status: 400 }
       )
     }
 
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { success: false, error: 'Contact email is required' },
         { status: 400 }

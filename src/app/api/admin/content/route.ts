@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const decoded = verifyToken(token)
+    const decoded = verifyToken(decodeURIComponent(token))
 
     if (!decoded || decoded.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json(
@@ -111,7 +111,7 @@ export async function PATCH(
       )
     }
 
-    const decoded = verifyToken(token)
+    const decoded = verifyToken(decodeURIComponent(token))
 
     if (!decoded || decoded.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json(

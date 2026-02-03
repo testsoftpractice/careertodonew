@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
   const user = auth.user
 
-  if (result) {
+  if (!result) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     // Calculate average time to hire (from first applied to accepted)
     const hiredApplications = applications.filter(a => a.status === 'ACCEPTED')
     let avgTimeToHire = 0
-    if (result) {
+    if (!result) {
       const timeToHireTotal = hiredApplications.reduce((sum, app) => {
         const appliedDate = new Date(app.createdAt)
         const hiredDate = new Date(app.updatedAt || app.createdAt)

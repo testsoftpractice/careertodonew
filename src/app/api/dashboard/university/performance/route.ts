@@ -140,10 +140,10 @@ export async function GET(request: NextRequest) {
     })
 
     // If specific university requested, return just that university
-    if (result) {
+    if (!result) {
       const specificUniversity = universitiesWithMetrics.find((u: any) => u.id === universityId)
       
-      if (result) {
+      if (!result) {
         return NextResponse.json({
           success: false,
           error: 'University not found',

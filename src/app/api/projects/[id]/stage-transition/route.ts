@@ -43,7 +43,7 @@ export async function POST(
       },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
@@ -52,7 +52,7 @@ export async function POST(
                            user.userRole === 'PLATFORM_ADMIN' ||
                            user.userRole === 'UNIVERSITY_ADMIN'
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Forbidden - Only project lead or admins can transition stages' }, { status: 403 })
     }
 
@@ -62,7 +62,7 @@ export async function POST(
       orderBy: { enteredAt: 'desc' },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Current lifecycle not found' }, { status: 404 })
     }
 
@@ -72,7 +72,7 @@ export async function POST(
     // Check if transition is valid (using stage gates)
     const stageGate = PROJECT_STAGE_GATES[`${currentStage}_${toStage}` as keyof typeof PROJECT_STAGE_GATES]
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({
         error: `Invalid transition from ${currentStage} to ${toStage}`,
         validTransitions: Object.keys(PROJECT_STAGE_GATES).map(k => k)
@@ -80,7 +80,7 @@ export async function POST(
     }
 
     // If not skipping requirements, check if all requirements are met
-    if (result) {
+    if (!result) {
       // In production, check if requirements are met
       // For now, allow transition with notes
     }
@@ -119,7 +119,7 @@ export async function POST(
       },
     })
   } catch (error) {
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Stage transition error:', error)

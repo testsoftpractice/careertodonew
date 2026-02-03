@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const universityId = request.nextUrl.searchParams.get("universityId")
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ success: false, error: "University ID is required" }, { status: 400 })
     }
 

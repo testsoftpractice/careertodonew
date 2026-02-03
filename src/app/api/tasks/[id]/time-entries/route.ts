@@ -41,7 +41,7 @@ export async function GET(
       select: { assignedTo: true },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
@@ -103,7 +103,7 @@ export async function POST(
       select: { assignedTo: true, projectId: true, assignedBy: true },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
@@ -117,7 +117,7 @@ export async function POST(
     const isProjectOwner = project?.ownerId === user.userId
 
     // Allow if task assignee or project owner
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Forbidden - No access to add time entries to this task' }, { status: 403 })
     }
 
@@ -150,7 +150,7 @@ export async function POST(
       },
     })
   } catch (error) {
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Create time entry error:', error)
@@ -182,7 +182,7 @@ export async function PUT(
       where: { id: entryId },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Time entry not found' }, { status: 404 })
     }
 
@@ -213,7 +213,7 @@ export async function PUT(
       },
     })
   } catch (error) {
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Update time entry error:', error)
@@ -242,7 +242,7 @@ export async function DELETE(
       where: { id: entryId },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json({ error: 'Time entry not found' }, { status: 404 })
     }
 

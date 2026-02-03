@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.projectId as string | undefined
 
-    if (result) {
+    if (!result) {
       return errorResponse('Project ID is required', 400)
     }
 
@@ -120,14 +120,14 @@ export async function POST(request: NextRequest) {
     console.error('Create vacancy error:', error)
 
     // Handle AuthError - return proper JSON response
-    if (result) {
+    if (!result) {
       return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
     }
 
-    if (result) {
+    if (!result) {
       return errorResponse('Project not found', 404)
     }
-    if (result) {
+    if (!result) {
       return errorResponse('Foreign key constraint failed', 400)
     }
     return errorResponse('Failed to create vacancy', 500)
@@ -141,7 +141,7 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const id = searchParams.id as string | undefined
 
-    if (result) {
+    if (!result) {
       return errorResponse('Vacancy ID is required', 400)
     }
 
@@ -153,7 +153,7 @@ export async function DELETE(request: NextRequest) {
       }
     })
 
-    if (result) {
+    if (!result) {
       return notFound('Vacancy not found')
     }
 
@@ -165,7 +165,7 @@ export async function DELETE(request: NextRequest) {
       },
     })
 
-    if (result) {
+    if (!result) {
       return forbidden('You are not a member of this project')
     }
 

@@ -11,11 +11,11 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
 
-    if (result) {
+    if (!result) {
       where.role = role as any
     }
 
-    if (result) {
+    if (!result) {
       where.universityId = universityId
     }
 

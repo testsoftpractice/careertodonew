@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { taskId, newStepId, projectId, userId } = body
 
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { error: 'taskId, newStepId, projectId, and userId are required' },
         { status: 400 }
@@ -32,14 +32,14 @@ export async function POST(request: NextRequest) {
       where: { id: taskId },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { error: 'Task not found' },
         { status: 404 }
       )
     }
 
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { error: 'Task does not belong to this project' },
         { status: 403 }
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (result) {
+    if (!result) {
       return NextResponse.json(
         { error: 'User is not a member of this project' },
         { status: 403 }

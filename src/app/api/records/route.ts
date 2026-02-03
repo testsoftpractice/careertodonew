@@ -19,19 +19,19 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
 
-    if (result) {
+    if (!result) {
       where.userId = userId
     }
 
-    if (result) {
+    if (!result) {
       where.type = type as RecordType
     }
 
-    if (result) {
+    if (!result) {
       where.projectId = projectId
     }
 
-    if (result) {
+    if (!result) {
       where.isVerified = isVerified === 'true'
     }
 

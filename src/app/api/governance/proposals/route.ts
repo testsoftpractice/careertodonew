@@ -43,28 +43,28 @@ export async function POST(request: NextRequest) {
     const validatedData = createProposalSchema.parse(body)
 
     // Check if university ID exists
-    if (!result) {
+    if (!user.universityId) {
       return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
     }
 
     // Validate related entities
-    if (!result) {
+    if (validatedData.projectId) {
       const project = await db.project.findUnique({ where: { id: validatedData.projectId } })
-      if (!result) {
+      if (!project) {
         return NextResponse.json({ error: 'Project not found' }, { status: 404 })
       }
     }
 
-    if (!result) {
+    if (validatedData.studentId) {
       const student = await db.user.findUnique({ where: { id: validatedData.studentId } })
-      if (!result) {
+      if (!student) {
         return NextResponse.json({ error: 'Student not found' }, { status: 404 })
       }
     }
 
-    if (!result) {
+    if (validatedData.contentId) {
       const content = await db.content.findUnique({ where: { id: validatedData.contentId } })
-      if (!result) {
+      if (!content) {
         return NextResponse.json({ error: 'Content not found' }, { status: 404 })
       }
     }
@@ -97,11 +97,78 @@ export async function POST(request: NextRequest) {
         message: 'Governance proposal created successfully',
       },
     })
-  } catch (error) {
-    if (!result) {
+  } catch (error: any) {
+    if (error.name === 'ZodError') {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Create governance proposal error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// GET /api/governance/proposals - Get all governance proposals
+export async function GET(request: NextRequest) {
+  if (!isFeatureEnabled(GOVERNANCE_APPROVAL)) {
+    return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
+  }
+
+  const auth = await requireAuth(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
+  if ('status' in auth) return auth
+
+  const user = auth.user
+
+  try {
+    const { searchParams } = new URL(request.url)
+    const status = searchParams.get('status')
+    const type = searchParams.get('type')
+    const priority = searchParams.get('priority')
+
+    const where: any = {}
+
+    if (status) {
+      where.status = status
+    }
+
+    if (type) {
+      where.type = type
+    }
+
+    if (priority) {
+      where.priority = priority
+    }
+
+    const proposals = await db.governanceProposal.findMany({
+      where,
+      include: {
+        createdByUser: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        votes: true,
+        comments: {
+          include: {
+            createdByUser: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: proposals,
+    })
+  } catch (error) {
+    console.error('Get governance proposals error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

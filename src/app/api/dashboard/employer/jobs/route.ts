@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 
 // GET /api/dashboard/employer/jobs - Get employer's job postings
 export async function GET(request: NextRequest) {
-  const auth = await requireAuth(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
+  const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
   const user = auth.user
@@ -12,14 +12,14 @@ export async function GET(request: NextRequest) {
   const status = searchParams.get('status') || 'all'
   const limit = parseInt(searchParams.get('limit') || '50')
 
-  if (!result) {
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
     const jobs = await db.job.findMany({
       where: {
-        employerId: user.id,
+        userId: user.id,
         ...(status !== 'all' ? { status: status as any } : {})
       },
       include: {
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate stats
-    const totalActive = jobs.filter(j => j.status === 'ACTIVE').length
+    const totalActive = jobs.filter(j => j.published).length
     const totalApplications = jobApplications.length
     const totalViews = jobs.reduce((sum, j) => sum + (j.views || 0), 0)
 
@@ -60,19 +60,13 @@ export async function GET(request: NextRequest) {
         id: job.id,
         title: job.title,
         description: job.description || '',
-        department: job.department || 'General',
         location: job.location || 'Remote',
-        type: job.employmentType || 'full_time',
+        type: job.employmentType || job.type || 'FULL_TIME',
         status: job.status,
         applications: jobApps.length,
         hired: hiredCount,
         views: job.views || 0,
-        postedDate: job.createdAt,
-        deadline: job.deadline,
-        budget: {
-          min: job.salaryMin || 0,
-          max: job.salaryMax || 0
-        }
+        postedDate: job.publishedAt || job.createdAt
       }
     })
 

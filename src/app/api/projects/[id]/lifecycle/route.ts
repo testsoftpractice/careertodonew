@@ -58,22 +58,22 @@ export async function GET(
       where: { id },
       select: {
         id: true,
-        projectLeadId: true,
+        ownerId: true,
         projectMembers: {
           select: { userId: true },
         },
       },
     })
 
-    if (!result) {
+    if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
     // Check if user has access (project lead or member)
-    const hasAccess = project.projectLeadId === user.id ||
+    const hasAccess = project.ownerId === user.id ||
                        project.projectMembers.some((m: any) => m.userId === user.id)
 
-    if (!result) {
+    if (!hasAccess) {
       return NextResponse.json({ error: 'Forbidden - No access to this project' }, { status: 403 })
     }
 
@@ -130,18 +130,18 @@ export async function POST(
     // Check if user has access (only project lead can change stages)
     const project = await db.project.findUnique({
       where: { id },
-      select: { projectLeadId: true },
+      select: { ownerId: true },
     })
 
-    if (!result) {
+    if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
-    const canManageLifecycle = project.projectLeadId === user.id ||
+    const canManageLifecycle = project.ownerId === user.id ||
                              user.userRole === 'PLATFORM_ADMIN' ||
                              user.userRole === 'UNIVERSITY_ADMIN'
 
-    if (!result) {
+    if (!canManageLifecycle) {
       return NextResponse.json({ error: 'Forbidden - Only project lead can manage lifecycle' }, { status: 403 })
     }
 
@@ -153,7 +153,7 @@ export async function POST(
       data: {
         projectId: id,
         currentStage: validatedData.stage,
-        previousStage: project.projectLeadId === user.id ? project.projectLeadId : 'DRAFT', // Default to DRAFT if not lead
+        previousStage: project.ownerId === user.id ? project.ownerId : 'DRAFT', // Default to DRAFT if not lead
         enteredAt: new Date(),
         enteredBy: user.id,
         notes: validatedData.notes,
@@ -193,7 +193,7 @@ export async function PUT(
   try {
     const { lifecycleId } = await request.json()
 
-    if (!result) {
+    if (!lifecycleId) {
       return NextResponse.json({ error: 'Lifecycle entry ID is required' }, { status: 400 })
     }
 
@@ -202,26 +202,30 @@ export async function PUT(
       where: { id: lifecycleId },
     })
 
-    if (!result) {
+    if (!lifecycleEntry) {
       return NextResponse.json({ error: 'Lifecycle entry not found' }, { status: 404 })
     }
 
     // Check ownership
     const project = await db.project.findUnique({
       where: { id: lifecycleEntry.projectId },
-      select: { projectLeadId: true },
+      select: { ownerId: true },
     })
 
-    const canEdit = project.projectLeadId === user.id ||
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+
+    const canEdit = project.ownerId === user.id ||
                      user.userRole === 'PLATFORM_ADMIN' ||
                      user.userRole === 'UNIVERSITY_ADMIN'
 
-    if (!result) {
+    if (!canEdit) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Validate input
-    const validatedData = updateLifecycleEntrySchema.parse(await request.json())
+    const validatedData = updateLifecycleEntrySchema.parse(body)
 
     // Update lifecycle entry
     const updatedEntry = await db.projectLifecycle.update({
@@ -263,7 +267,7 @@ export async function DELETE(
   try {
     const { lifecycleId } = await request.json()
 
-    if (!result) {
+    if (!lifecycleId) {
       return NextResponse.json({ error: 'Lifecycle entry ID is required' }, { status: 400 })
     }
 
@@ -272,21 +276,25 @@ export async function DELETE(
       where: { id: lifecycleId },
     })
 
-    if (!result) {
+    if (!lifecycleEntry) {
       return NextResponse.json({ error: 'Lifecycle entry not found' }, { status: 404 })
     }
 
     // Check ownership
     const project = await db.project.findUnique({
       where: { id: lifecycleEntry.projectId },
-      select: { projectLeadId: true },
+      select: { ownerId: true },
     })
 
-    const canDelete = project.projectLeadId === user.id ||
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+
+    const canDelete = project.ownerId === user.id ||
                      user.userRole === 'PLATFORM_ADMIN' ||
                      user.userRole === 'UNIVERSITY_ADMIN'
 
-    if (!result) {
+    if (!canDelete) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

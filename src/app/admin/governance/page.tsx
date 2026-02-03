@@ -63,7 +63,7 @@ interface PendingProject {
   title: string
   category: string
   university?: { name: string }
-  projectLead?: { name: string; email: string }
+  owner?: { name: string; email: string }
   createdAt: string
   status: string
   completionRate: number
@@ -395,7 +395,7 @@ export default function GovernancePage() {
                         <div className="flex-1">
                           <div className="font-medium">{project.title}</div>
                           <div className="text-sm text-muted-foreground">
-                            {project.university?.name || 'No university'} • {project.projectLead?.name || 'No lead assigned'}
+                            {project.university?.name || 'No university'} • {project.owner?.name || 'No lead assigned'}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">

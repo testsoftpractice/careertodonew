@@ -25,7 +25,7 @@ export async function GET(
       where: { id: taskId },
     })
 
-    if (!result) {
+    if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
@@ -88,7 +88,7 @@ export async function POST(
         where: { id: taskId },
       })
 
-      if (!result) {
+      if (!task) {
         return NextResponse.json({ error: 'Task not found' }, { status: 404 })
       }
 

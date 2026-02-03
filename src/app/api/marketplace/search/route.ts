@@ -14,28 +14,28 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "20")
 
     const where: any = {}
-    
-    if (!result) {
+
+    if (search) {
       where.OR = [
         { title: { contains: search, mode: "insensitive" } },
         { description: { contains: search, mode: "insensitive" } },
-        { projectLead: { contains: search, mode: "insensitive" } },
+        { owner: { name: { contains: search, mode: "insensitive" } } },
       ]
     }
-    
-    if (!result) {
+
+    if (category) {
       where.category = category
     }
-    
-    if (!result) {
+
+    if (university) {
       where.university = { name: { contains: university, mode: "insensitive" } }
     }
-    
-    if (!result) {
+
+    if (status) {
       where.status = status
     }
-    
-    if (!result) {
+
+    if (reputationMin && reputationMax) {
       where.rating = {
         _avg: {
           execution: { gte: reputationMin, lte: reputationMax },
@@ -50,6 +50,14 @@ export async function GET(request: NextRequest) {
     const [projects, totalCount] = await Promise.all([
       db.project.findMany({
         where,
+        include: {
+          owner: {
+            select: { id: true, name: true, email: true }
+          },
+          university: {
+            select: { id: true, name: true }
+          },
+        },
         take: limit,
         skip: (page - 1) * limit,
         orderBy: { createdAt: "desc" },
@@ -66,7 +74,7 @@ export async function GET(request: NextRequest) {
       category: p.category || "",
       status: p.status || "",
       teamReputation: 4.5,
-      projectLead: p.projectLead || "",
+      owner: p.owner?.name || "",
       deadline: p.createdAt?.toISOString().split("T")[0] || "",
       investmentGoal: p.investmentGoal || 0,
       currentRaised: 0,

@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.projectId as string | undefined
 
-    if (!result) {
+    if (!projectId) {
       return errorResponse('Project ID is required', 400)
     }
 
@@ -48,6 +48,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const authResult = await requireAuth(request)
+    if ('status' in authResult) return authResult
+
     const body = await request.json()
 
     // Validate request body
@@ -74,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     const isOwner = project.ownerId === authResult.dbUser.id
 
-    // Verify user is member of the project or owner
+    // Verify user is member of project or owner
     const member = await db.projectMember.findFirst({
       where: {
         projectId: data.projectId,
@@ -82,7 +84,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (!member) {
+    if (!member && !isOwner) {
       return forbidden('You are not a member of this project')
     }
 
@@ -118,18 +120,6 @@ export async function POST(request: NextRequest) {
     return successResponse(vacancy, 'Vacancy created successfully')
   } catch (error: any) {
     console.error('Create vacancy error:', error)
-
-    // Handle AuthError - return proper JSON response
-    if (!result) {
-      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
-    }
-
-    if (!result) {
-      return errorResponse('Project not found', 404)
-    }
-    if (!result) {
-      return errorResponse('Foreign key constraint failed', 400)
-    }
     return errorResponse('Failed to create vacancy', 500)
   }
 }
@@ -138,10 +128,12 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const authResult = await requireAuth(request)
+    if ('status' in authResult) return authResult
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.id as string | undefined
 
-    if (!result) {
+    if (!id) {
       return errorResponse('Vacancy ID is required', 400)
     }
 
@@ -153,11 +145,11 @@ export async function DELETE(request: NextRequest) {
       }
     })
 
-    if (!result) {
+    if (!vacancy) {
       return notFound('Vacancy not found')
     }
 
-    // Check if user is member of the project
+    // Check if user is member of project
     const member = await db.projectMember.findFirst({
       where: {
         projectId: vacancy.projectId,
@@ -165,7 +157,9 @@ export async function DELETE(request: NextRequest) {
       },
     })
 
-    if (!result) {
+    const isOwner = vacancy.project.ownerId === authResult.dbUser.id
+
+    if (!member && !isOwner) {
       return forbidden('You are not a member of this project')
     }
 
@@ -175,7 +169,7 @@ export async function DELETE(request: NextRequest) {
     })
 
     return successResponse({ id }, 'Vacancy deleted successfully')
-  } catch (error) {
+  } catch (error: any) {
     console.error('Delete vacancy error:', error)
     return errorResponse('Failed to delete vacancy', 500)
   }

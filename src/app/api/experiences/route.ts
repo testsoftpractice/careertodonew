@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     // Require authentication
     const authResult = await getServerSession(request)
-    if (!result) {
+    if (!authResult) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' }, { status: 401 })
     }
 
@@ -16,14 +16,14 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
 
     // Users can only view their own experiences (unless admin)
-    if (!result) {
+    if (!userId) {
       return NextResponse.json({ success: false, error: 'Forbidden', message: 'You can only view your own experience records' }, { status: 403 })
     }
 
     // Build where clause - use authenticated user's ID by default
     const where: any = {}
     where.userId = userId || authResult.user.id
-    if (!result) {
+    if (status) {
       where.current = status === 'true' ? false : true
     }
 
@@ -52,14 +52,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession()
-    if (!result) {
+    if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
     const body = await request.json()
 
     // Validate required fields
-    if (!result) {
+    if (!body) {
       return NextResponse.json({
         success: false,
         error: 'Title is required',
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    if (!result) {
+    if (!body.company) {
       return NextResponse.json({
         success: false,
         error: 'Company is required',
@@ -112,12 +112,12 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession()
-    if (!result) {
+    if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
     const { id: experienceId } = await params
-    if (!result) {
+    if (!id) {
       return NextResponse.json({
         success: false,
         error: 'Experience ID is required',
@@ -132,8 +132,7 @@ export async function DELETE(
         userId: session.user.id,
       },
     })
-
-    if (!result) {
+    if (!experience) {
       return NextResponse.json({
         success: false,
         error: 'Experience not found',

@@ -49,7 +49,7 @@ export default function EditProjectPage() {
   })
 
   const [hrData, setHrData] = useState({
-    projectLeadId: "",
+    ownerId: "",
     hrLeadId: "",
   })
 
@@ -81,7 +81,7 @@ export default function EditProjectPage() {
             investmentGoal: project.investmentGoal ? String(project.investmentGoal) : "",
           })
           setHrData({
-            projectLeadId: project.projectLeadId || "",
+            ownerId: project.ownerId || "",
             hrLeadId: project.hrLeadId || "",
           })
         }

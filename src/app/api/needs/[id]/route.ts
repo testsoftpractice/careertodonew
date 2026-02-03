@@ -87,7 +87,7 @@ export async function GET(
 
     const need = mockNeeds.find((n) => n.id === id)
 
-    if (!result) {
+    if (!need) {
       return NextResponse.json(
         { success: false, error: 'Need not found' },
         { status: 404 }

@@ -15,15 +15,15 @@ export async function GET(request: NextRequest) {
       },
     }
 
-    if (!result) {
+    if (investorId) {
       where.investorId = investorId
     }
 
-    if (!result) {
+    if (projectId) {
       where.projectId = projectId
     }
 
-    if (!result) {
+    if (status) {
       where.status = status
     }
 
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       include: {
         project: {
           include: {
-            projectLead: {
+            owner: {
               select: {
                 id: true,
                 name: true,
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        investor: {
+        user: {
           select: {
             id: true,
             name: true,
@@ -157,7 +157,7 @@ export async function PUT(
       include: {
         project: {
           include: {
-            projectLead: {
+            owner: {
               select: {
                 id: true,
                 name: true,
@@ -166,7 +166,7 @@ export async function PUT(
             },
           },
         },
-        investor: {
+        user: {
           select: {
             id: true,
             name: true,
@@ -181,7 +181,7 @@ export async function PUT(
     if (status === 'UNDER_REVIEW') {
       await db.notification.create({
         data: {
-          userId: deal.investorId,
+          userId: deal.userId,
           type: 'DEAL_UPDATE',
           title: 'Deal Under Review',
           message: `Your proposal for "${deal.project.title}" is now under review`,
@@ -192,7 +192,7 @@ export async function PUT(
       // Notify both parties
       await db.notification.create({
         data: {
-          userId: deal.investorId,
+          userId: deal.userId,
           type: 'DEAL_UPDATE',
           title: 'Deal Agreed',
           message: `Congratulations! The deal for "${deal.project.title}" has been agreed`,
@@ -202,17 +202,17 @@ export async function PUT(
 
       await db.notification.create({
         data: {
-          userId: deal.project.projectLeadId,
+          userId: deal.project.ownerId,
           type: 'DEAL_UPDATE',
           title: 'Deal Agreed',
-          message: `The investment deal for "${deal.project.title}" has been agreed with ${deal.investor.name}`,
+          message: `The investment deal for "${deal.project.title}" has been agreed with ${deal.user.name}`,
           link: `/projects/${deal.projectId}/deals/${dealId}`,
         },
       })
     } else if (status === 'FUNDED') {
       await db.notification.create({
         data: {
-          userId: deal.investorId,
+          userId: deal.userId,
           type: 'DEAL_FUNDED',
           title: 'Deal Funded',
           message: `Your investment in "${deal.project.title}" has been funded successfully`,
@@ -222,10 +222,10 @@ export async function PUT(
 
       await db.notification.create({
         data: {
-          userId: deal.project.projectLeadId,
+          userId: deal.project.ownerId,
           type: 'DEAL_FUNDED',
           title: 'Deal Funded',
-          message: `The investment from ${deal.investor.name} has been funded`,
+          message: `The investment from ${deal.user.name} has been funded`,
           link: `/projects/${deal.projectId}/investments`,
         },
       })

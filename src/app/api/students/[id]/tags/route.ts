@@ -46,7 +46,7 @@ export async function GET(
   const user = auth.user
   const universityId = user.universityId
 
-  if (!result) {
+  if (!id) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
@@ -102,7 +102,7 @@ export async function POST(
   const user = auth.user
   const universityId = user.universityId
 
-  if (!result) {
+  if (!id) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
@@ -114,8 +114,7 @@ export async function POST(
     const student = await db.user.findUnique({
       where: { id: studentId },
     })
-
-    if (!result) {
+    if (!student) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 })
     }
 
@@ -152,7 +151,7 @@ export async function POST(
       },
     })
   } catch (error) {
-    if (!result) {
+    if (!searchParams) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Create student tag error:', error)

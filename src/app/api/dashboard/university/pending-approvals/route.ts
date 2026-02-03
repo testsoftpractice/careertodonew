@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const user = auth.user
   const universityId = user.universityId
 
-  if (!result) {
+  if (!user) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       title: business.name,
       description: business.description || '',
       category: business.category || 'General',
-      projectLead: business.owner ? {
+      owner: business.owner ? {
         id: business.owner.id,
         name: business.owner.name,
         email: business.owner.email,

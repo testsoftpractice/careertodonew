@@ -29,8 +29,7 @@ export async function GET(
         ownerId: true,
       },
     })
-
-    if (!result) {
+    if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
@@ -38,7 +37,7 @@ export async function GET(
     const isOwner = project.ownerId === userId
     const isAdmin = userRole === 'PLATFORM_ADMIN' || userRole === 'UNIVERSITY_ADMIN'
 
-    if (!result) {
+    if (!isOwner) {
       return NextResponse.json({ error: 'Forbidden - Only project owner or admins can view vacancies' }, { status: 403 })
     }
 
@@ -100,8 +99,7 @@ export async function POST(
         ownerId: true,
       },
     })
-
-    if (!result) {
+    if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
@@ -116,7 +114,7 @@ export async function POST(
       },
     })
 
-    if (!result) {
+    if (!member) {
       return NextResponse.json({ error: 'Forbidden - Only project owner or members can create vacancies' }, { status: 403 })
     }
 

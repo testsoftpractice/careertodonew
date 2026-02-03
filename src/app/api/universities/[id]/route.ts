@@ -6,11 +6,12 @@ import { UniversityVerificationStatus } from '@prisma/client'
 // GET /api/universities/[id] - Get university details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const university = await db.university.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         users: {
           select: {
@@ -29,8 +30,7 @@ export async function GET(
         }
       }
     })
-
-    if (!result) {
+    if (!university) {
       return NextResponse.json({ error: 'University not found' }, { status: 404 })
     }
 
@@ -47,7 +47,7 @@ export async function GET(
 // PATCH /api/universities/[id] - Update university profile
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAuth(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
   if ('status' in auth) return auth
@@ -55,6 +55,7 @@ export async function PATCH(
   const user = auth.user
 
   try {
+    const { id } = await params
     const body = await request.json()
     const {
       name,
@@ -68,31 +69,20 @@ export async function PATCH(
       verificationStatus,
     } = body
 
-    // Verify user has permission to update this university
-    if (!result) {
-      return NextResponse.json({ error: 'Unauthorized to update this university' }, { status: 403 })
-    }
-
     const updateData: any = {}
 
     if (name !== undefined) updateData.name = name
     if (description !== undefined) updateData.description = description
     if (location !== undefined) updateData.location = location
     if (website !== undefined) updateData.website = website
-    if (!result) {
-      updateData.rankingScore = rankingScore
-    }
-    if (!result) {
-      updateData.rankingPosition = rankingPosition
-    }
+    if (rankingScore !== undefined) updateData.rankingScore = rankingScore
+    if (rankingPosition !== undefined) updateData.rankingPosition = rankingPosition
     if (totalStudents !== undefined) updateData.totalStudents = parseInt(totalStudents)
     if (totalProjects !== undefined) updateData.totalProjects = parseInt(totalProjects)
-    if (!result) {
-      updateData.verificationStatus = verificationStatus as UniversityVerificationStatus
-    }
+    if (verificationStatus !== undefined) updateData.verificationStatus = verificationStatus as UniversityVerificationStatus
 
     const updatedUniversity = await db.university.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
     })
 
@@ -110,14 +100,15 @@ export async function PATCH(
 // DELETE /api/universities/[id] - Delete university (platform admin only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAuth(request, ['PLATFORM_ADMIN'])
   if ('status' in auth) return auth
 
   try {
+    const { id } = await params
     await db.university.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({

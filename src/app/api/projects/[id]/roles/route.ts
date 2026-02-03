@@ -78,17 +78,16 @@ export async function POST(
     // Check if user has permission to invite (project lead or admin)
     const project = await db.project.findUnique({
       where: { id },
-      select: { projectLeadId: true },
+      select: { ownerId: true },
     })
-
-    if (!result) {
+    if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
-    const canInvite = project.projectLeadId === user.id ||
+    const canInvite = project.ownerId === user.id ||
                       user.userRole === 'PLATFORM_ADMIN'
 
-    if (!result) {
+    if (!canInvite) {
       return NextResponse.json({ error: 'Forbidden - Only project lead or admins can invite members' }, { status: 403 })
     }
 
@@ -121,7 +120,7 @@ export async function POST(
       },
     }, { status: 201 })
   } catch (error) {
-    if (!result) {
+    if (!searchParams) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Invite members error:', error)

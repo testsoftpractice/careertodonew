@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.userId as string | undefined
     const role = searchParams.role as string | undefined
 
-    if (!result) {
+    if (!userId || !role) {
       return NextResponse.json({
         success: false,
         error: 'User ID and role are required'
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    if (!result) {
+    if (!user) {
       return NextResponse.json({
         success: false,
         error: 'User not found'
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     }
 
     // STUDENT Dashboard
-    if (!result) {
+    if (role === 'STUDENT') {
       const myProjects = await db.projectMember.findMany({
         where: { userId },
         include: {
@@ -100,20 +100,14 @@ export async function GET(request: NextRequest) {
     }
 
     // UNIVERSITY ADMIN Dashboard
-    if (!result) {
-      if (!result) {
-        return NextResponse.json({ dashboardData }, { status: 200 })
-      }
-
+    if (role === 'UNIVERSITY_ADMIN') {
       const university = await db.university.findUnique({
         where: { id: user.universityId }
       })
 
       const universityProjects = await db.project.findMany({
         where: {
-          owner: {
-            universityId: user.universityId
-          },
+          ownerId: user.id,
         },
         include: {
           owner: {
@@ -148,7 +142,7 @@ export async function GET(request: NextRequest) {
     }
 
     // EMPLOYER Dashboard
-    if (!result) {
+    if (role === 'EMPLOYER') {
       const postedJobs = await db.job.findMany({
         where: { userId },
         include: {
@@ -164,7 +158,7 @@ export async function GET(request: NextRequest) {
           job: {
             userId
           }
-        },
+        } as any,
         include: {
           applicant: {
             select: {
@@ -197,7 +191,7 @@ export async function GET(request: NextRequest) {
     }
 
     // INVESTOR Dashboard
-    if (!result) {
+    if (role === 'INVESTOR') {
       const investments = await db.investment.findMany({
         where: { userId },
         include: {
@@ -243,7 +237,7 @@ export async function GET(request: NextRequest) {
     }
 
     // PLATFORM ADMIN Dashboard
-    if (!result) {
+    if (role === 'PLATFORM_ADMIN') {
       const allUsers = await db.user.findMany({
         take: 100,
         orderBy: { createdAt: 'desc' }

@@ -17,10 +17,10 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Notify project lead
+    // Notify project owner
     await db.notification.create({
       data: {
-        userId: investment.project?.projectLeadId,
+        userId: investment.project?.ownerId,
         type: "INVESTMENT",
         title: "Investment Interest Received",
         message: `An investor has expressed interest in your project: ${investment.project?.title}. Investment amount: $${amount.toLocaleString()}, Equity: ${equity}%`,

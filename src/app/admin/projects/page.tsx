@@ -36,7 +36,7 @@ interface Project {
   description: string
   category: string
   university: string
-  projectLead: string
+  owner: string
   status: string
   riskLevel: string
   investmentStatus: string

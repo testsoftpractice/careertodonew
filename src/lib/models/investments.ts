@@ -171,7 +171,7 @@ export interface Deal {
   
   // Parties
   investorId: string;
-  projectLeadId: string;
+  ownerId: string;
   teamId?: string;
   
   // Deal Terms
@@ -368,11 +368,9 @@ export function calculateDealComplexity(deal: Deal): 'SIMPLE' | 'MODERATE' | 'CO
   if (deal.boardSeat) complexity += 1
   if (deal.governanceRights && deal.governanceRights.length > 3) complexity += 1
   
-  if (deal.commentsCount > 5) complexity += 1
+  if (deal.comments.length > 5) complexity += 1
   if (deal.documents.length > 5) complexity += 1
-  
-  if (deal.timeToClose > 12 && deal.timeToClose < 6) complexity += 1
-  if (deal.timeToClose > 18) complexity += 2
+
   
   return complexity as string
 }

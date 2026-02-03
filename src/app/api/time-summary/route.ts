@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.userId as string | undefined
 
-    if (!result) {
+    if (!searchParams) {
       return NextResponse.json({
         success: false,
         error: 'User ID is required'
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     // Process time entries
     timeEntries.forEach(entry => {
       // Safety check for missing task or project
-      if (!result) {
+      if (!searchParams) {
         return
       }
 
@@ -98,13 +98,13 @@ export async function GET(request: NextRequest) {
       let projectId = session.projectId
       let project = session.project
 
-      if (!result) {
+      if (!projectId) {
         projectId = session.task.project.id
         project = session.task.project
       }
 
       // Skip if no project associated
-      if (!result) {
+      if (!searchParams) {
         return
       }
 
@@ -121,14 +121,14 @@ export async function GET(request: NextRequest) {
       const data = projectTimeMap.get(projectId)!
 
       // Add work session duration (in seconds) converted to hours
-      if (!result) {
+      if (!data) {
         data.totalHours += session.duration / 3600
       }
       data.totalEntries += 1
 
       // Track sessions by work condition type
       const sessionType = session.type || 'UNSUPPORTED'
-      if (!result) {
+      if (!sessionType) {
         data.workSessionsByType[sessionType] = 0
       }
       data.workSessionsByType[sessionType] += session.duration || 0
@@ -178,7 +178,7 @@ export async function GET(request: NextRequest) {
     const workSessionTypeSummary: Record<string, number> = {}
     workSessions.forEach(session => {
       const type = session.type || 'UNSUPPORTED'
-      if (!result) {
+      if (!type) {
         workSessionTypeSummary[type] = 0
       }
       workSessionTypeSummary[type] += session.duration || 0

@@ -17,9 +17,9 @@ export async function GET(request: NextRequest) {
     let authenticatedUserId: string | null = null
     let userRole: string | null = null
 
-    if (!result) {
+    if (!token) {
       const decoded = verifyToken(token)
-      if (!result) {
+      if (!token) {
         authenticatedUserId = decoded.userId
         userRole = decoded.role
       }
@@ -28,12 +28,12 @@ export async function GET(request: NextRequest) {
     // Build query
     const where: any = {}
 
-    if (!result) {
+    if (!token) {
       where.status = status
     }
 
     // If requesting specific user's businesses, filter by owner
-    if (!result) {
+    if (!token) {
       where.ownerId = userId
     }
 
@@ -99,12 +99,12 @@ export async function POST(request: NextRequest) {
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!result) {
+    if (!token) {
       throw new UnauthorizedError('Authentication required')
     }
 
     const decoded = verifyToken(token)
-    if (!result) {
+    if (!token) {
       throw new UnauthorizedError('Invalid token')
     }
 
@@ -112,19 +112,19 @@ export async function POST(request: NextRequest) {
     userRole = decoded.role
 
     // Authorization - Only employers and platform admins can create businesses
-    if (!result) {
+    if (!token) {
       throw new ForbiddenError('Only employers and platform admins can create businesses')
     }
 
     const body = await request.json()
 
     // Validate required fields
-    if (!result) {
+    if (!token) {
       throw new AppError('Business name is required', 400)
     }
 
     // Ensure userId is set
-    if (!result) {
+    if (!token) {
       throw new UnauthorizedError('Invalid authentication')
     }
 
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     logError(error, 'Create business', userId || 'unknown')
 
-    if (!result) {
+    if (!token) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 

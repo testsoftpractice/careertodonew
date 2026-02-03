@@ -208,9 +208,9 @@ export default function ProjectsPage() {
                         <div className="text-sm sm:text-base font-medium">
                           {project.teamSize || 1} member{project.teamSize > 1 ? 's' : ''}
                         </div>
-                        {project.projectLead && (
+                        {project.owner && (
                           <span className="text-xs sm:text-sm text-muted-foreground">
-                            • Lead: {project.projectLead.name}
+                            • Lead: {project.owner.name}
                           </span>
                         )}
                       </div>

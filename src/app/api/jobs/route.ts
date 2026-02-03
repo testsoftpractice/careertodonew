@@ -11,28 +11,31 @@ export async function GET(request: NextRequest) {
     const businessId = searchParams.get('businessId')
     const status = searchParams.get('status')
     const type = searchParams.get('type')
+    const published = searchParams.get('published')
 
     const where: any = {}
 
     // Apply filters
-    if (!result) {
+    if (userId) {
       where.userId = userId
     }
 
-    if (!result) {
+    if (businessId) {
       where.businessId = businessId
     }
 
-    if (!result) {
+    if (published === 'true') {
       where.published = true
-    }
-
-    if (!result) {
+    } else if (published === 'false') {
       where.published = false
     }
 
-    if (!result) {
+    if (type) {
       where.type = type
+    }
+
+    if (status) {
+      where.status = status
     }
 
     const jobs = await db.job.findMany({
@@ -91,12 +94,12 @@ export async function POST(request: NextRequest) {
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!result) {
+    if (!token) {
       throw new UnauthorizedError('Authentication required')
     }
 
     const decoded = verifyToken(token)
-    if (!result) {
+    if (!decoded) {
       throw new UnauthorizedError('Invalid token')
     }
 
@@ -108,7 +111,7 @@ export async function POST(request: NextRequest) {
       decoded.role === 'PLATFORM_ADMIN' ||
       decoded.role === 'UNIVERSITY_ADMIN'
 
-    if (!result) {
+    if (!canPostJobs) {
       return NextResponse.json({
         success: false,
         error: 'Only employers, university admins, and platform admins can create jobs',
@@ -118,7 +121,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Validate required fields
-    if (!result) {
+    if (!body.title) {
       throw new AppError('Job title is required', 400)
     }
 
@@ -126,6 +129,7 @@ export async function POST(request: NextRequest) {
     const job = await db.job.create({
       data: {
         userId: userId,
+        employerId: userId,
         businessId: body.businessId || null,
         title: body.title,
         description: body.description || null,
@@ -162,7 +166,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     logError(error, 'Create job', userId || 'unknown')
 
-    if (!result) {
+    if (error instanceof AppError) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 

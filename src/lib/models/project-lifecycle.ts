@@ -71,7 +71,7 @@ export const PROJECT_STAGE_GATES: Record<ProjectStage, ProjectStageGate> = {
       'Category selected',
       'Team size estimated',
     ],
-    approvers: ['projectLead', 'universityAdmin'],
+    approvers: ['owner', 'universityAdmin'],
     autoAdvance: false,
   },
   PROPOSED_UNDER_REVIEW: {
@@ -102,7 +102,7 @@ export const PROJECT_STAGE_GATES: Record<ProjectStage, ProjectStageGate> = {
       'Project posted publicly',
       'First team member recruited',
     ],
-    approvers: ['projectLead', 'universityAdmin'],
+    approvers: ['owner', 'universityAdmin'],
     autoAdvance: false,
   },
   RECRUITING_ACTIVE: {
@@ -112,14 +112,14 @@ export const PROJECT_STAGE_GATES: Record<ProjectStage, ProjectStageGate> = {
       'Minimum team size reached',
       'Initial funding secured',
     ],
-    approvers: ['projectLead'],
+    approvers: ['owner'],
     autoAdvance: false,
   },
   ACTIVE_PAUSED: {
     fromStage: ProjectStage.ACTIVE,
     toStage: ProjectStage.PAUSED,
     requirements: [],
-    approvers: ['projectLead'],
+    approvers: ['owner'],
     autoAdvance: true,
   },
   PAUSED_ACTIVE: {
@@ -129,7 +129,7 @@ export const PROJECT_STAGE_GATES: Record<ProjectStage, ProjectStageGate> = {
       'Pause reason resolved',
       'Team availability confirmed',
     ],
-    approvers: ['projectLead'],
+    approvers: ['owner'],
     autoAdvance: true,
   },
   ACTIVE_COMPLETED: {
@@ -139,7 +139,7 @@ export const PROJECT_STAGE_GATES: Record<ProjectStage, ProjectStageGate> = {
       'All milestones completed',
       'Final deliverable submitted',
     ],
-    approvers: ['projectLead', 'universityAdmin'],
+    approvers: ['owner', 'universityAdmin'],
     autoAdvance: false,
   },
 };

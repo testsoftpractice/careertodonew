@@ -7,12 +7,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const { applicantId, coverLetter, resumeUrl, portfolioUrl, linkedInUrl } = body
 
     // Validate input
-    if (!result) {
+    if (!applicantId) {
       return NextResponse.json(
         { success: false, error: 'Applicant ID is required' },
         { status: 400 }
@@ -26,7 +26,7 @@ export async function POST(
       )
     }
 
-    if (!result) {
+    if (!resumeUrl) {
       return NextResponse.json(
         { success: false, error: 'Resume URL is required' },
         { status: 400 }
@@ -43,7 +43,7 @@ export async function POST(
         },
       })
 
-      if (!result) {
+      if (existingApplication) {
         throw new Error('Already applied to this job')
       }
 
@@ -110,7 +110,7 @@ export async function POST(
     )
   } catch (error: any) {
     console.error('Apply to job error:', error)
-    if (!result) {
+    if (error.message === 'Already applied to this job') {
       return NextResponse.json(
         { success: false, error: 'You have already applied to this job' },
         { status: 400 }

@@ -8,7 +8,7 @@ import { unauthorized, forbidden } from '@/lib/api-response'
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
-    if (!result) {
+    if (!authResult) {
       return unauthorized('Authentication required')
     }
 
@@ -19,19 +19,15 @@ export async function GET(request: NextRequest) {
     const where: Record<string, string | undefined> = {}
 
     // If filtering by ownerId, only allow viewing own projects or admin
-    if (!result) {
-      if (!result) {
+    if (ownerId) {
+      if (authResult.dbUser.id !== ownerId && authResult.dbUser.role !== 'PLATFORM_ADMIN') {
         return forbidden('You can only view your own projects')
       }
       where.ownerId = ownerId
     }
 
-    if (!result) {
+    if (status) {
       where.status = status as any
-    }
-
-    if (!result) {
-      where.ownerId = ownerId
     }
 
     const projects = await db.project.findMany({
@@ -91,18 +87,13 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
 
-    // Users can only create projects for themselves
-    if (!result) {
-      return forbidden('You can only create projects for yourself')
-    }
-
     // Use authenticated user's ID
     const ownerId = currentUser.id
 
     console.log('Project creation request body:', JSON.stringify(body, null, 2))
 
     // Validate required fields
-    if (!result) {
+    if (!body.name) {
       return NextResponse.json({
         success: false,
         error: 'Project name is required'
@@ -116,7 +107,7 @@ export async function POST(request: NextRequest) {
 
     console.log('Owner lookup result:', owner ? `Found: ${owner.name} (${owner.id})` : 'Not found')
 
-    if (!result) {
+    if (!owner) {
       console.error('Owner not found for ID:', ownerId)
       return NextResponse.json({
         success: false,
@@ -157,7 +148,7 @@ export async function POST(request: NextRequest) {
     console.error('Project creation error:', error)
 
     // Handle AuthError - return proper JSON response
-    if (!result) {
+    if (error.name === 'AuthError') {
       return NextResponse.json({
         success: false,
         error: error.message || 'Authentication required'

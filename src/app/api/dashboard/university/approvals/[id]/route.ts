@@ -13,13 +13,14 @@ export async function GET(
   const user = auth.user
   const universityId = user.universityId
 
-  if (!result) {
+  if (!universityId) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
   try {
+    const { id } = await params
     const business = await db.project.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         owner: {
           select: {
@@ -88,12 +89,12 @@ export async function GET(
       },
     })
 
-    if (!result) {
+    if (!business) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
     // Check if user has permission to view this business
-    if (!result) {
+    if (business.universityId !== universityId && user.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json({ error: 'Unauthorized to view this business' }, { status: 403 })
     }
 
@@ -118,11 +119,12 @@ export async function POST(
   const user = auth.user
   const universityId = user.universityId
 
-  if (!result) {
+  if (!universityId) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
   try {
+    const { id } = await params
     const body = await request.json()
     const { action, reason, comments } = body
 
@@ -131,7 +133,7 @@ export async function POST(
     }
 
     const business = await db.project.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         owner: {
           select: {
@@ -149,24 +151,24 @@ export async function POST(
       },
     })
 
-    if (!result) {
+    if (!business) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
     // Check if user has permission
-    if (!result) {
+    if (business.universityId !== universityId && user.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json({ error: 'Unauthorized to approve this business' }, { status: 403 })
     }
 
-    if (!result) {
+    if (business.status !== 'PROPOSED') {
       return NextResponse.json({ error: 'Business is not in PROPOSED status' }, { status: 400 })
     }
 
     // Update business status
     const status = action === 'approve' ? 'IN_PROGRESS' : 'CANCELLED'
-    
+
     const updatedBusiness = await db.project.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         status,
         ...(action === 'reject' ? {
@@ -176,7 +178,7 @@ export async function POST(
     })
 
     // Award points if approved
-    if (!result) {
+    if (action === 'approve') {
       await db.user.update({
         where: { id: business.ownerId },
         data: {

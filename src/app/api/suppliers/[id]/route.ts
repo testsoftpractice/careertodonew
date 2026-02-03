@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     const supplier = await db.supplier.findUnique({
       where: { id },
@@ -22,7 +22,7 @@ export async function GET(
       },
     })
 
-    if (!result) {
+    if (!supplier) {
       return NextResponse.json(
         { success: false, error: 'Supplier not found' },
         { status: 404 }

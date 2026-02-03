@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const projectId = searchParams.get('projectId')
     const userId = searchParams.get('userId') // In production, this comes from auth
 
-    if (!result) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'projectId is required' },
         { status: 400 }
@@ -64,14 +64,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { userId, title, description, priority, dueDate } = body
 
-    if (!result) {
+    if (!searchParams) {
       return NextResponse.json(
         { error: 'projectId is required' },
         { status: 400 }
       )
     }
 
-    if (!result) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'userId and title are required' },
         { status: 400 }
@@ -87,8 +87,7 @@ export async function POST(request: NextRequest) {
         },
       },
     })
-
-    if (!result) {
+    if (!member) {
       return NextResponse.json(
         { error: 'User is not a member of this project' },
         { status: 403 }
@@ -146,8 +145,7 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get('id')
     const projectId = searchParams.get('projectId')
     const userId = searchParams.get('userId')
-
-    if (!result) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'id, projectId, and userId are required' },
         { status: 400 }
@@ -158,15 +156,14 @@ export async function DELETE(request: NextRequest) {
     const task = await db.task.findUnique({
       where: { id },
     })
-
-    if (!result) {
+    if (!task) {
       return NextResponse.json(
         { error: 'Task not found' },
         { status: 404 }
       )
     }
 
-    if (!result) {
+    if (!task) {
       return NextResponse.json(
         { error: 'Task does not belong to this project' },
         { status: 403 }
@@ -182,8 +179,7 @@ export async function DELETE(request: NextRequest) {
         },
       },
     })
-
-    if (!result) {
+    if (!member) {
       return NextResponse.json(
         { error: 'User is not a member of this project' },
         { status: 403 }

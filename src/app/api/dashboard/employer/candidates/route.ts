@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const status = searchParams.get('status') || 'all'
   const limit = parseInt(searchParams.get('limit') || '50')
 
-  if (!result) {
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     // Get employer's jobs
     const jobs = await db.job.findMany({
       where: {
-        employerId: user.id,
+        userId: user.id,
         ...(status !== 'all' ? { status: status as any } : {})
       },
       select: { id: true, title: true },
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       where: {
         jobId: { in: jobIds },
         ...(search ? {
-          applicant: {
+          user: {
             OR: [
               { name: { contains: search, mode: 'insensitive' } },
               { email: { contains: search, mode: 'insensitive' } }
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         job: {
           select: { id: true, title: true }
         },
-        applicant: {
+        user: {
           select: {
             id: true,
             name: true,
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate match score based on skills and experience
     const candidates = applications.map(app => {
-      const applicant = app.applicant
+      const applicant = app.user
       const reputation = (
         (applicant.executionScore || 0) +
         (applicant.collaborationScore || 0) +

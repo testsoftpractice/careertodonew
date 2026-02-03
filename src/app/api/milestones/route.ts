@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { projectId, title, description, status, dueDate } = body
 
-    if (!result) {
+    if (!auth) {
       return NextResponse.json(
         { success: false, error: "Project ID and title are required" },
         { status: 400 }
@@ -20,8 +20,7 @@ export async function POST(request: NextRequest) {
       where: { id: projectId },
       select: { ownerId: true, id: true }
     })
-
-    if (!result) {
+    if (!project) {
       return NextResponse.json(
         { success: false, error: "Project not found" },
         { status: 404 }
@@ -41,7 +40,7 @@ export async function POST(request: NextRequest) {
     const isMember = memberCount > 0
 
     // Allow if owner or member
-    if (!result) {
+    if (!isMember) {
       return NextResponse.json(
         { success: false, error: "You are not a member of this project" },
         { status: 403 }
@@ -53,7 +52,7 @@ export async function POST(request: NextRequest) {
     const milestoneStatus = (status && validStatuses.includes(status)) ? status : 'NOT_STARTED'
 
     // dueDate is required in schema
-    if (!result) {
+    if (!validStatuses) {
       return NextResponse.json(
         { success: false, error: "Due date is required" },
         { status: 400 }
@@ -87,8 +86,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('projectId')
-
-    if (!result) {
+    if (!projectId) {
       return NextResponse.json(
         { success: false, error: "Project ID is required" },
         { status: 400 }

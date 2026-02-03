@@ -4,19 +4,15 @@ import { db } from '@/lib/db'
 
 // GET /api/dashboard/employer/pipeline - Get employer's hiring pipeline
 export async function GET(request: NextRequest) {
-  const auth = await requireAuth(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
+  const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
   const user = auth.user
 
-  if (!result) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   try {
     // Get employer's jobs with application counts
     const jobs = await db.job.findMany({
-      where: { employerId: user.id },
+      where: { userId: user.id },
       include: {
         _count: {
           select: { applications: true }
@@ -45,7 +41,7 @@ export async function GET(request: NextRequest) {
     // Calculate average time to hire (from first applied to accepted)
     const hiredApplications = applications.filter(a => a.status === 'ACCEPTED')
     let avgTimeToHire = 0
-    if (!result) {
+    if (hiredApplications.length > 0) {
       const timeToHireTotal = hiredApplications.reduce((sum, app) => {
         const appliedDate = new Date(app.createdAt)
         const hiredDate = new Date(app.updatedAt || app.createdAt)

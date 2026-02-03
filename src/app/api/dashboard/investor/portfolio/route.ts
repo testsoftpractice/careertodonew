@@ -9,10 +9,6 @@ export async function GET(request: NextRequest) {
 
   const user = auth.user
 
-  if (!result) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   try {
     // Get investor's investments
     const investments = await db.investment.findMany({

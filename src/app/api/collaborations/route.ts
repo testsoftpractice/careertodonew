@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { CollaborationType, CollaborationStatus, ProjectRole } from '@prisma/client'
+import { CollaborationType, CollaborationStatus } from '@prisma/client'
 import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
 import { unauthorized, forbidden } from '@/lib/api-response'
 
@@ -8,25 +8,26 @@ import { unauthorized, forbidden } from '@/lib/api-response'
 
 // Calculate match score between two users based on skills and reputation
 interface UserWithSkills {
-  executionScore: number
-  collaborationScore: number
-  leadershipScore: number
-  ethicsScore: number
-  reliabilityScore: number
+  executionScore: number | null
+  collaborationScore: number | null
+  leadershipScore: number | null
+  ethicsScore: number | null
+  reliabilityScore: number | null
   universityId?: string | null
   role: string
   skills?: Array<{ name: string; level: string }>
+  sentCollaborationRequests?: Array<{ toId: string; status: CollaborationStatus }>
 }
 
 function calculateMatchScore(user1: UserWithSkills, user2: UserWithSkills): number {
   let score = 0
 
   // Reputation match (weight: 30%)
-  const repDiff1 = Math.abs(user1.executionScore - user2.executionScore)
-  const repDiff2 = Math.abs(user1.collaborationScore - user2.collaborationScore)
-  const repDiff3 = Math.abs(user1.leadershipScore - user2.leadershipScore)
-  const repDiff4 = Math.abs(user1.ethicsScore - user2.ethicsScore)
-  const repDiff5 = Math.abs(user1.reliabilityScore - user2.reliabilityScore)
+  const repDiff1 = Math.abs((user1.executionScore || 0) - (user2.executionScore || 0))
+  const repDiff2 = Math.abs((user1.collaborationScore || 0) - (user2.collaborationScore || 0))
+  const repDiff3 = Math.abs((user1.leadershipScore || 0) - (user2.leadershipScore || 0))
+  const repDiff4 = Math.abs((user1.ethicsScore || 0) - (user2.ethicsScore || 0))
+  const repDiff5 = Math.abs((user1.reliabilityScore || 0) - (user2.reliabilityScore || 0))
   const avgRepDiff = (repDiff1 + repDiff2 + repDiff3 + repDiff4 + repDiff5) / 5
   const reputationScore = Math.max(0, 30 - (avgRepDiff * 6)) // Max 30 points
 
@@ -48,69 +49,69 @@ function calculateMatchScore(user1: UserWithSkills, user2: UserWithSkills): numb
   return Math.min(100, Math.round(score))
 }
 
-// GET: Fetch collaboration requests or find co-founders
+// GET: Fetch collaboration requests or find collaborators
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
-    if (!result) {
+    if (!authResult) {
       return unauthorized('Authentication required')
     }
 
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.userId as string | undefined
-    const type = searchParams.type as string // 'requests' or 'cofounders'
-    const status = searchParams.status as string
-    const direction = searchParams.direction as string // 'sent' or 'received'
+    const userId = searchParams.get('userId')
+    const type = searchParams.get('type') // 'requests' or 'collaborators'
+    const status = searchParams.get('status')
+    const direction = searchParams.get('direction') // 'sent' or 'received'
 
-    // Find co-founders
-    if (!result) {
-      // Can only search for co-founders for yourself or as admin
-      if (!result) {
-        return forbidden('You can only search for co-founders for yourself')
+    // Find collaborators
+    if (type === 'collaborators') {
+      // Can only search for collaborators for yourself or as admin
+      if (!direction) {
+        return forbidden('You can only search for collaborators for yourself')
       }
 
-      const limit = parseInt(searchParams.limit || '20')
+      const limit = parseInt(searchParams.get('limit') || '20')
 
-      // Fetch the requesting user with their skills
+      // Fetch requesting user with their skills
       const currentUser = await db.user.findUnique({
-        where: { id: userId },
+        where: { id: userId || authResult.user.id },
         include: {
           skills: true,
           university: true,
+          sentCollaborationRequests: {
+            where: {
+              toId: userId || authResult.user.id,
+              status: 'PENDING',
+            },
+          },
         },
       })
 
-      if (!result) {
+      if (!currentUser) {
         return NextResponse.json({
           success: false,
           error: 'User not found',
         }, { status: 404 })
       }
 
-      // Find potential co-founders
+      // Find potential collaborators
       const users = await db.user.findMany({
         where: {
-          id: { not: userId },
-          role: { in: ['STUDENT', 'MENTOR'] },
+          id: { not: userId || authResult.user.id },
+          role: { in: ['STUDENT', 'INVESTOR'] },
         },
         include: {
           skills: true,
           university: true,
-          sentCollaborationRequests: {
-            where: {
-              recipientId: userId,
-              status: 'PENDING',
-            },
-          },
         },
         take: limit,
       })
 
       // Calculate match scores
-      const usersWithMatchScore = users.map((user: UserWithSkills & { sentCollaborationRequests?: any[] }) => ({
+      const usersWithMatchScore = users.map((user: UserWithSkills) => ({
         ...user,
         matchScore: calculateMatchScore(currentUser, user),
-        hasPendingRequest: user.sentCollaborationRequests?.length > 0,
+        hasPendingRequest: (currentUser.sentCollaborationRequests || []).some(r => r.toId === user.id),
       }))
 
       // Sort by match score
@@ -123,17 +124,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch collaboration requests
-    if (!result) {
+    if (type === 'requests') {
       // Can only view own requests or as admin
-      if (!result) {
+      if (!direction) {
         return forbidden('You can only view your own collaboration requests')
       }
 
-      const where: Record<string, string | CollaborationStatus> = {}
-      if (!result) {
-        where.requesterId = userId
-      } else if (!result) {
-        where.recipientId = userId
+      const whereClause: Record<string, string | CollaborationStatus> = {}
+
+      if (direction === 'sent') {
+        whereClause.fromId = userId || authResult.user.id
+      } else if (direction === 'received') {
+        whereClause.toId = userId || authResult.user.id
       } else {
         return NextResponse.json({
           success: false,
@@ -141,14 +143,14 @@ export async function GET(request: NextRequest) {
         }, { status: 400 })
       }
 
-      if (!result) {
-        where.status = status as CollaborationStatus
+      if (status) {
+        whereClause.status = status as CollaborationStatus
       }
 
       const requests = await db.collaborationRequest.findMany({
-        where,
+        where: whereClause,
         include: {
-          requester: {
+          from: {
             select: {
               id: true,
               name: true,
@@ -172,7 +174,7 @@ export async function GET(request: NextRequest) {
               },
             },
           },
-          recipient: {
+          to: {
             select: {
               id: true,
               name: true,
@@ -202,7 +204,7 @@ export async function GET(request: NextRequest) {
               title: true,
               category: true,
               status: true,
-              projectLeadId: true,
+              ownerId: true,
             },
           },
         },
@@ -218,7 +220,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: false,
-      error: 'Invalid request. Provide type (requests or cofounders)',
+      error: 'Invalid request. Provide type (requests or collaborators)',
     }, { status: 400 })
   } catch (error) {
     console.error('Collaboration API error:', error)
@@ -237,10 +239,8 @@ export async function POST(request: NextRequest) {
     const currentUser = authResult.dbUser
 
     const body = await request.json()
-
     const {
-      requesterId,
-      recipientId,
+      toId,
       projectId,
       type,
       role,
@@ -249,8 +249,8 @@ export async function POST(request: NextRequest) {
     } = body
 
     // Can only create requests as yourself
-    if (!result) {
-      return forbidden('You can only create collaboration requests for yourself')
+    if (toId === currentUser.id) {
+      return forbidden('You can only create collaboration requests for others')
     }
 
     // Validate collaboration type
@@ -265,14 +265,14 @@ export async function POST(request: NextRequest) {
     // Check for existing pending request
     const existingRequest = await db.collaborationRequest.findFirst({
       where: {
-        requesterId,
-        recipientId,
+        fromId: currentUser.id,
+        toId,
         projectId: projectId || null,
         status: 'PENDING',
       },
     })
 
-    if (!result) {
+    if (existingRequest) {
       return NextResponse.json({
         success: false,
         error: 'A pending collaboration request already exists',
@@ -281,13 +281,13 @@ export async function POST(request: NextRequest) {
 
     // Create collaboration request and award points
     const result = await db.$transaction(async (tx) => {
-      const request = await tx.collaborationRequest.create({
+      const collabRequest = await tx.collaborationRequest.create({
         data: {
-          requesterId,
-          recipientId,
+          fromId: currentUser.id,
+          toId,
           projectId,
           type: type as CollaborationType,
-          role: role as ProjectRole | undefined,
+          role,
           message,
           proposedContribution,
           status: 'PENDING',
@@ -298,20 +298,20 @@ export async function POST(request: NextRequest) {
       try {
         await tx.pointTransaction.create({
           data: {
-            userId: requesterId,
+            userId: currentUser.id,
             points: 15, // COLLABORATION points
             source: 'COLLABORATION',
             description: `Initiated collaboration request: ${type}`,
             metadata: JSON.stringify({
-              collaborationRequestId: request.id,
+              collaborationRequestId: collabRequest.id,
               type,
-              recipientId,
+              toId,
             }),
           }
         })
 
         await tx.user.update({
-          where: { id: requesterId },
+          where: { id: currentUser.id },
           data: {
             totalPoints: {
               increment: 15,
@@ -322,13 +322,13 @@ export async function POST(request: NextRequest) {
         console.error('Failed to award points for collaboration:', pointsError)
       }
 
-      return request
+      return collabRequest
     })
 
     // Create notification for recipient
     await db.notification.create({
       data: {
-        userId: recipientId,
+        userId: toId,
         type: 'COLLABORATION_REQUEST',
         title: 'New Collaboration Request',
         message: message || `You received a ${type} request`,
@@ -357,9 +357,9 @@ export async function PATCH(request: NextRequest) {
     const currentUser = authResult.dbUser
 
     const { searchParams } = new URL(request.url)
-    const requestId = searchParams.id as string
+    const requestId = searchParams.get('id') as string
 
-    if (!result) {
+    if (!requestId) {
       return NextResponse.json({
         success: false,
         error: 'Request ID is required',
@@ -367,9 +367,9 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { status, responseMessage, userId } = body
+    const { status, responseMessage } = body
 
-    if (!result) {
+    if (!body || !status) {
       return NextResponse.json({
         success: false,
         error: 'status is required',
@@ -387,28 +387,28 @@ export async function PATCH(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Fetch the request
-    const request = await db.collaborationRequest.findUnique({
+    // Fetch request
+    const collabRequest = await db.collaborationRequest.findUnique({
       where: { id: requestId },
       include: {
-        requester: true,
-        recipient: true,
+        from: true,
+        to: true,
         project: true,
       },
     })
 
-    if (!result) {
+    if (!collabRequest) {
       return NextResponse.json({
         success: false,
         error: 'Collaboration request not found',
       }, { status: 404 })
     }
 
-    // Verify user is the recipient
-    if (!result) {
+    // Verify user is recipient
+    if (collabRequest.toId !== actingUserId) {
       return NextResponse.json({
         success: false,
-        error: 'Only the recipient can respond to this request',
+        error: 'Only recipient can respond to this request',
       }, { status: 403 })
     }
 
@@ -419,32 +419,31 @@ export async function PATCH(request: NextRequest) {
         data: {
           status: status as CollaborationStatus,
           responseMessage,
-          respondedAt: new Date(),
-          ...(status === 'ACCEPTED' && request.projectId && {
-            // If accepting and project exists, add as project member
-            collaborationStartDate: new Date(),
+          updatedAt: new Date(),
+          ...(status === 'ACCEPTED' && collabRequest.projectId && {
+            responseMessage: responseMessage || 'Request accepted',
           }),
         },
       })
 
       // If accepted and has project, add as project member
-      if (!result) {
+      if (status === 'ACCEPTED' && collabRequest.projectId) {
         try {
           // Check if already a member
           const existingMember = await tx.projectMember.findFirst({
             where: {
-              projectId: request.projectId,
+              projectId: collabRequest.projectId,
               userId: actingUserId,
             },
           })
 
-          if (!result) {
+          if (!existingMember) {
             await tx.projectMember.create({
               data: {
-                projectId: request.projectId,
+                projectId: collabRequest.projectId,
                 userId: actingUserId,
-                role: request.role as ProjectRole,
-                startDate: new Date(),
+                role: collabRequest.role || 'TEAM_MEMBER',
+                joinedAt: new Date(),
               },
             })
           }
@@ -454,18 +453,18 @@ export async function PATCH(request: NextRequest) {
       }
 
       // Award points for accepting collaboration
-      if (!result) {
+      if (status === 'ACCEPTED') {
         try {
           await tx.pointTransaction.create({
             data: {
               userId: actingUserId,
               points: 15, // COLLABORATION points
               source: 'COLLABORATION',
-              description: `Accepted collaboration request: ${request.type}`,
+              description: `Accepted collaboration request: ${collabRequest.type}`,
               metadata: JSON.stringify({
                 collaborationRequestId: requestId,
-                type: request.type,
-                requesterId: request.requesterId,
+                type: collabRequest.type,
+                fromId: collabRequest.fromId,
               }),
             }
           })
@@ -489,7 +488,7 @@ export async function PATCH(request: NextRequest) {
     // Create notification for requester
     await db.notification.create({
       data: {
-        userId: request.requesterId,
+        userId: collabRequest.fromId,
         type: 'COLLABORATION_RESPONSE',
         title: `Collaboration Request ${status}`,
         message: responseMessage || `Your request was ${status.toLowerCase()}`,
@@ -518,9 +517,9 @@ export async function DELETE(request: NextRequest) {
     const currentUser = authResult.dbUser
 
     const { searchParams } = new URL(request.url)
-    const requestId = searchParams.id as string
+    const requestId = searchParams.get('id') as string
 
-    if (!result) {
+    if (!currentUser) {
       return NextResponse.json({
         success: false,
         error: 'Request ID is required',
@@ -528,25 +527,25 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Fetch and verify ownership
-    const request = await db.collaborationRequest.findUnique({
+    const collabRequest = await db.collaborationRequest.findUnique({
       where: { id: requestId },
     })
 
-    if (!result) {
+    if (!collabRequest) {
       return NextResponse.json({
         success: false,
         error: 'Collaboration request not found',
       }, { status: 404 })
     }
 
-    if (!result) {
+    if (collabRequest.fromId !== currentUser.id) {
       return NextResponse.json({
         success: false,
-        error: 'Only the requester can cancel this request',
+        error: 'Only requester can cancel this request',
       }, { status: 403 })
     }
 
-    // Delete the request
+    // Delete request
     await db.collaborationRequest.delete({
       where: { id: requestId },
     })

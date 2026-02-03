@@ -40,18 +40,16 @@ export async function POST(
     const task = await db.task.findUnique({
       where: { id: taskId },
     })
-
-    if (!result) {
+    if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
     // Check if task belongs to same project
     const project = await db.project.findUnique({
       where: { id },
-      select: { projectLeadId: true },
+      select: { ownerId: true },
     })
-
-    if (!result) {
+    if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
@@ -64,7 +62,7 @@ export async function POST(
       },
     })
 
-    if (!result) {
+    if (!projectMember) {
       return NextResponse.json({ error: 'Forbidden - No access to this task' }, { status: 403 })
     }
 
@@ -88,7 +86,7 @@ export async function POST(
       'GUEST': 1,
     }
 
-    if (!result) {
+    if (!searchParams) {
       return NextResponse.json({ error: 'Forbidden - Cannot block task assigned to higher or equal role' }, { status: 403 })
     }
 
@@ -121,7 +119,7 @@ export async function POST(
       },
     })
   } catch (error) {
-    if (!result) {
+    if (!searchParams) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Block task error:', error)

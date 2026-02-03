@@ -203,7 +203,7 @@ export async function GET(
 
     const job = mockJobs.find((j) => j.id === id)
 
-    if (!result) {
+    if (!job) {
       return NextResponse.json(
         { success: false, error: 'Job not found' },
         { status: 404 }

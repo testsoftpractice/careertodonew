@@ -7,35 +7,35 @@ import { unauthorized, forbidden } from '@/lib/api-response'
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
-    if (!result) {
+    if (!authResult) {
       return unauthorized('Authentication required')
     }
 
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('projectId')
-    const userId = searchParams.get('userId')
+    const investorId = searchParams.get('investorId')
     const status = searchParams.get('status')
     const type = searchParams.get('type')
 
     const where: Record<string, string | undefined> = {}
 
-    if (!result) {
+    if (projectId) {
       where.projectId = projectId
     }
 
-    // If filtering by userId, only allow viewing own investments or admin
-    if (!result) {
-      if (!result) {
+    // If filtering by investorId, only allow viewing own investments or admin
+    if (investorId) {
+      if (authResult.dbUser.id !== investorId && authResult.role !== 'PLATFORM_ADMIN') {
         return forbidden('You can only view your own investments')
       }
-      where.userId = userId
+      where.investorId = investorId
     }
 
-    if (!result) {
+    if (status) {
       where.status = status
     }
 
-    if (!result) {
+    if (type) {
       where.type = type
     }
 
@@ -76,8 +76,8 @@ export async function GET(request: NextRequest) {
       success: true,
       data: investments.map(inv => ({
         id: inv.id,
-        userId: inv.userId,
-        user: inv.user,
+        investorId: inv.userId,
+        investor: inv.user,
         projectId: inv.projectId,
         project: inv.project,
         type: inv.type,
@@ -104,22 +104,22 @@ export async function POST(request: NextRequest) {
     const currentUser = authResult.dbUser
 
     const body = await request.json()
-    const { userId,
+    const { investorId,
       projectId,
       type,
       amount, } = body
 
     // Users can only create investments for themselves
-    if (!result) {
+    if (currentUser.id !== investorId && currentUser.role !== 'PLATFORM_ADMIN') {
       return forbidden('You can only create investments for yourself')
     }
 
     // Check if user exists
     const user = await db.user.findUnique({
-      where: { id: userId },
+      where: { id: investorId },
     })
 
-    if (!result) {
+    if (!user) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
@@ -136,22 +136,22 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (!result) {
+    if (!project) {
       return NextResponse.json(
         { success: false, error: 'Project not found' },
         { status: 404 }
       )
     }
 
-    // Check if user already has an investment in this project
+    // Check if investor already has an investment in this project
     const existingInvestment = await db.investment.findFirst({
       where: {
         projectId,
-        userId,
+        investorId,
       },
     })
 
-    if (!result) {
+    if (existingInvestment) {
       return NextResponse.json(
         { success: false, error: 'You already have an investment in this project' },
         { status: 400 }
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
 
     const investment = await db.investment.create({
       data: {
-        userId,
+        investorId,
         projectId,
         type: type || 'EQUITY',
         status: 'PENDING',
@@ -178,12 +178,6 @@ export async function POST(request: NextRequest) {
           select: {
             id: true,
             name: true,
-            owner: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
           },
         },
       },

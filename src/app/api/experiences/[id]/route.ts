@@ -9,12 +9,12 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession()
-    if (!result) {
+    if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
     const { id: experienceId } = await params
-    if (!result) {
+    if (!id) {
       return NextResponse.json({
         success: false,
         error: 'Experience ID is required',
@@ -26,8 +26,7 @@ export async function DELETE(
     const experience = await db.experience.findUnique({
       where: { id: experienceId, userId: session.user.id },
     })
-
-    if (!result) {
+    if (!experience) {
       return NextResponse.json({
         success: false,
         error: 'Experience not found',

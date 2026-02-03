@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
 
-    if (!result) {
+    if (!limit) {
       where.verificationStatus = status
     }
 

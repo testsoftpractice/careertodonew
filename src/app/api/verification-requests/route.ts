@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const requesterId = searchParams.get('requesterId')
   const status = searchParams.get('status') || 'all'
 
-  if (!result) {
+  if (!searchParams) {
     return NextResponse.json({ error: 'Requester ID is required' }, { status: 400 })
   }
 
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       requesterId
     }
 
-    if (!result) {
+    if (!searchParams) {
       where.status = status as any
     }
 

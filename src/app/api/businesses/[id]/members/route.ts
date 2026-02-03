@@ -13,7 +13,7 @@ async function getUserBusinessRole(userId: string, businessId: string) {
   if (!business) return null
 
   // Owner has OWNER role
-  if (!result) {
+  if (userId === business.ownerId) {
     return 'OWNER'
   }
 
@@ -56,18 +56,18 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const businessId = params.id
+    const { id: businessId } = await params
 
     // Authentication
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!result) {
+    if (!token) {
       throw new UnauthorizedError('Authentication required')
     }
 
     const decoded = verifyToken(token)
-    if (!result) {
+    if (!decoded) {
       throw new UnauthorizedError('Invalid token')
     }
 
@@ -76,7 +76,7 @@ export async function GET(
     // Check if user has access to this business
     const userRole = await getUserBusinessRole(userId, businessId)
 
-    if (!result) {
+    if (!userRole) {
       throw new ForbiddenError('You are not a member of this business')
     }
 
@@ -110,9 +110,9 @@ export async function GET(
       count: members.length,
     })
   } catch (error: any) {
-    logError(error, 'Get business members', params.id)
+    logError(error, 'Get business members', businessId)
 
-    if (!result) {
+    if (error.statusCode) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 
@@ -123,32 +123,32 @@ export async function GET(
   }
 }
 
-// POST /api/businesses/[id]/members - Add a member to the business
+// POST /api/businesses/[id]/members - Add a member to a business
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   let userId: string | null = null
   try {
-    const businessId = params.id
+    const { id: businessId } = await params
 
     // Authentication
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!result) {
+    if (!token) {
       throw new UnauthorizedError('Authentication required')
     }
 
     const decoded = verifyToken(token)
-    if (!result) {
+    if (!decoded) {
       throw new UnauthorizedError('Invalid token')
     }
 
     userId = decoded.userId
 
     // Ensure userId is set
-    if (!result) {
+    if (!userId) {
       throw new UnauthorizedError('Invalid authentication')
     }
 
@@ -157,14 +157,14 @@ export async function POST(
 
     const canAddMembers = ['OWNER', 'ADMIN', 'HR_MANAGER', 'RECRUITER'].includes(userRole || '')
 
-    if (!result) {
+    if (!canAddMembers) {
       throw new ForbiddenError('Insufficient permissions to add members')
     }
 
     const body = await request.json()
 
     // Validate required fields
-    if (!result) {
+    if (!body.userId || !body.role) {
       throw new AppError('userId and role are required', 400)
     }
 
@@ -174,7 +174,7 @@ export async function POST(
       select: { id: true, name: true, email: true },
     })
 
-    if (!result) {
+    if (!targetUser) {
       throw new NotFoundError('User not found')
     }
 
@@ -188,7 +188,7 @@ export async function POST(
       },
     })
 
-    if (!result) {
+    if (existingMember) {
       throw new AppError('User is already a member of this business', 400)
     }
 
@@ -223,15 +223,181 @@ export async function POST(
       message: `${targetUser.name} added to business as ${body.role}`,
     }, { status: 201 })
   } catch (error: any) {
-    logError(error, 'Add business member', params.id)
+    logError(error, 'Add business member', businessId)
 
-    if (!result) {
+    if (error.statusCode) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 
     return NextResponse.json({
       success: false,
       error: 'Failed to add member',
+    }, { status: 500 })
+  }
+}
+
+// PATCH /api/businesses/[id]/members/[memberId] - Update member role
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  let userId: string | null = null
+  try {
+    const { id: businessId } = await params
+
+    const { memberId } = await params
+
+    // Authentication
+    const sessionCookie = request.cookies.get('session')
+    const token = sessionCookie?.value
+
+    if (!token) {
+      throw new UnauthorizedError('Authentication required')
+    }
+
+    const decoded = verifyToken(token)
+    if (!decoded) {
+      throw new UnauthorizedError('Invalid token')
+    }
+
+    userId = decoded.userId
+
+    if (!userId) {
+      throw new UnauthorizedError('Invalid authentication')
+    }
+
+    // Authorization - Check if user can update this member
+    const userRole = await getUserBusinessRole(userId, businessId)
+
+    if (!userRole) {
+      throw new ForbiddenError('You are not a member of this business')
+    }
+
+    const canUpdateMembers = ['OWNER', 'ADMIN', 'HR_MANAGER'].includes(userRole || '')
+
+    if (!canUpdateMembers) {
+      throw new ForbiddenError('Insufficient permissions to update members')
+    }
+
+    const body = await request.json()
+
+    // Get the member to update
+    const member = await db.businessMember.findUnique({
+      where: { id: memberId },
+      select: { id: true, role: true },
+    })
+
+    if (!member) {
+      throw new NotFoundError('Member not found')
+    }
+
+    // Check if can assign the new role
+    if (body.role && !hasHigherRoleOrEqual(userRole || 'VIEWER', body.role)) {
+      throw new ForbiddenError('Cannot assign a role higher than your own')
+    }
+
+    // Update member
+    const updateData: any = {}
+    if (body.role) updateData.role = body.role
+    if (body.permissions) updateData.permissions = JSON.stringify(body.permissions)
+
+    const updatedMember = await db.businessMember.update({
+      where: { id: memberId },
+      data: updateData,
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: updatedMember,
+      message: 'Member updated successfully',
+    })
+  } catch (error: any) {
+    logError(error, 'Update business member', businessId)
+
+    if (error.statusCode) {
+      return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
+    }
+
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to update member',
+    }, { status: 500 })
+  }
+}
+
+// DELETE /api/businesses/[id]/members/[memberId] - Remove member from business
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  let userId: string | null = null
+  try {
+    const { id: businessId } = await params
+
+    const { memberId } = await params
+
+    // Authentication
+    const sessionCookie = request.cookies.get('session')
+    const token = sessionCookie?.value
+
+    if (!token) {
+      throw new UnauthorizedError('Authentication required')
+    }
+
+    const decoded = verifyToken(token)
+    if (!decoded) {
+      throw new UnauthorizedError('Invalid token')
+    }
+
+    userId = decoded.userId
+
+    if (!userId) {
+      throw new UnauthorizedError('Invalid authentication')
+    }
+
+    // Authorization - Check if user can remove this member
+    const userRole = await getUserBusinessRole(userId, businessId)
+
+    if (!userRole) {
+      throw new ForbiddenError('You are not a member of this business')
+    }
+
+    // Get the member to remove
+    const member = await db.businessMember.findUnique({
+      where: { id: memberId },
+      select: { id: true, userId: true, role: true },
+    })
+
+    if (!member) {
+      throw new NotFoundError('Member not found')
+    }
+
+    // Owner can remove anyone, others can only remove themselves or lower roles
+    const canRemove = userRole === 'OWNER' || member.userId === userId
+
+    if (!canRemove) {
+      throw new ForbiddenError('Insufficient permissions to remove this member')
+    }
+
+    // Remove member
+    await db.businessMember.delete({
+      where: { id: memberId },
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Member removed successfully',
+    })
+  } catch (error: any) {
+    logError(error, 'Remove business member', businessId)
+
+    if (error.statusCode) {
+      return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
+    }
+
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to remove member',
     }, { status: 500 })
   }
 }

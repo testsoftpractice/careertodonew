@@ -123,7 +123,13 @@ enum NotificationType {
   TASK_ASSIGNED
   PROJECT_UPDATE
   VERIFICATION
+  VERIFICATION_STATUS
   INVESTMENT
+  DEAL_UPDATE
+  COLLABORATION_REQUEST
+  COLLABORATION_RESPONSE
+  BUSINESS_APPROVAL
+  BUSINESS_REJECTION
   MESSAGE
 }
 
@@ -194,6 +200,18 @@ enum WorkSessionType {
   RESEARCH
 }
 
+enum CollaborationType {
+  MENTORSHIP
+  PROJECT
+  PARTNERSHIP
+}
+
+enum CollaborationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
 // ============================================
 // MODELS
 // ============================================
@@ -213,6 +231,7 @@ model University {
 
   // Relations
   users             User[]
+  projects          Project[]
 
   // Timestamps
   createdAt         DateTime                      @default(now())
@@ -263,6 +282,11 @@ model User {
   loginAttempts        Int                @default(0)
   lockedAt             DateTime?
   lastPasswordChange   DateTime?
+  lastLoginAt          DateTime?
+
+  // Additional fields
+  department           String?
+  projectLeads         Int                @default(0)
 
   // Relations
   skills                Skill[]
@@ -293,6 +317,8 @@ model User {
   personalTasks         PersonalTask[]
   taskStepsCreated     TaskStep[]         @relation("TaskStepsCreatedBy")
   taskComments          TaskComment[]      @relation("TaskComments")
+  sentCollaborationRequests CollaborationRequest[] @relation("CollaborationFrom")
+  receivedCollaborationRequests CollaborationRequest[] @relation("CollaborationTo")
 
   // Timestamps
   createdAt             DateTime           @default(now())
@@ -353,6 +379,7 @@ model Education {
   school      String
   degree      String
   field       String?
+  gpa         Float?
   description String?
   startDate   DateTime
   endDate     DateTime
@@ -406,6 +433,7 @@ model Project {
   // Owner
   ownerId           String
   businessId        String?
+  universityId      String?
 
   // Additional fields
   startDate         DateTime?
@@ -417,9 +445,15 @@ model Project {
   progress          Float         @default(0) // 0-100 percentage
   seekingInvestment Boolean       @default(false)
 
+  // Approval fields
+  approvalDate      DateTime?
+  terminationReason String?
+  terminationDate   DateTime?
+
   // Relations
   owner             User          @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   business          Business?     @relation("ProjectBusiness", fields: [businessId], references: [id], onDelete: SetNull)
+  university        University?    @relation(fields: [universityId], references: [id], onDelete: SetNull)
   members           ProjectMember[]
   tasks             Task[]
   milestones         Milestone[]
@@ -703,6 +737,7 @@ model Notification {
   type      NotificationType
   title     String
   message   String
+  link      String?
   priority  NotificationPriority @default(MEDIUM)
   read      Boolean             @default(false)
 
@@ -743,9 +778,16 @@ model VerificationRequest {
   type        String
   status      VerificationStatus @default(PENDING)
   submittedAt DateTime           @default(now())
+  createdAt   DateTime           @default(now())
   reviewedAt  DateTime?
   notes       String?
+  reviewNote  String?
   requesterId String?
+  priority    NotificationPriority?
+
+  title       String?
+  description String?
+  projectId   String?
 
   // Relations
   user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -787,6 +829,12 @@ model Investment {
   projectedReturn Float?
   investedAt  DateTime?
 
+  // Additional fields for proposals and deals
+  terms       String?
+  expiresAt   DateTime?
+  agreementId String?
+  fundedAt    DateTime?
+
   // Relations
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   project     Project? @relation("InvestmentProject", fields: [projectId], references: [id], onDelete: SetNull)
@@ -811,6 +859,7 @@ model Business {
   size              String?
   status            VerificationStatus @default(PENDING)
   verifiedAt        DateTime?
+  public            Boolean           @default(false)
 
   // Owner
   ownerId           String
@@ -854,8 +903,15 @@ model Job {
   title       String
   description String?
   type        EmploymentType @default(FULL_TIME)
+  employmentType EmploymentType @default(FULL_TIME)
   location    String?
   salary      String?
+  salaryMin   Float?
+  salaryMax   Float?
+  department  String?
+  status      String?
+  views       Int             @default(0)
+  deadline    DateTime?
   published   Boolean        @default(false)
   publishedAt DateTime?
 
@@ -1008,4 +1064,26 @@ model TaskComment {
 
   @@index([taskId])
   @@index([userId])
+}
+
+// Collaboration Request model for mentorship, project, and partnership requests
+model CollaborationRequest {
+  id          String            @id @default(cuid())
+  fromId      String
+  toId        String
+  type        CollaborationType @default(PROJECT)
+  status      CollaborationStatus @default(PENDING)
+  message     String?
+  projectId   String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  // Relations
+  from        User     @relation("CollaborationFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to          User     @relation("CollaborationTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@index([fromId])
+  @@index([toId])
+  @@index([status])
+  @@index([type])
 }

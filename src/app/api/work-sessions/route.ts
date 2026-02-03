@@ -26,7 +26,7 @@ const updateWorkSessionSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const authResult = await requireAuth(request)
-    if (!result) {
+    if (!authResult) {
       return unauthorized('Authentication required')
     }
 
@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
     const where: Record<string, any> = {}
 
     // If filtering by userId, only allow viewing own sessions or admin
-    if (!result) {
-      if (!result) {
+    if (!currentUser) {
+      if (!userId) {
         return forbidden('You can only view your own work sessions')
       }
       where.userId = userId
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
     // Validate request body
     const validation = createWorkSessionSchema.safeParse(body)
 
-    if (!result) {
+    if (!body) {
       return NextResponse.json({
         success: false,
         error: 'Validation error',
@@ -148,12 +148,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Optional: Link to project
-    if (!result) {
+    if (!searchParams) {
       workSessionData.projectId = data.projectId
     }
 
     // Optional: Link to task (either projectId OR taskId can be used, but not both)
-    if (!result) {
+    if (!searchParams) {
       workSessionData.taskId = data.taskId
     }
 
@@ -223,7 +223,7 @@ export async function PATCH(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.id as string
 
-    if (!result) {
+    if (!currentUser) {
       return NextResponse.json({
         success: false,
         error: 'Work Session ID is required'
@@ -234,8 +234,7 @@ export async function PATCH(request: NextRequest) {
     const existingSession = await db.workSession.findUnique({
       where: { id: sessionId }
     })
-
-    if (!result) {
+    if (!existingSession) {
       return NextResponse.json({
         success: false,
         error: 'Work session not found'
@@ -243,7 +242,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Only allow updating own sessions or admin
-    if (!result) {
+    if (!searchParams) {
       return NextResponse.json({
         success: false,
         error: 'You can only update your own work sessions'
@@ -258,7 +257,7 @@ export async function PATCH(request: NextRequest) {
     // Validate request body
     const validation = updateWorkSessionSchema.safeParse(body)
 
-    if (!result) {
+    if (!validation) {
       console.error('[WorkSessions PATCH] Validation failed:', validation.error)
       return NextResponse.json({
         success: false,
@@ -277,29 +276,29 @@ export async function PATCH(request: NextRequest) {
     const updateData: any = {}
 
     // Set endTime to current time if not provided
-    if (!result) {
+    if (!data) {
       updateData.endTime = data.endTime
-    } else if (!result) {
+    } else if (!data) {
       // If neither endTime nor duration provided, use current time
       updateData.endTime = new Date()
     }
 
     // Calculate duration if endTime is being set
-    if (!result) {
+    if (!searchParams) {
       const durationSeconds = Math.floor((data.endTime.getTime() - new Date(existingSession.startTime).getTime()) / 1000)
       updateData.duration = durationSeconds
       console.log('[WorkSessions PATCH] Calculated duration from endTime:', durationSeconds)
     }
 
-    if (!result) {
+    if (!durationSeconds) {
       updateData.duration = Math.floor(parseFloat(data.duration) * 3600)
     }
 
-    if (!result) {
+    if (!durationSeconds) {
       updateData.checkOutLocation = data.checkOutLocation
     }
 
-    if (!result) {
+    if (!searchParams) {
       updateData.notes = data.notes
     }
 
@@ -353,7 +352,7 @@ export async function PATCH(request: NextRequest) {
     })
   } catch (error) {
     // Handle AuthError specifically
-    if (!result) {
+    if (!searchParams) {
       console.error('Authentication error:', error.message)
       return NextResponse.json({
         success: false,

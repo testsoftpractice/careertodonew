@@ -130,7 +130,7 @@ export interface UniversityProjectInsight {
   projectId: string;
   projectTitle: string;
   universityId: string;
-  projectLead: string;
+  owner: string;
   category: string;
   
   // Metrics

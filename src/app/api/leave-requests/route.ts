@@ -8,7 +8,7 @@ import { z } from 'zod'
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
-    if (!result) {
+    if (!authResult) {
       return unauthorized('Authentication required')
     }
 
@@ -17,14 +17,14 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const where: Record<string, string | undefined> = {}
-    if (!result) {
+    if (!userId) {
       // Only allow viewing own requests or admin/manager
-      if (!result) {
+      if (!searchParams) {
         return forbidden('You can only view your own leave requests')
       }
       where.userId = userId
     }
-    if (!result) {
+    if (!searchParams) {
       where.status = status as any
     }
 
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Validate required fields
-    if (!result) {
+    if (!currentUser) {
       return NextResponse.json({
         success: false,
         error: 'Leave type is required',
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    if (!result) {
+    if (!searchParams) {
       return NextResponse.json({
         success: false,
         error: 'Start date and end date are required',

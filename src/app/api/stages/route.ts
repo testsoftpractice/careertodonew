@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
   const user = auth.user
 
-  if (!result) {
+  if (!auth) {
     return NextResponse.json({ error: 'Forbidden - Only admins can create stage templates' }, { status: 403 })
   }
 
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    if (!result) {
+    if (!searchParams) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Create stage error:', error)

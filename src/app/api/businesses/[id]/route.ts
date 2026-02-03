@@ -13,7 +13,7 @@ async function getUserBusinessRole(userId: string, businessId: string) {
   if (!business) return null
 
   // Owner has OWNER role
-  if (!result) {
+  if (business.ownerId === userId) {
     return 'OWNER'
   }
 
@@ -64,7 +64,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const businessId = params.id
+    const { id } = await params
+    const businessId = id
 
     // Authentication
     const sessionCookie = request.cookies.get('session')
@@ -73,9 +74,9 @@ export async function GET(
     let userId: string | null = null
     let userRole: string | null = null
 
-    if (!result) {
+    if (token) {
       const decoded = verifyToken(token)
-      if (!result) {
+      if (decoded) {
         userId = decoded.userId
         userRole = decoded.role
       }
@@ -142,7 +143,7 @@ export async function GET(
       },
     })
 
-    if (!result) {
+    if (!business) {
       throw new NotFoundError('Business not found')
     }
 
@@ -150,7 +151,8 @@ export async function GET(
     const myRole = userId ? await getUserBusinessRole(userId, businessId) : null
 
     // Filter sensitive data based on access
-    if (!result) {
+    // For now, allow read access to authenticated users
+    if (!userId && !business.public) {
       throw new ForbiddenError('Access denied')
     }
 
@@ -162,9 +164,9 @@ export async function GET(
       },
     })
   } catch (error: any) {
-    logError(error, 'Get business', params.id)
+    logError(error, 'Get business', (await params).id)
 
-    if (!result) {
+    if (error instanceof AppError) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 
@@ -182,32 +184,33 @@ export async function PATCH(
 ) {
   let userId: string | null = null
   try {
-    const businessId = params.id
+    const { id } = await params
+    const businessId = id
 
     // Authentication
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!result) {
+    if (!token) {
       throw new UnauthorizedError('Authentication required')
     }
 
     const decoded = verifyToken(token)
-    if (!result) {
+    if (!decoded) {
       throw new UnauthorizedError('Invalid token')
     }
 
     userId = decoded.userId
 
     // Ensure userId is set
-    if (!result) {
+    if (!userId) {
       throw new UnauthorizedError('Invalid authentication')
     }
 
     // Authorization - Check if user can manage this business
     const canManage = await canManageBusiness(userId, businessId, ['OWNER', 'ADMIN'])
 
-    if (!result) {
+    if (!canManage) {
       throw new ForbiddenError('Insufficient permissions to manage this business')
     }
 
@@ -246,9 +249,9 @@ export async function PATCH(
       message: 'Business updated successfully',
     })
   } catch (error: any) {
-    logError(error, 'Update business', params.id)
+    logError(error, 'Update business', (await params).id)
 
-    if (!result) {
+    if (error instanceof AppError) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 
@@ -266,18 +269,19 @@ export async function DELETE(
 ) {
   let userId: string | null = null
   try {
-    const businessId = params.id
+    const { id } = await params
+    const businessId = id
 
     // Authentication
     const sessionCookie = request.cookies.get('session')
     const token = sessionCookie?.value
 
-    if (!result) {
+    if (!token) {
       throw new UnauthorizedError('Authentication required')
     }
 
     const decoded = verifyToken(token)
-    if (!result) {
+    if (!decoded) {
       throw new UnauthorizedError('Invalid token')
     }
 
@@ -286,7 +290,7 @@ export async function DELETE(
     // Authorization - Only owner or platform admin can delete
     const canDelete = await canManageBusiness(userId, businessId, ['OWNER'])
 
-    if (!result) {
+    if (!canDelete) {
       throw new ForbiddenError('Only business owner or platform admin can delete business')
     }
 
@@ -300,9 +304,9 @@ export async function DELETE(
       message: 'Business deleted successfully',
     })
   } catch (error: any) {
-    logError(error, 'Delete business', params.id)
+    logError(error, 'Delete business', (await params).id)
 
-    if (!result) {
+    if (error instanceof AppError) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 

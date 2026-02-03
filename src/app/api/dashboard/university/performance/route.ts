@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         },
         projects: {
           include: {
-            projectLead: {
+            owner: {
               select: {
                 id: true,
                 name: true,
@@ -140,10 +140,10 @@ export async function GET(request: NextRequest) {
     })
 
     // If specific university requested, return just that university
-    if (!result) {
+    if (!token) {
       const specificUniversity = universitiesWithMetrics.find((u: any) => u.id === universityId)
       
-      if (!result) {
+      if (!token) {
         return NextResponse.json({
           success: false,
           error: 'University not found',

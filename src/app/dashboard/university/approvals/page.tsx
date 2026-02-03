@@ -36,7 +36,7 @@ interface PendingBusiness {
   title: string
   description: string
   category: string
-  projectLead: {
+  owner: {
     id: string
     name: string
     email: string
@@ -265,7 +265,7 @@ export default function UniversityApprovals() {
                               </div>
                               <div>
                                 <span className="text-sm text-muted-foreground">Project Lead:</span>
-                                <div className="font-medium">{business.projectLead.name}</div>
+                                <div className="font-medium">{business.owner.name}</div>
                               </div>
                               <div>
                                 <span className="text-sm text-muted-foreground">University:</span>

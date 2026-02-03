@@ -39,8 +39,7 @@ export async function GET(
     const task = await db.task.findUnique({
       where: { id: taskId },
     })
-
-    if (!result) {
+    if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
@@ -117,7 +116,7 @@ export async function POST(
       },
     })
   } catch (error) {
-    if (!result) {
+    if (!searchParams) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Add checklist item error:', error)

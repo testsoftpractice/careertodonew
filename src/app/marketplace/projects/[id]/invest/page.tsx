@@ -177,7 +177,7 @@ export default function MarketInvestmentPage({ params }: { params: Promise<{ id:
                     <div className="space-y-1">
                       <div className="text-xs sm:text-sm text-muted-foreground">Project Lead</div>
                       <div className="text-sm sm:text-base font-medium truncate">
-                        {project.projectLead?.name || 'Unknown'}
+                        {project.owner?.name || 'Unknown'}
                       </div>
                     </div>
                   </div>
@@ -334,10 +334,10 @@ export default function MarketInvestmentPage({ params }: { params: Promise<{ id:
                       <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 flex-shrink-0" />
                       <div>
                         <div className="font-medium text-sm sm:text-base">
-                          {project.projectLead?.name || 'Unknown'}
+                          {project.owner?.name || 'Unknown'}
                         </div>
                         <div className="text-xs sm:text-sm text-muted-foreground">
-                          Project Lead • {project.projectLead?.university?.name || 'Unknown University'}
+                          Project Lead • {project.owner?.university?.name || 'Unknown University'}
                         </div>
                       </div>
                     </div>

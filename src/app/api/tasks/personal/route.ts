@@ -13,18 +13,17 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const userId = searchParams.get('userId')
-
-    if (!result) {
+    if (!userId) {
       return badRequest('userId is required')
     }
 
     const authResult = await verifyAuth(request)
-    if (!result) {
+    if (!authResult) {
       return unauthorized()
     }
 
     // Verify user is requesting their own tasks
-    if (!result) {
+    if (!authResult) {
       return errorResponse('Forbidden', 403)
     }
 
@@ -47,7 +46,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
-    if (!result) {
+    if (!authResult) {
       return unauthorized()
     }
 
@@ -64,7 +63,7 @@ export async function POST(request: NextRequest) {
       body
     )
 
-    if (!result) {
+    if (!validation) {
       return validationError(validation.errors)
     }
 
@@ -97,18 +96,17 @@ export async function PATCH(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const id = searchParams.get('id')
     const userId = searchParams.get('userId')
-
-    if (!result) {
+    if (!userId) {
       return badRequest('id and userId are required')
     }
 
     const authResult = await verifyAuth(request)
-    if (!result) {
+    if (!authResult) {
       return unauthorized()
     }
 
     // Verify user is updating their own task
-    if (!result) {
+    if (!authResult) {
       return errorResponse('Forbidden', 403)
     }
 
@@ -116,12 +114,11 @@ export async function PATCH(request: NextRequest) {
     const task = await db.personalTask.findUnique({
       where: { id },
     })
-
-    if (!result) {
+    if (!task) {
       return errorResponse('Task not found', 404)
     }
 
-    if (!result) {
+    if (!task) {
       return errorResponse('Unauthorized', 403)
     }
 
@@ -132,7 +129,7 @@ export async function PATCH(request: NextRequest) {
     if (body.description !== undefined) updateData.description = body.description
     if (body.priority !== undefined) updateData.priority = body.priority
     if (body.dueDate !== undefined) updateData.dueDate = body.dueDate ? new Date(body.dueDate) : null
-    if (!result) {
+    if (!body) {
       updateData.status = body.status
       if (body.status === 'DONE') updateData.completedAt = new Date()
     }
@@ -159,8 +156,7 @@ export async function DELETE(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const id = searchParams.get('id')
     const userId = searchParams.get('userId')
-
-    if (!result) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'id and userId are required' },
         { status: 400 }
@@ -171,15 +167,14 @@ export async function DELETE(request: NextRequest) {
     const task = await db.personalTask.findUnique({
       where: { id },
     })
-
-    if (!result) {
+    if (!task) {
       return NextResponse.json(
         { error: 'Task not found' },
         { status: 404 }
       )
     }
 
-    if (!result) {
+    if (!task) {
       return NextResponse.json(
         { error: 'Unauthorized: You can only delete your own tasks' },
         { status: 403 }

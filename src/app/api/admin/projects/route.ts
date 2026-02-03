@@ -89,11 +89,10 @@ export async function GET(request: NextRequest) {
             status: mappedStatus,
             ownerId: p.ownerId,
             university: p.owner.university?.name || "No University",
-            projectLead: {
+            owner: {
               name: p.owner.name,
               email: p.owner.email
             },
-            owner: p.owner,
             budget: p.budget,
             submittedAt: p.createdAt.toISOString(),
             lastUpdated: p.updatedAt.toISOString(),

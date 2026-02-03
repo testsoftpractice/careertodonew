@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, context: any) {
   const user = auth.user
   const universityId = user.universityId
 
-  if (!result) {
+  if (!token) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
@@ -101,11 +101,11 @@ export async function GET(request: NextRequest, context: any) {
 
     // Apply filters
     let filteredFeed = [...activityFeed]
-    if (!result) {
+    if (!token) {
       filteredFeed = filteredFeed.filter(item => item.type === type)
     }
 
-    if (!result) {
+    if (!token) {
       filteredFeed = filteredFeed.slice(0, limit)
     }
 

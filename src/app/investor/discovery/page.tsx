@@ -100,8 +100,8 @@ export default function InvestorDiscoveryPage() {
 
         if (filters.minReputation > 0) {
           filteredBusinesses = filteredBusinesses.filter((b: any) => {
-            const avgRep = b.projectLead
-              ? (b.projectLead.executionScore + b.projectLead.collaborationScore) / 2
+            const avgRep = b.owner
+              ? (b.owner.executionScore + b.owner.collaborationScore) / 2
               : 0
             return avgRep >= filters.minReputation
           })
@@ -141,7 +141,7 @@ export default function InvestorDiscoveryPage() {
   }
 
   const calculateInvestmentPotential = (business: any) => {
-    const leadRep = business.projectLead
+    const leadRep = business.owner
       ? (leadRep.executionScore + leadRep.collaborationScore) / 2
       : 0
 
@@ -431,20 +431,20 @@ export default function InvestorDiscoveryPage() {
                         )}
 
                         {/* Project Lead */}
-                        {business.projectLead && (
+                        {business.owner && (
                           <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
                               <AvatarFallback className="text-xs bg-secondary">
-                                {business.projectLead.name?.charAt(0) || 'L'}
+                                {business.owner.name?.charAt(0) || 'L'}
                               </AvatarFallback>
                             </Avatar>
                             <div className="text-sm">
                               <div className="font-medium">Lead</div>
-                              <div className="text-muted-foreground">{business.projectLead.name}</div>
+                              <div className="text-muted-foreground">{business.owner.name}</div>
                               <div className="flex items-center gap-1">
                                 <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
                                 <span>{Math.round(
-                                  (business.projectLead.executionScore + business.projectLead.collaborationScore) / 2
+                                  (business.owner.executionScore + business.owner.collaborationScore) / 2
                                 ).toFixed(1)}</span>
                               </div>
                             </div>

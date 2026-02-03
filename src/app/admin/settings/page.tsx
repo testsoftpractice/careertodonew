@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -64,7 +64,7 @@ export default function AdminSettingsPage() {
   const handleSavePlatformSettings = async () => {
     try {
       setLoading(true)
-      await await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise(resolve => setTimeout(resolve, 1000))
       toast({
         title: 'Success',
         description: 'Platform settings saved successfully',
@@ -102,7 +102,7 @@ export default function AdminSettingsPage() {
 
     try {
       setLoading(true)
-      await await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise(resolve => setTimeout(resolve, 1000))
       toast({
         title: 'Success',
         description: 'Password changed successfully',

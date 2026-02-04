@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -211,16 +211,16 @@ function DashboardContent({ user }: { user: any }) {
     } else if (activeTab === 'leave-management') {
       fetchLeaveRequests()
     }
-  }, [activeTab, user, viewType])
+  }, [activeTab, viewType, fetchStats, fetchTasks, fetchTimeEntries, fetchLeaveRequests, fetchAvailableProjects, fetchProjects, fetchTimeSummary])
 
   // Fetch project tasks when project is selected (for Tasks tab)
   useEffect(() => {
     if (viewType === 'project' && selectedProject && activeTab === 'tasks') {
       fetchProjectTasks(selectedProject.id)
     }
-  }, [viewType, selectedProject, activeTab, user])
+  }, [viewType, selectedProject, activeTab, fetchProjectTasks])
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     if (!user) return
 
     try {
@@ -236,9 +236,9 @@ function DashboardContent({ user }: { user: any }) {
     } finally {
       setLoading(prev => ({ ...prev, stats: false }))
     }
-  }
+  }, [user?.id])
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     if (!user) return
 
     try {
@@ -254,9 +254,9 @@ function DashboardContent({ user }: { user: any }) {
     } finally {
       setLoading(prev => ({ ...prev, projects: false }))
     }
-  }
+  }, [user?.id])
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     if (!user) return
 
     try {
@@ -281,9 +281,9 @@ function DashboardContent({ user }: { user: any }) {
     } finally {
       setLoading(prev => ({ ...prev, tasks: false }))
     }
-  }
+  }, [user?.id])
 
-  const fetchPersonalTasks = async () => {
+  const fetchPersonalTasks = useCallback(async () => {
     if (!user) return
 
     try {
@@ -299,9 +299,9 @@ function DashboardContent({ user }: { user: any }) {
     } finally {
       setLoading(prev => ({ ...prev, tasks: false }))
     }
-  }
+  }, [user?.id, projectTasks])
 
-  const fetchProjectTasks = async (projectId: string) => {
+  const fetchProjectTasks = useCallback(async (projectId: string) => {
     if (!user) return
 
     try {
@@ -315,9 +315,9 @@ function DashboardContent({ user }: { user: any }) {
     } finally {
       setLoading(prev => ({ ...prev, tasks: false }))
     }
-  }
+  }, [user?.id])
 
-  const fetchAvailableProjects = async () => {
+  const fetchAvailableProjects = useCallback(async () => {
     if (!user) return
 
     try {
@@ -330,9 +330,9 @@ function DashboardContent({ user }: { user: any }) {
     } catch (error) {
       console.error('Fetch projects error:', error)
     }
-  }
+  }, [user?.id])
 
-  const fetchTimeEntries = async () => {
+  const fetchTimeEntries = useCallback(async () => {
     if (!user) return
 
     try {
@@ -345,9 +345,9 @@ function DashboardContent({ user }: { user: any }) {
     } catch (error) {
       console.error('Fetch time entries error:', error)
     }
-  }
+  }, [user?.id])
 
-  const fetchTimeSummary = async () => {
+  const fetchTimeSummary = useCallback(async () => {
     if (!user) return
 
     try {
@@ -360,9 +360,9 @@ function DashboardContent({ user }: { user: any }) {
     } catch (error) {
       console.error('Fetch time summary error:', error)
     }
-  }
+  }, [user?.id])
 
-  const fetchLeaveRequests = async () => {
+  const fetchLeaveRequests = useCallback(async () => {
     if (!user) return
 
     try {
@@ -375,7 +375,7 @@ function DashboardContent({ user }: { user: any }) {
     } catch (error) {
       console.error('Fetch leave requests error:', error)
     }
-  }
+  }, [user?.id])
 
   const handleLogout = async () => {
     const success = await logoutAndRedirect()

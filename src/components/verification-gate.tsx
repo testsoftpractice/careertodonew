@@ -2,8 +2,7 @@
 
 import React from 'react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
-import { Shield, Lock, CheckCircle2, Clock, XCircle, AlertTriangle, AlertOctagon, Activity, FileText, Zap, Info, UserCheck, ShieldAlert, TriangleAlert, InfoIcon, FileIcon } from 'lucide-react'
+import { Shield, CheckCircle2, Clock, XCircle } from 'lucide-react'
 
 export type VerificationStatus = 'PENDING' | 'UNDER_REVIEW' | 'VERIFIED' | 'REJECTED'
 
@@ -27,10 +26,6 @@ export function VerificationGate({
   customMessage,
 }: VerificationGateProps) {
   const isVerified = user?.verificationStatus === 'VERIFIED'
-  const isUnverified = !isVerified && user?.verificationStatus !== 'VERIFIED'
-  const isPending = user?.verificationStatus === 'PENDING'
-  const isUnderReview = user?.verificationStatus === 'UNDER_REVIEW'
-  const isRejected = user?.verificationStatus === 'REJECTED'
 
   const getStatusConfig = (status: VerificationStatus) => {
     switch (status) {
@@ -92,86 +87,24 @@ export function VerificationGate({
     </div>
   }
 
-  if (restrictActions) {
-    return (
-      <Alert className={statusConfig.bgColor} variant="outline">
-        <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
-        <AlertTitle className={statusConfig.color}>{statusConfig.title}</AlertTitle>
-        <AlertDescription>{statusConfig.description}</AlertDescription>
-        <div className="mt-4">
-          <Button variant="outline" size="sm" asChild>
-            <a href="/dashboard">View Dashboard</a>
-          </Button>
-        </div>
-      </Alert>
-    )
-  }
-
-  if (isVerified && showBadge) {
+  // If restrictActions is true and user is not verified, show dashboard with opacity + alert on top
+  if (restrictActions && !isVerified) {
     return (
       <div className="space-y-4">
-        {showBadge && (
-          <div className="flex items-center gap-2">
-            <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
-            <span className="text-sm font-medium text-muted-foreground">{statusConfig.title}</span>
-          </div>
-        )}
         <Alert className={statusConfig.bgColor} variant="outline">
           <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
           <AlertTitle className={statusConfig.color}>{statusConfig.title}</AlertTitle>
           <AlertDescription>{statusConfig.description}</AlertDescription>
         </Alert>
-      </div>
-    )
-  }
-
-  if (isPending && restrictActions) {
-    return (
-      <div className="space-y-4">
-        {showBadge && (
-          <div className="flex items-center gap-2">
-            <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
-            <span className="text-sm font-medium text-muted-foreground">{statusConfig.title}</span>
-          </div>
-        )}
-        <Alert className={statusConfig.bgColor} variant="outline">
-          <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
-          <AlertTitle className={statusConfig.color}>{statusConfig.title}</AlertTitle>
-          <AlertDescription>{statusConfig.description}</AlertDescription>
-        </Alert>
-        <div className="mt-4">
-          <Button variant="outline" size="sm">
-            Review Details
-          </Button>
+        <div className={`transition-opacity duration-300 opacity-50 pointer-events-none`}>
+          {children}
         </div>
       </div>
     )
   }
 
-  if (isUnderReview && restrictActions) {
-    return (
-      <div className="space-y-4">
-        {showBadge && (
-          <div className="flex items-center gap-2">
-            <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
-            <span className="text-sm font-medium text-muted-foreground">{statusConfig.title}</span>
-          </div>
-        )}
-        <Alert className={statusConfig.bgColor} variant="outline">
-          <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
-          <AlertTitle className={statusConfig.color}>{statusConfig.title}</AlertTitle>
-          <AlertDescription>{statusConfig.description}</AlertDescription>
-        </Alert>
-        <div className="mt-4">
-          <Button variant="outline" size="sm">
-            Request Review
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  if (isRejected && restrictActions) {
+  // If restrictActions is false and user is not verified, show status + children normally
+  if (!restrictActions && !isVerified) {
     return (
       <div className="space-y-4">
         {showBadge && (
@@ -185,34 +118,13 @@ export function VerificationGate({
           <AlertTitle>{statusConfig.title}</AlertTitle>
           <AlertDescription>{statusConfig.description}</AlertDescription>
         </Alert>
-        <div className="mt-4">
-          <Button variant="outline" size="sm">
-            Re-apply
-          </Button>
-        </div>
+        {children}
       </div>
     )
   }
 
-  if (isPending && !restrictActions) {
-    return (
-      <div className="space-y-4">
-        {showBadge && (
-          <div className="flex items-center gap-2">
-            <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
-            <span className="text-sm font-medium text-muted-foreground">{statusConfig.title}</span>
-          </div>
-        )}
-        <Alert className={statusConfig.bgColor} variant="outline">
-          <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
-          <AlertTitle>{statusConfig.title}</AlertTitle>
-          <AlertDescription>{statusConfig.description}</AlertDescription>
-        </Alert>
-      </div>
-    )
-  }
-
-  return <div className={`transition-opacity duration-300 ${restrictActions ? 'opacity-50 pointer-events-none' : ''}`}>
+  // User is verified, show children normally
+  return <div className={`transition-opacity duration-300`}>
     {fallback || children}
   </div>
 }

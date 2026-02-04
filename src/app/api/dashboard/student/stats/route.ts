@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { getCached, createDashboardStatsKey } from '@/lib/utils/cache'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,53 +13,56 @@ export async function GET(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Get counts
-    const totalProjects = await db.project.count({ where: { ownerId: userId } })
-    const activeProjects = await db.project.count({ where: { ownerId: userId, status: 'IN_PROGRESS' } })
-    const completedProjects = await db.project.count({ where: { ownerId: userId, status: 'COMPLETED' } })
+    const cacheKey = createDashboardStatsKey(userId)
 
-    const tasksCompleted = await db.task.count({ where: { assignedTo: userId, status: 'DONE' } })
-    const tasksPending = await db.task.count({ where: { assignedTo: userId, status: 'TODO' } })
-    const tasksInProgress = await db.task.count({ where: { assignedTo: userId, status: 'IN_PROGRESS' } })
+    // Use cache with 2 minute TTL for stats
+    return await getCached(cacheKey, async () => {
+      // Get counts
+      const [totalProjects, activeProjects, completedProjects, tasksCompleted, tasksPending, tasksInProgress, user, recentActivityCount] = await Promise.all([
+        db.project.count({ where: { ownerId: userId } }),
+        db.project.count({ where: { ownerId: userId, status: 'IN_PROGRESS' } }),
+        db.project.count({ where: { ownerId: userId, status: 'COMPLETED' } }),
+        db.task.count({ where: { assignedTo: userId, status: 'DONE' } }),
+        db.task.count({ where: { assignedTo: userId, status: 'TODO' } }),
+        db.task.count({ where: { assignedTo: userId, status: 'IN_PROGRESS' } }),
+        db.user.findUnique({
+          where: { id: userId },
+          select: {
+            executionScore: true,
+            collaborationScore: true,
+            leadershipScore: true,
+            ethicsScore: true,
+            reliabilityScore: true,
+          }
+        }),
+        db.notification.count({ where: { userId, read: false } })
+      ])
 
-    // Get user with their scores
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: {
-        executionScore: true,
-        collaborationScore: true,
-        leadershipScore: true,
-        ethicsScore: true,
-        reliabilityScore: true,
+      const breakdown = {
+        execution: user?.executionScore || 0,
+        collaboration: user?.collaborationScore || 0,
+        leadership: user?.leadershipScore || 0,
+        ethics: user?.ethicsScore || 0,
+        reliability: user?.reliabilityScore || 0,
       }
-    })
 
-    const breakdown = {
-      execution: user?.executionScore || 0,
-      collaboration: user?.collaborationScore || 0,
-      leadership: user?.leadershipScore || 0,
-      ethics: user?.ethicsScore || 0,
-      reliability: user?.reliabilityScore || 0,
-    }
+      const stats = {
+        totalProjects,
+        activeProjects,
+        completedProjects,
+        tasksCompleted,
+        tasksPending,
+        tasksInProgress,
+        overallRating: ((breakdown.execution + breakdown.collaboration + breakdown.leadership + breakdown.ethics + breakdown.reliability) / 5).toFixed(1),
+        breakdown,
+        recentActivityCount,
+      }
 
-    const recentActivityCount = await db.notification.count({ where: { userId, read: false } })
-
-    const stats = {
-      totalProjects,
-      activeProjects,
-      completedProjects,
-      tasksCompleted,
-      tasksPending,
-      tasksInProgress,
-      overallRating: ((breakdown.execution + breakdown.collaboration + breakdown.leadership + breakdown.ethics + breakdown.reliability) / 5).toFixed(1),
-      breakdown,
-      recentActivityCount,
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: stats,
-    })
+      return NextResponse.json({
+        success: true,
+        data: stats,
+      })
+    }, 120000) // 2 minutes TTL
   } catch (error) {
     console.error('Get student stats error:', error)
     return NextResponse.json({

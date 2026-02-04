@@ -31,20 +31,7 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env
-.env.*
-!.env.example
-!.env.supabase.example
-!.env.local
-
-# Database files (keep local dev DB out of repo)
-*.db
-*.sqlite
-*.sqlite3
-db/
-
-# Prisma migration backups
-prisma/*.backup.prisma
+.env*
 
 # vercel
 .vercel
@@ -60,3 +47,5 @@ test
 prompt
 
 server.log
+# Skills directory
+/skills/

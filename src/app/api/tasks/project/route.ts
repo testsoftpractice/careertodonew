@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { userId, title, description, priority, dueDate } = body
 
-    if (!searchParams) {
+    if (!projectId) {
       return NextResponse.json(
         { error: 'projectId is required' },
         { status: 400 }

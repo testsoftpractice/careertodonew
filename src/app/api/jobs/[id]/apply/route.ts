@@ -9,12 +9,12 @@ export async function POST(
   try {
     const { id } = await params
     const body = await request.json()
-    const { applicantId, coverLetter, resumeUrl, portfolioUrl, linkedInUrl } = body
+    const { userId, coverLetter, resumeUrl, portfolioUrl, linkedInUrl } = body
 
     // Validate input
-    if (!applicantId) {
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: 'Applicant ID is required' },
+        { success: false, error: 'User ID is required' },
         { status: 400 }
       )
     }
@@ -39,7 +39,7 @@ export async function POST(
       const existingApplication = await tx.jobApplication.findFirst({
         where: {
           jobId: id,
-          applicantId,
+          userId,
         },
       })
 
@@ -51,7 +51,7 @@ export async function POST(
       const application = await tx.jobApplication.create({
         data: {
           jobId: id,
-          applicantId,
+          userId,
           coverLetter,
           resumeUrl,
           portfolioUrl: portfolioUrl || null,
@@ -72,7 +72,7 @@ export async function POST(
       try {
         await tx.pointTransaction.create({
           data: {
-            userId: applicantId,
+            userId: userId,
             points: 5, // JOB_APPLICATION points
             source: 'JOB_APPLICATION',
             description: `Applied to job: ${application.job.title}`,
@@ -85,7 +85,7 @@ export async function POST(
 
         // Update user's total points
         await tx.user.update({
-          where: { id: applicantId },
+          where: { id: userId },
           data: {
             totalPoints: {
               increment: 5,

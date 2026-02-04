@@ -81,6 +81,7 @@ enum ProjectStatus {
   COMPLETED
   CANCELLED
   ON_HOLD
+  ACTIVE
 }
 
 enum TaskPriority {
@@ -130,6 +131,8 @@ enum NotificationType {
   COLLABORATION_RESPONSE
   BUSINESS_APPROVAL
   BUSINESS_REJECTION
+  PROJECT_APPROVAL
+  JOB_APPROVAL
   MESSAGE
 }
 
@@ -210,6 +213,23 @@ enum CollaborationStatus {
   PENDING
   ACCEPTED
   REJECTED
+}
+
+enum ProjectApprovalStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  REQUIRE_CHANGES
+}
+
+enum JobApprovalStatus {
+  DRAFT
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
 }
 
 // ============================================
@@ -307,7 +327,9 @@ model User {
   verificationRequests  VerificationRequest[]
   agreements            Agreement[]
   investments           Investment[]
+  projectsApproved      ProjectApproval[]
   jobsPosted            Job[]
+  jobsApproved           JobApproval[]
   jobApplications       JobApplication[]
   messagesSent          Message[]          @relation("MessagesSent")
   messagesReceived      Message[]          @relation("MessagesReceived")
@@ -446,9 +468,14 @@ model Project {
   seekingInvestment Boolean       @default(false)
 
   // Approval fields
+  approvalStatus    ProjectApprovalStatus @default(PENDING)
   approvalDate      DateTime?
+  approvedAt        DateTime?
+  approvedBy        String?
   terminationReason String?
   terminationDate   DateTime?
+  reviewComments    String?
+  submissionDate    DateTime?
 
   // Relations
   owner             User          @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
@@ -463,6 +490,7 @@ model Project {
   agreements        Agreement[]
   workSessions      WorkSession[]
   investments       Investment[]  @relation("InvestmentProject")
+  approvals         ProjectApproval[]
 
   // Timestamps
   createdAt         DateTime      @default(now())
@@ -915,10 +943,19 @@ model Job {
   published   Boolean        @default(false)
   publishedAt DateTime?
 
+  // Approval fields
+  approvalStatus    JobApprovalStatus @default(DRAFT)
+  approvedAt        DateTime?
+  approvedBy        String?
+  rejectionReason   String?
+  reviewComments    String?
+  submissionDate    DateTime?
+
   // Relations
   user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   business    Business?       @relation("BusinessJobs", fields: [businessId], references: [id], onDelete: Cascade)
   applications JobApplication[]
+  approvals   JobApproval[]
 
   // Timestamps
   createdAt   DateTime       @default(now())
@@ -1086,4 +1123,50 @@ model CollaborationRequest {
   @@index([toId])
   @@index([status])
   @@index([type])
+}
+
+// ============================================
+// APPROVAL MODELS
+// ============================================
+
+model ProjectApproval {
+  id          String                @id @default(cuid())
+  projectId   String
+  adminId     String
+  status      ProjectApprovalStatus
+  comments    String?
+  reviewedAt  DateTime              @default(now())
+
+  // Relations
+  project     Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  admin       User                  @relation(fields: [adminId], references: [id])
+
+  // Timestamps
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@index([projectId])
+  @@index([adminId])
+  @@index([status])
+}
+
+model JobApproval {
+  id          String              @id @default(cuid())
+  jobId       String
+  adminId     String
+  status      JobApprovalStatus
+  comments    String?
+  reviewedAt  DateTime            @default(now())
+
+  // Relations
+  job         Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  admin       User                @relation(fields: [adminId], references: [id])
+
+  // Timestamps
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([jobId])
+  @@index([adminId])
+  @@index([status])
 }

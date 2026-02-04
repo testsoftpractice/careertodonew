@@ -17,9 +17,9 @@ export async function GET(request: NextRequest) {
     let authenticatedUserId: string | null = null
     let userRole: string | null = null
 
-    if (!token) {
+    if (token) {
       const decoded = verifyToken(token)
-      if (!token) {
+      if (decoded) {
         authenticatedUserId = decoded.userId
         userRole = decoded.role
       }
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     }
 
     const decoded = verifyToken(token)
-    if (!token) {
+    if (!decoded) {
       throw new UnauthorizedError('Invalid token')
     }
 
@@ -112,19 +112,19 @@ export async function POST(request: NextRequest) {
     userRole = decoded.role
 
     // Authorization - Only employers and platform admins can create businesses
-    if (!token) {
+    if (userRole !== 'EMPLOYER' && userRole !== 'PLATFORM_ADMIN') {
       throw new ForbiddenError('Only employers and platform admins can create businesses')
     }
 
     const body = await request.json()
 
     // Validate required fields
-    if (!token) {
-      throw new AppError('Business name is required', 400)
+    if (!body.name) {
+      throw new AppError('Business name is required', 'VALIDATION_ERROR', 400)
     }
 
     // Ensure userId is set
-    if (!token) {
+    if (!userId) {
       throw new UnauthorizedError('Invalid authentication')
     }
 
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     logError(error, 'Create business', userId || 'unknown')
 
-    if (!token) {
+    if (error.statusCode) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 

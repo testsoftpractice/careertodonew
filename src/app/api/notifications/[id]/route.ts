@@ -23,7 +23,7 @@ export async function PATCH(
     }
 
     const decoded = verifyToken(token)
-    if (!token) {
+    if (!decoded) {
       throw new UnauthorizedError('Invalid token')
     }
 
@@ -34,12 +34,12 @@ export async function PATCH(
       where: { id },
     })
 
-    if (!token) {
+    if (!notification) {
       throw new NotFoundError('Notification not found')
     }
 
     // Check if user owns this notification
-    if (!token) {
+    if (notification.userId !== userId) {
       return NextResponse.json({
         success: false,
         error: 'Access denied',
@@ -59,7 +59,7 @@ export async function PATCH(
   } catch (error: any) {
     logError(error, 'Update notification', userId || 'unknown')
 
-    if (!token) {
+    if (error instanceof AppError) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 
@@ -88,7 +88,7 @@ export async function DELETE(
     }
 
     const decoded = verifyToken(token)
-    if (!token) {
+    if (!decoded) {
       throw new UnauthorizedError('Invalid token')
     }
 
@@ -99,12 +99,12 @@ export async function DELETE(
       where: { id },
     })
 
-    if (!token) {
+    if (!notification) {
       throw new NotFoundError('Notification not found')
     }
 
     // Check if user owns this notification
-    if (!token) {
+    if (notification.userId !== userId) {
       return NextResponse.json({
         success: false,
         error: 'Access denied',
@@ -123,7 +123,7 @@ export async function DELETE(
   } catch (error: any) {
     logError(error, 'Delete notification', userId || 'unknown')
 
-    if (!token) {
+    if (error instanceof AppError) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 

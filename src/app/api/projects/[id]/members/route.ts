@@ -156,7 +156,7 @@ export async function POST(
       },
     })
   } catch (error) {
-    if (!searchParams) {
+    if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Add team member error:', error)

@@ -17,17 +17,17 @@ export async function GET(request: NextRequest) {
 
     const decoded = verifyToken(token)
 
-    if (!token) {
+    if (!decoded) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
         { status: 401 }
       )
     }
 
-    // Get potential mentors (users with MENTOR role or high scores)
+    // Get potential mentors (users with high scores and admin roles)
     const potentialMentors = await db.user.findMany({
       where: {
-        role: { in: ['MENTOR', 'UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'] }
+        role: { in: ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'] }
       },
       select: {
         id: true,
@@ -46,19 +46,18 @@ export async function GET(request: NextRequest) {
 
     // Transform to mentor format
     const mentors = potentialMentors.map(user => {
-      const avgScore = (
-        (user.executionScore +
-         user.collaborationScore +
-         user.leadershipScore +
-         user.ethicsScore +
-         user.reliabilityScore) / 5
-      )
+      const executionScore = user.executionScore || 0
+      const collaborationScore = user.collaborationScore || 0
+      const leadershipScore = user.leadershipScore || 0
+      const ethicsScore = user.ethicsScore || 0
+      const reliabilityScore = user.reliabilityScore || 0
+      const avgScore = (executionScore + collaborationScore + leadershipScore + ethicsScore + reliabilityScore) / 5
 
       return {
         id: user.id,
         name: user.name,
         avatar: user.avatar,
-        title: user.role === 'MENTOR' ? 'Industry Mentor' : 'Academic Mentor',
+        title: user.role === 'UNIVERSITY_ADMIN' ? 'Academic Mentor' : 'Platform Mentor',
         company: 'CareerToDone Network',
         expertise: ['Project Management', 'Career Guidance', 'Technical Skills', 'Leadership'].slice(0, Math.floor(Math.random() * 3) + 1),
         availability: ['available', 'busy', 'offline'][Math.floor(Math.random() * 3)] as any,

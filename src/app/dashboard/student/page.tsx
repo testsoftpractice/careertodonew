@@ -179,19 +179,301 @@ function DashboardContent({ user }: { user: any }) {
     }
   }, [timerRunning])
 
-  // Auto-save timer every 30 seconds
-  useEffect(() => {
-    if (!timerRunning || !currentWorkSessionId) return
+  const fetchStats = useCallback(async () => {
+    if (!user) return
 
-    const saveInterval = setInterval(async () => {
-      if (selectedTaskForTimer && timerSeconds > 0) {
-        await saveTimeEntry(false) // Save without stopping
+    try {
+      setLoading(prev => ({ ...prev, stats: true }))
+      const response = await authFetch(`/api/dashboard/student/stats?userId=${user.id}`)
+
+      // Check if response is ok before parsing
+      if (!response.ok) {
+        console.error('Fetch stats error: Response not ok', response.status)
+        return
       }
-    }, 30000) // Save every 30 seconds
 
-    return () => clearInterval(saveInterval)
-  }, [timerRunning, currentWorkSessionId, selectedTaskForTimer, timerSeconds])
+      const text = await response.text()
 
+      // Check if response is empty
+      if (!text || text.trim() === '') {
+        console.error('Fetch stats error: Empty response')
+        return
+      }
+
+      const data = JSON.parse(text)
+
+      if (data.success) {
+        setStats(data.data)
+      }
+    } catch (error) {
+      console.error('Fetch stats error:', error)
+    } finally {
+      setLoading(prev => ({ ...prev, stats: false }))
+    }
+  }, [user?.id])
+
+  const fetchProjects = useCallback(async () => {
+    if (!user) return
+
+    try {
+      setLoading(prev => ({ ...prev, projects: true }))
+      const response = await authFetch(`/api/projects?ownerId=${user.id}`)
+
+      // Check if response is ok before parsing
+      if (!response.ok) {
+        console.error('Fetch projects error: Response not ok', response.status)
+        return
+      }
+
+      const text = await response.text()
+
+      // Check if response is empty
+      if (!text || text.trim() === '') {
+        console.error('Fetch projects error: Empty response')
+        return
+      }
+
+      const data = JSON.parse(text)
+
+      if (data.success) {
+        setProjects(data.data || [])
+      }
+    } catch (error) {
+      console.error('Fetch projects error:', error)
+    } finally {
+      setLoading(prev => ({ ...prev, projects: false }))
+    }
+  }, [user?.id])
+
+  const fetchTasks = useCallback(async () => {
+    if (!user) return
+
+    try {
+      setLoading(prev => ({ ...prev, tasks: true }))
+
+      // Fetch both personal tasks and assigned project tasks
+      const [personalResponse, projectResponse] = await Promise.all([
+        authFetch(`/api/tasks/personal?userId=${user.id}`),
+        authFetch(`/api/tasks?assigneeId=${user.id}`),
+      ])
+
+      // Check responses before parsing
+      if (!personalResponse.ok || !projectResponse.ok) {
+        console.error('Fetch tasks error: Response not ok')
+        return
+      }
+
+      const personalText = await personalResponse.text()
+      const projectText = await projectResponse.text()
+
+      // Check if responses are empty
+      if (!personalText || personalText.trim() === '' ||
+          !projectText || projectText.trim() === '') {
+        console.error('Fetch tasks error: Empty response')
+        return
+      }
+
+      const personalData = JSON.parse(personalText)
+      const projectData = JSON.parse(projectText)
+
+      // GET personal tasks returns { success: true, data: tasks[] }
+      setPersonalTasks(personalData.data || [])
+      setProjectTasks(projectData.data || [])
+      // Set combined tasks for backward compatibility
+      setTasks([...(personalData.data || []), ...(projectData.data || [])])
+    } catch (error) {
+      console.error('Fetch tasks error:', error)
+    } finally {
+      setLoading(prev => ({ ...prev, tasks: false }))
+    }
+  }, [user?.id])
+
+  const fetchPersonalTasks = useCallback(async () => {
+    if (!user) return
+
+    try {
+      setLoading(prev => ({ ...prev, tasks: true }))
+      const response = await authFetch(`/api/tasks/personal?userId=${user.id}`)
+
+      // Check if response is ok before parsing
+      if (!response.ok) {
+        console.error('Fetch personal tasks error: Response not ok', response.status)
+        return
+      }
+
+      const text = await response.text()
+
+      // Check if response is empty
+      if (!text || text.trim() === '') {
+        console.error('Fetch personal tasks error: Empty response')
+        return
+      }
+
+      const data = JSON.parse(text)
+
+      // GET personal tasks returns { success: true, data: tasks[] }
+      setPersonalTasks(data.data || [])
+      // Also update combined tasks
+      setTasks([...(data.data || []), ...projectTasks])
+    } catch (error) {
+      console.error('Fetch personal tasks error:', error)
+    } finally {
+      setLoading(prev => ({ ...prev, tasks: false }))
+    }
+  }, [user?.id, projectTasks])
+
+  const fetchProjectTasks = useCallback(async (projectId: string) => {
+    if (!user) return
+
+    try {
+      setLoading(prev => ({ ...prev, tasks: true }))
+      const response = await authFetch(`/api/tasks?projectId=${projectId}`)
+
+      // Check if response is ok before parsing
+      if (!response.ok) {
+        console.error('Fetch project tasks error: Response not ok', response.status)
+        return
+      }
+
+      const text = await response.text()
+
+      // Check if response is empty
+      if (!text || text.trim() === '') {
+        console.error('Fetch project tasks error: Empty response')
+        return
+      }
+
+      const data = JSON.parse(text)
+
+      setProjectTasks(data.data || [])
+    } catch (error) {
+      console.error('Fetch project tasks error:', error)
+    } finally {
+      setLoading(prev => ({ ...prev, tasks: false }))
+    }
+  }, [user?.id])
+
+  const fetchAvailableProjects = useCallback(async () => {
+    if (!user) return
+
+    try {
+      const response = await authFetch('/api/projects')
+
+      // Check if response is ok before parsing
+      if (!response.ok) {
+        console.error('Fetch available projects error: Response not ok', response.status)
+        return
+      }
+
+      const text = await response.text()
+
+      // Check if response is empty
+      if (!text || text.trim() === '') {
+        console.error('Fetch available projects error: Empty response')
+        return
+      }
+
+      const data = JSON.parse(text)
+
+      if (data.success) {
+        setAvailableProjects(data.data || [])
+      }
+    } catch (error) {
+      console.error('Fetch projects error:', error)
+    }
+  }, [user?.id])
+
+  const fetchTimeEntries = useCallback(async () => {
+    if (!user) return
+
+    try {
+      const response = await authFetch(`/api/time-entries?userId=${user.id}`)
+
+      // Check if response is ok before parsing
+      if (!response.ok) {
+        console.error('Fetch time entries error: Response not ok', response.status)
+        return
+      }
+
+      const text = await response.text()
+
+      // Check if response is empty
+      if (!text || text.trim() === '') {
+        console.error('Fetch time entries error: Empty response')
+        return
+      }
+
+      const data = JSON.parse(text)
+
+      if (data.success) {
+        setTimeEntries(data.data || [])
+      }
+    } catch (error) {
+      console.error('Fetch time entries error:', error)
+    }
+  }, [user?.id])
+
+  const fetchTimeSummary = useCallback(async () => {
+    if (!user) return
+
+    try {
+      const response = await authFetch(`/api/time-summary?userId=${user.id}`)
+
+      // Check if response is ok before parsing
+      if (!response.ok) {
+        console.error('Fetch time summary error: Response not ok', response.status)
+        return
+      }
+
+      const text = await response.text()
+
+      // Check if response is empty
+      if (!text || text.trim() === '') {
+        console.error('Fetch time summary error: Empty response')
+        return
+      }
+
+      const data = JSON.parse(text)
+
+      if (data.success) {
+        setTimeSummary(data.data)
+      }
+    } catch (error) {
+      console.error('Fetch time summary error:', error)
+    }
+  }, [user?.id])
+
+  const fetchLeaveRequests = useCallback(async () => {
+    if (!user) return
+
+    try {
+      const response = await authFetch(`/api/leave-requests?userId=${user.id}`)
+
+      // Check if response is ok before parsing
+      if (!response.ok) {
+        console.error('Fetch leave requests error: Response not ok', response.status)
+        return
+      }
+
+      const text = await response.text()
+
+      // Check if response is empty
+      if (!text || text.trim() === '') {
+        console.error('Fetch leave requests error: Empty response')
+        return
+      }
+
+      const data = JSON.parse(text)
+
+      if (data.success) {
+        setLeaveRequests(data.data || [])
+      }
+    } catch (error) {
+      console.error('Fetch leave requests error:', error)
+    }
+  }, [user?.id])
+
+  // Fetch data based on active tab
   useEffect(() => {
     if (activeTab === 'overview') {
       fetchStats()
@@ -219,163 +501,6 @@ function DashboardContent({ user }: { user: any }) {
       fetchProjectTasks(selectedProject.id)
     }
   }, [viewType, selectedProject, activeTab, fetchProjectTasks])
-
-  const fetchStats = useCallback(async () => {
-    if (!user) return
-
-    try {
-      setLoading(prev => ({ ...prev, stats: true }))
-      const response = await authFetch(`/api/dashboard/student/stats?userId=${user.id}`)
-      const data = await response.json()
-
-      if (data.success) {
-        setStats(data.data)
-      }
-    } catch (error) {
-      console.error('Fetch stats error:', error)
-    } finally {
-      setLoading(prev => ({ ...prev, stats: false }))
-    }
-  }, [user?.id])
-
-  const fetchProjects = useCallback(async () => {
-    if (!user) return
-
-    try {
-      setLoading(prev => ({ ...prev, projects: true }))
-      const response = await authFetch(`/api/projects?ownerId=${user.id}`)
-      const data = await response.json()
-
-      if (data.success) {
-        setProjects(data.data || [])
-      }
-    } catch (error) {
-      console.error('Fetch projects error:', error)
-    } finally {
-      setLoading(prev => ({ ...prev, projects: false }))
-    }
-  }, [user?.id])
-
-  const fetchTasks = useCallback(async () => {
-    if (!user) return
-
-    try {
-      setLoading(prev => ({ ...prev, tasks: true }))
-
-      // Fetch both personal tasks and assigned project tasks
-      const [personalResponse, projectResponse] = await Promise.all([
-        authFetch(`/api/tasks/personal?userId=${user.id}`),
-        authFetch(`/api/tasks?assigneeId=${user.id}`),
-      ])
-
-      const personalData = await personalResponse.json()
-      const projectData = await projectResponse.json()
-
-      // GET personal tasks returns { success: true, data: tasks[] }
-      setPersonalTasks(personalData.data || [])
-      setProjectTasks(projectData.data || [])
-      // Set combined tasks for backward compatibility
-      setTasks([...(personalData.data || []), ...(projectData.data || [])])
-    } catch (error) {
-      console.error('Fetch tasks error:', error)
-    } finally {
-      setLoading(prev => ({ ...prev, tasks: false }))
-    }
-  }, [user?.id])
-
-  const fetchPersonalTasks = useCallback(async () => {
-    if (!user) return
-
-    try {
-      setLoading(prev => ({ ...prev, tasks: true }))
-      const response = await authFetch(`/api/tasks/personal?userId=${user.id}`)
-      const data = await response.json()
-      // GET personal tasks returns { success: true, data: tasks[] }
-      setPersonalTasks(data.data || [])
-      // Also update combined tasks
-      setTasks([...(data.data || []), ...projectTasks])
-    } catch (error) {
-      console.error('Fetch personal tasks error:', error)
-    } finally {
-      setLoading(prev => ({ ...prev, tasks: false }))
-    }
-  }, [user?.id, projectTasks])
-
-  const fetchProjectTasks = useCallback(async (projectId: string) => {
-    if (!user) return
-
-    try {
-      setLoading(prev => ({ ...prev, tasks: true }))
-      const response = await authFetch(`/api/tasks?projectId=${projectId}`)
-      if (!response.ok) throw new Error('Failed to fetch project tasks')
-      const data = await response.json()
-      setProjectTasks(data.data || [])
-    } catch (error) {
-      console.error('Fetch project tasks error:', error)
-    } finally {
-      setLoading(prev => ({ ...prev, tasks: false }))
-    }
-  }, [user?.id])
-
-  const fetchAvailableProjects = useCallback(async () => {
-    if (!user) return
-
-    try {
-      const response = await authFetch('/api/projects')
-      const data = await response.json()
-
-      if (data.success) {
-        setAvailableProjects(data.data || [])
-      }
-    } catch (error) {
-      console.error('Fetch projects error:', error)
-    }
-  }, [user?.id])
-
-  const fetchTimeEntries = useCallback(async () => {
-    if (!user) return
-
-    try {
-      const response = await authFetch(`/api/time-entries?userId=${user.id}`)
-      const data = await response.json()
-
-      if (data.success) {
-        setTimeEntries(data.data || [])
-      }
-    } catch (error) {
-      console.error('Fetch time entries error:', error)
-    }
-  }, [user?.id])
-
-  const fetchTimeSummary = useCallback(async () => {
-    if (!user) return
-
-    try {
-      const response = await authFetch(`/api/time-summary?userId=${user.id}`)
-      const data = await response.json()
-
-      if (data.success) {
-        setTimeSummary(data.data)
-      }
-    } catch (error) {
-      console.error('Fetch time summary error:', error)
-    }
-  }, [user?.id])
-
-  const fetchLeaveRequests = useCallback(async () => {
-    if (!user) return
-
-    try {
-      const response = await authFetch(`/api/leave-requests?userId=${user.id}`)
-      const data = await response.json()
-
-      if (data.success) {
-        setLeaveRequests(data.data || [])
-      }
-    } catch (error) {
-      console.error('Fetch leave requests error:', error)
-    }
-  }, [user?.id])
 
   const handleLogout = async () => {
     const success = await logoutAndRedirect()
@@ -546,6 +671,19 @@ function DashboardContent({ user }: { user: any }) {
     const secs = seconds % 60
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
+
+  // Auto-save timer every 30 seconds
+  useEffect(() => {
+    if (!timerRunning || !currentWorkSessionId) return
+
+    const saveInterval = setInterval(async () => {
+      if (selectedTaskForTimer && timerSeconds > 0) {
+        await saveTimeEntry(false) // Save without stopping
+      }
+    }, 30000) // Save every 30 seconds
+
+    return () => clearInterval(saveInterval)
+  }, [timerRunning, currentWorkSessionId, selectedTaskForTimer, timerSeconds])
 
   // Leave request functions
   const handleCreateLeaveRequest = async () => {

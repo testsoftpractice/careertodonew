@@ -6,22 +6,11 @@ import { db } from '@/lib/db'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const universityId = searchParams.universityId as string | undefined
+    const universityId = searchParams.get('universityId') as string | undefined
 
     // Calculate performance metrics for all universities
     const universities = await db.university.findMany({
       include: {
-        students: {
-          include: {
-            projectMemberships: {
-              include: {
-                project: true,
-              },
-            },
-            pointTransactions: true,
-            receivedRatings: true,
-          },
-        },
         projects: {
           include: {
             owner: {
@@ -44,6 +33,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate metrics for each university
     const universitiesWithMetrics = universities.map((university: any) => {
+      // Get students for this university
       const students = university.students || []
 
       // Student Metrics
@@ -59,11 +49,11 @@ export async function GET(request: NextRequest) {
       students.forEach((student) => {
         // Reputation scores
         totalReputation += (
-          student.executionScore +
-          student.collaborationScore +
-          student.leadershipScore +
-          student.ethicsScore +
-          student.reliabilityScore
+          (student.executionScore || 0) +
+          (student.collaborationScore || 0) +
+          (student.leadershipScore || 0) +
+          (student.ethicsScore || 0) +
+          (student.reliabilityScore || 0)
         ) / 5
 
         // Total points
@@ -140,10 +130,10 @@ export async function GET(request: NextRequest) {
     })
 
     // If specific university requested, return just that university
-    if (!token) {
+    if (universityId) {
       const specificUniversity = universitiesWithMetrics.find((u: any) => u.id === universityId)
-      
-      if (!token) {
+
+      if (!specificUniversity) {
         return NextResponse.json({
           success: false,
           error: 'University not found',
@@ -154,7 +144,7 @@ export async function GET(request: NextRequest) {
       const topStudents = await db.user.findMany({
         where: {
           universityId,
-          role: { in: ['STUDENT', 'MENTOR'] },
+          role: 'STUDENT',
         },
         select: {
           id: true,
@@ -178,11 +168,11 @@ export async function GET(request: NextRequest) {
           topStudents: topStudents.map((student: any) => ({
             ...student,
             overallReputation: (
-              student.executionScore +
-              student.collaborationScore +
-              student.leadershipScore +
-              student.ethicsScore +
-              student.reliabilityScore
+              (student.executionScore || 0) +
+              (student.collaborationScore || 0) +
+              (student.leadershipScore || 0) +
+              (student.ethicsScore || 0) +
+              (student.reliabilityScore || 0)
             ) / 5,
           })),
         },

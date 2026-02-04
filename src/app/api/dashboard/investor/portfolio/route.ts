@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 
 // GET /api/dashboard/investor/portfolio - Get investor's portfolio overview
 export async function GET(request: NextRequest) {
-  const auth = await requireAuth(request, ['INVESTOR', 'PLATFORM_ADMIN'])
+  const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
   const user = auth.user
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate portfolio stats
-    const totalInvested = investments.reduce((inv, sum) => sum + (inv.amount || 0), 0)
+    const totalInvested = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0)
     const activeInvestments = investments.filter(i => i.status === 'ACTIVE').length
     const completedInvestments = investments.filter(i => i.status === 'COMPLETED').length
 

@@ -84,11 +84,11 @@ export async function POST(
     console.error("Approve project error:", error)
 
     // Handle AuthError
-    if (!searchParams) {
+    if (error instanceof Error) {
       return NextResponse.json({
         success: false,
         error: error.message || 'Authentication required'
-      }, { status: error.statusCode || 401 })
+      }, { status: 401 })
     }
 
     return NextResponse.json({

@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
     console.log('[SIGNUP] Password hashed successfully')
 
     // Handle university association
-    let finalUniversityId = null
+    let finalUniversityId: string | null = null
 
     if (universityId) {
       console.log('[SIGNUP] Looking up university with ID:', universityId)
@@ -158,14 +158,14 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      finalUniversityId = universityData.id
+      finalUniversityId = universityData.id ?? null
       console.log('[SIGNUP] University found:', universityData.name)
 
       // If UNIVERSITY_ADMIN and university already has an admin, reject
       if (normalizedRole === 'UNIVERSITY_ADMIN') {
         const existingAdmin = await db.user.findFirst({
           where: {
-            universityId: finalUniversityId,
+            universityId: finalUniversityId!,
             role: UserRole.UNIVERSITY_ADMIN,
             verificationStatus: { in: [VerificationStatus.PENDING, VerificationStatus.UNDER_REVIEW, VerificationStatus.VERIFIED] }
           }
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
         // Update university status to UNDER_REVIEW when claimed
         console.log('[SIGNUP] Updating university status to UNDER_REVIEW')
         await db.university.update({
-          where: { id: finalUniversityId },
+          where: { id: finalUniversityId! },
           data: { verificationStatus: VerificationStatus.UNDER_REVIEW }
         })
       }

@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     // Get student's tasks as schedule items (mock schedule)
     const tasks = await db.task.findMany({
-      where: { assigneeId: decoded.userId },
+      where: { assignedTo: decoded.userId },
       include: {
         project: {
           select: { name: true }
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
       return {
         id: task.id,
-        courseCode: `CRS${task.project?.name.substring(0, 3).toUpperCase()}${index}`,
+        courseCode: `CRS${task.projectId?.substring(0, 3).toUpperCase()}${index}`,
         courseName: task.project?.name || 'Project Work',
         day,
         startTime: dueDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),

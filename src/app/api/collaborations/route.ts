@@ -8,6 +8,7 @@ import { unauthorized, forbidden } from '@/lib/api-response'
 
 // Calculate match score between two users based on skills and reputation
 interface UserWithSkills {
+  id: string
   executionScore: number | null
   collaborationScore: number | null
   leadershipScore: number | null
@@ -73,14 +74,22 @@ export async function GET(request: NextRequest) {
       const limit = parseInt(searchParams.get('limit') || '20')
 
       // Fetch requesting user with their skills
+      const currentUserId = userId || (authResult.user?.id)
+      if (!currentUserId) {
+        return NextResponse.json({
+          success: false,
+          error: 'User ID required',
+        }, { status: 400 })
+      }
+
       const currentUser = await db.user.findUnique({
-        where: { id: userId || authResult.user.id },
+        where: { id: currentUserId },
         include: {
           skills: true,
           university: true,
           sentCollaborationRequests: {
             where: {
-              toId: userId || authResult.user.id,
+              toId: currentUserId,
               status: 'PENDING',
             },
           },
@@ -97,7 +106,7 @@ export async function GET(request: NextRequest) {
       // Find potential collaborators
       const users = await db.user.findMany({
         where: {
-          id: { not: userId || authResult.user.id },
+          id: { not: currentUserId },
           role: { in: ['STUDENT', 'INVESTOR'] },
         },
         include: {
@@ -110,6 +119,7 @@ export async function GET(request: NextRequest) {
       // Calculate match scores
       const usersWithMatchScore = users.map((user: UserWithSkills) => ({
         ...user,
+        id: user.id,
         matchScore: calculateMatchScore(currentUser, user),
         hasPendingRequest: (currentUser.sentCollaborationRequests || []).some(r => r.toId === user.id),
       }))
@@ -131,11 +141,19 @@ export async function GET(request: NextRequest) {
       }
 
       const whereClause: Record<string, string | CollaborationStatus> = {}
+      const currentUserId = userId || (authResult.user?.id)
+
+      if (!currentUserId) {
+        return NextResponse.json({
+          success: false,
+          error: 'User ID required',
+        }, { status: 400 })
+      }
 
       if (direction === 'sent') {
-        whereClause.fromId = userId || authResult.user.id
+        whereClause.fromId = currentUserId
       } else if (direction === 'received') {
-        whereClause.toId = userId || authResult.user.id
+        whereClause.toId = currentUserId
       } else {
         return NextResponse.json({
           success: false,
@@ -196,15 +214,6 @@ export async function GET(request: NextRequest) {
                   level: true,
                 },
               },
-            },
-          },
-          project: {
-            select: {
-              id: true,
-              title: true,
-              category: true,
-              status: true,
-              ownerId: true,
             },
           },
         },
@@ -287,7 +296,6 @@ export async function POST(request: NextRequest) {
           toId,
           projectId,
           type: type as CollaborationType,
-          role,
           message,
           proposedContribution,
           status: 'PENDING',
@@ -393,7 +401,6 @@ export async function PATCH(request: NextRequest) {
       include: {
         from: true,
         to: true,
-        project: true,
       },
     })
 
@@ -442,7 +449,7 @@ export async function PATCH(request: NextRequest) {
               data: {
                 projectId: collabRequest.projectId,
                 userId: actingUserId,
-                role: collabRequest.role || 'TEAM_MEMBER',
+                role: 'TEAM_MEMBER',
                 joinedAt: new Date(),
               },
             })

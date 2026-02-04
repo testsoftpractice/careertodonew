@@ -1,0 +1,185 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+import { requireAuth, getUserFromRequest } from '@/lib/api/auth-middleware'
+import { JobApprovalStatus } from '@prisma/client'
+import { successResponse, errorResponse, forbidden, notFound } from '@/lib/api-response'
+
+// GET /api/admin/approvals/jobs/[id] - Get job details for review
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const auth = requireAuth(request)
+    if ('status' in auth) return auth
+
+    const user = getUserFromRequest(request)
+    if (!user || user.role !== 'PLATFORM_ADMIN') {
+      return forbidden('Only platform admins can access this endpoint')
+    }
+
+    const { id } = await params
+
+    // Get job with full details
+    const job = await db.job.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+            role: true,
+            bio: true,
+            location: true,
+            linkedinUrl: true,
+          },
+        },
+        business: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            industry: true,
+            location: true,
+            website: true,
+            size: true,
+          },
+        },
+        applications: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+                role: true,
+                university: {
+                  select: {
+                    id: true,
+                    name: true,
+                    code: true,
+                  },
+                },
+                major: true,
+                graduationYear: true,
+                totalPoints: true,
+              },
+            },
+          },
+          take: 20,
+          orderBy: { createdAt: 'desc' },
+        },
+        approvals: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            admin: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            applications: true,
+          },
+        },
+      },
+    })
+
+    if (!job) {
+      return notFound('Job not found')
+    }
+
+    return successResponse(job)
+  } catch (error: any) {
+    console.error('Get job for approval error:', error)
+    return errorResponse('Failed to fetch job details', 500)
+  }
+}
+// PATCH /api/admin/approvals/jobs/[id] - Reject a job
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const auth = requireAuth(request)
+    if ('status' in auth) return auth
+
+    const user = getUserFromRequest(request)
+    if (!user || user.role !== 'PLATFORM_ADMIN') {
+      return forbidden('Only platform admins can reject jobs')
+    }
+
+    const { id } = await params
+    const body = await request.json()
+    const { rejectionReason, reviewComments } = body
+
+    if (!rejectionReason) {
+      return errorResponse('Rejection reason is required', 400)
+    }
+
+    // Check if job exists
+    const job = await db.job.findUnique({
+      where: { id },
+      include: {
+        business: true,
+      },
+    })
+
+    if (!job) {
+      return notFound('Job not found')
+    }
+
+    // Update job approval status
+    const updatedJob = await db.job.update({
+      where: { id },
+      data: {
+        approvalStatus: 'REJECTED',
+        rejectionReason: rejectionReason,
+        reviewComments: reviewComments || null,
+        status: 'CLOSED',
+      },
+    })
+
+    // Create approval record
+    const approval = await db.jobApproval.create({
+      data: {
+        jobId: id,
+        adminId: user.id,
+        status: 'REJECTED',
+        comments: `${rejectionReason}\n\n${reviewComments || ''}`.trim(),
+      },
+    })
+
+    // Create notification for business
+    if (job.businessId && job.business) {
+      await db.notification.create({
+        data: {
+          userId: job.business.userId,
+          type: 'JOB_APPROVAL',
+          title: '❌ Job Not Approved',
+          message: `Your job "${job.title}" was not approved. Reason: ${rejectionReason}`,
+          link: `/jobs/${id}`,
+        },
+      })
+    }
+
+    return successResponse(
+      {
+        job: updatedJob,
+        approval,
+      },
+      'Job rejected successfully'
+    )
+  } catch (error: any) {
+    console.error('Reject job error:', error)
+    return errorResponse('Failed to reject job', 500)
+  }
+}

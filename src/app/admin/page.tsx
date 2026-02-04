@@ -24,6 +24,7 @@ import {
   ArrowRight,
   ShieldCheck,
   Activity,
+  Briefcase,
 } from 'lucide-react'
 import Link from 'next/link'
 import { logoutAndRedirect, adminLogoutAndRedirect } from '@/lib/utils/logout'
@@ -36,6 +37,20 @@ export default function AdminPage() {
   }
 
   const adminModules = [
+    {
+      title: 'Project Approvals',
+      description: 'Review and approve project submissions',
+      icon: CheckCircle2,
+      href: '/admin/approvals/projects',
+      color: 'from-amber-500 to-amber-600',
+    },
+    {
+      title: 'Job Approvals',
+      description: 'Review and approve job postings',
+      icon: Briefcase,
+      href: '/admin/approvals/jobs',
+      color: 'from-orange-500 to-orange-600',
+    },
     {
       title: 'User Management',
       description: 'Manage all platform users and roles',
@@ -69,7 +84,7 @@ export default function AdminPage() {
       description: 'Manage platform governance and proposals',
       icon: ShieldCheck,
       href: '/admin/governance',
-      color: 'from-amber-500 to-amber-600',
+      color: 'from-indigo-500 to-indigo-600',
     },
     {
       title: 'Projects',
@@ -83,14 +98,14 @@ export default function AdminPage() {
       description: 'View platform statistics and metrics',
       icon: BarChart3,
       href: '/admin/governance',
-      color: 'from-indigo-500 to-indigo-600',
+      color: 'from-teal-500 to-teal-600',
     },
     {
       title: 'Settings',
       description: 'Configure platform settings and preferences',
       icon: Settings,
       href: '/admin/settings',
-      color: 'from-teal-500 to-teal-600',
+      color: 'from-slate-500 to-slate-600',
     },
     {
       title: 'Profile',
@@ -153,15 +168,39 @@ export default function AdminPage() {
           </Card>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+            <Link href="/admin/approvals/projects">
+              <Card className="bg-gradient-to-br from-amber-500/10 to-amber-600/10 dark:from-amber-500/20 dark:to-amber-600/20 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-amber-200 dark:border-amber-800 cursor-pointer h-full">
+                <CardContent className="p-4 sm:p-6 text-center">
+                  <div className="bg-gradient-to-br from-amber-500 to-amber-600 text-white p-3 rounded-xl mb-3">
+                    <Database className="h-6 w-6 sm:h-8 sm:w-8" />
+                  </div>
+                  <div className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400">Project Approvals</div>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Review pending projects</p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/admin/approvals/jobs">
+              <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 dark:from-orange-500/20 dark:to-orange-600/20 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-orange-200 dark:border-orange-800 cursor-pointer h-full">
+                <CardContent className="p-4 sm:p-6 text-center">
+                  <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-3 rounded-xl mb-3">
+                    <Briefcase className="h-6 w-6 sm:h-8 sm:w-8" />
+                  </div>
+                  <div className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400">Job Approvals</div>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Review pending jobs</p>
+                </CardContent>
+              </Card>
+            </Link>
+
             <Link href="/admin/users">
               <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
                 <CardContent className="p-4 sm:p-6 text-center">
                   <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-3 rounded-xl mb-3">
-                    <Users className="h-8 w-8" />
+                    <Users className="h-6 w-6 sm:h-8 sm:w-8" />
                   </div>
-                  <div className="text-2xl sm:text-3xl font-bold mt-2">Active Users</div>
-                  <p className="text-sm text-muted-foreground">Total registered users</p>
+                  <div className="text-xl sm:text-2xl font-bold mt-2">Active Users</div>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Total registered users</p>
                 </CardContent>
               </Card>
             </Link>
@@ -170,22 +209,10 @@ export default function AdminPage() {
               <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
                 <CardContent className="p-4 sm:p-6 text-center">
                   <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-3 rounded-xl mb-3">
-                    <Building2 className="h-8 w-8" />
+                    <Building2 className="h-6 w-6 sm:h-8 sm:w-8" />
                   </div>
-                  <div className="text-2xl sm:text-3xl font-bold mt-2">Universities</div>
-                  <p className="text-sm text-muted-foreground">Registered institutions</p>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href="/admin/projects">
-              <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
-                <CardContent className="p-4 sm:p-6 text-center">
-                  <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-3 rounded-xl mb-3">
-                    <Database className="h-8 w-8" />
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-bold mt-2">Projects</div>
-                  <p className="text-sm text-muted-foreground">Active projects</p>
+                  <div className="text-xl sm:text-2xl font-bold mt-2">Universities</div>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Registered institutions</p>
                 </CardContent>
               </Card>
             </Link>
@@ -194,22 +221,10 @@ export default function AdminPage() {
               <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
                 <CardContent className="p-4 sm:p-6 text-center">
                   <div className="bg-gradient-to-br from-amber-500 to-amber-600 text-white p-3 rounded-xl mb-3">
-                    <Activity className="h-8 w-8" />
+                    <Activity className="h-6 w-6 sm:h-8 sm:w-8" />
                   </div>
-                  <div className="text-2xl sm:text-3xl font-bold mt-2">24h Activity</div>
-                  <p className="text-sm text-muted-foreground">Platform engagement</p>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href="/admin/leaderboards">
-              <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
-                <CardContent className="p-4 sm:p-6 text-center">
-                  <div className="bg-gradient-to-br from-rose-500 to-rose-600 text-white p-3 rounded-xl mb-3">
-                    <TrendingUp className="h-8 w-8" />
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-bold mt-2">Leaderboards</div>
-                  <p className="text-sm text-muted-foreground">View rankings</p>
+                  <div className="text-xl sm:text-2xl font-bold mt-2">24h Activity</div>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Platform engagement</p>
                 </CardContent>
               </Card>
             </Link>
@@ -250,6 +265,18 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <Link href="/admin/approvals/projects" className="block">
+                  <Button variant="outline" className="w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <Database className="h-4 w-4 mr-2" />
+                    Review Projects
+                  </Button>
+                </Link>
+                <Link href="/admin/approvals/jobs" className="block">
+                  <Button variant="outline" className="w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <Briefcase className="h-4 w-4 mr-2" />
+                    Review Jobs
+                  </Button>
+                </Link>
                 <Link href="/admin/users" className="block">
                   <Button variant="outline" className="w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-800">
                     <Users className="h-4 w-4 mr-2" />
@@ -260,18 +287,6 @@ export default function AdminPage() {
                   <Button variant="outline" className="w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-800">
                     <CheckCircle2 className="h-4 w-4 mr-2" />
                     View Audits
-                  </Button>
-                </Link>
-                <Link href="/admin/leaderboards" className="block">
-                  <Button variant="outline" className="w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-800">
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Leaderboards
-                  </Button>
-                </Link>
-                <Link href="/admin/settings" className="block">
-                  <Button variant="outline" className="w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-800">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Settings
                   </Button>
                 </Link>
               </div>

@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/api/auth-middleware'
+import { requireAuth, requireRole, getUserFromRequest } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
-import { BusinessVerificationStatus } from '@prisma/client'
+import { VerificationStatus } from '@prisma/client'
 
 // GET /api/employer/profile - Get employer profile
 export async function GET(request: NextRequest) {
-  const auth = await requireAuth(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
-  if ('status' in auth) return auth
+  const auth = requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
+  if (auth !== true) return auth
 
-  const user = auth.user
+  const user = getUserFromRequest(request)
 
-  if (!auth) {
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -31,14 +31,13 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Get employer's business
-    const business = await db.business.findFirst({
+    // Get employer's project
+    const project = await db.project.findFirst({
       where: { ownerId: user.id },
       include: {
         _count: {
           select: {
-            members: true,
-            projects: true
+            projectMembers: true,
           }
         }
       }
@@ -48,7 +47,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         ...employer,
-        business
+        project
       }
     })
   } catch (error) {
@@ -59,12 +58,12 @@ export async function GET(request: NextRequest) {
 
 // PATCH /api/employer/profile - Update employer profile
 export async function PATCH(request: NextRequest) {
-  const auth = await requireAuth(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
-  if ('status' in auth) return auth
+  const auth = requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
+  if (auth !== true) return auth
 
-  const user = auth.user
+  const user = getUserFromRequest(request)
 
-  if (!auth) {
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -94,37 +93,36 @@ export async function PATCH(request: NextRequest) {
       data: updateData
     })
 
-    // Update business if exists
-    if (!updatedUser) {
-      const businessUpdateData: any = {}
-      if (companyDescription) businessUpdateData.description = companyDescription
-      if (companyWebsite) businessUpdateData.website = companyWebsite
-      if (companySize) businessUpdateData.size = parseInt(companySize)
-      if (companyIndustry) businessUpdateData.industry = companyIndustry
+    // Update project if exists
+    const project = await db.project.findFirst({
+      where: { ownerId: user.id }
+    })
 
-      const business = await db.business.findFirst({
-        where: { ownerId: user.id }
+    if (project) {
+      const projectUpdateData: any = {}
+      if (companyDescription) projectUpdateData.description = companyDescription
+      if (companyWebsite) projectUpdateData.website = companyWebsite
+      if (companySize) projectUpdateData.size = parseInt(companySize)
+      if (companyIndustry) projectUpdateData.category = companyIndustry
+
+      await db.project.update({
+        where: { id: project.id },
+        data: projectUpdateData
       })
-
-      if (!business) {
-        await db.business.update({
-          where: { id: business.id },
-          data: businessUpdateData
-        })
-      } else {
-        // Create business if it doesn't exist
-        await db.business.create({
-          data: {
-            ownerId: user.id,
-            name: name || `${user.name}'s Business`,
-            description: companyDescription,
-            website: companyWebsite,
-            size: companySize ? parseInt(companySize) : 10,
-            industry: companyIndustry,
-            status: BusinessVerificationStatus.PENDING,
-          }
-        })
-      }
+    } else {
+      // Create project if it doesn't exist
+      await db.project.create({
+        data: {
+          ownerId: user.id,
+          name: name || `${user.name}'s Business`,
+          description: companyDescription,
+          website: companyWebsite,
+          size: companySize ? parseInt(companySize) : 10,
+          category: companyIndustry,
+          status: VerificationStatus.PENDING,
+          universityId: user.universityId,
+        }
+      })
     }
 
     return NextResponse.json({

@@ -1,0 +1,262 @@
+$ prisma generate && next build
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v6.19.2) to ./node_modules/@prisma/client in 301ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 11.9s
+  Skipping validation of types
+  Collecting page data using 3 workers ...
+JWT_SECRET environment variable is not set, using default for development
+[DB] Initializing Prisma Client...
+[DB] DATABASE_URL: SET
+[DB] DIRECT_URL: NOT SET
+[DB] Using datasource URL: file:/home/z/my-project/db/custom.db
+JWT_SECRET environment variable is not set, using default for development
+[DB] Initializing Prisma Client...
+[DB] DATABASE_URL: SET
+[DB] DIRECT_URL: NOT SET
+[DB] Using datasource URL: file:/home/z/my-project/db/custom.db
+[DB] Initializing Prisma Client...
+[DB] DATABASE_URL: SET
+[DB] DIRECT_URL: NOT SET
+[DB] Using datasource URL: file:/home/z/my-project/db/custom.db
+JWT_SECRET environment variable is not set, using default for development
+  Generating static pages using 3 workers (0/162) ...
+  Generating static pages using 3 workers (40/162) 
+  Generating static pages using 3 workers (80/162) 
+  Generating static pages using 3 workers (121/162) 
+✓ Generating static pages using 3 workers (162/162) in 1121.8ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /about
+├ ○ /admin
+├ ○ /admin/audit
+├ ○ /admin/compliance
+├ ○ /admin/content
+├ ○ /admin/governance
+├ ○ /admin/leaderboards
+├ ○ /admin/login
+├ ○ /admin/profile
+├ ○ /admin/projects
+├ ○ /admin/settings
+├ ○ /admin/universities
+├ ƒ /admin/universities/[id]
+├ ○ /admin/users
+├ ƒ /api
+├ ƒ /api/admin/audit
+├ ƒ /api/admin/compliance
+├ ƒ /api/admin/content
+├ ƒ /api/admin/governance/proposals
+├ ƒ /api/admin/login
+├ ƒ /api/admin/projects
+├ ƒ /api/admin/projects/[id]/approve
+├ ƒ /api/admin/settings
+├ ƒ /api/admin/stats
+├ ƒ /api/admin/universities
+├ ƒ /api/admin/universities/[id]
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/admin/validate
+├ ƒ /api/admin/verification/stats
+├ ƒ /api/admin/verification/users
+├ ƒ /api/admin/verification/users/[id]
+├ ƒ /api/admin/verify
+├ ƒ /api/agreements
+├ ƒ /api/audits
+├ ƒ /api/auth/forgot-password
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/auth/reset-password
+├ ƒ /api/auth/reset-password/validate-token
+├ ƒ /api/auth/signup
+├ ƒ /api/auth/validate
+├ ƒ /api/businesses
+├ ƒ /api/businesses/[id]
+├ ƒ /api/businesses/[id]/members
+├ ƒ /api/collaborations
+├ ƒ /api/conflicts
+├ ƒ /api/dashboard
+├ ƒ /api/dashboard/admin/platform
+├ ƒ /api/dashboard/admin/security
+├ ƒ /api/dashboard/admin/system
+├ ƒ /api/dashboard/admin/users
+├ ƒ /api/dashboard/admin/users/[id]
+├ ƒ /api/dashboard/admin/verifications
+├ ƒ /api/dashboard/admin/verifications/[id]
+├ ƒ /api/dashboard/employer/candidates
+├ ƒ /api/dashboard/employer/jobs
+├ ƒ /api/dashboard/employer/pipeline
+├ ƒ /api/dashboard/employer/stats
+├ ƒ /api/dashboard/employer/team
+├ ƒ /api/dashboard/investor/deals
+├ ƒ /api/dashboard/investor/financial
+├ ƒ /api/dashboard/investor/portfolio
+├ ƒ /api/dashboard/investor/startups
+├ ƒ /api/dashboard/investor/stats
+├ ƒ /api/dashboard/student/achievements
+├ ƒ /api/dashboard/student/courses
+├ ƒ /api/dashboard/student/deadlines
+├ ƒ /api/dashboard/student/grades
+├ ƒ /api/dashboard/student/mentors
+├ ƒ /api/dashboard/student/schedule
+├ ƒ /api/dashboard/student/stats
+├ ƒ /api/dashboard/student/study-time
+├ ƒ /api/dashboard/university
+├ ƒ /api/dashboard/university/activity
+├ ƒ /api/dashboard/university/approvals
+├ ƒ /api/dashboard/university/approvals/[id]
+├ ƒ /api/dashboard/university/departments
+├ ƒ /api/dashboard/university/funding
+├ ƒ /api/dashboard/university/pending-approvals
+├ ƒ /api/dashboard/university/performance
+├ ƒ /api/dashboard/university/projects
+├ ƒ /api/dashboard/university/research
+├ ƒ /api/dashboard/university/stats
+├ ƒ /api/dashboard/university/students
+├ ƒ /api/debug/env
+├ ƒ /api/education
+├ ƒ /api/employer/profile
+├ ƒ /api/experiences
+├ ƒ /api/experiences/[id]
+├ ƒ /api/governance/proposals
+├ ƒ /api/investments
+├ ƒ /api/investments/deals
+├ ƒ /api/investments/interest
+├ ƒ /api/investments/proposals
+├ ƒ /api/jobs
+├ ƒ /api/jobs/[id]
+├ ƒ /api/jobs/[id]/apply
+├ ƒ /api/leaderboards
+├ ƒ /api/leaderboards/universities
+├ ƒ /api/leave-requests
+├ ƒ /api/leave-requests/[id]
+├ ƒ /api/marketplace/projects
+├ ƒ /api/marketplace/search
+├ ƒ /api/milestones
+├ ƒ /api/milestones/[id]
+├ ƒ /api/needs
+├ ƒ /api/needs/[id]
+├ ƒ /api/needs/[id]/apply
+├ ƒ /api/notifications
+├ ƒ /api/notifications/[id]
+├ ƒ /api/permissions
+├ ƒ /api/points
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/departments
+├ ƒ /api/projects/[id]/lifecycle
+├ ƒ /api/projects/[id]/members
+├ ƒ /api/projects/[id]/milestones
+├ ƒ /api/projects/[id]/roles
+├ ƒ /api/projects/[id]/stage-transition
+├ ƒ /api/projects/[id]/tasks
+├ ƒ /api/projects/[id]/vacancies
+├ ƒ /api/ratings
+├ ƒ /api/records
+├ ƒ /api/records/[id]/share
+├ ƒ /api/records/[id]/verify-request
+├ ƒ /api/stages
+├ ƒ /api/students/[id]/tags
+├ ƒ /api/suppliers
+├ ƒ /api/suppliers/[id]
+├ ƒ /api/suppliers/[id]/contact
+├ ƒ /api/tasks
+├ ƒ /api/tasks/[id]
+├ ƒ /api/tasks/[id]/blocks
+├ ƒ /api/tasks/[id]/checklist
+├ ƒ /api/tasks/[id]/dependencies
+├ ƒ /api/tasks/[id]/estimations
+├ ƒ /api/tasks/[id]/submit
+├ ƒ /api/tasks/[id]/time-entries
+├ ƒ /api/tasks/comments
+├ ƒ /api/tasks/move
+├ ƒ /api/tasks/personal
+├ ƒ /api/tasks/project
+├ ƒ /api/time-entries
+├ ƒ /api/time-summary
+├ ƒ /api/universities
+├ ƒ /api/universities/[id]
+├ ƒ /api/users
+├ ƒ /api/users/[id]
+├ ƒ /api/vacancies
+├ ƒ /api/vacancies/[id]
+├ ƒ /api/verification
+├ ƒ /api/verification-requests
+├ ƒ /api/verification/[id]
+├ ƒ /api/work-sessions
+├ ○ /auth
+├ ○ /auth/forgot-password
+├ ○ /auth/reset-password
+├ ○ /business/create
+├ ○ /collaboration
+├ ○ /contact
+├ ○ /dashboard/employer
+├ ○ /dashboard/employer/profile
+├ ○ /dashboard/employer/settings
+├ ○ /dashboard/employer/verification-requests
+├ ○ /dashboard/investor
+├ ○ /dashboard/investor/deals
+├ ƒ /dashboard/investor/portfolio/[id]
+├ ƒ /dashboard/investor/portfolio/[id]/success
+├ ○ /dashboard/investor/profile
+├ ○ /dashboard/investor/proposals
+├ ○ /dashboard/investor/settings
+├ ○ /dashboard/notifications
+├ ○ /dashboard/student
+├ ○ /dashboard/student/profile
+├ ○ /dashboard/student/settings
+├ ○ /dashboard/student/verifications
+├ ○ /dashboard/university
+├ ○ /dashboard/university/approvals
+├ ○ /dashboard/university/performance
+├ ○ /dashboard/university/profile
+├ ○ /dashboard/university/projects
+├ ○ /dashboard/university/settings
+├ ○ /dashboard/university/students
+├ ○ /features
+├ ○ /invest-success
+├ ○ /investor/discovery
+├ ○ /jobs
+├ ƒ /jobs/[id]
+├ ○ /jobs/create
+├ ○ /leaderboards
+├ ○ /marketplace
+├ ƒ /marketplace/projects/[id]/invest
+├ ○ /needs
+├ ƒ /needs/[id]
+├ ○ /needs/create
+├ ○ /privacy
+├ ○ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/edit
+├ ƒ /projects/[id]/tasks
+├ ƒ /projects/[id]/tasks/[taskId]/assign
+├ ƒ /projects/[id]/tasks/[taskId]/edit
+├ ƒ /projects/[id]/tasks/[taskId]/submit
+├ ○ /projects/create
+├ ○ /projects/demo-task-management
+├ ƒ /records/[id]/verify
+├ ○ /records/create
+├ ○ /solutions
+├ ○ /suppliers
+├ ƒ /suppliers/[id]
+├ ○ /suppliers/create
+├ ○ /support
+└ ○ /terms
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

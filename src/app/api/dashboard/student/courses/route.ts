@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const decoded = verifyToken(token)
 
-    if (!token) {
+    if (!decoded) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
         { status: 401 }
@@ -28,11 +28,6 @@ export async function GET(request: NextRequest) {
     // Get student's education records (courses)
     const education = await db.education.findMany({
       where: { userId: decoded.userId },
-      include: {
-        university: {
-          select: { name: true }
-        }
-      },
       orderBy: { startDate: 'desc' },
       take: 10
     })
@@ -44,11 +39,9 @@ export async function GET(request: NextRequest) {
           ? 100
           : Math.round(((new Date().getTime() - new Date(edu.startDate).getTime()) / (new Date(edu.endDate).getTime() - new Date(edu.startDate).getTime())) * 100)
         : Math.round(((new Date().getTime() - new Date(edu.startDate).getTime()) / (365 * 24 * 60 * 60 * 1000)) * 100)
-
       const status = edu.endDate
         ? new Date() > new Date(edu.endDate) ? 'completed' as const : 'in_progress' as const
         : 'in_progress' as const
-
       return {
         id: edu.id,
         code: `${edu.degree.substring(0, 3).toUpperCase()}${Math.floor(Math.random() * 1000)}`, // Mock course code
@@ -56,9 +49,9 @@ export async function GET(request: NextRequest) {
         instructor: 'Instructor Name', // Mock - would need proper data model
         progress: Math.min(Math.max(progress, 0), 100),
         grade: edu.gpa ? (edu.gpa >= 3.7 ? 'A' : edu.gpa >= 3.0 ? 'B' : edu.gpa >= 2.0 ? 'C' : 'D') : undefined,
-        credits: edu.fieldOfStudy ? 3 : 0, // Mock credits
+        credits: edu.field ? 3 : 0, // Mock credits
         status,
-        university: edu.university?.name
+        university: edu.school
       }
     })
 

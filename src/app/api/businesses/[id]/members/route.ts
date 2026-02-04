@@ -55,8 +55,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let businessId: string | undefined
   try {
-    const { id: businessId } = await params
+    const paramsData = await params
+    businessId = paramsData.id
 
     // Authentication
     const sessionCookie = request.cookies.get('session')
@@ -110,7 +112,7 @@ export async function GET(
       count: members.length,
     })
   } catch (error: any) {
-    logError(error, 'Get business members', businessId)
+    logError(error, 'Get business members', businessId || 'unknown')
 
     if (error.statusCode) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
@@ -129,8 +131,10 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   let userId: string | null = null
+  let businessId: string | undefined
   try {
-    const { id: businessId } = await params
+    const paramsData = await params
+    businessId = paramsData.id
 
     // Authentication
     const sessionCookie = request.cookies.get('session')
@@ -165,7 +169,7 @@ export async function POST(
 
     // Validate required fields
     if (!body.userId || !body.role) {
-      throw new AppError('userId and role are required', 400)
+      throw new AppError('userId and role are required', 'VALIDATION_ERROR', 400)
     }
 
     // Check if user exists
@@ -189,7 +193,7 @@ export async function POST(
     })
 
     if (existingMember) {
-      throw new AppError('User is already a member of this business', 400)
+      throw new AppError('User is already a member of this business', 'DUPLICATE_MEMBER', 400)
     }
 
     // Check if assigning role is allowed (can only assign lower or equal roles)
@@ -223,7 +227,7 @@ export async function POST(
       message: `${targetUser.name} added to business as ${body.role}`,
     }, { status: 201 })
   } catch (error: any) {
-    logError(error, 'Add business member', businessId)
+    logError(error, 'Add business member', businessId || 'unknown')
 
     if (error.statusCode) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
@@ -236,16 +240,19 @@ export async function POST(
   }
 }
 
-// PATCH /api/businesses/[id]/members/[memberId] - Update member role
+// PATCH /api/businesses/[id]/members - Update member role
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   let userId: string | null = null
+  let businessId: string | undefined
   try {
-    const { id: businessId } = await params
+    const paramsData = await params
+    businessId = paramsData.id
 
-    const { memberId } = await params
+    const requestBody = await request.json()
+    const { memberId } = requestBody
 
     // Authentication
     const sessionCookie = request.cookies.get('session')
@@ -279,8 +286,6 @@ export async function PATCH(
       throw new ForbiddenError('Insufficient permissions to update members')
     }
 
-    const body = await request.json()
-
     // Get the member to update
     const member = await db.businessMember.findUnique({
       where: { id: memberId },
@@ -292,14 +297,14 @@ export async function PATCH(
     }
 
     // Check if can assign the new role
-    if (body.role && !hasHigherRoleOrEqual(userRole || 'VIEWER', body.role)) {
+    if (requestBody.role && !hasHigherRoleOrEqual(userRole || 'VIEWER', requestBody.role)) {
       throw new ForbiddenError('Cannot assign a role higher than your own')
     }
 
     // Update member
     const updateData: any = {}
-    if (body.role) updateData.role = body.role
-    if (body.permissions) updateData.permissions = JSON.stringify(body.permissions)
+    if (requestBody.role) updateData.role = requestBody.role
+    if (requestBody.permissions) updateData.permissions = JSON.stringify(requestBody.permissions)
 
     const updatedMember = await db.businessMember.update({
       where: { id: memberId },
@@ -312,7 +317,7 @@ export async function PATCH(
       message: 'Member updated successfully',
     })
   } catch (error: any) {
-    logError(error, 'Update business member', businessId)
+    logError(error, 'Update business member', businessId || 'unknown')
 
     if (error.statusCode) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
@@ -325,16 +330,19 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/businesses/[id]/members/[memberId] - Remove member from business
+// DELETE /api/businesses/[id]/members - Remove member from business
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   let userId: string | null = null
+  let businessId: string | undefined
   try {
-    const { id: businessId } = await params
+    const paramsData = await params
+    businessId = paramsData.id
 
-    const { memberId } = await params
+    const requestBody = await request.json()
+    const { memberId } = requestBody
 
     // Authentication
     const sessionCookie = request.cookies.get('session')
@@ -389,7 +397,7 @@ export async function DELETE(
       message: 'Member removed successfully',
     })
   } catch (error: any) {
-    logError(error, 'Remove business member', businessId)
+    logError(error, 'Remove business member', businessId || 'unknown')
 
     if (error.statusCode) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })

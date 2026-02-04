@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/api/auth-middleware'
+import { requireAuth, requireRole, getUserFromRequest } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
 
 // GET /api/dashboard/employer/candidates - Get employer's candidate pool
 export async function GET(request: NextRequest) {
-  const auth = await requireAuth(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
-  if ('status' in auth) return auth
+  const auth = requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
+  if (auth !== true) return auth
 
-  const user = auth.user
+  const user = getUserFromRequest(request)
   const { searchParams } = new URL(request.url)
   const search = searchParams.get('search') || ''
   const status = searchParams.get('status') || 'all'
@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
         ...(search ? {
           user: {
             OR: [
-              { name: { contains: search, mode: 'insensitive' } },
-              { email: { contains: search, mode: 'insensitive' } }
+              { name: { contains: search } },
+              { email: { contains: search } }
             ]
           }
         } : {})
@@ -53,7 +53,6 @@ export async function GET(request: NextRequest) {
             name: true,
             email: true,
             avatar: true,
-            resume: true,
             major: true,
             university: {
               select: {
@@ -108,7 +107,7 @@ export async function GET(request: NextRequest) {
         status: app.status,
         appliedDate: app.createdAt,
         matchScore: Math.min(100, reputation * 10 + Math.random() * 20),
-        experience: applicant.resume ? Math.floor(Math.random() * 10 + 1) : 0,
+        experience: Math.floor(Math.random() * 10 + 1),
         skills: ['Communication', 'Teamwork', 'Problem Solving'].slice(0, 3)
       }
     })
@@ -121,7 +120,7 @@ export async function GET(request: NextRequest) {
         newApplications,
         inReview,
         hired,
-        avgMatchScore: candidates.reduce((sum, c) => sum + c.matchScore, 0) / candidates.length
+        avgMatchScore: candidates.length > 0 ? candidates.reduce((sum, c) => sum + c.matchScore, 0) / candidates.length : 0
       }
     })
   } catch (error) {

@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/api/auth-middleware'
+import { requireAuth, requireRole, getUserFromRequest } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
 
 // GET /api/dashboard/university/projects - Get university projects with metrics
 export async function GET(request: NextRequest) {
-  const auth = await requireAuth(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
-  if ('status' in auth) return auth
+  const auth = requireRole(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
+  if (auth !== true) return auth
 
-  const user = auth.user
-  const universityId = user.universityId
+  const user = getUserFromRequest(request)
+  const universityId = user?.universityId
 
-  if (!token) {
+  if (!user) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
@@ -22,14 +22,14 @@ export async function GET(request: NextRequest) {
     // Get projects owned by students of this university
     const projects = await db.project.findMany({
       where: {
-        owner: {
+        ownerId: {
           universityId,
         },
         ...(status !== 'all' ? { status: status as any } : {}),
         ...(search ? {
           OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { description: { contains: search, mode: 'insensitive' } },
+            { name: { contains: search } },
+            { description: { contains: search } },
           ]
         } : {})
       },
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
             name: true,
             avatar: true,
             major: true,
-          }
+          },
         },
         members: {
           select: {
@@ -70,8 +70,8 @@ export async function GET(request: NextRequest) {
             members: true,
             tasks: true,
             milestones: true,
-          }
-        }
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc'
@@ -80,10 +80,12 @@ export async function GET(request: NextRequest) {
 
     // Calculate additional metrics for each project
     const projectsWithMetrics = projects.map(project => {
-      const totalTasks = project._count.tasks || 0
-      const completedTasks = project.tasks.filter(t => t.status === 'DONE').length
-      const totalMilestones = project._count.milestones || 0
-      const completedMilestones = project.milestones.filter(m => m.status === 'COMPLETED').length
+      const projectWithCount = project as typeof project & { _count?: { tasks?: number; milestones?: number; members?: number } }
+      const totalTasks = projectWithCount._count?.tasks || 0
+      const completedTasks = project.tasks?.filter((t: any) => t.status === 'DONE').length || 0
+      const totalMilestones = projectWithCount._count?.milestones || 0
+      const completedMilestones = project.milestones?.filter((m: any) => m.status === 'COMPLETED').length || 0
+      const memberCount = projectWithCount._count?.members || 0
 
       return {
         id: project.id,
@@ -101,24 +103,24 @@ export async function GET(request: NextRequest) {
           avatar: project.owner.avatar,
           major: project.owner.major,
         } : null,
-        
+
         // Members
-        memberCount: project._count.members || 0,
-        members: project.members.map(m => ({
+        memberCount,
+        members: project.members.map((m: any) => ({
           id: m.user.id,
           name: m.user.name,
           avatar: m.user.avatar,
         })),
-        
+
         // Metrics
         totalTasks,
         completedTasks,
         taskCompletionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
-        
+
         totalMilestones,
         completedMilestones,
         milestoneCompletionRate: totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0,
-        
+
         createdAt: project.createdAt,
         updatedAt: project.updatedAt,
       }

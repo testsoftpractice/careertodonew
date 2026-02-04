@@ -21,11 +21,11 @@ export async function GET(request: NextRequest) {
       where.raterId = raterId
     }
 
-    if (!searchParams) {
+    if (!request.nextUrl.searchParams.isEmpty()) {
       where.dimension = dimension as RatingDimension
     }
 
-    if (!searchParams) {
+    if (!request.nextUrl.searchParams.isEmpty()) {
       where.projectId = projectId
     }
 
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     } = body
 
     // Validate score is between 1 and 5
-    if (!searchParams) {
+    if (!request.nextUrl.searchParams.isEmpty()) {
       return NextResponse.json(
         { error: 'Score must be between 1 and 5' },
         { status: 400 }

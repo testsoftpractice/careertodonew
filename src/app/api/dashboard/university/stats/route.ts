@@ -12,16 +12,18 @@ export async function GET(request: NextRequest) {
     const totalStudents = await db.user.count({ where: { universityId, role: "STUDENT" } })
     const totalProjects = await db.project.count({
       where: {
-        owner: {
+        ownerId: {
           universityId: universityId,
         },
       },
     })
     const activeDepartments = await db.department.count({
       where: {
-        project: {
-          owner: {
-            universityId: universityId,
+        projects: {
+          some: {
+            ownerId: {
+              universityId: universityId,
+            },
           },
         },
       },
@@ -52,7 +54,7 @@ export async function GET(request: NextRequest) {
     const topStudents = users
       .map(u => {
         const overallReputation =
-          (u.executionScore + u.collaborationScore + u.leadershipScore + u.ethicsScore + u.reliabilityScore) / 5
+          ((u.executionScore || 0) + (u.collaborationScore || 0) + (u.leadershipScore || 0) + (u.ethicsScore || 0) + (u.reliabilityScore || 0)) / 5
 
         return {
           id: u.id,
@@ -61,11 +63,11 @@ export async function GET(request: NextRequest) {
           major: u.major || "",
           overallReputation: Math.round(overallReputation * 10) / 10,
           breakdown: {
-            execution: u.executionScore,
-            collaboration: u.collaborationScore,
-            leadership: u.leadershipScore,
-            ethics: u.ethicsScore,
-            reliability: u.reliabilityScore,
+            execution: u.executionScore || 0,
+            collaboration: u.collaborationScore || 0,
+            leadership: u.leadershipScore || 0,
+            ethics: u.ethicsScore || 0,
+            reliability: u.reliabilityScore || 0,
           },
           projectCount: 0, // Would need to count project memberships
           achievementCount: 0, // Would need to count achievements

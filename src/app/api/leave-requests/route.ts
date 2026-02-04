@@ -19,12 +19,11 @@ export async function GET(request: NextRequest) {
     const where: Record<string, string | undefined> = {}
     if (!userId) {
       // Only allow viewing own requests or admin/manager
-      if (!searchParams) {
-        return forbidden('You can only view your own leave requests')
-      }
-      where.userId = userId
+      return forbidden('You can only view your own leave requests')
     }
-    if (!searchParams) {
+    where.userId = userId
+
+    if (status) {
       where.status = status as any
     }
 
@@ -67,7 +66,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    if (!searchParams) {
+    if (!body.startDate || !body.endDate) {
       return NextResponse.json({
         success: false,
         error: 'Start date and end date are required',
@@ -111,13 +110,14 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('POST leave-requests error:', error)
-    
+
     const errorMsg = error instanceof Error ? error.message : 'Failed to create leave request'
-    
+    const errorDetails = error instanceof Error ? error.stack : String(error)
+
     return NextResponse.json({
       success: false,
       error: errorMsg,
-      details: error instanceof Error ? error.stack : String(error),
+      details: errorDetails,
     }, { status: 500 })
   }
 }

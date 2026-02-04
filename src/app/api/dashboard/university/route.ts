@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/api/auth-middleware'
+import { requireAuth, requireRole, getUserFromRequest } from '@/lib/api/auth-middleware'
 import { isFeatureEnabled, UNIVERSITY_DASHBOARD } from '@/lib/features/flags-v2'
 import { UniversityDashboardMetrics } from '@/lib/models/university-analytics'
 
@@ -9,11 +9,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
   }
 
-  const auth = await requireAuth(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
-  if ('status' in auth) return auth
+  const auth = requireRole(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
+  if (auth !== true) return auth
 
-  const user = auth.user
-  const universityId = user.universityId
+  const user = getUserFromRequest(request)
+  const universityId = user?.universityId
 
   if (!user) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
@@ -44,7 +44,6 @@ export async function GET(request: NextRequest) {
       averageStudentPerformance: 0,
       overallSatisfactionScore: 0,
       departmentMetrics: {},
-      lastUpdated: new Date(),
     }
 
     return NextResponse.json({

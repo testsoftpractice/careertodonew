@@ -86,7 +86,7 @@ export async function POST(
       'GUEST': 1,
     }
 
-    if (!searchParams) {
+    if (!request.nextUrl.searchParams.isEmpty()) {
       return NextResponse.json({ error: 'Forbidden - Cannot block task assigned to higher or equal role' }, { status: 403 })
     }
 
@@ -119,7 +119,7 @@ export async function POST(
       },
     })
   } catch (error) {
-    if (!searchParams) {
+    if (!request.nextUrl.searchParams.isEmpty()) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Block task error:', error)

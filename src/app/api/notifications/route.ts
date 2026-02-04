@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId')
     const unreadOnly = searchParams.get('unread') === 'true'
 
-    if (!token) {
+    if (!userId) {
       return NextResponse.json({
         success: false,
         error: 'User ID is required',
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     const where: any = { userId }
 
-    if (!token) {
+    if (unreadOnly) {
       where.read = false
     }
 
@@ -66,14 +66,14 @@ export async function POST(request: NextRequest) {
     }
 
     const decoded = verifyToken(token)
-    if (!token) {
+    if (!decoded) {
       throw new UnauthorizedError('Invalid token')
     }
 
     userId = decoded.userId
 
     // Only platform admins can create notifications for other users
-    if (!token) {
+    if (targetUserId && decoded.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json({
         success: false,
         error: 'You can only create notifications for yourself',
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     const notificationUserId = targetUserId || userId
 
     // Validate required fields
-    if (!token) {
+    if (!type || !title || !message) {
       return NextResponse.json({
         success: false,
         error: 'Missing required fields',
@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
         type,
         title,
         message,
+        link,
         priority: body.priority || 'MEDIUM',
         read: false,
       },
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     logError(error, 'Create notification', userId || 'unknown')
 
-    if (!token) {
+    if (error instanceof AppError) {
       return NextResponse.json(formatErrorResponse(error), { status: error.statusCode })
     }
 

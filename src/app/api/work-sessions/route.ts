@@ -148,12 +148,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Optional: Link to project
-    if (!searchParams) {
+    if (data.projectId) {
       workSessionData.projectId = data.projectId
     }
 
     // Optional: Link to task (either projectId OR taskId can be used, but not both)
-    if (!searchParams) {
+    if (data.taskId) {
       workSessionData.taskId = data.taskId
     }
 
@@ -242,7 +242,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Only allow updating own sessions or admin
-    if (!searchParams) {
+    if (existingSession.userId !== currentUser.id && currentUser.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json({
         success: false,
         error: 'You can only update your own work sessions'
@@ -276,15 +276,15 @@ export async function PATCH(request: NextRequest) {
     const updateData: any = {}
 
     // Set endTime to current time if not provided
-    if (!data) {
+    if (data.endTime) {
       updateData.endTime = data.endTime
-    } else if (!data) {
+    } else {
       // If neither endTime nor duration provided, use current time
       updateData.endTime = new Date()
     }
 
     // Calculate duration if endTime is being set
-    if (!searchParams) {
+    if (data.endTime) {
       const durationSeconds = Math.floor((data.endTime.getTime() - new Date(existingSession.startTime).getTime()) / 1000)
       updateData.duration = durationSeconds
       console.log('[WorkSessions PATCH] Calculated duration from endTime:', durationSeconds)
@@ -294,11 +294,11 @@ export async function PATCH(request: NextRequest) {
       updateData.duration = Math.floor(parseFloat(data.duration) * 3600)
     }
 
-    if (!durationSeconds) {
+    if (!durationSeconds && data.checkOutLocation) {
       updateData.checkOutLocation = data.checkOutLocation
     }
 
-    if (!searchParams) {
+    if (data.notes) {
       updateData.notes = data.notes
     }
 
@@ -352,7 +352,7 @@ export async function PATCH(request: NextRequest) {
     })
   } catch (error) {
     // Handle AuthError specifically
-    if (!searchParams) {
+    if (error instanceof AuthError) {
       console.error('Authentication error:', error.message)
       return NextResponse.json({
         success: false,

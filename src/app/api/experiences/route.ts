@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 // POST /api/experiences - Create new experience
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
@@ -111,13 +111,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id?: string }> }
 ) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
     const { id: experienceId } = await params
-    if (!id) {
+    if (!experienceId) {
       return NextResponse.json({
         success: false,
         error: 'Experience ID is required',

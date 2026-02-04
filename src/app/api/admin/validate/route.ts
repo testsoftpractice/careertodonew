@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   try {
     // Get token from cookie
     const cookieHeader = request.headers.get('cookie')
-    let token = null
+    let token: string | null = null
 
     if (cookieHeader) {
       const cookies = cookieHeader.split(';').map(c => c.trim())

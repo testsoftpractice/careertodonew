@@ -3,21 +3,21 @@ import { requireAuth } from '@/lib/api/auth-middleware'
 import { isFeatureEnabled, UNIVERSITY_DASHBOARD } from '@/lib/features/flags-v2'
 
 // GET /api/dashboard/university/activity - Get activity feed
-export async function GET(request: NextRequest, context: any) {
+export async function GET(request: NextRequest) {
   if (!isFeatureEnabled(UNIVERSITY_DASHBOARD)) {
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
   }
 
-  const auth = await requireAuth(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
+  const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
-  const searchParams = await context.searchParams
-  const type = (searchParams.type as string) || 'ALL'
-  const limit = Number(searchParams.limit) || 20
+  const { searchParams } = new URL(request.url)
+  const type = (searchParams.get('type') as string) || 'ALL'
+  const limit = Number(searchParams.get('limit')) || 20
   const user = auth.user
   const universityId = user.universityId
 
-  if (!token) {
+  if (!universityId) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest, context: any) {
         details: {
           projectTitle: 'Campus Media Network',
           projectId: '2',
-          amount: 8000,
+          amount: 80000,
           equity: 10,
         },
       },
@@ -101,11 +101,11 @@ export async function GET(request: NextRequest, context: any) {
 
     // Apply filters
     let filteredFeed = [...activityFeed]
-    if (!token) {
+    if (type !== 'ALL') {
       filteredFeed = filteredFeed.filter(item => item.type === type)
     }
 
-    if (!token) {
+    if (type !== 'ALL') {
       filteredFeed = filteredFeed.slice(0, limit)
     }
 

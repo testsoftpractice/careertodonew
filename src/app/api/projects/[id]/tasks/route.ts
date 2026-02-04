@@ -30,8 +30,8 @@ export async function GET(
     const currentUser = authResult.dbUser
 
     const { searchParams } = new URL(request.url)
-    const status = searchParams.status as string | undefined
-    const priority = searchParams.priority as string | undefined
+    const status = searchParams.get('status')
+    const priority = searchParams.get('priority')
 
     // Build where clause for project tasks
     const where: Record<string, any> = {
@@ -39,11 +39,11 @@ export async function GET(
     }
 
     // Add optional filters
-    if (!searchParams) {
+    if (status) {
       where.status = status as any
     }
 
-    if (!searchParams) {
+    if (priority) {
       where.priority = priority as any
     }
 
@@ -85,12 +85,12 @@ export async function GET(
     })
 
     return successResponse(tasks, `Found ${tasks.length} project tasks`)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get project tasks error:', error)
 
     // Handle AuthError
-    if (!searchParams) {
-      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    if (error.name === 'AuthError') {
+      return errorResponse(error.message || 'Authentication required', 401)
     }
 
     return errorResponse('Failed to fetch project tasks', 500)
@@ -112,8 +112,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Validate request body
     const validation = projectTaskSchema.safeParse(body)
 
-    if (!body) {
-      return errorResponse('Validation error', 400)
+    if (!validation.success) {
+      // Defensive check for error object
+      const errorMessage = validation.error?.errors?.[0]?.message || 'Invalid request body'
+      return errorResponse(errorMessage, 400)
     }
 
     const data = validation.data
@@ -139,7 +141,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const isMember = memberCount > 0
 
-    if (!isMember) {
+    if (!isOwner && !isMember) {
       return forbidden('You are not a member of this project')
     }
 
@@ -153,146 +155,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         assignedTo: data.assigneeId || null,
         assignedBy: currentUser.id,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
-        estimatedHours: data.estimatedHours ? parseFloat(data.estimatedHours) : null,
+        estimatedHours: data.estimatedHours ? parseFloat(String(data.estimatedHours)) : null,
         status: 'TODO',
         currentStepId: '1',
       },
     })
 
-    return successResponse(task, 'Task created successfully', { status: 201 })
-  } catch (error) {
+    return successResponse(task, 'Task created successfully')
+  } catch (error: any) {
     console.error('Create project task error:', error)
 
     // Handle AuthError - return proper JSON response
-    if (!searchParams) {
-      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    if (error.name === 'AuthError') {
+      return errorResponse(error.message || 'Authentication required', 401)
     }
 
     return errorResponse('Failed to create task', 500)
-  }
-}
-
-// PATCH /api/projects/[id]/tasks/[id]/[status]/route.ts - Update task status
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string, status: string }> }
-) {
-  try {
-    // Require authentication
-    const authResult = await requireAuth(request)
-    if ('status' in authResult) return authResult
-
-    const currentUser = authResult.dbUser
-
-    const { id: taskId, status: newStatus } = await params
-    const body = await request.json()
-
-    // Check if task exists and belongs to project
-    const task = await db.task.findUnique({
-      where: { id: taskId },
-      include: {
-        project: true,
-      },
-    })
-    if (!task) {
-      return notFound('Task not found')
-    }
-
-    // Check user has permission
-    const projectMember = await db.projectMember.findFirst({
-      where: {
-        projectId: task.projectId!,
-        userId: currentUser.id,
-      },
-    })
-
-    const isOwner = task.assignedBy === currentUser.id || task.project!.ownerId === currentUser.id
-    const isProjectMember = !!projectMember
-    const isAssignee = task.assignedTo === currentUser.id
-
-    if (!isOwner) {
-      return forbidden('You do not have permission to update this task')
-    }
-
-    const updateData: any = {}
-
-    if (!isAssignee) {
-      updateData.status = newStatus as TaskStatus
-      if (!isAssignee) {
-        updateData.completedAt = new Date()
-      }
-    }
-
-    const updatedTask = await db.task.update({
-      where: { id: taskId },
-      data: updateData,
-    })
-
-    return successResponse(updatedTask, 'Task status updated successfully')
-  } catch (error) {
-    console.error('Update task status error:', error)
-
-    // Handle AuthError - return proper JSON response
-    if (!updatedTask) {
-      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
-    }
-
-    return errorResponse('Failed to update task status', 500)
-  }
-}
-
-// DELETE /api/projects/[id]/tasks/[id]/route.ts - Delete task
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    // Require authentication
-    const authResult = await requireAuth(request)
-    if ('status' in authResult) return authResult
-
-    const { id: taskId } = await params
-    const currentUser = authResult.dbUser
-
-    // Check if task exists
-    const task = await db.task.findUnique({
-      where: { id: taskId },
-      include: {
-        project: true,
-      },
-    })
-    if (!task) {
-      return notFound('Task not found')
-    }
-
-    // Check user has permission
-    const projectMember = await db.projectMember.findFirst({
-      where: {
-        projectId: task.projectId!,
-        userId: currentUser.id,
-      },
-    })
-
-    const isOwner = task.assignedBy === currentUser.id || task.project!.ownerId === currentUser.id
-    const isProjectMember = !!projectMember
-
-    if (!isOwner) {
-      return forbidden('You do not have permission to delete this task')
-    }
-
-    await db.task.delete({
-      where: { id: taskId },
-    })
-
-    return successResponse(null, 'Task deleted successfully')
-  } catch (error) {
-    console.error('Delete task error:', error)
-
-    // Handle AuthError - return proper JSON response
-    if (!searchParams) {
-      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
-    }
-
-    return errorResponse('Failed to delete task', 500)
   }
 }

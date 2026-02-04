@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.userId as string | undefined
 
-    if (!searchParams) {
+    if (!request.nextUrl.searchParams.isEmpty()) {
       return NextResponse.json({
         success: false,
         error: 'User ID is required'
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     // Process time entries
     timeEntries.forEach(entry => {
       // Safety check for missing task or project
-      if (!searchParams) {
+      if (!entry.task?.project) {
         return
       }
 
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Skip if no project associated
-      if (!searchParams) {
+      if (!projectId) {
         return
       }
 

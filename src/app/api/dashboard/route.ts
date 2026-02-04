@@ -6,8 +6,8 @@ import { db } from '@/lib/db'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.userId as string | undefined
-    const role = searchParams.role as string | undefined
+    const userId = searchParams.get('userId') as string | undefined
+    const role = searchParams.get('role') as string | undefined
 
     if (!userId || !role) {
       return NextResponse.json({
@@ -101,6 +101,13 @@ export async function GET(request: NextRequest) {
 
     // UNIVERSITY ADMIN Dashboard
     if (role === 'UNIVERSITY_ADMIN') {
+      if (!user.universityId) {
+        return NextResponse.json({
+          success: false,
+          error: 'University ID is required for university admin'
+        }, { status: 400 })
+      }
+
       const university = await db.university.findUnique({
         where: { id: user.universityId }
       })
@@ -145,36 +152,16 @@ export async function GET(request: NextRequest) {
     if (role === 'EMPLOYER') {
       const postedJobs = await db.job.findMany({
         where: { userId },
-        include: {
-          _count: {
-            applications: true
-          }
-        },
         orderBy: { createdAt: 'desc' }
       })
 
       const applications = await db.jobApplication.findMany({
         where: {
           job: {
-            userId
+            userId: userId
           }
-        } as any,
+        },
         include: {
-          applicant: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              avatar: true,
-              major: true,
-              university: {
-                select: {
-                  name: true,
-                  code: true,
-                }
-              }
-            }
-          },
           job: true
         },
         orderBy: { createdAt: 'desc' }
@@ -214,14 +201,6 @@ export async function GET(request: NextRequest) {
       const availableProjects = await db.project.findMany({
         where: {
           status: 'IN_PROGRESS'
-        },
-        include: {
-          owner: {
-            select: {
-              id: true,
-              name: true,
-            }
-          }
         },
         take: 20,
         orderBy: { createdAt: 'desc' }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/api/auth-middleware'
+import { requireAuth, getUserFromRequest } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
 
 // GET /api/dashboard/university/approvals/[id] - Get a specific pending approval
@@ -7,11 +7,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAuth(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
+  const auth = requireAuth(request)
   if ('status' in auth) return auth
 
-  const user = auth.user
-  const universityId = user.universityId
+  const user = getUserFromRequest(request)
+  const universityId = user?.universityId
 
   if (!universityId) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
@@ -40,15 +40,7 @@ export async function GET(
             },
           },
         },
-        university: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
-            location: true,
-          },
-        },
-        members: {
+        projectMembers: {
           include: {
             user: {
               select: {
@@ -63,29 +55,6 @@ export async function GET(
           },
           take: 10,
         },
-        tasks: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-            priority: true,
-          }
-        },
-        milestones: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-            dueDate: true,
-          }
-        },
-        _count: {
-          select: {
-            members: true,
-            tasks: true,
-            milestones: true,
-          },
-        },
       },
     })
 
@@ -94,7 +63,7 @@ export async function GET(
     }
 
     // Check if user has permission to view this business
-    if (business.universityId !== universityId && user.role !== 'PLATFORM_ADMIN') {
+    if (business.universityId !== universityId && user?.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json({ error: 'Unauthorized to view this business' }, { status: 403 })
     }
 
@@ -113,11 +82,11 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAuth(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
+  const auth = requireAuth(request)
   if ('status' in auth) return auth
 
-  const user = auth.user
-  const universityId = user.universityId
+  const user = getUserFromRequest(request)
+  const universityId = user?.universityId
 
   if (!universityId) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
@@ -142,12 +111,6 @@ export async function POST(
             email: true,
           },
         },
-        university: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
       },
     })
 
@@ -156,23 +119,22 @@ export async function POST(
     }
 
     // Check if user has permission
-    if (business.universityId !== universityId && user.role !== 'PLATFORM_ADMIN') {
+    if (business.universityId !== universityId && user?.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json({ error: 'Unauthorized to approve this business' }, { status: 403 })
     }
 
-    if (business.status !== 'PROPOSED') {
+    if (business.status !== 'PROPOSED' as any) {
       return NextResponse.json({ error: 'Business is not in PROPOSED status' }, { status: 400 })
     }
 
     // Update business status
-    const status = action === 'approve' ? 'IN_PROGRESS' : 'CANCELLED'
-
+    const newStatus = action === 'approve' ? 'IN_PROGRESS' : 'CANCELLED'
     const updatedBusiness = await db.project.update({
       where: { id },
       data: {
-        status,
-        ...(action === 'reject' ? {
-          description: business.description + `\n\nRejection Reason: ${reason || 'No reason provided'}`
+        status: newStatus,
+        ...(action === 'reject' && reason ? {
+          description: (business.description || '') + `\n\nRejection Reason: ${reason}`
         } : {})
       },
     })
@@ -193,7 +155,7 @@ export async function POST(
       await db.notification.create({
         data: {
           userId: business.ownerId,
-          type: 'PROJECT_UPDATE',
+          type: 'SUCCESS',
           title: '✅ Business Approved!',
           message: `Your business "${business.name}" has been approved and is now active.`,
           link: `/projects/${business.id}`,
@@ -204,7 +166,7 @@ export async function POST(
       await db.notification.create({
         data: {
           userId: business.ownerId,
-          type: 'PROJECT_UPDATE',
+          type: 'ERROR',
           title: '❌ Business Not Approved',
           message: `Your business "${business.name}" was not approved. ${reason ? `Reason: ${reason}` : ''}`,
           link: `/projects/${business.id}`,

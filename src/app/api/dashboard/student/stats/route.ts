@@ -15,28 +15,26 @@ export async function GET(request: NextRequest) {
 
     const cacheKey = createDashboardStatsKey(userId)
 
-    // Use cache with 2 minute TTL for stats
-    return await getCached(cacheKey, async () => {
-      // Get counts
-      const [totalProjects, activeProjects, completedProjects, tasksCompleted, tasksPending, tasksInProgress, user, recentActivityCount] = await Promise.all([
-        db.project.count({ where: { ownerId: userId } }),
-        db.project.count({ where: { ownerId: userId, status: 'IN_PROGRESS' } }),
-        db.project.count({ where: { ownerId: userId, status: 'COMPLETED' } }),
-        db.task.count({ where: { assignedTo: userId, status: 'DONE' } }),
-        db.task.count({ where: { assignedTo: userId, status: 'TODO' } }),
-        db.task.count({ where: { assignedTo: userId, status: 'IN_PROGRESS' } }),
-        db.user.findUnique({
-          where: { id: userId },
-          select: {
-            executionScore: true,
-            collaborationScore: true,
-            leadershipScore: true,
-            ethicsScore: true,
-            reliabilityScore: true,
-          }
-        }),
-        db.notification.count({ where: { userId, read: false } })
-      ])
+    // Fetch data directly (no caching for now to avoid stream issues)
+    const [totalProjects, activeProjects, completedProjects, tasksCompleted, tasksPending, tasksInProgress, user, recentActivityCount] = await Promise.all([
+      db.project.count({ where: { ownerId: userId } }),
+      db.project.count({ where: { ownerId: userId, status: 'IN_PROGRESS' } }),
+      db.project.count({ where: { ownerId: userId, status: 'COMPLETED' } }),
+      db.task.count({ where: { assignedTo: userId, status: 'DONE' } }),
+      db.task.count({ where: { assignedTo: userId, status: 'TODO' } }),
+      db.task.count({ where: { assignedTo: userId, status: 'IN_PROGRESS' } }),
+      db.user.findUnique({
+        where: { id: userId },
+        select: {
+          executionScore: true,
+          collaborationScore: true,
+          leadershipScore: true,
+          ethicsScore: true,
+          reliabilityScore: true,
+        }
+      }),
+      db.notification.count({ where: { userId, read: false } })
+    ])
 
       const breakdown = {
         execution: user?.executionScore || 0,
@@ -62,7 +60,6 @@ export async function GET(request: NextRequest) {
         success: true,
         data: stats,
       })
-    }, 120000) // 2 minutes TTL
   } catch (error) {
     console.error('Get student stats error:', error)
     return NextResponse.json({

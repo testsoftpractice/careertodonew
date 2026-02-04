@@ -8,13 +8,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
     const { id: requestId } = await params
-    if (!id) {
+    if (!requestId) {
       return NextResponse.json({
         success: false,
         error: 'Leave request ID is required',
@@ -23,7 +23,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { status, rejectionReason, reviewedBy } = body
+    const { status, rejectionReason } = body
 
     // Validate status
     const validStatuses = ['PENDING', 'APPROVED', 'REJECTED']
@@ -40,10 +40,11 @@ export async function PATCH(
       updatedAt: new Date(),
     }
 
-    if (!searchParams) {
+    if (status) {
+      updateData.status = status
       updateData.reviewedBy = session.user.id
       updateData.reviewedAt = new Date()
-      if (!searchParams) {
+      if (status === 'REJECTED' && rejectionReason) {
         updateData.rejectionReason = rejectionReason
       }
     }
@@ -56,7 +57,7 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       data: leaveRequest,
-      message: `Leave request ${status.toLowerCase()} successfully`,
+      message: `Leave request ${status?.toLowerCase()} successfully`,
     })
   } catch (error) {
     console.error('PATCH leave-requests/[id] error:', error)
@@ -74,13 +75,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
     const { id: requestId } = await params
-    if (!id) {
+    if (!requestId) {
       return NextResponse.json({
         success: false,
         error: 'Leave request ID is required',
@@ -88,7 +89,7 @@ export async function DELETE(
       })
     }
 
-    // Check if user owns the leave request
+    // Check if user owns leave request
     const leaveRequest = await db.leaveRequest.findUnique({
       where: {
         id: requestId,
@@ -103,7 +104,7 @@ export async function DELETE(
       })
     }
 
-    if (!searchParams) {
+    if (leaveRequest.status !== 'PENDING') {
       return NextResponse.json({
         success: false,
         error: 'Cannot delete approved or rejected leave request',

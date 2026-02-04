@@ -73,7 +73,22 @@ function DashboardContent({ user }: { user: any }) {
     try {
       setLoading(prev => ({ ...prev, stats: true }))
       const response = await fetch(`/api/dashboard/employer/stats?userId=${user.id}`)
-      const data = await response.json()
+
+      // Check if response is ok before parsing
+      if (!response.ok) {
+        console.error('Fetch stats error: Response not ok', response.status)
+        return
+      }
+
+      const text = await response.text()
+
+      // Check if response is empty
+      if (!text || text.trim() === '') {
+        console.error('Fetch stats error: Empty response')
+        return
+      }
+
+      const data = JSON.parse(text)
 
       if (data.success) {
         setStats(data.data)
@@ -102,7 +117,22 @@ function DashboardContent({ user }: { user: any }) {
     try {
       setLoading(prev => ({ ...prev, requests: true }))
       const response = await fetch(`/api/verification-requests?requesterId=${user.id}`)
-      const data = await response.json()
+
+      // Check if response is ok before parsing
+      if (!response.ok) {
+        console.error('Fetch requests error: Response not ok', response.status)
+        return
+      }
+
+      const text = await response.text()
+
+      // Check if response is empty
+      if (!text || text.trim() === '') {
+        console.error('Fetch requests error: Empty response')
+        return
+      }
+
+      const data = JSON.parse(text)
 
       if (data.success) {
         setRequests(data.data || [])

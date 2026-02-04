@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 
 // GET /api/dashboard/investor/stats - Get investor dashboard statistics
 export async function GET(request: NextRequest) {
-  const auth = await requireAuth(request, ['INVESTOR', 'PLATFORM_ADMIN'])
+  const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
   const user = auth.user
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
           select: { id: true, name: true, status: true }
         }
       },
-      orderBy: { investedAt: 'desc' }
+      orderBy: { createdAt: 'desc' }
     })
 
     // Calculate statistics

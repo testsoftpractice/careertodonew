@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/api/auth-middleware'
+import { requireAuth, requireRole, getUserFromRequest } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
 
 // GET /api/dashboard/university/students - Get university students with metrics
 export async function GET(request: NextRequest) {
-  const auth = await requireAuth(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
-  if ('status' in auth) return auth
+  const auth = requireRole(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
+  if (auth !== true) return auth
 
-  const user = auth.user
-  const universityId = user.universityId
+  const user = getUserFromRequest(request)
+  const universityId = user?.universityId
 
   if (!user) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
@@ -27,9 +27,9 @@ export async function GET(request: NextRequest) {
         role: 'STUDENT',
         ...(search ? {
           OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { email: { contains: search, mode: 'insensitive' } },
-            { major: { contains: search, mode: 'insensitive' } },
+            { name: { contains: search } },
+            { email: { contains: search } },
+            { major: { contains: search } },
           ]
         } : {})
       },
@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate additional metrics for each student
     const studentsWithMetrics = students.map(student => {
+      const studentWithCount = student as typeof student & { _count?: { tasksCreated?: number; tasksAssigned?: number; timeEntries?: number; workSessions?: number } }
       const overallReputation = (
         (student.executionScore || 0) +
         (student.collaborationScore || 0) +
@@ -89,21 +90,21 @@ export async function GET(request: NextRequest) {
         reliabilityScore: student.reliabilityScore || 0,
         verificationStatus: student.verificationStatus,
         createdAt: student.createdAt,
-        projectCount: student._count.tasksCreated || 0,
-        assignedTasks: student._count.tasksAssigned || 0,
-        timeEntries: student._count.timeEntries || 0,
-        workSessions: student._count.workSessions || 0,
+        projectCount: studentWithCount._count?.tasksCreated || 0,
+        assignedTasks: studentWithCount._count?.tasksAssigned || 0,
+        timeEntries: studentWithCount._count?.timeEntries || 0,
+        workSessions: studentWithCount._count?.workSessions || 0,
       }
     })
 
     // Apply sorting
     let sortedStudents = [...studentsWithMetrics]
-    if (!sortedStudents) {
-      sortedStudents.sort((a, b) => b.totalPoints - a.totalPoints)
-    } else if (!sortedStudents) {
+    if (sort === 'reputation') {
       sortedStudents.sort((a, b) => b.reputation - a.reputation)
-    } else if (!sortedStudents) {
+    } else if (sort === 'name') {
       sortedStudents.sort((a, b) => a.name.localeCompare(b.name))
+    } else {
+      sortedStudents.sort((a, b) => b.totalPoints - a.totalPoints)
     }
 
     return NextResponse.json({

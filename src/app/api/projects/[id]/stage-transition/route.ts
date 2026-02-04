@@ -118,7 +118,7 @@ export async function POST(
       },
     })
   } catch (error) {
-    if (!searchParams) {
+    if (!request.nextUrl.searchParams.isEmpty()) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
     }
     console.error('Stage transition error:', error)

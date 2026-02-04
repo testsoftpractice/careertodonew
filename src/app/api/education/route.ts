@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 // POST /api/education - Create new education
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
@@ -119,13 +119,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id?: string }> }
 ) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
     const { id: educationId } = await params
-    if (!id) {
+    if (!educationId) {
       return NextResponse.json({
         success: false,
         error: 'Education ID is required',
@@ -182,13 +182,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id?: string }> }
 ) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
     const { id: educationId } = await params
-    if (!id) {
+    if (!educationId) {
       return NextResponse.json({
         success: false,
         error: 'Education ID is required',

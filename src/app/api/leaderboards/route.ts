@@ -8,16 +8,15 @@ export async function GET(request: NextRequest) {
     const university = searchParams.get('university') || null
     const limit = parseInt(searchParams.get('limit') || '50')
 
-    const orderBy: any = category ? { rating: { _avg: { [category]: 'desc' } } } : { reputation: 'desc' }
+    // Use totalPoints for ranking since it exists in the User model
+    const orderBy: any = { totalPoints: 'desc' }
 
-    const where: any = {}
-
-    if (category) {
-      where.rating = { _avg: { [category]: { gt: 0 } } }
+    const where: any = {
+      role: 'STUDENT', // Only show students in leaderboard
     }
 
     if (university) {
-      where.user = { university: { name: { contains: university, mode: 'insensitive' } } }
+      where.university = { name: { contains: university, mode: 'insensitive' } }
     }
 
     const [users, totalCount] = await Promise.all([
@@ -25,6 +24,13 @@ export async function GET(request: NextRequest) {
         where,
         take: limit,
         orderBy,
+        include: {
+          university: {
+            select: {
+              name: true,
+            },
+          },
+        },
       }),
       db.user.count({ where }),
     ])
@@ -34,20 +40,20 @@ export async function GET(request: NextRequest) {
       id: u.id,
       name: u.name,
       email: u.email,
-      avatarUrl: u.avatarUrl,
+      avatar: u.avatar,
       university: u.university?.name || '',
       major: u.major || '',
       graduationYear: u.graduationYear || null,
-      overallReputation: u.reputation || 0,
+      overallReputation: u.totalPoints || 0,
       breakdown: {
-        execution: 4.5,
-        collaboration: 4.5,
-        leadership: 3.5,
-        ethics: 4.5,
-        reliability: 5.0,
+        execution: u.executionScore || 0,
+        collaboration: u.collaborationScore || 0,
+        leadership: u.leadershipScore || 0,
+        ethics: u.ethicsScore || 0,
+        reliability: u.reliabilityScore || 0,
       },
-      projectCount: 0,
-      achievementCount: 0,
+      projectCount: 0, // Would need to count projects separately if needed
+      achievementCount: 0, // Would need to count achievements separately if needed
     }))
 
     return NextResponse.json({

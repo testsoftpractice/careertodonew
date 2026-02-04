@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     const decoded = verifyToken(token)
 
-    if (!token) {
+    if (!decoded) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
         { status: 401 }
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     const completedTasks = await db.task.findMany({
       where: {
-        assigneeId: decoded.userId,
+        assignedTo: decoded.userId,
         status: 'DONE'
       },
       orderBy: { updatedAt: 'desc' },

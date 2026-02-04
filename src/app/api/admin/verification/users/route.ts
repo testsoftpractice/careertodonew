@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
             code: true
           }
         },
-        business: {
+        businessesOwned: {
           select: {
             id: true,
             name: true

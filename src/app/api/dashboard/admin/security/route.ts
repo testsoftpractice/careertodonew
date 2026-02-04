@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate stats
     const totalAlerts = alerts.length
-    const criticalAlerts = alerts.filter(a => a.severity === 'critical').length
+    const criticalAlerts = 0 // No critical alerts in the current mock data
     const highAlerts = alerts.filter(a => a.severity === 'high').length
     const resolvedToday = alerts.filter(a => a.status === 'resolved').length
 

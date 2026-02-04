@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     const decoded = verifyToken(token)
 
-    if (!token) {
+    if (!decoded) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
         { status: 401 }
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     const grades = education.map(edu => ({
       id: edu.id,
       courseCode: `CRS${edu.id.substring(0, 6)}`,
-      courseName: edu.fieldOfStudy || edu.degree,
+      courseName: edu.field || edu.degree,
       grade: edu.gpa ? (edu.gpa >= 3.7 ? 'A' : edu.gpa >= 3.0 ? 'B' : edu.gpa >= 2.0 ? 'C' : 'D') : 'N/A',
       credits: 3,
       semester: new Date(edu.startDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),

@@ -287,6 +287,11 @@ export async function DELETE(
 
     userId = decoded.userId
 
+    // Ensure userId is set
+    if (!userId) {
+      throw new UnauthorizedError('Invalid authentication')
+    }
+
     // Authorization - Only owner or platform admin can delete
     const canDelete = await canManageBusiness(userId, businessId, ['OWNER'])
 

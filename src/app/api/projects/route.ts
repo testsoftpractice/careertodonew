@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
 import { unauthorized, forbidden } from '@/lib/api-response'
+import { buildProjectVisibilityWhereClause } from '@/lib/visibility-controls'
 
 // ==================== PROJECTS API ====================
 
@@ -16,11 +17,15 @@ export async function GET(request: NextRequest) {
     const status = searchParams.status as string | undefined
     const ownerId = searchParams.ownerId as string | undefined
 
+    // Get user info for visibility control
+    const userId = authResult.dbUser?.id || null
+    const userRole = authResult.dbUser?.role || null
+
     const where: Record<string, string | undefined> = {}
 
     // If filtering by ownerId, only allow viewing own projects or admin
     if (ownerId) {
-      if (authResult.dbUser.id !== ownerId && authResult.dbUser.role !== 'PLATFORM_ADMIN') {
+      if (userId !== ownerId && userRole !== 'PLATFORM_ADMIN') {
         return forbidden('You can only view your own projects')
       }
       where.ownerId = ownerId
@@ -30,8 +35,11 @@ export async function GET(request: NextRequest) {
       where.status = status as any
     }
 
+    // Apply visibility control
+    const visibilityWhere = buildProjectVisibilityWhereClause(userId, userRole, where)
+
     const projects = await db.project.findMany({
-      where,
+      where: visibilityWhere,
       include: {
         owner: {
           select: {
@@ -40,7 +48,14 @@ export async function GET(request: NextRequest) {
             email: true,
             avatar: true,
             role: true,
-          }
+            university: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+              },
+            },
+          },
         },
         members: {
           include: {
@@ -52,29 +67,29 @@ export async function GET(request: NextRequest) {
                 avatar: true,
                 role: true,
                 major: true,
-              }
-            }
+              },
+            },
           },
-          take: 10
+          take: 10,
         },
         tasks: {
           take: 5,
-          orderBy: { dueDate: 'asc' }
+          orderBy: { dueDate: 'asc' },
         },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     })
 
     return NextResponse.json({
       success: true,
       data: projects,
-      count: projects.length
+      count: projects.length,
     })
   } catch (error) {
     console.error('Projects API error:', error)
     return NextResponse.json({
       success: false,
-      error: 'Failed to fetch projects'
+      error: 'Failed to fetch projects',
     }, { status: 500 })
   }
 }
@@ -115,17 +130,20 @@ export async function POST(request: NextRequest) {
       }, { status: 404 })
     }
 
-    // Create project with owner as member
+    // Create project with owner as member and PENDING approval status
     const project = await db.project.create({
       data: {
         name: body.name,
         description: body.description,
         ownerId: ownerId,
-        status: 'UNDER_REVIEW',
+        status: 'IDEA', // Start with IDEA status
+        approvalStatus: 'PENDING', // Requires admin approval
+        submissionDate: new Date(),
         startDate: body.startDate ? new Date(body.startDate) : null,
         endDate: body.endDate ? new Date(body.endDate) : null,
         budget: body.budget ? parseFloat(body.budget) : null,
         category: body.category,
+        seekingInvestment: body.seekingInvestment || false,
         members: {
           create: {
             userId: ownerId,

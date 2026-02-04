@@ -8,8 +8,8 @@ import { logError, formatErrorResponse, AppError, UnauthorizedError, ForbiddenEr
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const status = searchParams.status as string | undefined
-    const universityId = searchParams.universityId as string | undefined
+    const status = searchParams.get('status') as string | undefined
+    const universityId = searchParams.get('universityId') as string | undefined
 
     const where: any = {}
 
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
             location: true,
           },
         },
-        members: {
+        projectMembers: {
           include: {
             user: {
               select: {
@@ -70,7 +70,9 @@ export async function GET(request: NextRequest) {
           take: 10,
         },
         _count: {
-          members: true,
+          select: {
+            projectMembers: true,
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -110,7 +112,7 @@ export async function POST(request: NextRequest) {
     userId = decoded.userId
     const user = await db.user.findUnique({
       where: { id: userId },
-      select: { id: true, role: true, universityId: true, university: { name: true } },
+      select: { id: true, role: true, universityId: true, university: { select: { name: true } } },
     })
 
     if (!user) {
@@ -159,7 +161,7 @@ export async function POST(request: NextRequest) {
             location: true,
           },
         },
-        members: {
+        projectMembers: {
           include: {
             user: {
               select: {
@@ -175,7 +177,9 @@ export async function POST(request: NextRequest) {
           take: 10,
         },
         _count: {
-          members: true,
+          select: {
+            projectMembers: true,
+          },
         },
       },
     })
@@ -187,7 +191,7 @@ export async function POST(request: NextRequest) {
       }, { status: 404 })
     }
 
-    if (business.status !== 'PROPOSED') {
+    if (business.status !== 'PROPOSED' as any) {
       return NextResponse.json({
         success: false,
         error: 'Business is not in PROPOSED status',
@@ -196,17 +200,9 @@ export async function POST(request: NextRequest) {
 
     const action = body.action // 'approve' or 'reject'
 
-    // Update business status
-    const status = action === 'approve' ? 'APPROVED' : 'REJECTED'
-
     // Prepare update data
-    const updateData: {
-      status: string
-      approvalDate: Date | null
-      terminationReason: string | null
-      terminationDate: Date | null
-    } = {
-      status,
+    const updateData: any = {
+      status: action === 'approve' ? 'ACTIVE' : 'CANCELLED',
       approvalDate: action === 'approve' ? new Date() : null,
       terminationReason: action === 'reject' ? (body.reason || '') : null,
       terminationDate: action === 'reject' ? new Date() : null,
@@ -248,7 +244,7 @@ export async function POST(request: NextRequest) {
         userId: business.ownerId,
         points: pointsAwarded,
         source: action === 'approve' ? 'BUSINESS_APPROVAL' : 'BUSINESS_REJECTION',
-        description: `${action === 'approve' ? 'Approved' : 'Rejected'} business: ${business.title}`,
+        description: `${action === 'approve' ? 'Approved' : 'Rejected'} business: ${business.name}`,
         metadata: JSON.stringify({
           businessId: business.id,
           universityId: business.universityId,
@@ -271,12 +267,14 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      await db.university.update({
-        where: { id: user.universityId },
-        data: {
-          totalProjects: { increment: 1 },
-        },
-      })
+      if (user.universityId) {
+        await db.university.update({
+          where: { id: user.universityId },
+          data: {
+            totalProjects: { increment: 1 },
+          },
+        })
+      }
     }
 
     // Send notification to business lead
@@ -285,13 +283,13 @@ export async function POST(request: NextRequest) {
         userId: business.ownerId,
         type: action === 'approve' ? 'BUSINESS_APPROVAL' : 'BUSINESS_REJECTION',
         title: action === 'approve' ? '🎉 Business Approved!' : '❌ Business Rejected',
-        message: `Your business "${business.title}" has been ${action.toLowerCase()}.`,
+        message: `Your business "${business.name}" has been ${action.toLowerCase()}.`,
         link: `/businesses/${business.id}`,
       },
     })
 
     // Send notification to all business members
-    const memberIds = business.members.map((m) => m.userId)
+    const memberIds = (business as any).projectMembers?.map((m: any) => m.userId) || []
 
     if (memberIds.length > 0) {
       await db.notification.createMany({
@@ -299,7 +297,7 @@ export async function POST(request: NextRequest) {
           userId: memberId,
           type: action === 'approve' ? 'BUSINESS_APPROVAL' : 'BUSINESS_REJECTION',
           title: action === 'approve' ? 'Team Business Approved!' : 'Team Business Rejected',
-          message: `A business you're part of "${business.title}" has been ${action.toLowerCase()}`,
+          message: `A business you're part of "${business.name}" has been ${action.toLowerCase()}`,
           link: `/businesses/${business.id}`,
         })),
       })

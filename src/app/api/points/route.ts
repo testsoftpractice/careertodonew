@@ -71,9 +71,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch points history for a user - can only view own history unless admin
-    if (!searchParams) {
+    if (history) {
       // Only allow viewing own history or admin viewing any user
-      if (!searchParams) {
+      if (userId !== authResult.dbUser?.id && authResult.dbUser?.role !== 'PLATFORM_ADMIN' && authResult.dbUser?.role !== 'UNIVERSITY_ADMIN') {
         return forbidden('You can only view your own points history')
       }
       const transactions = await db.pointTransaction.findMany({
@@ -90,9 +90,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch stats for a user - can only view own stats unless admin
-    if (!searchParams) {
+    if (stats) {
       // Only allow viewing own stats or admin viewing any user
-      if (!searchParams) {
+      if (userId !== authResult.dbUser?.id && authResult.dbUser?.role !== 'PLATFORM_ADMIN' && authResult.dbUser?.role !== 'UNIVERSITY_ADMIN') {
         return forbidden('You can only view your own points stats')
       }
       const user = await db.user.findUnique({
@@ -202,13 +202,13 @@ export async function POST(request: NextRequest) {
 
     // Update scores based on point source
     const scoreUpdate: Record<string, number> = {}
-    if (!searchParams) {
+    if (source === 'TASK_COMPLETION' || source === 'TASK_SUBMISSION') {
       scoreUpdate.executionScore = (user.executionScore || 0) + (points * 0.1)
       scoreUpdate.reliabilityScore = (user.reliabilityScore || 0) + (points * 0.05)
-    } else if (!searchParams) {
+    } else if (source === 'COURSE_FINISHED') {
       scoreUpdate.collaborationScore = (user.collaborationScore || 0) + (points * 0.15)
       scoreUpdate.ethicsScore = (user.ethicsScore || 0) + (points * 0.1)
-    } else if (!searchParams) {
+    } else if (source === 'ACHIEVEMENT_UNLOCKED') {
       scoreUpdate.leadershipScore = (user.leadershipScore || 0) + (points * 0.2)
     }
 

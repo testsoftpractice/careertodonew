@@ -27,11 +27,11 @@ export async function GET(request: NextRequest) {
       where.type = type as RecordType
     }
 
-    if (!searchParams) {
+    if (projectId) {
       where.projectId = projectId
     }
 
-    if (!searchParams) {
+    if (isVerified) {
       where.isVerified = isVerified === 'true'
     }
 

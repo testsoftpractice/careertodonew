@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/api/auth-middleware'
+import { requireAuth, requireRole, getUserFromRequest } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
 
 // GET /api/dashboard/university/pending-approvals - Get pending business approvals
 export async function GET(request: NextRequest) {
-  const auth = await requireAuth(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
-  if ('status' in auth) return auth
+  const auth = requireRole(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
+  if (auth !== true) return auth
 
-  const user = auth.user
-  const universityId = user.universityId
+  const user = getUserFromRequest(request)
+  const universityId = user?.universityId
 
   if (!user) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })

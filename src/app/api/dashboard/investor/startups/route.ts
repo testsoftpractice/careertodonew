@@ -4,14 +4,10 @@ import { db } from '@/lib/db'
 
 // GET /api/dashboard/investor/startups - Get investor's startup tracker
 export async function GET(request: NextRequest) {
-  const auth = await requireAuth(request, ['INVESTOR', 'PLATFORM_ADMIN'])
+  const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
   const user = auth.user
-
-  if (!token) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
 
   try {
     // Get investments made by this investor
@@ -22,7 +18,7 @@ export async function GET(request: NextRequest) {
           select: { id: true, name: true, status: true, businessId: true }
         }
       },
-      orderBy: { investedAt: 'desc' }
+      orderBy: { createdAt: 'desc' }
     })
 
     // Get unique projects from investments
@@ -68,7 +64,6 @@ export async function GET(request: NextRequest) {
       const totalInvested = startup.totalInvested
       const currentValue = totalInvested * (1 + Math.random() * 0.4)
       const roi = currentValue > totalInvested ? ((currentValue - totalInvested) / totalInvested) * 100 : 0
-
       const employees = Math.floor(Math.random() * 50) + 5
       const monthlyGrowth = Math.floor(Math.random() * 5 + (Math.random() * 2)) - 2
       const foundedYear = 2018 + Math.floor(Math.random() * 6)

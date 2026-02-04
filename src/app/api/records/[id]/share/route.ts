@@ -65,7 +65,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     })
 
-    if (!searchParams) {
+    if (!request.nextUrl.searchParams.isEmpty()) {
       return NextResponse.json({ success: false, error: "Invalid or expired share link" }, { status: 404 })
     }
 

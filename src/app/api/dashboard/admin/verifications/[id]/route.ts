@@ -73,10 +73,9 @@ export async function PATCH(
     const updatedRequest = await db.verificationRequest.update({
       where: { id: verificationId },
       data: {
-        status: action === 'approve' ? 'APPROVED' : 'REJECTED',
-        reviewedBy: decoded.userId,
+        status: action === 'approve' ? 'VERIFIED' : 'REJECTED',
         reviewedAt: new Date(),
-        rejectionReason: reason
+        reviewNote: reason
       }
     })
 

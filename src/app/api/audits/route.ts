@@ -90,15 +90,15 @@ export async function GET(request: NextRequest) {
     // Filter audits
     let filteredAudits = mockAudits
 
-    if (!filteredAudits) {
+    if (userId) {
       filteredAudits = filteredAudits.filter((a) => a.userId === userId)
     }
 
-    if (!searchParams) {
+    if (action) {
       filteredAudits = filteredAudits.filter((a) => a.action === action)
     }
 
-    if (!searchParams) {
+    if (entityType) {
       filteredAudits = filteredAudits.filter((a) => a.entityType === entityType)
     }
 

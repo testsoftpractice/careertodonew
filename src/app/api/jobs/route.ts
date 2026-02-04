@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyToken } from '@/lib/auth/jwt'
 import { logError, formatErrorResponse, AppError, UnauthorizedError } from '@/lib/utils/error-handler'
+import { buildJobVisibilityWhereClause } from '@/lib/visibility-controls'
 
 // GET /api/jobs - List jobs with filters
 export async function GET(request: NextRequest) {
@@ -38,8 +39,28 @@ export async function GET(request: NextRequest) {
       where.status = status
     }
 
+    // Get user info for visibility control
+    let userRole: string | null = null
+    let authUserId: string | null = null
+
+    // Try to get auth info if available
+    try {
+      const sessionCookie = request.cookies.get('session')
+      const token = sessionCookie?.value
+      if (token) {
+        const decoded = verifyToken(token)
+        authUserId = decoded.userId
+        userRole = decoded.role
+      }
+    } catch (e) {
+      // Not authenticated - that's fine, will show only approved jobs
+    }
+
+    // Apply visibility control
+    const visibilityWhere = buildJobVisibilityWhereClause(authUserId, userRole, where)
+
     const jobs = await db.job.findMany({
-      where,
+      where: visibilityWhere,
       include: {
         user: {
           select: {
@@ -125,19 +146,19 @@ export async function POST(request: NextRequest) {
       throw new AppError('Job title is required', 400)
     }
 
-    // Create job
+    // Create job with PENDING approval status
     const job = await db.job.create({
       data: {
         userId: userId,
-        employerId: userId,
         businessId: body.businessId || null,
         title: body.title,
         description: body.description || null,
         type: body.type || 'FULL_TIME',
         location: body.location || null,
         salary: body.salary || null,
-        published: body.published || false,
-        publishedAt: body.published ? new Date() : null,
+        published: false, // Always start as not published
+        publishedAt: null,
+        approvalStatus: 'PENDING',
       },
       include: {
         user: {

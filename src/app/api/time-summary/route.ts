@@ -102,13 +102,13 @@ export async function GET(request: NextRequest) {
       let projectId = session.projectId
       let project = session.project
 
-      if (!projectId) {
+      if (!projectId && session.task?.project) {
         projectId = session.task.project.id
         project = session.task.project
       }
 
       // Skip if no project associated
-      if (!projectId) {
+      if (!projectId || !project) {
         return
       }
 
@@ -182,7 +182,7 @@ export async function GET(request: NextRequest) {
     const workSessionTypeSummary: Record<string, number> = {}
     workSessions.forEach(session => {
       const type = session.type || 'UNSUPPORTED'
-      if (!type) {
+      if (!workSessionTypeSummary[type]) {
         workSessionTypeSummary[type] = 0
       }
       workSessionTypeSummary[type] += session.duration || 0

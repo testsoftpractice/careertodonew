@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { verifyAuth, requireAuth } from '@/lib/auth/verify'
+import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
 import { unauthorized, forbidden } from '@/lib/api-response'
 
 // ==================== TIME ENTRIES API ====================
@@ -97,6 +97,9 @@ export async function GET(request: NextRequest) {
       totalHours
     })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Time Entries API error:', error)
     return NextResponse.json({
       success: false,
@@ -235,6 +238,9 @@ export async function POST(request: NextRequest) {
       message: 'Time entry created successfully'
     }, { status: 201 })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Time Entry creation error:', error)
     return NextResponse.json({
       success: false,

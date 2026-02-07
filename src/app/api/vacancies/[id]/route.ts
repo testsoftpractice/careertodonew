@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { requireAuth } from '@/lib/auth/verify'
+import { requireAuth, AuthError } from '@/lib/auth/verify'
 import { successResponse, errorResponse, forbidden, notFound, unauthorized } from '@/lib/api-response'
 import { z } from 'zod'
 
@@ -104,6 +104,9 @@ export async function PATCH(
 
     return successResponse(updatedVacancy, 'Vacancy updated successfully')
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Update vacancy error:', error)
     return errorResponse('Failed to update vacancy')
   }
@@ -150,6 +153,9 @@ export async function DELETE(
 
     return successResponse({ id }, 'Vacancy deleted successfully')
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Delete vacancy error:', error)
     return errorResponse('Failed to delete vacancy')
   }

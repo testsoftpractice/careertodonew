@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { successResponse, errorResponse, validationError, forbidden, notFound } from '@/lib/api-response'
-import { requireAuth } from '@/lib/auth/verify'
+import { requireAuth, AuthError } from '@/lib/auth/verify'
 import { z } from 'zod'
 
 const createVacancySchema = z.object({
@@ -38,7 +38,10 @@ export async function GET(request: NextRequest) {
     })
 
     return successResponse(vacancies)
-  } catch (error) {
+  } catch (error: any) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Vacancies API error:', error)
     return errorResponse('Failed to fetch vacancies', 500)
   }
@@ -118,6 +121,9 @@ export async function POST(request: NextRequest) {
 
     return successResponse(vacancy, 'Vacancy created successfully')
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Create vacancy error:', error)
     return errorResponse('Failed to create vacancy', 500)
   }
@@ -168,6 +174,9 @@ export async function DELETE(request: NextRequest) {
 
     return successResponse({ id }, 'Vacancy deleted successfully')
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Delete vacancy error:', error)
     return errorResponse('Failed to delete vacancy', 500)
   }

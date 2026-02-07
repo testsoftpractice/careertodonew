@@ -157,6 +157,9 @@ export async function GET(request: NextRequest) {
       error: 'Please provide userId, stats=true, or leaderboard=true',
     }, { status: 400 })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Points API error:', error)
     return NextResponse.json({
       success: false,
@@ -173,6 +176,9 @@ export async function POST(request: NextRequest) {
     try {
       authResult = await requireRole(request, ['PLATFORM_ADMIN', 'UNIVERSITY_ADMIN', 'MENTOR'])
     } catch (error) {
+      if (error instanceof AuthError) {
+        return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+      }
       if (!authResult) {
         return forbidden('Only admins and mentors can award points')
       }
@@ -252,6 +258,9 @@ export async function POST(request: NextRequest) {
       },
     }, { status: 201 })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Award points error:', error)
     return NextResponse.json({
       success: false,
@@ -268,6 +277,9 @@ export async function ADJUST(request: NextRequest) {
     try {
       authResult = await requireRole(request, ['PLATFORM_ADMIN'])
     } catch (error) {
+      if (error instanceof AuthError) {
+        return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+      }
       if (!authResult) {
         return forbidden('Only platform administrators can adjust points')
       }
@@ -314,6 +326,9 @@ export async function ADJUST(request: NextRequest) {
       },
     }, { status: 201 })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Adjust points error:', error)
     return NextResponse.json({
       success: false,

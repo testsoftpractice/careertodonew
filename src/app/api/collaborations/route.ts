@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { CollaborationType, CollaborationStatus } from '@prisma/client'
 import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
-import { unauthorized, forbidden } from '@/lib/api-response'
+import { unauthorized, forbidden, errorResponse } from '@/lib/api-response'
 
 // ==================== COLLABORATION API ====================
 
@@ -232,6 +232,9 @@ export async function GET(request: NextRequest) {
       error: 'Invalid request. Provide type (requests or collaborators)',
     }, { status: 400 })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Collaboration API error:', error)
     return NextResponse.json({
       success: false,
@@ -349,6 +352,9 @@ export async function POST(request: NextRequest) {
       data: result,
     }, { status: 201 })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Create collaboration request error:', error)
     return NextResponse.json({
       success: false,
@@ -508,6 +514,9 @@ export async function PATCH(request: NextRequest) {
       data: updatedRequest,
     })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Update collaboration request error:', error)
     return NextResponse.json({
       success: false,
@@ -562,6 +571,9 @@ export async function DELETE(request: NextRequest) {
       message: 'Collaboration request cancelled successfully',
     })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Delete collaboration request error:', error)
     return NextResponse.json({
       success: false,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { requireAuth } from '@/lib/auth/verify'
+import { requireAuth, AuthError } from '@/lib/auth/verify'
 import { ProjectApprovalStatus, ProjectStatus } from '@prisma/client'
 import { successResponse, errorResponse, forbidden, notFound } from '@/lib/api-response'
 
@@ -129,6 +129,10 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      console.error('Authentication error:', error.message)
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Get project approvals error:', error)
     return errorResponse('Failed to fetch project approvals', 500)
   }
@@ -171,7 +175,7 @@ export async function POST(request: NextRequest) {
         approvedAt: new Date(),
         approvedBy: currentUser.id,
         reviewComments: comments || null,
-        rejectionReason: null,
+        terminationReason: null,
         status: publishImmediately ? 'ACTIVE' : 'FUNDING',
         published: publishImmediately ? true : undefined,
         publishedAt: publishImmediately ? new Date() : undefined,
@@ -231,6 +235,10 @@ export async function POST(request: NextRequest) {
       'Project approved successfully'
     )
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      console.error('Authentication error:', error.message)
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Approve project error:', error)
     return errorResponse('Failed to approve project', 500)
   }

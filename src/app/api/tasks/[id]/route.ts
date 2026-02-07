@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { TaskStatus } from '@prisma/client'
-import { requireAuth } from '@/lib/auth/verify'
+import { requireAuth, AuthError } from '@/lib/auth/verify'
 import { forbidden, notFound, unauthorized } from '@/lib/api-response'
 
 // GET /api/tasks/[id] - Get a specific task
@@ -52,6 +52,9 @@ export async function GET(
       data: task
     })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Get task error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -178,6 +181,9 @@ export async function PATCH(
       data: updatedTask,
     })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Update task error:', error)
 
     // Handle AuthError - return proper JSON response
@@ -240,6 +246,9 @@ export async function DELETE(
       message: 'Task deleted successfully',
     })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Delete task error:', error)
 
     // Handle AuthError - return proper JSON response

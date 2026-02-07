@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { TaskStatus } from '@prisma/client'
-import { requireAuth } from '@/lib/auth/verify'
+import { requireAuth, AuthError } from '@/lib/auth/verify'
 import { successResponse, errorResponse, forbidden, notFound, unauthorized } from '@/lib/api-response'
 import { z } from 'zod'
 
@@ -85,6 +85,9 @@ export async function GET(
 
     return successResponse(tasks, `Found ${tasks.length} project tasks`)
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Get project tasks error:', error)
 
     // Handle AuthError
@@ -188,6 +191,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return successResponse(task, 'Task created successfully')
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Create project task error:', error)
 
     // Handle AuthError - return proper JSON response

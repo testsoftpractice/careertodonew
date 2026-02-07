@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { successResponse, errorResponse, badRequest, unauthorized, forbidden, notFound, validationError } from '@/lib/api-response'
 import { validateRequest, createTaskSchema, updateTaskSchema } from '@/lib/validation'
-import { verifyAuth, requireAuth } from '@/lib/auth/verify'
+import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
 
 // ==================== TASKS API ====================
 
@@ -69,6 +69,9 @@ export async function GET(request: NextRequest) {
       count: tasks.length
     })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Tasks API error:', error)
     return NextResponse.json({
       success: false,
@@ -134,6 +137,9 @@ export async function POST(request: NextRequest) {
 
     return successResponse(task, 'Task created successfully', { status: 201 })
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Task creation error:', error)
 
     // Handle AuthError - return proper JSON response

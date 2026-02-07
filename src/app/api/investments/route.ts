@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
-import { unauthorized, forbidden } from '@/lib/api-response'
+import { unauthorized, forbidden, errorResponse } from '@/lib/api-response'
 
 // GET /api/investments - List investments with filters
 export async function GET(request: NextRequest) {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     // If filtering by investorId, only allow viewing own investments or admin
     if (investorId) {
-      if (authResult.dbUser.id !== investorId && authResult.role !== 'PLATFORM_ADMIN') {
+      if (authResult.dbUser?.id !== investorId && authResult.dbUser?.role !== 'PLATFORM_ADMIN') {
         return forbidden('You can only view your own investments')
       }
       where.investorId = investorId
@@ -88,6 +88,9 @@ export async function GET(request: NextRequest) {
       })),
     })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Get investments error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
@@ -203,6 +206,9 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Create investment error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

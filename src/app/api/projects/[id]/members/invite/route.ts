@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { requireAuth } from '@/lib/auth/verify'
+import { requireAuth, AuthError } from '@/lib/auth/verify'
 import { db } from '@/lib/db'
 import { successResponse, errorResponse, notFound, forbidden } from '@/lib/api-response'
 
@@ -134,6 +134,9 @@ export async function POST(
       `Successfully added ${targetUser.name} to the project`
     )
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Invite member error:', error)
 
     if (error.name === 'AuthError') {

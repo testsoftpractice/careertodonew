@@ -170,7 +170,7 @@ export async function PATCH(
       where: { id },
       data: {
         approvalStatus: 'REJECTED',
-        rejectionReason: rejectionReason,
+        terminationReason: rejectionReason,
         reviewComments: reviewComments || null,
         status: 'CANCELLED',
       },
@@ -249,7 +249,7 @@ export async function PUT(
       data: {
         approvalStatus: 'REQUIRE_CHANGES',
         reviewComments: reviewComments,
-        rejectionReason: null,
+        terminationReason: null,
         status: 'ON_HOLD',
       },
     })

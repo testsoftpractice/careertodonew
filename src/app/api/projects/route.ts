@@ -86,6 +86,9 @@ export async function GET(request: NextRequest) {
       count: projects.length,
     })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Projects API error:', error)
     return NextResponse.json({
       success: false,
@@ -165,6 +168,9 @@ export async function POST(request: NextRequest) {
       data: project
     }, { status: 201 })
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Project creation error:', error)
 
     // Handle AuthError - return proper JSON response

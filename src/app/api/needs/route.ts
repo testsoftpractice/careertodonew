@@ -140,6 +140,12 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error: unknown) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { success: false, error: error.message || 'Authentication required' },
+        { status: error.statusCode || 401 }
+      )
+    }
     console.error('Get needs error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
@@ -209,6 +215,12 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error: unknown) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { success: false, error: error.message || 'Authentication required' },
+        { status: error.statusCode || 401 }
+      )
+    }
     console.error('Create need error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

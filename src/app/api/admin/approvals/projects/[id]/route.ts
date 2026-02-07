@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { requireAuth, getUserFromRequest } from '@/lib/api/auth-middleware'
+import { requireAuth, AuthError } from '@/lib/auth/verify'
 import { ProjectApprovalStatus } from '@prisma/client'
 import { successResponse, errorResponse, forbidden, notFound } from '@/lib/api-response'
 
@@ -10,11 +10,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = requireAuth(request)
-    if ('status' in auth) return auth
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
 
-    const user = getUserFromRequest(request)
-    if (!user || user.role !== 'PLATFORM_ADMIN') {
+    if (currentUser.role !== 'PLATFORM_ADMIN') {
       return forbidden('Only platform admins can access this endpoint')
     }
 
@@ -126,6 +125,10 @@ export async function GET(
 
     return successResponse(project)
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      console.error('Authentication error:', error.message)
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Get project for approval error:', error)
     return errorResponse('Failed to fetch project details', 500)
   }
@@ -137,11 +140,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = requireAuth(request)
-    if ('status' in auth) return auth
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
 
-    const user = getUserFromRequest(request)
-    if (!user || user.role !== 'PLATFORM_ADMIN') {
+    if (currentUser.role !== 'PLATFORM_ADMIN') {
       return forbidden('Only platform admins can reject projects')
     }
 
@@ -180,7 +182,7 @@ export async function PATCH(
     const approval = await db.projectApproval.create({
       data: {
         projectId: id,
-        adminId: user.id,
+        adminId: currentUser.id,
         status: 'REJECTED',
         comments: `${rejectionReason}\n\n${reviewComments || ''}`.trim(),
       },
@@ -205,6 +207,10 @@ export async function PATCH(
       'Project rejected successfully'
     )
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      console.error('Authentication error:', error.message)
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Reject project error:', error)
     return errorResponse('Failed to reject project', 500)
   }
@@ -215,11 +221,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = requireAuth(request)
-    if ('status' in auth) return auth
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
 
-    const user = getUserFromRequest(request)
-    if (!user || user.role !== 'PLATFORM_ADMIN') {
+    if (currentUser.role !== 'PLATFORM_ADMIN') {
       return forbidden('Only platform admins can request changes')
     }
 
@@ -258,7 +263,7 @@ export async function PUT(
     const approval = await db.projectApproval.create({
       data: {
         projectId: id,
-        adminId: user.id,
+        adminId: currentUser.id,
         status: 'REQUIRE_CHANGES',
         comments: reviewComments,
       },
@@ -283,6 +288,10 @@ export async function PUT(
       'Changes requested successfully'
     )
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      console.error('Authentication error:', error.message)
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Request changes error:', error)
     return errorResponse('Failed to request changes', 500)
   }

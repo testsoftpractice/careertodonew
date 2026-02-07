@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { requireAuth, getUserFromRequest } from '@/lib/api/auth-middleware'
+import { requireAuth, AuthError } from '@/lib/auth/verify'
 import { JobApprovalStatus } from '@prisma/client'
 import { successResponse, errorResponse, forbidden, notFound } from '@/lib/api-response'
 
@@ -10,10 +10,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await requireAuth(request)
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
 
-    const user = auth.dbUser
-    if (!user || user.role !== 'PLATFORM_ADMIN') {
+    if (currentUser.role !== 'PLATFORM_ADMIN') {
       return forbidden('Only platform admins can access this endpoint')
     }
 
@@ -98,6 +98,10 @@ export async function GET(
 
     return successResponse(job)
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      console.error('Authentication error:', error.message)
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Get job for approval error:', error)
     return errorResponse('Failed to fetch job details', 500)
   }
@@ -108,10 +112,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await requireAuth(request)
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
 
-    const user = auth.dbUser
-    if (!user || user.role !== 'PLATFORM_ADMIN') {
+    if (currentUser.role !== 'PLATFORM_ADMIN') {
       return forbidden('Only platform admins can reject jobs')
     }
 
@@ -150,7 +154,7 @@ export async function PATCH(
     const approval = await db.jobApproval.create({
       data: {
         jobId: id,
-        adminId: user.id,
+        adminId: currentUser.id,
         status: 'REJECTED',
         comments: `${rejectionReason}\n\n${reviewComments || ''}`.trim(),
       },
@@ -177,6 +181,10 @@ export async function PATCH(
       'Job rejected successfully'
     )
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      console.error('Authentication error:', error.message)
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Reject job error:', error)
     return errorResponse('Failed to reject job', 500)
   }

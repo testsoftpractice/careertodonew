@@ -8,8 +8,8 @@ if (!process.env.JWT_SECRET) {
   console.warn('JWT_SECRET environment variable is not set, using default for development')
 }
 
-const JWT_EXPIRES_IN = '1h' // 1 hour for access token
-const REFRESH_TOKEN_EXPIRES_IN = '7d' // 7 days for refresh token
+const JWT_EXPIRES_IN = '7d' // 7 days for access token
+const REFRESH_TOKEN_EXPIRES_IN = '30d' // 30 days for refresh token
 
 export async function hashPassword(password: string): Promise<string> {
   const salt = await bcrypt.genSalt(10)

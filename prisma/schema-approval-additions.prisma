@@ -1,0 +1,124 @@
+// ============================================
+// APPROVAL SYSTEM ADDITIONS
+// Add these to your main schema.prisma file
+// ============================================
+
+// ============================================
+// NEW ENUMS FOR APPROVAL SYSTEM
+// ============================================
+
+// Add these enums after the existing enums (around line 213)
+
+enum ProjectApprovalStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  REQUIRE_CHANGES
+}
+
+enum JobApprovalStatus {
+  DRAFT
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+// ============================================
+// PROJECT APPROVAL MODEL
+// ============================================
+
+// Add this model after the Project model (around line 476)
+
+model ProjectApproval {
+  id          String                @id @default(cuid())
+  projectId   String
+  adminId     String
+  status      ProjectApprovalStatus
+  comments    String?
+  reviewedAt  DateTime              @default(now())
+
+  // Relations
+  project     Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  admin       User                  @relation(fields: [adminId], references: [id])
+
+  // Timestamps
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@index([projectId])
+  @@index([adminId])
+  @@index([status])
+}
+
+// ============================================
+// JOB APPROVAL MODEL
+// ============================================
+
+// Add this model after the Job model (around line 928)
+
+model JobApproval {
+  id          String              @id @default(cuid())
+  jobId       String
+  adminId     String
+  status      JobApprovalStatus
+  comments    String?
+  reviewedAt  DateTime            @default(now())
+
+  // Relations
+  job         Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  admin       User                @relation(fields: [adminId], references: [id])
+
+  // Timestamps
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([jobId])
+  @@index([adminId])
+  @@index([status])
+}
+
+// ============================================
+// UPDATE TO EXISTING MODELS
+// ============================================
+
+// 1. UPDATE PROJECT MODEL - Add these fields to the Project model (after line 450)
+/*
+  // Existing approval fields - keep them, but add these:
+
+  // Approval fields
+  approvalStatus    ProjectApprovalStatus @default(PENDING)
+  approvedAt        DateTime?
+  approvedBy        String?
+  rejectionReason   String?
+  reviewComments    String?
+  submissionDate    DateTime?  // When first submitted for review
+
+  // Relations - Add to existing relations:
+  approvals         ProjectApproval[]
+*/
+
+// 2. UPDATE JOB MODEL - Add these fields to the Job model (after line 914)
+/*
+  // Add these approval-related fields:
+
+  // Approval fields
+  approvalStatus    JobApprovalStatus @default(DRAFT)
+  approvedAt        DateTime?
+  approvedBy        String?
+  rejectionReason   String?
+  reviewComments    String?
+  submissionDate    DateTime?  // When first submitted for review
+
+  // Relations - Add to existing relations:
+  approvals         JobApproval[]
+*/
+
+// 3. UPDATE USER MODEL - Add these relations (in the Relations section, after line 320)
+/*
+  // Add to existing relations:
+  projectsApproved      ProjectApproval[]
+  jobsApproved           JobApproval[]
+*/

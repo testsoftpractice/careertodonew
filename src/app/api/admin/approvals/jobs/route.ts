@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { requireAuth, getUserFromRequest } from '@/lib/api/auth-middleware'
+import { requireAuth, AuthError } from '@/lib/auth/verify'
 import { JobApprovalStatus } from '@prisma/client'
 import { successResponse, errorResponse, forbidden, notFound } from '@/lib/api-response'
 
 // GET /api/admin/approvals/jobs - List all jobs pending approval
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireAuth(request)
-    if ('status' in auth) return auth
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
 
-    const user = getUserFromRequest(request)
-    if (!user || user.role !== 'PLATFORM_ADMIN') {
+    if (currentUser.role !== 'PLATFORM_ADMIN') {
       return forbidden('Only platform admins can access this endpoint')
     }
 
@@ -127,6 +126,10 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      console.error('Authentication error:', error.message)
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Get job approvals error:', error)
     return errorResponse('Failed to fetch job approvals', 500)
   }
@@ -134,11 +137,10 @@ export async function GET(request: NextRequest) {
 // POST /api/admin/approvals/jobs - Approve a job
 export async function POST(request: NextRequest) {
   try {
-    const auth = requireAuth(request)
-    if ('status' in auth) return auth
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
 
-    const user = getUserFromRequest(request)
-    if (!user || user.role !== 'PLATFORM_ADMIN') {
+    if (currentUser.role !== 'PLATFORM_ADMIN') {
       return forbidden('Only platform admins can approve jobs')
     }
 
@@ -167,7 +169,7 @@ export async function POST(request: NextRequest) {
       data: {
         approvalStatus: 'APPROVED',
         approvedAt: new Date(),
-        approvedBy: user.id,
+        approvedBy: currentUser.id,
         reviewComments: comments || null,
         rejectionReason: null,
         status: 'ACTIVE',
@@ -178,7 +180,7 @@ export async function POST(request: NextRequest) {
     const approval = await db.jobApproval.create({
       data: {
         jobId: jobId,
-        adminId: user.id,
+        adminId: currentUser.id,
         status: 'APPROVED',
         comments: comments || null,
       },
@@ -205,6 +207,10 @@ export async function POST(request: NextRequest) {
       'Job approved successfully'
     )
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      console.error('Authentication error:', error.message)
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Approve job error:', error)
     return errorResponse('Failed to approve job', 500)
   }

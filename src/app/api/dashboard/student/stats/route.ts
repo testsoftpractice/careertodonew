@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
           ethicsScore: true,
           reliabilityScore: true,
         }
-      }),
-      db.notification.count({ where: { userId, read: false } })
+      }).catch(() => null), // Handle user not found gracefully
+      db.notification.count({ where: { userId, read: false } }).catch(() => 0), // Handle count errors gracefully
     ])
 
       const breakdown = {

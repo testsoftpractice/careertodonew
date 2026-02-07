@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/api/auth-middleware'
+import { verifyAuth, AuthError } from '@/lib/auth/verify'
+import { unauthorized, errorResponse } from '@/lib/api-response'
 import { db } from '@/lib/db'
 
 // GET /api/dashboard/employer/pipeline - Get employer's hiring pipeline
 export async function GET(request: NextRequest) {
-  const auth = await requireAuth(request)
-  if ('status' in auth) return auth
-
-  const user = auth.user
-
   try {
+    const authResult = await verifyAuth(request)
+    if (!authResult.success || !authResult.user) {
+      return unauthorized('Authentication required')
+    }
+
+    const user = authResult.user
+
     // Get employer's jobs with application counts
     const jobs = await db.job.findMany({
       where: { userId: user.id },
@@ -73,7 +76,10 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Get pipeline error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return errorResponse('Failed to fetch hiring pipeline', 500)
   }
 }

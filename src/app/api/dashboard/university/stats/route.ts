@@ -12,18 +12,16 @@ export async function GET(request: NextRequest) {
     const totalStudents = await db.user.count({ where: { universityId, role: "STUDENT" } })
     const totalProjects = await db.project.count({
       where: {
-        ownerId: {
+        owner: {
           universityId: universityId,
         },
       },
     })
     const activeDepartments = await db.department.count({
       where: {
-        projects: {
-          some: {
-            ownerId: {
-              universityId: universityId,
-            },
+        project: {
+          owner: {
+            universityId: universityId,
           },
         },
       },

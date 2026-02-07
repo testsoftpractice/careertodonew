@@ -1,21 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth, requireRole, getUserFromRequest } from '@/lib/api/auth-middleware'
+import { verifyAuth, requireRole, AuthError } from '@/lib/auth/verify'
+import { unauthorized, forbidden, errorResponse } from '@/lib/api-response'
 import { db } from '@/lib/db'
 
 // GET /api/dashboard/employer/candidates - Get employer's candidate pool
 export async function GET(request: NextRequest) {
-  const user = requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
-  if (user instanceof NextResponse) return user
-  const { searchParams } = new URL(request.url)
-  const search = searchParams.get('search') || ''
-  const status = searchParams.get('status') || 'all'
-  const limit = parseInt(searchParams.get('limit') || '50')
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   try {
+    const authResult = await verifyAuth(request)
+    if (!authResult.success || !authResult.user) {
+      return unauthorized('Authentication required')
+    }
+
+    // Check role
+    const user = authResult.user
+    if (!['EMPLOYER', 'PLATFORM_ADMIN'].includes(user.role)) {
+      return forbidden('Insufficient permissions')
+    }
+
+    const { searchParams } = new URL(request.url)
+    const search = searchParams.get('search') || ''
+    const status = searchParams.get('status') || 'all'
+    const limit = parseInt(searchParams.get('limit') || '50')
+
     // Get employer's jobs
     const jobs = await db.job.findMany({
       where: {
@@ -122,7 +128,10 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Get candidates error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return errorResponse('Failed to fetch candidates', 500)
   }
 }

@@ -6,10 +6,23 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { projectId, investmentType, amount, equity, investorId } = body
 
+    // Get project to find owner for notification
+    const project = await db.project.findUnique({
+      where: { id: projectId },
+      select: { ownerId: true, name: true },
+    })
+
+    if (!project) {
+      return NextResponse.json(
+        { success: false, error: 'Project not found' },
+        { status: 404 }
+      )
+    }
+
     const investment = await db.investment.create({
       data: {
         projectId,
-        investorId,
+        userId: investorId,
         type: investmentType,
         amount,
         equity,
@@ -20,10 +33,10 @@ export async function POST(request: NextRequest) {
     // Notify project owner
     await db.notification.create({
       data: {
-        userId: investment.project?.ownerId,
+        userId: project.ownerId,
         type: "INVESTMENT",
         title: "Investment Interest Received",
-        message: `An investor has expressed interest in your project: ${investment.project?.title}. Investment amount: $${amount.toLocaleString()}, Equity: ${equity}%`,
+        message: `An investor has expressed interest in your project: ${project.name}. Investment amount: $${amount?.toLocaleString() || 'N/A'}, Equity: ${equity || 'N/A'}%`,
         link: `/marketplace/projects/${projectId}`,
       }
     })

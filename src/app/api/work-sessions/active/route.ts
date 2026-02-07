@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth, AuthError } from '@/lib/auth/verify'
-import { unauthorized } from '@/lib/api-response'
+import { unauthorized, errorResponse } from '@/lib/api-response'
 
 // GET /api/work-sessions/active - Get active work session for current user
 export async function GET(request: NextRequest) {

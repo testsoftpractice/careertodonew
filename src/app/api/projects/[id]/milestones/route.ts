@@ -98,7 +98,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           project: {
             select: {
               id: true,
-              title: true,
+              name: true,
               ownerId: true,
             },
           },
@@ -118,7 +118,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
                 milestoneId: milestone.id,
                 milestoneTitle: milestone.title,
                 projectId: milestone.projectId,
-                projectTitle: milestone.project.title,
+                projectName: milestone.project.name,
               }),
             }
           })

@@ -5,26 +5,27 @@ import { db } from '@/lib/db'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const investorId = searchParams.get('investorId')
+    const userId = searchParams.get('investorId') || searchParams.get('userId')
     const projectId = searchParams.get('projectId')
     const status = searchParams.get('status')
 
-    const where: any = {
-      status: {
+    const where: any = {}
+
+    // Default to active deal statuses if no filter provided
+    if (!status || status === 'all') {
+      where.status = {
         in: ['UNDER_REVIEW', 'AGREED', 'FUNDED'],
-      },
+      }
+    } else {
+      where.status = status
     }
 
-    if (investorId) {
-      where.investorId = investorId
+    if (userId) {
+      where.userId = userId
     }
 
     if (projectId) {
       where.projectId = projectId
-    }
-
-    if (status) {
-      where.status = status
     }
 
     const deals = await db.investment.findMany({
@@ -54,7 +55,6 @@ export async function GET(request: NextRequest) {
             email: true,
           },
         },
-        agreement: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -133,7 +133,7 @@ export async function PUT(
       where: { id: dealId },
       include: {
         project: true,
-        investor: true,
+        user: true,
       },
     })
 
@@ -173,7 +173,6 @@ export async function PUT(
             email: true,
           },
         },
-        agreement: true,
       },
     })
 
@@ -184,7 +183,7 @@ export async function PUT(
           userId: deal.userId,
           type: 'DEAL_UPDATE',
           title: 'Deal Under Review',
-          message: `Your proposal for "${deal.project.title}" is now under review`,
+          message: `Your proposal for "${deal.project.name}" is now under review`,
           link: `/dashboard/investor/deals/${dealId}`,
         },
       })
@@ -195,7 +194,7 @@ export async function PUT(
           userId: deal.userId,
           type: 'DEAL_UPDATE',
           title: 'Deal Agreed',
-          message: `Congratulations! The deal for "${deal.project.title}" has been agreed`,
+          message: `Congratulations! The deal for "${deal.project.name}" has been agreed`,
           link: `/dashboard/investor/deals/${dealId}`,
         },
       })
@@ -205,7 +204,7 @@ export async function PUT(
           userId: deal.project.ownerId,
           type: 'DEAL_UPDATE',
           title: 'Deal Agreed',
-          message: `The investment deal for "${deal.project.title}" has been agreed with ${deal.user.name}`,
+          message: `The investment deal for "${deal.project.name}" has been agreed with ${deal.user.name}`,
           link: `/projects/${deal.projectId}/deals/${dealId}`,
         },
       })
@@ -215,7 +214,7 @@ export async function PUT(
           userId: deal.userId,
           type: 'DEAL_FUNDED',
           title: 'Deal Funded',
-          message: `Your investment in "${deal.project.title}" has been funded successfully`,
+          message: `Your investment in "${deal.project.name}" has been funded successfully`,
           link: `/dashboard/investor/portfolio/${dealId}`,
         },
       })

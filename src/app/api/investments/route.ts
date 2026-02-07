@@ -25,10 +25,10 @@ export async function GET(request: NextRequest) {
 
     // If filtering by investorId, only allow viewing own investments or admin
     if (investorId) {
-      if (authResult.dbUser?.id !== investorId && authResult.dbUser?.role !== 'PLATFORM_ADMIN') {
+      if (authResult.user?.id !== investorId && authResult.user?.role !== 'PLATFORM_ADMIN') {
         return forbidden('You can only view your own investments')
       }
-      where.investorId = investorId
+      where.userId = investorId
     }
 
     if (status) {
@@ -107,19 +107,19 @@ export async function POST(request: NextRequest) {
     const currentUser = authResult.dbUser
 
     const body = await request.json()
-    const { investorId,
+    const { userId,
       projectId,
       type,
       amount, } = body
 
     // Users can only create investments for themselves
-    if (currentUser.id !== investorId && currentUser.role !== 'PLATFORM_ADMIN') {
+    if (currentUser.id !== userId && currentUser.role !== 'PLATFORM_ADMIN') {
       return forbidden('You can only create investments for yourself')
     }
 
     // Check if user exists
     const user = await db.user.findUnique({
-      where: { id: investorId },
+      where: { id: userId },
     })
 
     if (!user) {
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
     const existingInvestment = await db.investment.findFirst({
       where: {
         projectId,
-        investorId,
+        userId,
       },
     })
 
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
 
     const investment = await db.investment.create({
       data: {
-        investorId,
+        userId,
         projectId,
         type: type || 'EQUITY',
         status: 'PENDING',

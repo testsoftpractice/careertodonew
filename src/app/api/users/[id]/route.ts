@@ -6,23 +6,32 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+    
     const user = await db.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         university: true,
-        projectMemberships: {
+        projectsMembered: {
           include: {
             project: true,
-            department: true,
           },
+          orderBy: { joinedAt: 'desc' },
+          take: 10,
         },
-        records: {
+        professionalRecords: {
           orderBy: { createdAt: 'desc' },
           take: 10,
         },
-        receivedRatings: {
+        ratingsReceived: {
           include: {
-            rater: true,
+            fromUser: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+              },
+            },
           },
           orderBy: { createdAt: 'desc' },
           take: 10,
@@ -37,12 +46,12 @@ export async function GET(
     }
 
     // Calculate average ratings
-    const ratings = user.receivedRatings
-    const avgExecution = ratings.filter(r => r.dimension === 'EXECUTION').reduce((acc, r) => acc + r.score, 0) / (ratings.filter(r => r.dimension === 'EXECUTION').length || 1)
-    const avgCollaboration = ratings.filter(r => r.dimension === 'COLLABORATION').reduce((acc, r) => acc + r.score, 0) / (ratings.filter(r => r.dimension === 'COLLABORATION').length || 1)
-    const avgLeadership = ratings.filter(r => r.dimension === 'LEADERSHIP').reduce((acc, r) => acc + r.score, 0) / (ratings.filter(r => r.dimension === 'LEADERSHIP').length || 1)
-    const avgEthics = ratings.filter(r => r.dimension === 'ETHICS').reduce((acc, r) => acc + r.score, 0) / (ratings.filter(r => r.dimension === 'ETHICS').length || 1)
-    const avgReliability = ratings.filter(r => r.dimension === 'RELIABILITY').reduce((acc, r) => acc + r.score, 0) / (ratings.filter(r => r.dimension === 'RELIABILITY').length || 1)
+    const ratings = user.ratingsReceived
+    const avgExecution = ratings.filter(r => r.type === 'EXECUTION').reduce((acc, r) => acc + r.score, 0) / (ratings.filter(r => r.type === 'EXECUTION').length || 1)
+    const avgCollaboration = ratings.filter(r => r.type === 'COLLABORATION').reduce((acc, r) => acc + r.score, 0) / (ratings.filter(r => r.type === 'COLLABORATION').length || 1)
+    const avgLeadership = ratings.filter(r => r.type === 'LEADERSHIP').reduce((acc, r) => acc + r.score, 0) / (ratings.filter(r => r.type === 'LEADERSHIP').length || 1)
+    const avgEthics = ratings.filter(r => r.type === 'ETHICS').reduce((acc, r) => acc + r.score, 0) / (ratings.filter(r => r.type === 'ETHICS').length || 1)
+    const avgReliability = ratings.filter(r => r.type === 'RELIABILITY').reduce((acc, r) => acc + r.score, 0) / (ratings.filter(r => r.type === 'RELIABILITY').length || 1)
 
     return NextResponse.json({
       user: {
@@ -67,23 +76,21 @@ export async function GET(
           ethics: avgEthics || user.ethicsScore,
           reliability: avgReliability || user.reliabilityScore,
         },
-        projects: user.projectMemberships.map(pm => ({
+        projects: user.projectsMembered.map(pm => ({
           id: pm.project.id,
-          title: pm.project.title,
+          name: pm.project.name,
           role: pm.role,
-          department: pm.department?.name,
           status: pm.project.status,
-          startDate: pm.startDate,
-          endDate: pm.endDate,
+          joinedAt: pm.joinedAt,
         })),
-        records: user.records,
+        records: user.professionalRecords,
         ratings: ratings.slice(0, 5),
       },
     })
   } catch (error) {
     console.error('Get user error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
@@ -94,6 +101,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+    
     const body = await request.json()
     const {
       name,
@@ -107,7 +116,7 @@ export async function PATCH(
     } = body
 
     const user = await db.user.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(name && { name }),
         ...(bio !== undefined && { bio }),

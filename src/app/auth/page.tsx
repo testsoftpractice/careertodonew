@@ -80,9 +80,9 @@ export default function AuthPage() {
           } else if (selectedRole === 'UNIVERSITY') {
             router.push('/dashboard/university')
           } else if (selectedRole === 'EMPLOYER') {
-            router.push('/marketplace')
+            router.push('/dashboard/employer')
           } else if (selectedRole === 'INVESTOR') {
-            router.push('/marketplace')
+            router.push('/dashboard/investor')
           }
         }, 1000)
       } else {
@@ -123,9 +123,9 @@ export default function AuthPage() {
           } else if (data.user.role === 'UNIVERSITY') {
             router.push('/dashboard/university')
           } else if (data.user.role === 'EMPLOYER') {
-            router.push('/marketplace')
+            router.push('/dashboard/employer')
           } else if (data.user.role === 'INVESTOR') {
-            router.push('/marketplace')
+            router.push('/dashboard/investor')
           } else if (data.user.role === 'PLATFORM_ADMIN') {
             router.push('/admin')
           }

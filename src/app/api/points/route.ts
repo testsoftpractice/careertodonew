@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import { verifyAuth, requireAuth, requireRole, AuthError } from '@/lib/auth/verify'
-import { unauthorized, forbidden, badRequest, validationError, successResponse } from '@/lib/api-response'
+import { unauthorized, forbidden, badRequest, validationError, successResponse, errorResponse } from '@/lib/api-response'
 
 // Validation schemas
 const awardPointsSchema = z.object({

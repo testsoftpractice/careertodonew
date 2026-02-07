@@ -141,7 +141,7 @@ export default function PostJobPage() {
           return
         }
 
-        const response = await fetch(`/api/dashboard/university/organizations?includeAll=true`)
+        const response = await fetch('/api/universities')
 
         if (!response.ok) {
           throw new Error('Failed to fetch universities')
@@ -149,10 +149,10 @@ export default function PostJobPage() {
 
         const data = await response.json()
 
-        if (data.success) {
-          setUniversities(data.data.universities || [])
+        if (data.universities) {
+          setUniversities(data.universities || [])
         } else {
-          throw new Error(data.error || 'Failed to fetch universities')
+          throw new Error('Failed to fetch universities')
         }
       } catch (error) {
         console.error('Fetch universities error:', error)

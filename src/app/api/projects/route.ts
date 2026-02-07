@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
-import { unauthorized, forbidden } from '@/lib/api-response'
+import { unauthorized, forbidden, errorResponse } from '@/lib/api-response'
 import { buildProjectVisibilityWhereClause } from '@/lib/visibility-controls'
 
 // ==================== PROJECTS API ====================

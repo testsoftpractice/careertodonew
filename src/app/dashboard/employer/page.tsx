@@ -38,6 +38,18 @@ import {
   Building2,
   Edit3,
   Save,
+  UserPlus,
+  MoreVertical,
+  Filter,
+  Calendar,
+  MapPin,
+  Mail,
+  Phone,
+  Star,
+  X,
+  Trash2,
+  Eye,
+  RefreshCw,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
@@ -61,11 +73,22 @@ function DashboardContent({ user }: { user: any }) {
   })
 
   const [requests, setRequests] = useState<any[]>([])
+  const [candidates, setCandidates] = useState<any[]>([])
+  const [pipeline, setPipeline] = useState<any[]>([])
+  const [jobs, setJobs] = useState<any[]>([])
+  const [team, setTeam] = useState<any[]>([])
 
   const [loading, setLoading] = useState({
     stats: false,
     requests: false,
+    candidates: false,
+    pipeline: false,
+    jobs: false,
+    team: false,
   })
+
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterStatus, setFilterStatus] = useState('ALL')
 
   const fetchStats = async () => {
     if (!user) return
@@ -74,7 +97,6 @@ function DashboardContent({ user }: { user: any }) {
       setLoading(prev => ({ ...prev, stats: true }))
       const response = await fetch(`/api/dashboard/employer/stats?userId=${user.id}`)
 
-      // Check if response is ok before parsing
       if (!response.ok) {
         console.error('Fetch stats error: Response not ok', response.status)
         return
@@ -82,7 +104,6 @@ function DashboardContent({ user }: { user: any }) {
 
       const text = await response.text()
 
-      // Check if response is empty
       if (!text || text.trim() === '') {
         console.error('Fetch stats error: Empty response')
         return
@@ -118,7 +139,6 @@ function DashboardContent({ user }: { user: any }) {
       setLoading(prev => ({ ...prev, requests: true }))
       const response = await fetch(`/api/verification-requests?requesterId=${user.id}`)
 
-      // Check if response is ok before parsing
       if (!response.ok) {
         console.error('Fetch requests error: Response not ok', response.status)
         return
@@ -126,7 +146,6 @@ function DashboardContent({ user }: { user: any }) {
 
       const text = await response.text()
 
-      // Check if response is empty
       if (!text || text.trim() === '') {
         console.error('Fetch requests error: Empty response')
         return
@@ -155,11 +174,131 @@ function DashboardContent({ user }: { user: any }) {
     }
   }
 
+  const fetchCandidates = async () => {
+    if (!user) return
+
+    try {
+      setLoading(prev => ({ ...prev, candidates: true }))
+      const response = await fetch(`/api/dashboard/employer/candidates?employerId=${user.id}`)
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch candidates')
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        setCandidates(data.data || [])
+      }
+    } catch (error) {
+      console.error('Fetch candidates error:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch candidates',
+        variant: 'destructive'
+      })
+    } finally {
+      setLoading(prev => ({ ...prev, candidates: false }))
+    }
+  }
+
+  const fetchPipeline = async () => {
+    if (!user) return
+
+    try {
+      setLoading(prev => ({ ...prev, pipeline: true }))
+      const response = await fetch(`/api/dashboard/employer/pipeline?employerId=${user.id}`)
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch pipeline')
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        setPipeline(data.data || [])
+      }
+    } catch (error) {
+      console.error('Fetch pipeline error:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch pipeline',
+        variant: 'destructive'
+      })
+    } finally {
+      setLoading(prev => ({ ...prev, pipeline: false }))
+    }
+  }
+
+  const fetchJobs = async () => {
+    if (!user) return
+
+    try {
+      setLoading(prev => ({ ...prev, jobs: true }))
+      const response = await fetch(`/api/jobs?employerId=${user.id}`)
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch jobs')
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        setJobs(data.data || [])
+      }
+    } catch (error) {
+      console.error('Fetch jobs error:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch jobs',
+        variant: 'destructive'
+      })
+    } finally {
+      setLoading(prev => ({ ...prev, jobs: false }))
+    }
+  }
+
+  const fetchTeam = async () => {
+    if (!user) return
+
+    try {
+      setLoading(prev => ({ ...prev, team: true }))
+      const response = await fetch(`/api/dashboard/employer/team?employerId=${user.id}`)
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch team')
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        setTeam(data.data || [])
+      }
+    } catch (error) {
+      console.error('Fetch team error:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch team',
+        variant: 'destructive'
+      })
+    } finally {
+      setLoading(prev => ({ ...prev, team: false }))
+    }
+  }
+
   useEffect(() => {
     if (activeTab === 'overview') {
       fetchStats()
     } else if (activeTab === 'requests') {
       fetchRequests()
+    } else if (activeTab === 'candidates') {
+      fetchCandidates()
+    } else if (activeTab === 'pipeline') {
+      fetchPipeline()
+    } else if (activeTab === 'jobs') {
+      fetchJobs()
+    } else if (activeTab === 'team') {
+      fetchTeam()
     }
   }, [activeTab, user])
 
@@ -170,6 +309,39 @@ function DashboardContent({ user }: { user: any }) {
       toast({ title: 'Success', description: 'Logged out successfully' })
     } else {
       toast({ title: 'Error', description: 'Failed to logout', variant: 'destructive' })
+    }
+  }
+
+  const filteredCandidates = candidates.filter(candidate =>
+    candidate.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    candidate.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    candidate.appliedPosition?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const filteredJobs = jobs.filter(job =>
+    job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    job.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'APPLIED': return 'bg-blue-100 text-blue-700 border-blue-200'
+      case 'REVIEWED': return 'bg-amber-100 text-amber-700 border-amber-200'
+      case 'INTERVIEWING': return 'bg-purple-100 text-purple-700 border-purple-200'
+      case 'OFFERED': return 'bg-emerald-100 text-emerald-700 border-emerald-200'
+      case 'HIRED': return 'bg-green-100 text-green-700 border-green-200'
+      case 'REJECTED': return 'bg-red-100 text-red-700 border-red-200'
+      default: return 'bg-gray-100 text-gray-700 border-gray-200'
+    }
+  }
+
+  const getJobStatusColor = (status: string) => {
+    switch (status) {
+      case 'PUBLISHED': return 'bg-emerald-100 text-emerald-700 border-emerald-200'
+      case 'DRAFT': return 'bg-amber-100 text-amber-700 border-amber-200'
+      case 'CLOSED': return 'bg-red-100 text-red-700 border-red-200'
+      case 'FILLED': return 'bg-blue-100 text-blue-700 border-blue-200'
+      default: return 'bg-gray-100 text-gray-700 border-gray-200'
     }
   }
 
@@ -196,11 +368,16 @@ function DashboardContent({ user }: { user: any }) {
                 </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/">
+                <Link href="/dashboard/employer/profile">
+                  <Button variant="ghost" size="sm">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link href="/">
+                  <Button variant="ghost" size="sm">
                     <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
+                  </Button>
+                </Link>
                 <Button variant="ghost" size="sm" onClick={handleLogout}>
                   <LogOut className="h-4 w-4" />
                 </Button>
@@ -215,12 +392,29 @@ function DashboardContent({ user }: { user: any }) {
               <LayoutDashboard className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
               <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
-            <TabsTrigger value="requests" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-400 data-[state=active]:text-white rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 transition-all duration-300">
+            <TabsTrigger value="candidates" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-400 data-[state=active]:text-white rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 transition-all duration-300">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
+              <span className="hidden sm:inline">Candidates</span>
+            </TabsTrigger>
+            <TabsTrigger value="pipeline" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-400 data-[state=active]:text-white rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 transition-all duration-300">
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
+              <span className="hidden sm:inline">Pipeline</span>
+            </TabsTrigger>
+            <TabsTrigger value="jobs" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-emerald-400 data-[state=active]:text-white rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 transition-all duration-300">
+              <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
+              <span className="hidden sm:inline">Jobs</span>
+            </TabsTrigger>
+            <TabsTrigger value="team" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-amber-400 data-[state=active]:text-white rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 transition-all duration-300">
+              <UserCheck className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
+              <span className="hidden sm:inline">Team</span>
+            </TabsTrigger>
+            <TabsTrigger value="requests" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-400 data-[state=active]:text-white rounded-xl px-3 sm:px-6 py-2 sm:py-2.5 transition-all duration-300">
               <Shield className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
               <span className="hidden sm:inline">Requests</span>
             </TabsTrigger>
           </TabsList>
 
+          {/* OVERVIEW TAB */}
           <TabsContent value="overview" className="space-y-4 sm:space-y-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0 shadow-xl shadow-orange-500/20 hover:shadow-2xl hover:shadow-orange-500/30 transition-all duration-300 hover:-translate-y-1">
@@ -358,92 +552,307 @@ function DashboardContent({ user }: { user: any }) {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <Link href="/marketplace" className="group">
-                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-                        <Target className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-sm sm:text-base mb-1 group-hover:text-indigo-500 transition-colors">Marketplace</h3>
-                        <p className="text-xs text-muted-foreground">Projects & investments</p>
-                      </div>
+          {/* CANDIDATES TAB */}
+          <TabsContent value="candidates" className="space-y-4 sm:space-y-6">
+            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800">
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-lg sm:text-xl">Candidates</CardTitle>
+                    <CardDescription>Manage and track job applicants</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="relative flex-1 sm:flex-initial">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Search candidates..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 pr-4 py-2 w-full sm:w-64 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-slate-800"
+                      />
                     </div>
+                    <Button size="sm" onClick={fetchCandidates}>
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loading.candidates ? (
+                  <div className="text-center py-12">
+                    <div className="h-8 w-8 border-4 border-t-primary border-r-transparent rounded-full animate-spin mx-auto" />
+                    <p className="text-sm text-muted-foreground mt-2">Loading candidates...</p>
+                  </div>
+                ) : filteredCandidates.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="h-16 w-16 mx-auto mb-4 text-slate-300" />
+                    <p className="text-sm text-muted-foreground mb-4">No candidates found</p>
+                    <Link href="/jobs/create">
+                      <Button size="sm">Create a Job Posting</Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="max-h-96 overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Applied Position</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Applied Date</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredCandidates.map((candidate: any) => (
+                          <TableRow key={candidate.id}>
+                            <TableCell className="font-medium">{candidate.name}</TableCell>
+                            <TableCell>{candidate.email}</TableCell>
+                            <TableCell>{candidate.appliedPosition}</TableCell>
+                            <TableCell>
+                              <Badge className={getStatusColor(candidate.status)}>
+                                {candidate.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {new Date(candidate.appliedAt).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button size="sm" variant="ghost" asChild>
+                                  <Link href={`/candidates/${candidate.id}`}>
+                                    <Eye className="h-4 w-4" />
+                                  </Link>
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* PIPELINE TAB */}
+          <TabsContent value="pipeline" className="space-y-4 sm:space-y-6">
+            <div className="grid md:grid-cols-5 gap-4">
+              {['APPLIED', 'REVIEWED', 'INTERVIEWING', 'OFFERED', 'HIRED'].map((stage: string) => (
+                <Card key={stage} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg border border-slate-200 dark:border-slate-800">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base font-semibold capitalize">{stage}</CardTitle>
+                      <Badge variant="outline">{pipeline.filter((p: any) => p.status === stage).length}</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2 max-h-96 overflow-y-auto">
+                    {loading.pipeline ? (
+                      <div className="text-center py-4">
+                        <div className="h-6 w-6 border-4 border-t-primary border-r-transparent rounded-full animate-spin mx-auto" />
+                      </div>
+                    ) : (
+                      pipeline.filter((p: any) => p.status === stage).map((candidate: any) => (
+                        <Card key={candidate.id} className="p-3 border border-slate-200 dark:border-slate-700 hover:border-primary transition-colors cursor-pointer">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className="bg-primary text-white text-xs">
+                                {candidate.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'C'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{candidate.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{candidate.appliedPosition}</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {new Date(candidate.appliedAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        </Card>
+                      ))
+                    )}
                   </CardContent>
                 </Card>
-              </Link>
-
-              <Link href="/jobs" className="group">
-                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="bg-gradient-to-br from-orange-500 to-rose-500 text-white p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-                        <Briefcase className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-sm sm:text-base mb-1 group-hover:text-orange-500 transition-colors">Jobs</h3>
-                        <p className="text-xs text-muted-foreground">Career opportunities</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-
-              <Link href="/needs" className="group">
-                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="bg-gradient-to-br from-emerald-500 to-teal-500 text-white p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-                        <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-sm sm:text-base mb-1 group-hover:text-emerald-500 transition-colors">Needs</h3>
-                        <p className="text-xs text-muted-foreground">Project requests</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-
-              <Link href="/suppliers" className="group">
-                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-800 cursor-pointer h-full">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-                        <Building2 className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-sm sm:text-base mb-1 group-hover:text-blue-500 transition-colors">Suppliers</h3>
-                        <p className="text-xs text-muted-foreground">Find services</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+              ))}
             </div>
           </TabsContent>
 
+          {/* JOBS TAB */}
+          <TabsContent value="jobs" className="space-y-4 sm:space-y-6">
+            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800">
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-lg sm:text-xl">Job Postings</CardTitle>
+                    <CardDescription>Manage your job listings</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="relative flex-1 sm:flex-initial">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Search jobs..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 pr-4 py-2 w-full sm:w-64 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-slate-800"
+                      />
+                    </div>
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-slate-800"
+                    >
+                      <option value="ALL">All Status</option>
+                      <option value="PUBLISHED">Published</option>
+                      <option value="DRAFT">Draft</option>
+                      <option value="CLOSED">Closed</option>
+                      <option value="FILLED">Filled</option>
+                    </select>
+                    <Link href="/jobs/create">
+                      <Button size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Post Job
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loading.jobs ? (
+                  <div className="text-center py-12">
+                    <div className="h-8 w-8 border-4 border-t-primary border-r-transparent rounded-full animate-spin mx-auto" />
+                    <p className="text-sm text-muted-foreground mt-2">Loading jobs...</p>
+                  </div>
+                ) : filteredJobs.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Briefcase className="h-16 w-16 mx-auto mb-4 text-slate-300" />
+                    <p className="text-sm text-muted-foreground mb-4">No job postings found</p>
+                    <Link href="/jobs/create">
+                      <Button size="sm">Create Your First Job Posting</Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="max-h-96 overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Applications</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Posted Date</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredJobs
+                          .filter((job: any) => filterStatus === 'ALL' || job.status === filterStatus)
+                          .map((job: any) => (
+                            <TableRow key={job.id}>
+                              <TableCell className="font-medium">{job.title}</TableCell>
+                              <TableCell>{job.applicationCount || 0}</TableCell>
+                              <TableCell>
+                                <Badge className={getJobStatusColor(job.status)}>
+                                  {job.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {new Date(job.createdAt).toLocaleDateString()}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button size="sm" variant="ghost" asChild>
+                                    <Link href={`/jobs/${job.id}`}>
+                                      <Eye className="h-4 w-4" />
+                                    </Link>
+                                  </Button>
+                                  <Button size="sm" variant="ghost" asChild>
+                                    <Link href={`/jobs/${job.id}/edit`}>
+                                      <Edit3 className="h-4 w-4" />
+                                    </Link>
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* TEAM TAB */}
+          <TabsContent value="team" className="space-y-4 sm:space-y-6">
+            <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
+              <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg sm:text-xl">Team Members</CardTitle>
+                      <CardDescription>Manage your team and roles</CardDescription>
+                    </div>
+                    <Button size="sm">
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Add Member
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {loading.team ? (
+                    <div className="text-center py-12">
+                      <div className="h-8 w-8 border-4 border-t-primary border-r-transparent rounded-full animate-spin mx-auto" />
+                      <p className="text-sm text-muted-foreground mt-2">Loading team...</p>
+                    </div>
+                  ) : team.length === 0 ? (
+                    <div className="text-center py-12">
+                      <UserCheck className="h-16 w-16 mx-auto mb-4 text-slate-300" />
+                      <p className="text-sm text-muted-foreground mb-4">No team members yet</p>
+                      <Button size="sm">Add First Team Member</Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {team.map((member: any) => (
+                        <div key={member.id} className="flex items-center gap-4 p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary transition-colors">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={member.avatar} />
+                            <AvatarFallback className="bg-primary text-white">
+                              {member.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'T'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium">{member.name}</p>
+                            <p className="text-sm text-muted-foreground">{member.email}</p>
+                            <Badge variant="outline" className="mt-1">{member.role}</Badge>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button size="sm" variant="ghost">
+                              <Edit3 className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* REQUESTS TAB */}
           <TabsContent value="requests" className="space-y-4 sm:space-y-6">
             <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800">
               <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
-                      <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
-                      Verification Requests
-                    </CardTitle>
-                    <CardDescription>Manage student verification requests</CardDescription>
-                  </div>
-                  <Link href="/records/create">
-                    <Button className="shadow-lg">
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Request
-                    </Button>
-                  </Link>
-                </div>
+                <CardTitle className="text-lg sm:text-xl">Verification Requests</CardTitle>
+                <CardDescription>Track your university verification requests</CardDescription>
               </CardHeader>
               <CardContent>
                 {loading.requests ? (
@@ -453,68 +862,35 @@ function DashboardContent({ user }: { user: any }) {
                   </div>
                 ) : requests.length === 0 ? (
                   <div className="text-center py-12">
-                    <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-lg font-semibold mb-2">No Requests Yet</h3>
-                    <p className="text-sm text-muted-foreground mb-6">
-                      You haven't submitted any verification requests yet.
-                    </p>
+                    <Shield className="h-16 w-16 mx-auto mb-4 text-slate-300" />
+                    <p className="text-sm text-muted-foreground mb-4">No verification requests</p>
                     <Link href="/records/create">
-                      <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Your First Request
-                      </Button>
+                      <Button size="sm">Create Verification Request</Button>
                     </Link>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Student</TableHead>
-                        <TableHead>Request Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {requests.slice(0, 10).map((request: any) => (
-                        <TableRow key={request.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-8 w-8">
-                                <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                                  {request.student?.name?.charAt(0) || 'S'}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="font-medium">{request.student?.name || 'Unknown'}</span>
+                  <div className="max-h-96 overflow-y-auto space-y-3">
+                    {requests.map((request: any) => (
+                      <div key={request.id} className="p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-semibold">{request.type}</h4>
+                              <Badge className={getStatusColor(request.status)}>
+                                {request.status}
+                              </Badge>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            {new Date(request.createdAt).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                request.status === 'APPROVED'
-                                  ? 'default'
-                                  : request.status === 'PENDING'
-                                  ? 'secondary'
-                                  : 'destructive'
-                              }
-                            >
-                              {request.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm" asChild>
-                              <Link href={`/records/${request.recordId}`}>
-                                <ExternalLink className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                            <p className="text-sm text-muted-foreground">
+                              {request.description}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Submitted: {new Date(request.submittedAt).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -527,9 +903,8 @@ function DashboardContent({ user }: { user: any }) {
 
 export default function EmployerDashboard() {
   const { user } = useAuth()
-  
   return (
-    <VerificationGate user={user} restrictActions={true} showBadge={true}>
+    <VerificationGate user={user} restrictActions={false} showBadge={false}>
       <DashboardContent user={user} />
     </VerificationGate>
   )

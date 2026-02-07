@@ -1,80 +1,145 @@
 $ next dev
 ▲ Next.js 16.1.6 (Turbopack)
 - Local:         http://localhost:3000
-- Network:       http://21.0.17.62:3000
+- Network:       http://21.0.20.47:3000
 - Environments: .env
 
 ✓ Starting...
-✓ Ready in 666ms
-Persisting failed: Unable to write SST file 00000024.sst
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
 
-Caused by:
-    No such file or directory (os error 2)
+✓ Ready in 719ms
+[DB] Initializing Prisma Client...
+[DB] DATABASE_URL: SET
+[DB] DIRECT_URL: NOT SET
+[DB] Using datasource URL: file:/home/z/my-project/db/custom.db
+prisma:query SELECT `main`.`University`.`id`, `main`.`University`.`name`, `main`.`University`.`code`, `main`.`University`.`description`, `main`.`University`.`location`, `main`.`University`.`website`, `main`.`University`.`rankingScore`, `main`.`University`.`rankingPosition`, `main`.`University`.`totalStudents`, `main`.`University`.`verificationStatus`, `main`.`University`.`totalProjects`, `main`.`University`.`createdAt`, `main`.`University`.`updatedAt`, COALESCE(`aggr_selection_0_User`.`_aggr_count_users`, 0) AS `_aggr_count_users` FROM `main`.`University` LEFT JOIN (SELECT `main`.`User`.`universityId`, COUNT(*) AS `_aggr_count_users` FROM `main`.`User` WHERE 1=1 GROUP BY `main`.`User`.`universityId`) AS `aggr_selection_0_User` ON (`main`.`University`.`id` = `aggr_selection_0_User`.`universityId`) WHERE 1=1 ORDER BY `main`.`University`.`rankingPosition` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`name`, `main`.`User`.`role`, `main`.`User`.`progressionLevel`, `main`.`User`.`universityId` FROM `main`.`User` WHERE `main`.`User`.`universityId` IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ORDER BY `main`.`User`.`id` ASC LIMIT ? OFFSET ?
+ GET /api/universities 200 in 438ms (compile: 386ms, render: 52ms)
+prisma:query SELECT `main`.`University`.`id`, `main`.`University`.`name`, `main`.`University`.`code`, `main`.`University`.`description`, `main`.`University`.`website`, `main`.`University`.`location`, `main`.`University`.`verificationStatus` FROM `main`.`University` WHERE `main`.`University`.`verificationStatus` = ? ORDER BY `main`.`University`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/dashboard/university/organizations?includeAll=false 200 in 115ms (compile: 105ms, render: 10ms)
+JWT_SECRET environment variable is not set, using default for development
+prisma:error 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].verificationRequest.findMany()` invocation in
+/home/z/my-project/.next/dev/server/chunks/[root-of-the-server]__42ea110d._.js:465:173
 
-thread 'tokio-runtime-worker' (828) panicked at /build/turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:156:17:
-Failed to restore task data (corrupted database or bug): Meta for Project::env (TaskId 2346))
+  462 if (!requesterId) {
+  463     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$api$2d$response$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["errorResponse"])('Requester ID is required', 400);
+  464 }
+→ 465 const requests = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].verificationRequest.findMany({
+        where: {
+          requesterId: "test"
+        },
+        orderBy: {
+          submittedAt: "desc"
+        },
+        include: {
+          submitter: {
+          ~~~~~~~~~
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true
+            }
+          },
+          verifier: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true
+            }
+          },
+          student: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+              university: {
+                select: {
+                  id: true,
+                  name: true,
+                  code: true
+                }
+              }
+            }
+          },
+      ?   user?: true
+        },
+        take: 50
+      })
 
-Caused by:
-    0: Looking up data for TaskId 2346 from database failed
-    1: Unable to open static sorted file referenced from 00000022.meta
-    2: Unable to open static sorted file 00000017.sst
-    3: No such file or directory (os error 2)
-note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+Unknown field `submitter` for include statement on model `VerificationRequest`. Available options are marked with ?.
+Get verification requests error: Error [PrismaClientValidationError]: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].verificationRequest.findMany()` invocation in
+/home/z/my-project/.next/dev/server/chunks/[root-of-the-server]__42ea110d._.js:465:173
 
-thread 'tokio-runtime-worker' (828) panicked at /build/turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:156:17:
-Failed to restore task data (corrupted database or bug): Meta for Project::env (TaskId 2346))
+  462 if (!requesterId) {
+  463     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$api$2d$response$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["errorResponse"])('Requester ID is required', 400);
+  464 }
+→ 465 const requests = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].verificationRequest.findMany({
+        where: {
+          requesterId: "test"
+        },
+        orderBy: {
+          submittedAt: "desc"
+        },
+        include: {
+          submitter: {
+          ~~~~~~~~~
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true
+            }
+          },
+          verifier: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true
+            }
+          },
+          student: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+              university: {
+                select: {
+                  id: true,
+                  name: true,
+                  code: true
+                }
+              }
+            }
+          },
+      ?   user?: true
+        },
+        take: 50
+      })
 
-Caused by:
-    0: Looking up data for TaskId 2346 from database failed
-    1: Unable to open static sorted file referenced from 00000022.meta
-    2: Unable to open static sorted file 00000017.sst
-    3: No such file or directory (os error 2)
+Unknown field `submitter` for include statement on model `VerificationRequest`. Available options are marked with ?.
+    at <unknown> (src/app/api/verification-requests/route.ts:21:51)
+    at async GET (src/app/api/verification-requests/route.ts:21:22)
+  19 |     }
+  20 |
+> 21 |     const requests = await db.verificationRequest.findMany({
+     |                                                   ^
+  22 |       where: { requesterId },
+  23 |       orderBy: { submittedAt: 'desc' },
+  24 |       include: { {
+  clientVersion: '6.19.2'
+}
+ GET /api/verification-requests?requesterId=test 500 in 435ms (compile: 224ms, render: 212ms)
 ○ Compiling / ...
-Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
-
-thread 'tokio-runtime-worker' (739) panicked at /build/turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:156:17:
-Failed to restore task data (corrupted database or bug): Meta for AppProject::app_entrypoints (TaskId 41))
-
-Caused by:
-    0: Looking up data for TaskId 41 from database failed
-    1: Unable to open static sorted file referenced from 00000022.meta
-    2: Unable to open static sorted file 00000017.sst
-    3: No such file or directory (os error 2)
-
-thread 'tokio-runtime-worker' (760) panicked at /build/turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:156:17:
-Failed to restore task data (corrupted database or bug): Meta for Project::collect_project_feature_telemetry (TaskId 19))
-
-Caused by:
-    0: Looking up data for TaskId 19 from database failed
-    1: Unable to open static sorted file referenced from 00000022.meta
-    2: Unable to open static sorted file 00000017.sst
-    3: No such file or directory (os error 2)
-
-thread 'tokio-runtime-worker' (739) panicked at /build/turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:156:17:
-Failed to restore task data (corrupted database or bug): Meta for project_container_entrypoints_operation (TaskId 15))
-
-Caused by:
-    0: Looking up data for TaskId 15 from database failed
-    1: Unable to open static sorted file referenced from 00000022.meta
-    2: Unable to open static sorted file 00000017.sst
-    3: No such file or directory (os error 2)
-
-thread 'tokio-runtime-worker' (760) panicked at /build/turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:156:17:
-Failed to restore task data (corrupted database or bug): Meta for pick_endpoint (TaskId 2159))
-
-Caused by:
-    0: Looking up data for TaskId 2159 from database failed
-    1: Unable to open static sorted file referenced from 00000022.meta
-    2: Unable to open static sorted file 00000017.sst
-    3: No such file or directory (os error 2)
-
-thread 'tokio-runtime-worker' (739) panicked at /build/turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:156:17:
-Failed to restore task data (corrupted database or bug): Meta for pick_endpoint (TaskId 2159))
-
-Caused by:
-    0: Looking up data for TaskId 2159 from database failed
-    1: Unable to open static sorted file referenced from 00000022.meta
-    2: Unable to open static sorted file 00000017.sst
-    3: No such file or directory (os error 2)
-Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
-Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+ GET / 200 in 3.6s (compile: 3.3s, render: 253ms)
+ GET / 200 in 74ms (compile: 5ms, render: 68ms)
+ GET / 200 in 283ms (compile: 68ms, render: 215ms)

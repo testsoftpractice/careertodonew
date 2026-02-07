@@ -129,9 +129,10 @@ export async function POST(request: NextRequest) {
         projectId: data.projectId,
         assignedTo: data.assigneeId || undefined,
         assignedBy: authResult.dbUser.id,
+        status: data.status || 'TODO',
         priority: data.priority,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
-        estimatedHours: data.estimatedHours ? parseFloat(data.estimatedHours) : null,
+        estimatedHours: data.estimatedHours ? parseFloat(data.estimatedHours.toString()) : null,
       }
     })
 

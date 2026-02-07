@@ -9,6 +9,7 @@ import { z } from 'zod'
 const projectTaskSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters'),
   description: z.string().max(1000, 'description must be less than 1000 characters').optional(),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED', 'CANCELLED', 'BACKLOG']).default('TODO'),
   priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).default('MEDIUM'),
   dueDate: z.string().datetime('Invalid due date format').optional(),
   estimatedHours: z.union([z.number().min(0).max(1000), z.string().transform(val => parseFloat(val))]).optional(),
@@ -151,13 +152,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       data: {
         title: data.title,
         description: data.description || null,
+        status: data.status || 'TODO',
         priority: data.priority,
         projectId,
         assignedTo: data.assigneeId || null,
         assignedBy: currentUser.id,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         estimatedHours: data.estimatedHours ? parseFloat(String(data.estimatedHours)) : null,
-        status: 'TODO',
         currentStepId: '1',
       },
       include: {

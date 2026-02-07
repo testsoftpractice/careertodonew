@@ -34,6 +34,7 @@ export const signupSchema = z.object({
 export const createTaskSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters'),
   description: z.string().max(1000, 'Description must be less than 1000 characters').optional(),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED', 'CANCELLED', 'BACKLOG']).default('TODO'),
   priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).default('MEDIUM'),
   projectId: z.string().cuid('Invalid project ID'),
   assigneeId: z.string().cuid('Invalid assignee ID').optional(),

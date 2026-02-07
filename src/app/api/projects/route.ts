@@ -80,10 +80,21 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
+    // Transform projects to match frontend expectations
+    const transformedProjects = projects.map(project => ({
+      ...project,
+      title: project.name, // Map 'name' to 'title'
+      teamSize: project.members?.length || 1,
+      university: project.owner?.university || null,
+      investmentGoal: project.budget || null,
+      investmentRaised: null, // This would need to be calculated from investments
+      completionRate: project.progress || 0,
+    }))
+
     return NextResponse.json({
       success: true,
-      data: projects,
-      count: projects.length,
+      data: transformedProjects,
+      count: transformedProjects.length,
     })
   } catch (error) {
     if (error instanceof AuthError) {

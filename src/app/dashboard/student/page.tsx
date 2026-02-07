@@ -48,7 +48,8 @@ import {
   Play,
   Pause,
   Square,
-  Timer,  MapPin,
+  Timer,
+  MapPin,
   CalendarDays,
   LogOut,
   Edit3,
@@ -60,6 +61,7 @@ import {
   ChevronRight,
   Trash2,
   Building2,
+  RefreshCw,
 } from 'lucide-react'
 import ProfessionalKanbanBoard, { Task as KanbanTask } from '@/components/task/ProfessionalKanbanBoard'
 import WorkSessionTimer from '@/components/time-tracking/work-session-timer'
@@ -414,7 +416,10 @@ function DashboardContent({ user }: { user: any }) {
   }, [user?.id])
 
   const fetchTimeSummary = useCallback(async () => {
-    if (!user) return
+    if (!user || !user.id) {
+      console.error('[fetchTimeSummary] User or user.id is not available')
+      return
+    }
 
     try {
       const response = await authFetch(`/api/time-summary?userId=${user.id}`)
@@ -517,6 +522,10 @@ function DashboardContent({ user }: { user: any }) {
     { id: 'create-task', label: 'New Task', icon: Plus, onClick: () => { setActiveTab('tasks'); setTimeout(() => setShowTaskDialog(true), 100); } },
     { id: 'find-projects', label: 'Find Projects', icon: Search, href: '/projects' },
     { id: 'browse-jobs', label: 'Browse Jobs', icon: Briefcase, href: '/jobs' },
+    { id: 'refresh', label: 'Refresh', icon: RefreshCw, onClick: () => {
+      fetchTasks();
+      toast({ title: 'Success', description: 'Tasks refreshed successfully' })
+    } },
   ]
 
   // Timer functions
@@ -780,8 +789,7 @@ function DashboardContent({ user }: { user: any }) {
 
       if (taskData.projectId && taskData.projectId !== 'none' && taskData.projectId !== '') {
         payload.projectId = taskData.projectId
-        payload.assignedTo = user.id
-        payload.assignedBy = user.id
+        payload.assigneeId = user.id
         if (taskData.dueDate) {
           payload.dueDate = new Date(taskData.dueDate).toISOString()
         }
@@ -1621,10 +1629,12 @@ function DashboardContent({ user }: { user: any }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="SICK_LEAVE" className="cursor-pointer">Sick Leave</SelectItem>
+                  <SelectItem value="PERSONAL_LEAVE" className="cursor-pointer">Personal Leave</SelectItem>
                   <SelectItem value="VACATION" className="cursor-pointer">Vacation</SelectItem>
-                  <SelectItem value="PERSONAL" className="cursor-pointer">Personal</SelectItem>
                   <SelectItem value="EMERGENCY" className="cursor-pointer">Emergency</SelectItem>
-                  <SelectItem value="OTHER" className="cursor-pointer">Other</SelectItem>
+                  <SelectItem value="BEREAVEMENT" className="cursor-pointer">Bereavement</SelectItem>
+                  <SelectItem value="MATERNITY" className="cursor-pointer">Maternity Leave</SelectItem>
+                  <SelectItem value="PATERNITY" className="cursor-pointer">Paternity Leave</SelectItem>
                 </SelectContent>
               </Select>
             </div>

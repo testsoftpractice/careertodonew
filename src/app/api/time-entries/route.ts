@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
+import { verifyAuth, requireAuth } from '@/lib/auth/verify'
 import { unauthorized, forbidden } from '@/lib/api-response'
 
 // ==================== TIME ENTRIES API ====================
@@ -13,27 +13,30 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.userId as string | undefined
-    const taskId = searchParams.taskId as string | undefined
+    const userId = searchParams.get('userId') as string | undefined
+    const taskId = searchParams.get('taskId') as string | undefined
 
     const where: Record<string, string | undefined> = {}
 
     // If filtering by userId, only allow viewing own entries or admin
-    if (!authResult) {
-      if (!authResult) {
+    if (userId) {
+      if (userId !== authResult.user!.id && authResult.user!.role !== 'PLATFORM_ADMIN') {
         return forbidden('You can only view your own time entries')
       }
       where.userId = userId
+    } else {
+      // Default to current user
+      where.userId = authResult.user!.id
     }
 
     // If filtering by taskId, verify user has access to the task
-    if (!authResult) {
+    if (taskId) {
       const task = await db.task.findUnique({
         where: { id: taskId },
         include: { project: true }
       })
 
-      if (!authResult) {
+      if (!task) {
         return forbidden('Task not found')
       }
 
@@ -42,7 +45,7 @@ export async function GET(request: NextRequest) {
       const isAssignee = task.assignedTo === authResult.user!.id
       const isAdmin = authResult.user!.role === 'PLATFORM_ADMIN'
 
-      if (!authResult) {
+      if (!isProjectMember && !isAssignee && !isAdmin) {
         return forbidden('You do not have access to this task')
       }
 
@@ -111,15 +114,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Users can only create time entries for themselves
-    if (!authResult) {
-      return forbidden('You can only create time entries for yourself')
-    }
-
-    // Use authenticated user's ID
     const userId = currentUser.id
 
     // Validate required fields
-    if (!authResult) {
+    if (!body.taskId) {
       return NextResponse.json({
         success: false,
         error: 'Task ID is required'
@@ -127,7 +125,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate hours
-    if (!authResult) {
+    if (!body.hours) {
       return NextResponse.json({
         success: false,
         error: 'Hours are required'
@@ -135,7 +133,6 @@ export async function POST(request: NextRequest) {
     }
 
     const hoursValue = parseFloat(body.hours)
-
     // Validate hours range (0 < hours <= 24)
     if (isNaN(hoursValue) || hoursValue <= 0) {
       return NextResponse.json({
@@ -144,7 +141,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    if (!authResult) {
+    if (hoursValue > 24) {
       return NextResponse.json({
         success: false,
         error: 'Hours cannot exceed 24'
@@ -168,7 +165,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Verify task exists and user has access to the task
+    // Verify task exists and user has access to task
     const task = await db.task.findUnique({
       where: { id: body.taskId },
       include: { project: true }
@@ -186,7 +183,7 @@ export async function POST(request: NextRequest) {
     const isProjectOwner = task.project?.ownerId === userId
     const isAdmin = currentUser.role === 'PLATFORM_ADMIN'
 
-    if (!authResult) {
+    if (!isAssignee && !isProjectOwner && !isAdmin) {
       return forbidden('You can only log time for tasks assigned to you or in your projects')
     }
 

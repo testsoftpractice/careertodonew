@@ -4,10 +4,8 @@ import { db } from '@/lib/db'
 
 // GET /api/dashboard/university/students - Get university students with metrics
 export async function GET(request: NextRequest) {
-  const auth = requireRole(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
-  if (auth !== true) return auth
-
-  const user = getUserFromRequest(request)
+  const user = requireRole(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
+  if (user instanceof NextResponse) return user
   const universityId = user?.universityId
 
   if (!user) {

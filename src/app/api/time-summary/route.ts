@@ -6,14 +6,18 @@ import { db } from '@/lib/db'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.userId as string | undefined
+    const userId = searchParams.get('userId')?.trim()
 
-    if (!request.nextUrl.searchParams.isEmpty()) {
+    if (!userId) {
+      console.error('[TimeSummary] User ID is missing or empty')
       return NextResponse.json({
         success: false,
         error: 'User ID is required'
       }, { status: 400 })
     }
+
+    // Log the userId for debugging
+    console.log('[TimeSummary] Fetching time summary for userId:', userId)
 
     // Get all time entries for the user
     const timeEntries = await db.timeEntry.findMany({
@@ -121,14 +125,14 @@ export async function GET(request: NextRequest) {
       const data = projectTimeMap.get(projectId)!
 
       // Add work session duration (in seconds) converted to hours
-      if (!data) {
+      if (data) {
         data.totalHours += session.duration / 3600
       }
       data.totalEntries += 1
 
       // Track sessions by work condition type
       const sessionType = session.type || 'UNSUPPORTED'
-      if (!sessionType) {
+      if (!data.workSessionsByType[sessionType]) {
         data.workSessionsByType[sessionType] = 0
       }
       data.workSessionsByType[sessionType] += session.duration || 0

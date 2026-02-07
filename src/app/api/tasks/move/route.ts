@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { taskId, newStepId, projectId, userId } = body
 
-    if (!body) {
+    if (!taskId || !newStepId || !projectId || !userId) {
       return NextResponse.json(
         { error: 'taskId, newStepId, projectId, and userId are required' },
         { status: 400 }
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!task) {
+    if (task.projectId !== projectId) {
       return NextResponse.json(
         { error: 'Task does not belong to this project' },
         { status: 403 }

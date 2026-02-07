@@ -5,10 +5,8 @@ import { VerificationStatus } from '@prisma/client'
 
 // GET /api/employer/profile - Get employer profile
 export async function GET(request: NextRequest) {
-  const auth = requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
-  if (auth !== true) return auth
-
-  const user = getUserFromRequest(request)
+  const user = requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
+  if (user instanceof NextResponse) return user
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -58,10 +56,8 @@ export async function GET(request: NextRequest) {
 
 // PATCH /api/employer/profile - Update employer profile
 export async function PATCH(request: NextRequest) {
-  const auth = requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
-  if (auth !== true) return auth
-
-  const user = getUserFromRequest(request)
+  const user = requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
+  if (user instanceof NextResponse) return user
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

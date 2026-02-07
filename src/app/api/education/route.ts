@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId')
 
     // Users can only view their own education (unless admin)
-    if (!userId) {
+    if (userId && userId !== authResult.user.id && authResult.user.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json({ success: false, error: 'Forbidden', message: 'You can only view your own education records' }, { status: 403 })
     }
 
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     
     // Validate required fields
-    if (!body) {
+    if (!body.school) {
       return NextResponse.json({
         success: false,
         error: 'School is required',

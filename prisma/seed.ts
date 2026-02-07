@@ -25,6 +25,7 @@ async function main() {
     await prisma.notification.deleteMany()
     await prisma.jobApplication.deleteMany()
     await prisma.job.deleteMany()
+    await prisma.jobApproval.deleteMany()
     await prisma.verificationRequest.deleteMany()
     await prisma.agreement.deleteMany()
     await prisma.investment.deleteMany()
@@ -37,6 +38,7 @@ async function main() {
     await prisma.personalTask.deleteMany()
     await prisma.task.deleteMany()
     await prisma.projectMember.deleteMany()
+    await prisma.projectApproval.deleteMany()
     await prisma.project.deleteMany()
     await prisma.leaveRequest.deleteMany()
     await prisma.professionalRecord.deleteMany()
@@ -48,6 +50,8 @@ async function main() {
     await prisma.business.deleteMany()
     await prisma.user.deleteMany()
     await prisma.university.deleteMany()
+    await prisma.collaborationRequest.deleteMany()
+    await prisma.leaderboard.deleteMany()
 
     console.log('✅ Existing data cleared')
 
@@ -6356,6 +6360,843 @@ async function main() {
 
     console.log('✅ Created', auditLogs.length, 'audit logs')
 
+    // ============================================
+    // MISSING MODELS SEEDING
+    // ============================================
+
+    console.log('📄 Creating professional records...')
+    const professionalRecords = await Promise.all([
+      prisma.professionalRecord.create({
+        data: {
+          userId: students[0].id,
+          recordType: 'CERTIFICATION',
+          title: 'Risk Management Certification',
+          description: 'Professional certification in risk management and assessment',
+          startDate: new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000),
+          endDate: new Date(now.getTime() - 300 * 24 * 60 * 60 * 1000),
+          verified: true
+        }
+      }),
+      prisma.professionalRecord.create({
+        data: {
+          userId: students[1].id,
+          recordType: 'AWARD',
+          title: 'Outstanding Student Award',
+          description: 'Awarded for excellence in international business studies',
+          startDate: new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000),
+          verified: true
+        }
+      }),
+      prisma.professionalRecord.create({
+        data: {
+          userId: students[2].id,
+          recordType: 'CERTIFICATION',
+          title: 'HR Professional Certification',
+          description: 'Certified Human Resources Professional',
+          startDate: new Date(now.getTime() - 200 * 24 * 60 * 60 * 1000),
+          verified: true
+        }
+      }),
+      prisma.professionalRecord.create({
+        data: {
+          userId: employers[0].id,
+          recordType: 'LICENSE',
+          title: 'Business Consulting License',
+          description: 'Licensed business consulting practitioner',
+          startDate: new Date(now.getTime() - 730 * 24 * 60 * 60 * 1000),
+          verified: true
+        }
+      }),
+      prisma.professionalRecord.create({
+        data: {
+          userId: students[3].id,
+          recordType: 'CERTIFICATION',
+          title: 'Administrative Management Certificate',
+          description: 'Professional certificate in administrative management',
+          startDate: new Date(now.getTime() - 150 * 24 * 60 * 60 * 1000),
+          verified: false
+        }
+      })
+    ])
+
+    console.log('✅ Created', professionalRecords.length, 'professional records')
+
+    console.log('🔍 Creating verification requests...')
+    const verificationRequests = await Promise.all([
+      prisma.verificationRequest.create({
+        data: {
+          userId: students[3].id,
+          type: 'EDUCATION',
+          status: 'PENDING',
+          title: 'Verify Administrative Management Certificate',
+          description: 'Request to verify professional certificate in administrative management',
+          priority: 'MEDIUM',
+          projectId: project4.id
+        }
+      }),
+      prisma.verificationRequest.create({
+        data: {
+          userId: students[4].id,
+          type: 'PROJECT',
+          status: 'UNDER_REVIEW',
+          title: 'Project Milestone Verification',
+          description: 'Verify completion of Research Target Universities milestone',
+          priority: 'HIGH',
+          projectId: project5.id
+        }
+      }),
+      prisma.verificationRequest.create({
+        data: {
+          userId: students[5].id,
+          type: 'SKILL',
+          status: 'VERIFIED',
+          title: 'Verify Data Analysis Skills',
+          description: 'Verification of advanced data analysis skills',
+          priority: 'LOW',
+          projectId: project1.id,
+          reviewedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.verificationRequest.create({
+        data: {
+          userId: students[6].id,
+          type: 'EDUCATION',
+          status: 'PENDING',
+          title: 'Verify Degree Completion',
+          description: 'Request to verify bachelor\'s degree completion',
+          priority: 'HIGH',
+          projectId: project2.id
+        }
+      }),
+      prisma.verificationRequest.create({
+        data: {
+          userId: employers[1].id,
+          type: 'BUSINESS',
+          status: 'VERIFIED',
+          title: 'Business Verification',
+          description: 'Verification of TalentForce HR Solutions business entity',
+          priority: 'HIGH',
+          reviewedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)
+        }
+      })
+    ])
+
+    console.log('✅ Created', verificationRequests.length, 'verification requests')
+
+    console.log('📝 Creating agreements...')
+    const agreements = await Promise.all([
+      prisma.agreement.create({
+        data: {
+          userId: students[0].id,
+          projectId: project1.id,
+          title: 'Project Membership Agreement',
+          content: 'This agreement outlines the terms and conditions for participation in the Global Supplier Verification project. Member agrees to contribute 20 hours per week and maintain confidentiality.',
+          signed: true,
+          signedAt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.agreement.create({
+        data: {
+          userId: students[1].id,
+          projectId: project2.id,
+          title: 'Cross-Border Trade Agreement',
+          content: 'Agreement for participation in the Cross-Border Trade Facilitation project. Includes terms for intellectual property rights and confidentiality.',
+          signed: true,
+          signedAt: new Date(now.getTime() - 25 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.agreement.create({
+        data: {
+          userId: students[2].id,
+          projectId: project3.id,
+          title: 'Recruitment Agency Agreement',
+          content: 'Agreement for the Professional Recruitment Agency project. Outlines roles, responsibilities, and compensation structure.',
+          signed: true,
+          signedAt: new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.agreement.create({
+        data: {
+          userId: students[3].id,
+          projectId: project4.id,
+          title: 'Virtual Admin Services Agreement',
+          content: 'Agreement for Virtual Administrative Support Company project. Defines service standards and deliverables.',
+          signed: false
+        }
+      }),
+      prisma.agreement.create({
+        data: {
+          userId: students[4].id,
+          projectId: project5.id,
+          title: 'Study-Abroad Counseling Agreement',
+          content: 'Agreement for International Study-Abroad Counseling Agency project. Covers student data protection and service guidelines.',
+          signed: true,
+          signedAt: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000)
+        }
+      })
+    ])
+
+    console.log('✅ Created', agreements.length, 'agreements')
+
+    console.log('💼 Creating job postings...')
+    const jobs = await Promise.all([
+      prisma.job.create({
+        data: {
+          userId: employers[0].id,
+          businessId: businesses[0].id,
+          title: 'Due Diligence Analyst',
+          description: 'We are seeking a detail-oriented Due Diligence Analyst to join our team. The ideal candidate will have experience in supplier verification and risk assessment.',
+          type: 'FULL_TIME',
+          employmentType: 'FULL_TIME',
+          location: 'Remote',
+          salary: '$60,000 - $80,000',
+          salaryMin: 60000,
+          salaryMax: 80000,
+          department: 'Due Diligence',
+          status: 'ACTIVE',
+          views: 125,
+          deadline: nextMonth,
+          published: true,
+          publishedAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.job.create({
+        data: {
+          userId: employers[0].id,
+          businessId: businesses[0].id,
+          title: 'Risk Assessment Specialist',
+          description: 'Looking for an experienced Risk Assessment Specialist to evaluate supplier risks and develop mitigation strategies.',
+          type: 'FULL_TIME',
+          employmentType: 'FULL_TIME',
+          location: 'Hybrid',
+          salary: '$70,000 - $90,000',
+          salaryMin: 70000,
+          salaryMax: 90000,
+          department: 'Risk Assessment',
+          status: 'ACTIVE',
+          views: 98,
+          deadline: nextMonth,
+          published: true,
+          publishedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.job.create({
+        data: {
+          userId: employers[1].id,
+          businessId: businesses[1].id,
+          title: 'Customs Compliance Officer',
+          description: 'Seeking a Customs Compliance Officer to ensure adherence to international trade regulations and customs procedures.',
+          type: 'FULL_TIME',
+          employmentType: 'FULL_TIME',
+          location: 'On-site - New York',
+          salary: '$65,000 - $85,000',
+          salaryMin: 65000,
+          salaryMax: 85000,
+          department: 'Compliance',
+          status: 'ACTIVE',
+          views: 87,
+          deadline: nextWeek,
+          published: true,
+          publishedAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.job.create({
+        data: {
+          userId: employers[1].id,
+          businessId: businesses[1].id,
+          title: 'Logistics Coordinator',
+          description: 'We need a Logistics Coordinator to manage cross-border shipping operations and coordinate with international carriers.',
+          type: 'FULL_TIME',
+          employmentType: 'FULL_TIME',
+          location: 'Remote',
+          salary: '$55,000 - $70,000',
+          salaryMin: 55000,
+          salaryMax: 70000,
+          department: 'Logistics',
+          status: 'ACTIVE',
+          views: 76,
+          deadline: nextMonth,
+          published: true,
+          publishedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.job.create({
+        data: {
+          userId: employers[2].id,
+          businessId: businesses[2].id,
+          title: 'Technical Recruiter',
+          description: 'Looking for a skilled Technical Recruiter to source and place IT professionals with our clients.',
+          type: 'FULL_TIME',
+          employmentType: 'FULL_TIME',
+          location: 'Hybrid',
+          salary: '$60,000 - $75,000',
+          salaryMin: 60000,
+          salaryMax: 75000,
+          department: 'Sourcing',
+          status: 'ACTIVE',
+          views: 134,
+          deadline: nextWeek,
+          published: true,
+          publishedAt: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.job.create({
+        data: {
+          userId: investors[0].id,
+          title: 'Investment Analyst Intern',
+          description: 'Venture Fund Limited is offering an internship for Investment Analyst role. Great learning opportunity.',
+          type: 'INTERNSHIP',
+          employmentType: 'INTERNSHIP',
+          location: 'Remote',
+          salary: '$25/hour',
+          salaryMin: 25,
+          salaryMax: 25,
+          department: 'Investment Analysis',
+          status: 'ACTIVE',
+          views: 203,
+          deadline: nextWeek,
+          published: true,
+          publishedAt: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000)
+        }
+      })
+    ])
+
+    console.log('✅ Created', jobs.length, 'job postings')
+
+    console.log('📋 Creating job applications...')
+    const jobApplications = await Promise.all([
+      prisma.jobApplication.create({
+        data: {
+          jobId: jobs[0].id,
+          userId: students[0].id,
+          status: 'UNDER_REVIEW'
+        }
+      }),
+      prisma.jobApplication.create({
+        data: {
+          jobId: jobs[0].id,
+          userId: students[5].id,
+          status: 'PENDING'
+        }
+      }),
+      prisma.jobApplication.create({
+        data: {
+          jobId: jobs[1].id,
+          userId: students[6].id,
+          status: 'INTERVIEW'
+        }
+      }),
+      prisma.jobApplication.create({
+        data: {
+          jobId: jobs[2].id,
+          userId: students[1].id,
+          status: 'PENDING'
+        }
+      }),
+      prisma.jobApplication.create({
+        data: {
+          jobId: jobs[3].id,
+          userId: students[7].id,
+          status: 'UNDER_REVIEW'
+        }
+      }),
+      prisma.jobApplication.create({
+        data: {
+          jobId: jobs[4].id,
+          userId: students[2].id,
+          status: 'OFFER'
+        }
+      }),
+      prisma.jobApplication.create({
+        data: {
+          jobId: jobs[5].id,
+          userId: students[8].id,
+          status: 'PENDING'
+        }
+      }),
+      prisma.jobApplication.create({
+        data: {
+          jobId: jobs[5].id,
+          userId: students[9].id,
+          status: 'UNDER_REVIEW'
+        }
+      })
+    ])
+
+    console.log('✅ Created', jobApplications.length, 'job applications')
+
+    console.log('💬 Creating messages...')
+    const messages = await Promise.all([
+      prisma.message.create({
+        data: {
+          fromUserId: students[0].id,
+          toUserId: students[1].id,
+          content: 'Hi Emily! I saw your cross-border trade project. Would you be interested in collaborating on a joint venture?',
+          read: true
+        }
+      }),
+      prisma.message.create({
+        data: {
+          fromUserId: students[1].id,
+          toUserId: students[0].id,
+          content: 'Hey Alex! That sounds great. Let\'s schedule a call to discuss details.',
+          read: true
+        }
+      }),
+      prisma.message.create({
+        data: {
+          fromUserId: employers[0].id,
+          toUserId: students[0].id,
+          content: 'Alex, we reviewed your application for the Due Diligence Analyst position. We\'d like to schedule an interview.',
+          read: false
+        }
+      }),
+      prisma.message.create({
+        data: {
+          fromUserId: students[2].id,
+          toUserId: employers[2].id,
+          content: 'Thank you for the job offer! I\'m excited to join the team.',
+          read: true
+        }
+      }),
+      prisma.message.create({
+        data: {
+          fromUserId: investors[0].id,
+          toUserId: students[4].id,
+          content: 'James, I\'m interested in learning more about your study-abroad counseling project. Can you send me the pitch deck?',
+          read: false
+        }
+      }),
+      prisma.message.create({
+        data: {
+          fromUserId: students[4].id,
+          toUserId: investors[0].id,
+          content: 'Hi Richard! Absolutely, I\'ll send it over today. Thanks for your interest!',
+          read: true
+        }
+      }),
+      prisma.message.create({
+        data: {
+          fromUserId: platformAdmin.id,
+          toUserId: students[3].id,
+          content: 'Your verification request has been received and is currently under review. You will be notified once a decision is made.',
+          read: true
+        }
+      }),
+      prisma.message.create({
+        data: {
+          fromUserId: students[5].id,
+          toUserId: students[6].id,
+          content: 'Hey David, how\'s the project going? Do you need any help with the risk assessment tasks?',
+          read: false
+        }
+      }),
+      prisma.message.create({
+        data: {
+          fromUserId: students[6].id,
+          toUserId: students[5].id,
+          content: 'Thanks Rachel! Everything is on track. The customs regulations research is almost complete.',
+          read: true
+        }
+      }),
+      prisma.message.create({
+        data: {
+          fromUserId: employers[1].id,
+          toUserId: employers[0].id,
+          content: 'Hi John, we have some potential partnership opportunities. Would you be open to a discussion?',
+          read: false
+        }
+      })
+    ])
+
+    console.log('✅ Created', messages.length, 'messages')
+
+    console.log('🏆 Creating leaderboard entries...')
+    const leaderboards = await Promise.all([
+      prisma.leaderboard.create({
+        data: {
+          userId: students[0].id,
+          category: 'PROJECT_COMPLETION',
+          score: 95.5,
+          rank: 1
+        }
+      }),
+      prisma.leaderboard.create({
+        data: {
+          userId: students[1].id,
+          category: 'PROJECT_COMPLETION',
+          score: 92.3,
+          rank: 2
+        }
+      }),
+      prisma.leaderboard.create({
+        data: {
+          userId: students[2].id,
+          category: 'PROJECT_COMPLETION',
+          score: 89.7,
+          rank: 3
+        }
+      }),
+      prisma.leaderboard.create({
+        data: {
+          userId: students[5].id,
+          category: 'TASK_EXECUTION',
+          score: 88.2,
+          rank: 1
+        }
+      }),
+      prisma.leaderboard.create({
+        data: {
+          userId: students[6].id,
+          category: 'TASK_EXECUTION',
+          score: 85.6,
+          rank: 2
+        }
+      }),
+      prisma.leaderboard.create({
+        data: {
+          userId: students[0].id,
+          category: 'COLLABORATION',
+          score: 94.1,
+          rank: 1
+        }
+      }),
+      prisma.leaderboard.create({
+        data: {
+          userId: students[3].id,
+          category: 'COLLABORATION',
+          score: 91.8,
+          rank: 2
+        }
+      }),
+      prisma.leaderboard.create({
+        data: {
+          userId: students[2].id,
+          category: 'LEADERSHIP',
+          score: 93.4,
+          rank: 1
+        }
+      }),
+      prisma.leaderboard.create({
+        data: {
+          userId: students[0].id,
+          category: 'LEADERSHIP',
+          score: 90.2,
+          rank: 2
+        }
+      }),
+      prisma.leaderboard.create({
+        data: {
+          userId: students[7].id,
+          category: 'SKILL_DEVELOPMENT',
+          score: 87.9,
+          rank: 1
+        }
+      })
+    ])
+
+    console.log('✅ Created', leaderboards.length, 'leaderboard entries')
+
+    console.log('⭐ Creating point transactions...')
+    const pointTransactions = await Promise.all([
+      prisma.pointTransaction.create({
+        data: {
+          userId: students[0].id,
+          points: 100,
+          source: 'TASK_COMPLETION',
+          description: 'Completed task: Client Acquisition Outreach',
+          metadata: JSON.stringify({ taskId: allTasks[0]?.id })
+        }
+      }),
+      prisma.pointTransaction.create({
+        data: {
+          userId: students[0].id,
+          points: 150,
+          source: 'MILESTONE_ACHIEVEMENT',
+          description: 'Achieved milestone: First Client Acquisition',
+          metadata: JSON.stringify({ projectId: project1.id, milestoneId: 'milestone-1' })
+        }
+      }),
+      prisma.pointTransaction.create({
+        data: {
+          userId: students[1].id,
+          points: 100,
+          source: 'TASK_COMPLETION',
+          description: 'Completed task: Research Customs Regulations',
+          metadata: JSON.stringify({ taskId: allTasks[15]?.id })
+        }
+      }),
+      prisma.pointTransaction.create({
+        data: {
+          userId: students[2].id,
+          points: 120,
+          source: 'TASK_COMPLETION',
+          description: 'Completed task: Define Recruitment Service Specializations',
+          metadata: JSON.stringify({ taskId: allTasks[30]?.id })
+        }
+      }),
+      prisma.pointTransaction.create({
+        data: {
+          userId: students[5].id,
+          points: 80,
+          source: 'TASK_COMPLETION',
+          description: 'Completed task: Design Due Diligence Framework',
+          metadata: JSON.stringify({ taskId: allTasks[5]?.id })
+        }
+      }),
+      prisma.pointTransaction.create({
+        data: {
+          userId: students[0].id,
+          points: 50,
+          source: 'COLLABORATION',
+          description: 'Received positive rating for collaboration',
+          metadata: JSON.stringify({ ratingId: ratings[0]?.id })
+        }
+      }),
+      prisma.pointTransaction.create({
+        data: {
+          userId: students[5].id,
+          points: 50,
+          source: 'COLLABORATION',
+          description: 'Received positive rating for collaboration',
+          metadata: JSON.stringify({ ratingId: ratings[1]?.id })
+        }
+      }),
+      prisma.pointTransaction.create({
+        data: {
+          userId: students[2].id,
+          points: 75,
+          source: 'LEADERSHIP',
+          description: 'Received positive leadership rating',
+          metadata: JSON.stringify({ ratingId: ratings[2]?.id })
+        }
+      }),
+      prisma.pointTransaction.create({
+        data: {
+          userId: students[3].id,
+          points: 40,
+          source: 'COLLABORATION',
+          description: 'Received rating for collaboration',
+          metadata: JSON.stringify({ ratingId: ratings[3]?.id })
+        }
+      }),
+      prisma.pointTransaction.create({
+        data: {
+          userId: students[1].id,
+          points: 150,
+          source: 'MILESTONE_ACHIEVEMENT',
+          description: 'Achieved milestone: Customs Broker License Secured',
+          metadata: JSON.stringify({ projectId: project2.id, milestoneId: 'milestone-2' })
+        }
+      }),
+      prisma.pointTransaction.create({
+        data: {
+          userId: students[2].id,
+          points: 150,
+          source: 'MILESTONE_ACHIEVEMENT',
+          description: 'Achieved milestone: First 10 Successful Placements',
+          metadata: JSON.stringify({ projectId: project3.id, milestoneId: 'milestone-3' })
+        }
+      }),
+      prisma.pointTransaction.create({
+        data: {
+          userId: students[3].id,
+          points: 100,
+          source: 'PROJECT_SUBMISSION',
+          description: 'Submitted project for review: Virtual Administrative Support Company',
+          metadata: JSON.stringify({ projectId: project4.id })
+        }
+      })
+    ])
+
+    console.log('✅ Created', pointTransactions.length, 'point transactions')
+
+    console.log('🤝 Creating collaboration requests...')
+    const collaborationRequests = await Promise.all([
+      prisma.collaborationRequest.create({
+        data: {
+          fromId: students[0].id,
+          toId: students[1].id,
+          type: 'PROJECT',
+          status: 'PENDING',
+          message: 'I have an idea for a joint project combining supplier verification and cross-border trade expertise. Would you be interested?',
+          projectId: project1.id
+        }
+      }),
+      prisma.collaborationRequest.create({
+        data: {
+          fromId: students[2].id,
+          toId: students[3].id,
+          type: 'PROJECT',
+          status: 'ACCEPTED',
+          message: 'Our projects complement each other well. Let\'s collaborate on sharing best practices between recruitment and administrative services.',
+          projectId: project3.id
+        }
+      }),
+      prisma.collaborationRequest.create({
+        data: {
+          fromId: students[4].id,
+          toId: students[0].id,
+          type: 'MENTORSHIP',
+          status: 'PENDING',
+          message: 'I\'d love to learn from your experience in building and leading successful projects. Would you be willing to mentor me?',
+          projectId: project5.id
+        }
+      }),
+      prisma.collaborationRequest.create({
+        data: {
+          fromId: students[5].id,
+          toId: students[6].id,
+          type: 'PARTNERSHIP',
+          status: 'PENDING',
+          message: 'Let\'s form a partnership to share resources and collaborate on our respective project tasks.',
+          projectId: project1.id
+        }
+      }),
+      prisma.collaborationRequest.create({
+        data: {
+          fromId: employers[0].id,
+          toId: employers[1].id,
+          type: 'PARTNERSHIP',
+          status: 'PENDING',
+          message: 'Our companies have complementary services. Let\'s explore partnership opportunities.'
+        }
+      }),
+      prisma.collaborationRequest.create({
+        data: {
+          fromId: investors[0].id,
+          toId: students[4].id,
+          type: 'PROJECT',
+          status: 'PENDING',
+          message: 'I\'m interested in potentially investing in your study-abroad counseling project. Let\'s discuss terms.',
+          projectId: project5.id
+        }
+      }),
+      prisma.collaborationRequest.create({
+        data: {
+          fromId: students[1].id,
+          toId: students[2].id,
+          type: 'PROJECT',
+          status: 'REJECTED',
+          message: 'Unfortunately, I don\'t have capacity for additional collaborations at this time.',
+          projectId: project2.id
+        }
+      })
+    ])
+
+    console.log('✅ Created', collaborationRequests.length, 'collaboration requests')
+
+    console.log('✅ Creating project approvals...')
+    const projectApprovals = await Promise.all([
+      prisma.projectApproval.create({
+        data: {
+          projectId: project1.id,
+          adminId: platformAdmin.id,
+          status: 'APPROVED',
+          comments: 'Project has been reviewed and meets all platform requirements. Excellent business case with clear milestones.',
+          reviewedAt: new Date(now.getTime() - 25 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.projectApproval.create({
+        data: {
+          projectId: project2.id,
+          adminId: platformAdmin.id,
+          status: 'APPROVED',
+          comments: 'Project approved. Cross-border trade facilitation is a valuable service. Ensure compliance with all regulations.',
+          reviewedAt: new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.projectApproval.create({
+        data: {
+          projectId: project3.id,
+          adminId: platformAdmin.id,
+          status: 'APPROVED',
+          comments: 'Professional recruitment agency project approved. Good market potential and solid business model.',
+          reviewedAt: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.projectApproval.create({
+        data: {
+          projectId: project4.id,
+          adminId: platformAdmin.id,
+          status: 'UNDER_REVIEW',
+          comments: 'Project is currently under review. We need more details about the service catalog and quality control processes.',
+          reviewedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.projectApproval.create({
+        data: {
+          projectId: project5.id,
+          adminId: platformAdmin.id,
+          status: 'PENDING',
+          comments: null,
+          reviewedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)
+        }
+      })
+    ])
+
+    console.log('✅ Created', projectApprovals.length, 'project approvals')
+
+    console.log('✅ Creating job approvals...')
+    const jobApprovals = await Promise.all([
+      prisma.jobApproval.create({
+        data: {
+          jobId: jobs[0].id,
+          adminId: platformAdmin.id,
+          status: 'APPROVED',
+          comments: 'Job posting approved. Clear description and competitive salary range.',
+          reviewedAt: new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.jobApproval.create({
+        data: {
+          jobId: jobs[1].id,
+          adminId: platformAdmin.id,
+          status: 'APPROVED',
+          comments: 'Approved. Risk Assessment Specialist is a key role for the business.',
+          reviewedAt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.jobApproval.create({
+        data: {
+          jobId: jobs[2].id,
+          adminId: platformAdmin.id,
+          status: 'APPROVED',
+          comments: 'Job approved. Important compliance role with good detail in requirements.',
+          reviewedAt: new Date(now.getTime() - 9 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.jobApproval.create({
+        data: {
+          jobId: jobs[3].id,
+          adminId: platformAdmin.id,
+          status: 'APPROVED',
+          comments: 'Approved. Logistics Coordinator position is well-defined.',
+          reviewedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.jobApproval.create({
+        data: {
+          jobId: jobs[4].id,
+          adminId: platformAdmin.id,
+          status: 'UNDER_REVIEW',
+          comments: 'Currently reviewing. Need to verify the salary range matches market rates.',
+          reviewedAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      prisma.jobApproval.create({
+        data: {
+          jobId: jobs[5].id,
+          adminId: platformAdmin.id,
+          status: 'APPROVED',
+          comments: 'Internship approved. Good opportunity for students to gain experience.',
+          reviewedAt: new Date(now.getTime() - 11 * 24 * 60 * 60 * 1000)
+        }
+      })
+    ])
+
+    console.log('✅ Created', jobApprovals.length, 'job approvals')
+
     console.log('✨ Business-focused database seeding completed successfully!')
     console.log('\n' + '='.repeat(50))
     console.log('📋 LOGIN CREDENTIALS:')
@@ -6516,6 +7357,17 @@ async function main() {
     console.log('Notifications:', notifications.length)
     console.log('Ratings:', ratings.length)
     console.log('Audit Logs:', auditLogs.length)
+    console.log('Professional Records:', professionalRecords.length)
+    console.log('Verification Requests:', verificationRequests.length)
+    console.log('Agreements:', agreements.length)
+    console.log('Jobs:', jobs.length)
+    console.log('Job Applications:', jobApplications.length)
+    console.log('Messages:', messages.length)
+    console.log('Leaderboards:', leaderboards.length)
+    console.log('Point Transactions:', pointTransactions.length)
+    console.log('Collaboration Requests:', collaborationRequests.length)
+    console.log('Project Approvals:', projectApprovals.length)
+    console.log('Job Approvals:', jobApprovals.length)
     console.log('')
     console.log('='.repeat(50))
     console.log('📋 BUSINESS PROJECTS OVERVIEW:')

@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const status = searchParams.status as string | undefined
-    const ownerId = searchParams.ownerId as string | undefined
+    const status = searchParams.get('status') as string | undefined
+    const ownerId = searchParams.get('ownerId') as string | undefined
 
     // Get user info for visibility control
     const userId = authResult.dbUser?.id || null
@@ -144,6 +144,8 @@ export async function POST(request: NextRequest) {
         budget: body.budget ? parseFloat(body.budget) : null,
         category: body.category,
         seekingInvestment: body.seekingInvestment || false,
+        published: body.publishImmediately || false,
+        publishedAt: body.publishImmediately ? new Date() : null,
         members: {
           create: {
             userId: ownerId,

@@ -30,10 +30,6 @@ export async function PATCH(
   try {
     // Require authentication
     const authResult = await requireAuth(request)
-    if (!authResult) {
-      return unauthorized()
-    }
-
     const currentUser = authResult.dbUser
     const { id } = await params
     const body = await request.json()
@@ -123,10 +119,6 @@ export async function DELETE(
   try {
     // Require authentication
     const authResult = await requireAuth(request)
-    if (!authResult) {
-      return unauthorized()
-    }
-
     const currentUser = authResult.dbUser
     const { id } = await params
 

@@ -44,13 +44,13 @@ export async function GET(
     })
 
     if (!task) {
-      return NextResponse.json(
-        { error: 'Task not found' },
-        { status: 404 }
-      )
+      return notFound('Task not found')
     }
 
-    return NextResponse.json({ task })
+    return NextResponse.json({
+      success: true,
+      data: task
+    })
   } catch (error) {
     console.error('Get task error:', error)
     return NextResponse.json(
@@ -68,9 +68,6 @@ export async function PATCH(
   try {
     // Require authentication
     const authResult = await requireAuth(request)
-    if ('status' in authResult) {
-      return authResult
-    }
 
     const currentUser = authResult.dbUser
 
@@ -140,7 +137,7 @@ export async function PATCH(
     if (description !== undefined) updateData.description = description
     if (status !== undefined) {
       updateData.status = status as TaskStatus
-      if (status === 'COMPLETED') {
+      if (status === 'DONE') {
         updateData.completedAt = new Date()
       }
     }
@@ -206,9 +203,6 @@ export async function DELETE(
   try {
     // Require authentication
     const authResult = await requireAuth(request)
-    if ('status' in authResult) {
-      return authResult
-    }
 
     const currentUser = authResult.dbUser
 

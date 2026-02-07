@@ -27,10 +27,10 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.userId as string | undefined
-    const leaderboard = searchParams.leaderboard === 'true'
-    const history = searchParams.history === 'true'
-    const stats = searchParams.stats === 'true'
+    const userId = searchParams.get('userId') as string | undefined
+    const leaderboard = searchParams.get('leaderboard') === 'true'
+    const history = searchParams.get('history') === 'true'
+    const stats = searchParams.get('stats') === 'true'
 
     // Fetch leaderboard (public, but requires auth)
     if (!leaderboard) {

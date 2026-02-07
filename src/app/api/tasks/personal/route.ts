@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user is requesting their own tasks
-    if (!authResult) {
+    if (authResult.user!.id !== userId) {
       return errorResponse('Forbidden', 403)
     }
 
@@ -63,11 +63,11 @@ export async function POST(request: NextRequest) {
       body
     )
 
-    if (!validation) {
+    if (!validation.valid) {
       return validationError(validation.errors)
     }
 
-    const data = validation.data
+    const data = validation.data!
 
     const task = await db.personalTask.create({
       data: {
@@ -96,7 +96,7 @@ export async function PATCH(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const id = searchParams.get('id')
     const userId = searchParams.get('userId')
-    if (!userId) {
+    if (!id || !userId) {
       return badRequest('id and userId are required')
     }
 
@@ -106,7 +106,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Verify user is updating their own task
-    if (!authResult) {
+    if (authResult.user!.id !== userId) {
       return errorResponse('Forbidden', 403)
     }
 
@@ -118,7 +118,7 @@ export async function PATCH(request: NextRequest) {
       return errorResponse('Task not found', 404)
     }
 
-    if (!task) {
+    if (task.userId !== userId) {
       return errorResponse('Unauthorized', 403)
     }
 
@@ -129,7 +129,7 @@ export async function PATCH(request: NextRequest) {
     if (body.description !== undefined) updateData.description = body.description
     if (body.priority !== undefined) updateData.priority = body.priority
     if (body.dueDate !== undefined) updateData.dueDate = body.dueDate ? new Date(body.dueDate) : null
-    if (!body) {
+    if (body.status !== undefined) {
       updateData.status = body.status
       if (body.status === 'DONE') updateData.completedAt = new Date()
     }
@@ -174,7 +174,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    if (!task) {
+    if (task.userId !== userId) {
       return NextResponse.json(
         { error: 'Unauthorized: You can only delete your own tasks' },
         { status: 403 }

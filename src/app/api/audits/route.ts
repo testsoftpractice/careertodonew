@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
     const { userId, userName, action, entityType, entityId, details } = body
 
     // Validate input
-    if (!body) {
+    if (!userId || !action || !entityType || !entityId) {
       return NextResponse.json(
         { success: false, error: 'User ID, action, and entity type are required' },
         { status: 400 }

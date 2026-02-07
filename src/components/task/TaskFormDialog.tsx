@@ -41,7 +41,8 @@ import { Task } from './ProfessionalKanbanBoard'
 interface TaskFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSave: (taskData: any) => Promise<void>
+  onRefresh?: () => void
+  onSave: (taskData: any, isNewTask?: boolean) => Promise<void>
   task?: Task | null
   mode?: 'create' | 'edit'
   projects?: Array<{ id: string; name: string }>

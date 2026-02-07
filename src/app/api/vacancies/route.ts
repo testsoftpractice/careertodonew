@@ -26,7 +26,7 @@ const createVacancySchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const projectId = searchParams.projectId as string | undefined
+    const projectId = searchParams.get('projectId') as string | undefined
 
     if (!projectId) {
       return errorResponse('Project ID is required', 400)
@@ -48,7 +48,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const authResult = await requireAuth(request)
-    if ('status' in authResult) return authResult
 
     const body = await request.json()
 
@@ -128,10 +127,9 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const authResult = await requireAuth(request)
-    if ('status' in authResult) return authResult
 
     const { searchParams } = new URL(request.url)
-    const id = searchParams.id as string | undefined
+    const id = searchParams.get('id') as string | undefined
 
     if (!id) {
       return errorResponse('Vacancy ID is required', 400)

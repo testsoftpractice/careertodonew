@@ -134,7 +134,7 @@ export async function POST(
       },
     })
 
-    if (!existingMember) {
+    if (existingMember) {
       return NextResponse.json({ error: 'User is already a member of this project' }, { status: 400 })
     }
 

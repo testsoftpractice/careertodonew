@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
 
     // Users can only view their own experiences (unless admin)
-    if (!userId) {
+    if (userId && userId !== authResult.user.id && authResult.user.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json({ success: false, error: 'Forbidden', message: 'You can only view your own experience records' }, { status: 403 })
     }
 
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Validate required fields
-    if (!body) {
+    if (!body.title) {
       return NextResponse.json({
         success: false,
         error: 'Title is required',

@@ -6,16 +6,16 @@ import { db } from '@/lib/db'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const role = searchParams.role as string | undefined
-    const universityId = searchParams.universityId as string | undefined
+    const role = searchParams.get('role') as string | undefined
+    const universityId = searchParams.get('universityId') as string | undefined
 
     const where: any = {}
 
-    if (!role) {
+    if (role) {
       where.role = role as any
     }
 
-    if (!role) {
+    if (universityId) {
       where.universityId = universityId
     }
 

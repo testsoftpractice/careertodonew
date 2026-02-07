@@ -2,19 +2,29 @@ $ prisma generate && next build
 Environment variables loaded from .env
 Prisma schema loaded from prisma/schema.prisma
 
-✔ Generated Prisma Client (v6.19.2) to ./node_modules/@prisma/client in 301ms
+✔ Generated Prisma Client (v6.19.2) to ./node_modules/@prisma/client in 303ms
 
 Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
 
-Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
 
 ▲ Next.js 16.1.6 (Turbopack)
 - Environments: .env
 
   Creating an optimized production build ...
-✓ Compiled successfully in 11.9s
+✓ Compiled successfully in 12.2s
   Skipping validation of types
   Collecting page data using 3 workers ...
+[DB] Initializing Prisma Client...
+[DB] DATABASE_URL: SET
+[DB] DIRECT_URL: NOT SET
+[DB] Using datasource URL: file:/home/z/my-project/db/custom.db
+JWT_SECRET environment variable is not set, using default for development
 JWT_SECRET environment variable is not set, using default for development
 [DB] Initializing Prisma Client...
 [DB] DATABASE_URL: SET
@@ -25,16 +35,11 @@ JWT_SECRET environment variable is not set, using default for development
 [DB] DATABASE_URL: SET
 [DB] DIRECT_URL: NOT SET
 [DB] Using datasource URL: file:/home/z/my-project/db/custom.db
-[DB] Initializing Prisma Client...
-[DB] DATABASE_URL: SET
-[DB] DIRECT_URL: NOT SET
-[DB] Using datasource URL: file:/home/z/my-project/db/custom.db
-JWT_SECRET environment variable is not set, using default for development
-  Generating static pages using 3 workers (0/162) ...
-  Generating static pages using 3 workers (40/162) 
-  Generating static pages using 3 workers (80/162) 
-  Generating static pages using 3 workers (121/162) 
-✓ Generating static pages using 3 workers (162/162) in 1121.8ms
+  Generating static pages using 3 workers (0/167) ...
+  Generating static pages using 3 workers (41/167) 
+  Generating static pages using 3 workers (83/167) 
+  Generating static pages using 3 workers (125/167) 
+✓ Generating static pages using 3 workers (167/167) in 914.2ms
   Finalizing page optimization ...
 
 Route (app)
@@ -42,6 +47,10 @@ Route (app)
 ├ ○ /_not-found
 ├ ○ /about
 ├ ○ /admin
+├ ○ /admin/approvals/jobs
+├ ƒ /admin/approvals/jobs/[id]
+├ ○ /admin/approvals/projects
+├ ƒ /admin/approvals/projects/[id]
 ├ ○ /admin/audit
 ├ ○ /admin/compliance
 ├ ○ /admin/content
@@ -55,6 +64,10 @@ Route (app)
 ├ ƒ /admin/universities/[id]
 ├ ○ /admin/users
 ├ ƒ /api
+├ ƒ /api/admin/approvals/jobs
+├ ƒ /api/admin/approvals/jobs/[id]
+├ ƒ /api/admin/approvals/projects
+├ ƒ /api/admin/approvals/projects/[id]
 ├ ƒ /api/admin/audit
 ├ ƒ /api/admin/compliance
 ├ ƒ /api/admin/content
@@ -158,7 +171,9 @@ Route (app)
 ├ ƒ /api/projects/[id]/departments
 ├ ƒ /api/projects/[id]/lifecycle
 ├ ƒ /api/projects/[id]/members
+├ ƒ /api/projects/[id]/members/invite
 ├ ƒ /api/projects/[id]/milestones
+├ ƒ /api/projects/[id]/publish
 ├ ƒ /api/projects/[id]/roles
 ├ ƒ /api/projects/[id]/stage-transition
 ├ ƒ /api/projects/[id]/tasks
@@ -196,6 +211,7 @@ Route (app)
 ├ ƒ /api/verification-requests
 ├ ƒ /api/verification/[id]
 ├ ƒ /api/work-sessions
+├ ƒ /api/work-sessions/active
 ├ ○ /auth
 ├ ○ /auth/forgot-password
 ├ ○ /auth/reset-password

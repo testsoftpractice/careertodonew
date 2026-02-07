@@ -52,7 +52,7 @@ export function requireAuth(request: NextRequest): JwtPayload | NextResponse {
 export function requireRole(
   request: NextRequest,
   allowedRoles: string[]
-): boolean | NextResponse {
+): JwtPayload | NextResponse {
   const user = getUserFromRequest(request)
 
   if (!user) {
@@ -69,7 +69,7 @@ export function requireRole(
     )
   }
 
-  return true
+  return user
 }
 
 /**

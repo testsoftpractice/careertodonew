@@ -4,11 +4,9 @@ import { db } from '@/lib/db'
 
 // GET /api/dashboard/university/pending-approvals - Get pending business approvals
 export async function GET(request: NextRequest) {
-  const auth = requireRole(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
-  if (auth !== true) return auth
-
-  const user = getUserFromRequest(request)
-  const universityId = user?.universityId
+  const user = requireRole(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
+  if (user instanceof NextResponse) return user
+  const universityId = user.universityId
 
   if (!user) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })

@@ -10,10 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = requireAuth(request)
-    if ('status' in auth) return auth
+    const auth = await requireAuth(request)
 
-    const user = getUserFromRequest(request)
+    const user = auth.dbUser
     if (!user || user.role !== 'PLATFORM_ADMIN') {
       return forbidden('Only platform admins can access this endpoint')
     }
@@ -109,10 +108,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = requireAuth(request)
-    if ('status' in auth) return auth
+    const auth = await requireAuth(request)
 
-    const user = getUserFromRequest(request)
+    const user = auth.dbUser
     if (!user || user.role !== 'PLATFORM_ADMIN') {
       return forbidden('Only platform admins can reject jobs')
     }
@@ -162,7 +160,7 @@ export async function PATCH(
     if (job.businessId && job.business) {
       await db.notification.create({
         data: {
-          userId: job.business.userId,
+          userId: job.business.ownerId,
           type: 'JOB_APPROVAL',
           title: '❌ Job Not Approved',
           message: `Your job "${job.title}" was not approved. Reason: ${rejectionReason}`,

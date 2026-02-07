@@ -466,6 +466,8 @@ model Project {
   imageUrl          String?       // Project cover image
   progress          Float         @default(0) // 0-100 percentage
   seekingInvestment Boolean       @default(false)
+  published         Boolean       @default(false)
+  publishedAt       DateTime?
 
   // Approval fields
   approvalStatus    ProjectApprovalStatus @default(PENDING)
@@ -502,6 +504,7 @@ model Project {
   @@index([stage])
   @@index([category])
   @@index([progress])
+  @@index([published])
 }
 
 model ProjectMember {

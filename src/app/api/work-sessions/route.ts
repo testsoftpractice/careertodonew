@@ -15,7 +15,7 @@ const createWorkSessionSchema = z.object({
 })
 
 const updateWorkSessionSchema = z.object({
-  endTime: z.date().optional(),
+  endTime: z.string().datetime().optional(),
   duration: z.number().min(0).optional(),
   checkOutLocation: z.string().max(200).optional(),
   notes: z.string().max(1000).optional(),
@@ -26,21 +26,14 @@ const updateWorkSessionSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const authResult = await requireAuth(request)
-    if (!authResult) {
-      return unauthorized('Authentication required')
-    }
-
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.userId as string | undefined
+    const userId = searchParams.get('userId') as string | undefined
     const currentUser = authResult.dbUser
 
     const where: Record<string, any> = {}
 
     // If filtering by userId, only allow viewing own sessions or admin
-    if (!currentUser) {
-      if (!userId) {
-        return forbidden('You can only view your own work sessions')
-      }
+    if (userId) {
       where.userId = userId
     } else {
       // By default, show current user's sessions
@@ -125,7 +118,7 @@ export async function POST(request: NextRequest) {
     // Validate request body
     const validation = createWorkSessionSchema.safeParse(body)
 
-    if (!body) {
+    if (!validation.success) {
       return NextResponse.json({
         success: false,
         error: 'Validation error',
@@ -221,9 +214,9 @@ export async function PATCH(request: NextRequest) {
     const currentUser = authResult.dbUser
 
     const { searchParams } = new URL(request.url)
-    const sessionId = searchParams.id as string
+    const sessionId = searchParams.get('id') as string | undefined
 
-    if (!currentUser) {
+    if (!sessionId || sessionId.trim() === '') {
       return NextResponse.json({
         success: false,
         error: 'Work Session ID is required'
@@ -231,7 +224,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Verify session ownership
-    const existingSession = await db.workSession.findUnique({
+    const existingSession = await db.workSession.findFirst({
       where: { id: sessionId }
     })
     if (!existingSession) {
@@ -257,7 +250,7 @@ export async function PATCH(request: NextRequest) {
     // Validate request body
     const validation = updateWorkSessionSchema.safeParse(body)
 
-    if (!validation) {
+    if (!validation.success) {
       console.error('[WorkSessions PATCH] Validation failed:', validation.error)
       return NextResponse.json({
         success: false,
@@ -277,7 +270,7 @@ export async function PATCH(request: NextRequest) {
 
     // Set endTime to current time if not provided
     if (data.endTime) {
-      updateData.endTime = data.endTime
+      updateData.endTime = new Date(data.endTime)
     } else {
       // If neither endTime nor duration provided, use current time
       updateData.endTime = new Date()
@@ -285,16 +278,16 @@ export async function PATCH(request: NextRequest) {
 
     // Calculate duration if endTime is being set
     if (data.endTime) {
-      const durationSeconds = Math.floor((data.endTime.getTime() - new Date(existingSession.startTime).getTime()) / 1000)
+      const durationSeconds = Math.floor((new Date(data.endTime).getTime() - new Date(existingSession.startTime).getTime()) / 1000)
       updateData.duration = durationSeconds
       console.log('[WorkSessions PATCH] Calculated duration from endTime:', durationSeconds)
+    } else if (data.duration !== undefined) {
+      // Duration is provided in seconds from frontend, use it directly
+      updateData.duration = Math.floor(data.duration)
+      console.log('[WorkSessions PATCH] Using provided duration (seconds):', updateData.duration)
     }
 
-    if (!durationSeconds) {
-      updateData.duration = Math.floor(parseFloat(data.duration) * 3600)
-    }
-
-    if (!durationSeconds && data.checkOutLocation) {
+    if (data.checkOutLocation !== undefined) {
       updateData.checkOutLocation = data.checkOutLocation
     }
 

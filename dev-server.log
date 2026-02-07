@@ -1,21 +1,80 @@
 $ next dev
-⚠ Port 3000 is in use by an unknown process, using available port 3001 instead.
 ▲ Next.js 16.1.6 (Turbopack)
-- Local:         http://localhost:3001
-- Network:       http://21.0.8.172:3001
+- Local:         http://localhost:3000
+- Network:       http://21.0.17.62:3000
 - Environments: .env
 
 ✓ Starting...
-✓ Ready in 741ms
-Persisting failed: Unable to open static sorted file referenced from 00000552.meta
+✓ Ready in 666ms
+Persisting failed: Unable to write SST file 00000024.sst
 
 Caused by:
-    0: Unable to open static sorted file 00000551.sst
-    1: No such file or directory (os error 2)
+    No such file or directory (os error 2)
+
+thread 'tokio-runtime-worker' (828) panicked at /build/turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:156:17:
+Failed to restore task data (corrupted database or bug): Meta for Project::env (TaskId 2346))
+
+Caused by:
+    0: Looking up data for TaskId 2346 from database failed
+    1: Unable to open static sorted file referenced from 00000022.meta
+    2: Unable to open static sorted file 00000017.sst
+    3: No such file or directory (os error 2)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'tokio-runtime-worker' (828) panicked at /build/turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:156:17:
+Failed to restore task data (corrupted database or bug): Meta for Project::env (TaskId 2346))
+
+Caused by:
+    0: Looking up data for TaskId 2346 from database failed
+    1: Unable to open static sorted file referenced from 00000022.meta
+    2: Unable to open static sorted file 00000017.sst
+    3: No such file or directory (os error 2)
+○ Compiling / ...
 Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
-Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
-Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
-Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
-Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+
+thread 'tokio-runtime-worker' (739) panicked at /build/turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:156:17:
+Failed to restore task data (corrupted database or bug): Meta for AppProject::app_entrypoints (TaskId 41))
+
+Caused by:
+    0: Looking up data for TaskId 41 from database failed
+    1: Unable to open static sorted file referenced from 00000022.meta
+    2: Unable to open static sorted file 00000017.sst
+    3: No such file or directory (os error 2)
+
+thread 'tokio-runtime-worker' (760) panicked at /build/turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:156:17:
+Failed to restore task data (corrupted database or bug): Meta for Project::collect_project_feature_telemetry (TaskId 19))
+
+Caused by:
+    0: Looking up data for TaskId 19 from database failed
+    1: Unable to open static sorted file referenced from 00000022.meta
+    2: Unable to open static sorted file 00000017.sst
+    3: No such file or directory (os error 2)
+
+thread 'tokio-runtime-worker' (739) panicked at /build/turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:156:17:
+Failed to restore task data (corrupted database or bug): Meta for project_container_entrypoints_operation (TaskId 15))
+
+Caused by:
+    0: Looking up data for TaskId 15 from database failed
+    1: Unable to open static sorted file referenced from 00000022.meta
+    2: Unable to open static sorted file 00000017.sst
+    3: No such file or directory (os error 2)
+
+thread 'tokio-runtime-worker' (760) panicked at /build/turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:156:17:
+Failed to restore task data (corrupted database or bug): Meta for pick_endpoint (TaskId 2159))
+
+Caused by:
+    0: Looking up data for TaskId 2159 from database failed
+    1: Unable to open static sorted file referenced from 00000022.meta
+    2: Unable to open static sorted file 00000017.sst
+    3: No such file or directory (os error 2)
+
+thread 'tokio-runtime-worker' (739) panicked at /build/turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:156:17:
+Failed to restore task data (corrupted database or bug): Meta for pick_endpoint (TaskId 2159))
+
+Caused by:
+    0: Looking up data for TaskId 2159 from database failed
+    1: Unable to open static sorted file referenced from 00000022.meta
+    2: Unable to open static sorted file 00000017.sst
+    3: No such file or directory (os error 2)
 Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
 Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)

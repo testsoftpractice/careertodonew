@@ -303,7 +303,7 @@ export default function AdminUniversitiesPage() {
                     Add University
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="backdrop:bg-black/50">
                   <DialogHeader>
                     <DialogTitle>Create New University</DialogTitle>
                     <DialogDescription>
@@ -601,7 +601,7 @@ export default function AdminUniversitiesPage() {
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="backdrop:bg-black/50">
           <DialogHeader>
             <DialogTitle>Edit University</DialogTitle>
             <DialogDescription>

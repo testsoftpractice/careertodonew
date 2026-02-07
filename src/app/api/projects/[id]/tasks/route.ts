@@ -24,7 +24,6 @@ export async function GET(
   try {
     // Require authentication
     const authResult = await requireAuth(request)
-    if ('status' in authResult) return authResult
 
     const { id: projectId } = await params
     const currentUser = authResult.dbUser
@@ -102,7 +101,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     // Require authentication
     const authResult = await requireAuth(request)
-    if ('status' in authResult) return authResult
 
     const { id: projectId } = await params
     const currentUser = authResult.dbUser
@@ -158,6 +156,33 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         estimatedHours: data.estimatedHours ? parseFloat(String(data.estimatedHours)) : null,
         status: 'TODO',
         currentStepId: '1',
+      },
+      include: {
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          }
+        },
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        project: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+          },
+        },
+        subTasks: {
+          orderBy: { sortOrder: 'asc' }
+        },
       },
     })
 

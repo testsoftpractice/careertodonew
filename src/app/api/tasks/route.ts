@@ -9,10 +9,10 @@ import { verifyAuth, requireAuth } from '@/lib/auth/verify'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const projectId = searchParams.projectId as string | undefined
-    const assigneeId = searchParams.assigneeId as string | undefined
-    const status = searchParams.status as string | undefined
-    const priority = searchParams.priority as string | undefined
+    const projectId = searchParams.get('projectId') as string | undefined
+    const assigneeId = searchParams.get('assigneeId') as string | undefined
+    const status = searchParams.get('status') as string | undefined
+    const priority = searchParams.get('priority') as string | undefined
 
     const where: any = {}
 
@@ -86,11 +86,11 @@ export async function POST(request: NextRequest) {
     // Validate request body
     const validation = validateRequest(createTaskSchema, body)
 
-    if (!validation.success) {
+    if (!validation.valid) {
       return validationError(validation.errors)
     }
 
-    const data = validation.data
+    const data = validation.data!
 
     // Check if user is project owner or member
     const project = await db.project.findUnique({

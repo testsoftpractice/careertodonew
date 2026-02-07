@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { userId, projectId, title, content } = body
 
-    if (!body) {
-      return NextResponse.json({ success: false, error: "User ID, title, and content are required" }, { status: 400 })
+    if (!userId || !title || !content) {
+      return NextResponse.json({ success: false, error: 'User ID, title, and content are required' }, { status: 400 })
     }
 
     const agreement = await db.agreement.create({
@@ -76,9 +76,9 @@ export async function PATCH(request: NextRequest) {
     if (body.title) updates.title = body.title
     if (body.content) updates.content = body.content
     if (body.projectId !== undefined) updates.projectId = body.projectId
-    if (!body) {
+    if (body.signed !== undefined) {
       updates.signed = body.signed
-      if (!body) {
+      if (body.signed) {
         updates.signedAt = new Date()
       }
     }

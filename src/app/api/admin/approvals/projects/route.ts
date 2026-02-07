@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { requireAuth, getUserFromRequest } from '@/lib/api/auth-middleware'
+import { requireAuth } from '@/lib/auth/verify'
 import { ProjectApprovalStatus, ProjectStatus } from '@prisma/client'
 import { successResponse, errorResponse, forbidden, notFound } from '@/lib/api-response'
 
 // GET /api/admin/approvals/projects - List all projects pending approval
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireAuth(request)
-    if ('status' in auth) return auth
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
 
-    const user = getUserFromRequest(request)
-    if (!user || user.role !== 'PLATFORM_ADMIN') {
+    if (currentUser.role !== 'PLATFORM_ADMIN') {
       return forbidden('Only platform admins can access this endpoint')
     }
 
@@ -138,11 +137,10 @@ export async function GET(request: NextRequest) {
 // POST /api/admin/approvals/projects - Approve a project
 export async function POST(request: NextRequest) {
   try {
-    const auth = requireAuth(request)
-    if ('status' in auth) return auth
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
 
-    const user = getUserFromRequest(request)
-    if (!user || user.role !== 'PLATFORM_ADMIN') {
+    if (currentUser.role !== 'PLATFORM_ADMIN') {
       return forbidden('Only platform admins can approve projects')
     }
 
@@ -171,10 +169,12 @@ export async function POST(request: NextRequest) {
       data: {
         approvalStatus: 'APPROVED',
         approvedAt: new Date(),
-        approvedBy: user.id,
+        approvedBy: currentUser.id,
         reviewComments: comments || null,
         rejectionReason: null,
         status: publishImmediately ? 'ACTIVE' : 'FUNDING',
+        published: publishImmediately ? true : undefined,
+        publishedAt: publishImmediately ? new Date() : undefined,
       },
     })
 
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
     const approval = await db.projectApproval.create({
       data: {
         projectId: projectId,
-        adminId: user.id,
+        adminId: currentUser.id,
         status: 'APPROVED',
         comments: comments || null,
       },

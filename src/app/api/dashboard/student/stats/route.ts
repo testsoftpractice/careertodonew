@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
         tasksCompleted,
         tasksPending,
         tasksInProgress,
-        overallRating: ((breakdown.execution + breakdown.collaboration + breakdown.leadership + breakdown.ethics + breakdown.reliability) / 5).toFixed(1),
+        overallRating: ((breakdown.execution + breakdown.collaborationScore + breakdown.leadershipScore + breakdown.ethicsScore + breakdown.reliabilityScore) / 5).toFixed(1),
         breakdown,
         recentActivityCount,
       }

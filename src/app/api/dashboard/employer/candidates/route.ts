@@ -4,10 +4,8 @@ import { db } from '@/lib/db'
 
 // GET /api/dashboard/employer/candidates - Get employer's candidate pool
 export async function GET(request: NextRequest) {
-  const auth = requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
-  if (auth !== true) return auth
-
-  const user = getUserFromRequest(request)
+  const user = requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
+  if (user instanceof NextResponse) return user
   const { searchParams } = new URL(request.url)
   const search = searchParams.get('search') || ''
   const status = searchParams.get('status') || 'all'

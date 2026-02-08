@@ -112,6 +112,9 @@ export async function GET(request: NextRequest) {
     const approvedCount = await db.project.count({
       where: { approvalStatus: 'APPROVED' }
     })
+    const rejectedCount = await db.project.count({
+      where: { approvalStatus: 'REJECTED' }
+    })
 
     return successResponse({
       projects,
@@ -125,6 +128,7 @@ export async function GET(request: NextRequest) {
         pending: pendingCount,
         underReview: underReviewCount,
         approved: approvedCount,
+        rejected: rejectedCount,
         total: totalCount,
       },
     })

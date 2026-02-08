@@ -122,6 +122,7 @@ export async function GET(request: NextRequest) {
         pending: pendingCount,
         underReview: underReviewCount,
         approved: approvedCount,
+        rejected,
         total: totalCount,
       },
     })

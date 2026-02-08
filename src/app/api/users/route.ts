@@ -1,66 +1,73 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAuth, AuthError } from '@/lib/auth/verify'
+import { errorResponse, forbidden } from '@/lib/api-response'
 
-// ==================== USERS API ====================
-
+// GET /api/users - Get users with filters
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
+
     const { searchParams } = new URL(request.url)
-    const role = searchParams.get('role') as string | undefined
-    const universityId = searchParams.get('universityId') as string | undefined
+    const search = searchParams.get('search') || ''
+    const role = searchParams.get('role')
+    const universityId = searchParams.get('universityId')
+    const limit = parseInt(searchParams.get('limit') || '50')
 
     const where: any = {}
 
     if (role) {
-      where.role = role as any
+      where.role = role
     }
 
     if (universityId) {
       where.universityId = universityId
     }
 
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ]
+    }
+
     const users = await db.user.findMany({
       where,
+      take: limit,
       select: {
         id: true,
-        email: true,
         name: true,
-        role: true,
+        email: true,
         avatar: true,
-        bio: true,
-        location: true,
-        major: true,
-        graduationYear: true,
-        // Removed non-existent fields: companyName, position, firmName, investmentFocus
-        executionScore: true,
-        collaborationScore: true,
-        leadershipScore: true,
-        ethicsScore: true,
-        reliabilityScore: true,
-        progressionLevel: true,
-        verificationStatus: true,
+        role: true,
+        universityId: true,
         university: {
           select: {
             id: true,
             name: true,
             code: true,
-            location: true,
-          }
-        }
+          },
+        },
+        major: true,
+        graduationYear: true,
+        verificationStatus: true,
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: {
+        name: 'asc',
+      },
     })
 
     return NextResponse.json({
       success: true,
       data: users,
-      count: users.length
+      count: users.length,
     })
   } catch (error) {
-    console.error('Users API error:', error)
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to fetch users'
-    }, { status: 500 })
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
+    console.error('Get users error:', error)
+    return errorResponse('Failed to fetch users', 500)
   }
 }

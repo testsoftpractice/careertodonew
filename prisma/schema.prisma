@@ -945,6 +945,7 @@ model Job {
   deadline    DateTime?
   published   Boolean        @default(false)
   publishedAt DateTime?
+  metadata    String?         @default("{}") // JSON field for requirements, responsibilities, benefits, positions, companyName, category, etc.
 
   // Approval fields
   approvalStatus    JobApprovalStatus @default(DRAFT)

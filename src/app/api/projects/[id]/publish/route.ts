@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { requireAuth, getUserFromRequest } from '@/lib/api/auth-middleware'
-import { successResponse, errorResponse, forbidden } from '@/lib/api-response'
+import { requireAuth, AuthError } from '@/lib/auth/verify'
+import { successResponse, errorResponse, forbidden, notFound } from '@/lib/api-response'
 
 // PATCH /api/projects/[id]/publish - Publish a project
 export async function PATCH(
@@ -9,10 +9,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = requireAuth(request)
-    if ('status' in auth) return auth
-
-    const user = getUserFromRequest(request)
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
     const { id } = await params
 
     // Check if project exists
@@ -33,7 +31,10 @@ export async function PATCH(
     }
 
     // Check if user is the project owner
-    if (user.id !== project.ownerId && user.role !== 'PLATFORM_ADMIN') {
+    const isOwner = project.ownerId === currentUser.id
+    const isAdmin = currentUser.role === 'PLATFORM_ADMIN'
+
+    if (!isOwner && !isAdmin) {
       return forbidden('Only project owner can publish the project')
     }
 
@@ -48,6 +49,8 @@ export async function PATCH(
       data: {
         published: true,
         publishedAt: new Date(),
+        approvalStatus: 'APPROVED',
+        status: 'ACTIVE',
       },
       include: {
         owner: {
@@ -71,6 +74,24 @@ export async function PATCH(
       },
     })
 
+    // Notify all project members
+    const members = await db.projectMember.findMany({
+      where: { projectId: id },
+      include: { user: true },
+    })
+
+    for (const member of members) {
+      await db.notification.create({
+        data: {
+          userId: member.userId,
+          type: 'PROJECT_UPDATE',
+          title: '📢 Project Published!',
+          message: `The project "${project.name}" has been published and is now visible to others.`,
+          link: `/projects/${id}`,
+        },
+      })
+    }
+
     return successResponse(
       {
         project: updatedProject,
@@ -79,6 +100,9 @@ export async function PATCH(
       'Project published successfully'
     )
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Publish project error:', error)
     return errorResponse('Failed to publish project', 500)
   }
@@ -90,10 +114,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = requireAuth(request)
-    if ('status' in auth) return auth
+    const authResult = await requireAuth(request)
+    const currentUser = authResult.dbUser
 
-    const user = getUserFromRequest(request)
     const { id } = await params
 
     // Check if project exists
@@ -104,6 +127,7 @@ export async function DELETE(
         ownerId: true,
         name: true,
         published: true,
+        status: true,
       },
     })
 
@@ -112,7 +136,10 @@ export async function DELETE(
     }
 
     // Check if user is the project owner
-    if (user.id !== project.ownerId && user.role !== 'PLATFORM_ADMIN') {
+    const isOwner = project.ownerId === currentUser.id
+    const isAdmin = currentUser.role === 'PLATFORM_ADMIN'
+
+    if (!isOwner && !isAdmin) {
       return forbidden('Only project owner can unpublish the project')
     }
 
@@ -127,6 +154,19 @@ export async function DELETE(
       data: {
         published: false,
         publishedAt: null,
+        approvalStatus: 'DRAFT',
+        status: 'IDEA',
+      },
+    })
+
+    // Create notification for project owner
+    await db.notification.create({
+      data: {
+        userId: project.ownerId,
+        type: 'PROJECT_UPDATE',
+        title: 'Project Unpublished',
+        message: `Your project "${project.name}" has been unpublished and is now private.`,
+        link: `/projects/${id}`,
       },
     })
 
@@ -138,6 +178,9 @@ export async function DELETE(
       'Project unpublished successfully'
     )
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Unpublish project error:', error)
     return errorResponse('Failed to unpublish project', 500)
   }

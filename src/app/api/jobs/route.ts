@@ -146,6 +146,22 @@ export async function POST(request: NextRequest) {
       throw new AppError('Job title is required', 400)
     }
 
+    // Prepare metadata for additional fields
+    const metadata = {
+      companyName: body.companyName || null,
+      category: body.category || null,
+      positions: body.positions || '1',
+      requirements: body.requirements || [],
+      responsibilities: body.responsibilities || [],
+      benefits: body.benefits || [],
+      applicationUrl: body.applicationUrl || null,
+      isRemote: body.isRemote || false,
+      remoteLocations: body.remoteLocations || [],
+      universityIds: body.universityIds || [],
+      targetByReputation: body.targetByReputation || false,
+      minReputation: body.minReputation || null,
+    }
+
     // Create job with PENDING approval status
     const job = await db.job.create({
       data: {
@@ -156,9 +172,14 @@ export async function POST(request: NextRequest) {
         type: body.type || 'FULL_TIME',
         location: body.location || null,
         salary: body.salary || null,
+        salaryMin: body.salaryRange?.min ? parseFloat(body.salaryRange.min) : null,
+        salaryMax: body.salaryRange?.max ? parseFloat(body.salaryRange.max) : null,
+        department: body.department || null,
+        deadline: body.deadline ? new Date(body.deadline) : null,
         published: false, // Always start as not published
         publishedAt: null,
         approvalStatus: 'PENDING',
+        metadata: JSON.stringify(metadata),
       },
       include: {
         user: {

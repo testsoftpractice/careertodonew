@@ -32,6 +32,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { useRoleAccess } from '@/hooks/use-role-access'
 import { toast } from '@/hooks/use-toast'
 import { motion } from 'framer-motion'
+import { authFetch } from '@/lib/api-response'
 
 export default function UniversityPerformanceDashboard() {
   const { user } = useAuth()
@@ -52,7 +53,7 @@ export default function UniversityPerformanceDashboard() {
   const fetchUniversityPerformance = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/dashboard/university/performance')
+      const response = await authFetch('/api/dashboard/university/performance')
       const data = await response.json()
 
       if (data.success) {

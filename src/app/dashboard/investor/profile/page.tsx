@@ -28,6 +28,7 @@ import {
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/api-response'
 
 export default function InvestorProfilePage() {
   const { user } = useAuth()
@@ -52,7 +53,7 @@ export default function InvestorProfilePage() {
       if (!user?.id) return
 
       try {
-        const response = await fetch(`/api/users/${user.id}`)
+        const response = await authFetch(`/api/users/${user.id}`)
         const data = await response.json()
 
         if (data.user) {
@@ -86,7 +87,7 @@ export default function InvestorProfilePage() {
 
     try {
       setLoading(true)
-      const response = await fetch(`/api/users/${user.id}`, {
+      const response = await authFetch(`/api/users/${user.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profile),

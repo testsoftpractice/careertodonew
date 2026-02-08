@@ -25,6 +25,7 @@ import {
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/api-response'
 
 export default function UniversityProjectsPage() {
   const { user } = useAuth()
@@ -38,7 +39,7 @@ export default function UniversityProjectsPage() {
 
       try {
         setLoading(true)
-        const response = await fetch(`/api/dashboard/university/projects`)
+        const response = await authFetch(`/api/dashboard/university/projects`)
 
         if (!response.ok) {
           throw new Error('Failed to fetch projects')
@@ -66,7 +67,7 @@ export default function UniversityProjectsPage() {
     fetchProjects()
   }, [user])
 
-  const filteredProjects = projects.filter(project =>
+  const filteredProjects = (projects || []).filter(project =>
     project.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.description?.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -126,7 +127,7 @@ export default function UniversityProjectsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-green-500">
-                  {projects.filter(p => p.status === 'ACTIVE').length}
+                  {(projects || []).filter(p => p.status === 'ACTIVE').length}
                 </div>
               </CardContent>
             </Card>
@@ -136,7 +137,7 @@ export default function UniversityProjectsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-blue-500">
-                  {projects.filter(p => p.status === 'COMPLETED').length}
+                  {(projects || []).filter(p => p.status === 'COMPLETED').length}
                 </div>
               </CardContent>
             </Card>
@@ -146,7 +147,7 @@ export default function UniversityProjectsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-purple-500">
-                  {projects.filter(p => p.seekingInvestment).length}
+                  {(projects || []).filter(p => p.seekingInvestment).length}
                 </div>
               </CardContent>
             </Card>

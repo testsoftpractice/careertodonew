@@ -35,9 +35,9 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate team stats
-    const totalMembers = users.length
-    const avgPerformance = users.length > 0
-      ? users.reduce((sum, u) => sum + (((u.executionScore || 0) + (u.collaborationScore || 0) + (u.leadershipScore || 0) + (u.ethicsScore || 0) + (u.reliabilityScore || 0)) / 5), 0) / users.length
+    const totalMembers = users?.length || 0
+    const avgPerformance = users && users.length > 0
+      ? (users || []).reduce((sum, u) => sum + (((u.executionScore || 0) + (u.collaborationScore || 0) + (u.leadershipScore || 0) + (u.ethicsScore || 0) + (u.reliabilityScore || 0)) / 5), 0) / (users?.length || 1)
       : 0
 
     const activeProjects = await db.project.count({
@@ -48,8 +48,8 @@ export async function GET(request: NextRequest) {
     })
 
     // Transform to team member format
-    const teamMembers = users.map(user => {
-      const performance = (((user.executionScore || 0) + (u.collaborationScore || 0) + (u.leadershipScore || 0) + (u.ethicsScore || 0) + (u.reliabilityScore || 0)) / 5) * 10
+    const teamMembers = (users || []).map(user => {
+      const performance = (((user.executionScore || 0) + (user.collaborationScore || 0) + (user.leadershipScore || 0) + (user.ethicsScore || 0) + (user.reliabilityScore || 0)) / 5) * 10
 
       return {
         id: user.id,

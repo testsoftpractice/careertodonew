@@ -31,6 +31,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { useRoleAccess } from '@/hooks/use-role-access'
 import { toast } from '@/hooks/use-toast'
 import { VerificationGate } from '@/components/verification-gate'
+import { authFetch } from '@/lib/api-response'
 
 export default function UniversityFundingPage() {
   const { user } = useAuth()
@@ -62,7 +63,7 @@ export default function UniversityFundingPage() {
 
     try {
       setLoading(prev => ({ ...prev, requests: true }))
-      const response = await fetch(`/api/dashboard/university/funding?universityId=${user.universityId || user.university?.id}`)
+      const response = await authFetch(`/api/dashboard/university/funding?universityId=${user.universityId || user.university?.id}`)
       const data = await response.json()
 
       if (data.success) {
@@ -112,7 +113,7 @@ export default function UniversityFundingPage() {
     }
   }
 
-  const filteredRequests = fundingRequests.filter((request: any) =>
+  const filteredRequests = (fundingRequests || []).filter((request: any) =>
     (filterStatus === 'ALL' || request.status === filterStatus) &&
     (request.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
      request.description?.toLowerCase().includes(searchTerm.toLowerCase()))

@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/api-response'
 import Link from 'next/link'
 import { UniversityProfileEnhanced } from '@/components/student/university-profile-enhanced'
 
@@ -122,7 +123,7 @@ export default function StudentProfile() {
 
     try {
       // Fetch user profile data
-      const profileResponse = await fetch(`/api/users/${user.id}`)
+      const profileResponse = await authFetch(`/api/users/${user.id}`)
       const profileData = await profileResponse.json()
       
       if (profileData.success && profileData.data) {
@@ -141,21 +142,21 @@ export default function StudentProfile() {
       }
 
       // Fetch experiences
-      const expResponse = await fetch(`/api/experiences?userId=${user.id}`)
+      const expResponse = await authFetch(`/api/experiences?userId=${user.id}`)
       const expData = await expResponse.json()
       if (expData.success) {
         setExperiences(expData.data || [])
       }
 
       // Fetch education
-      const eduResponse = await fetch(`/api/education?userId=${user.id}`)
+      const eduResponse = await authFetch(`/api/education?userId=${user.id}`)
       const eduData = await eduResponse.json()
       if (eduData.success) {
         setEducation(eduData.data || [])
       }
 
       // Fetch skills
-      const skillsResponse = await fetch(`/api/skills?userId=${user.id}`)
+      const skillsResponse = await authFetch(`/api/skills?userId=${user.id}`)
       const skillsData = await skillsResponse.json()
       if (skillsData.success) {
         setSkills(skillsData.data || [])
@@ -170,7 +171,7 @@ export default function StudentProfile() {
 
     setLoading(true)
     try {
-      const response = await fetch(`/api/users/${user.id}`, {
+      const response = await authFetch(`/api/users/${user.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -207,7 +208,7 @@ export default function StudentProfile() {
     if (!user || !newExperience.title) return
 
     try {
-      const response = await fetch('/api/experiences', {
+      const response = await authFetch('/api/experiences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -254,14 +255,14 @@ export default function StudentProfile() {
 
   const handleDeleteExperience = async (experienceId: string) => {
     try {
-      const response = await fetch(`/api/experiences/${experienceId}`, {
+      const response = await authFetch(`/api/experiences/${experienceId}`, {
         method: 'DELETE',
       })
 
       const data = await response.json()
 
       if (data.success) {
-        setExperiences(experiences.filter(exp => exp.id !== experienceId))
+        setExperiences((experiences || []).filter(exp => exp.id !== experienceId))
         toast({
           title: 'Success',
           description: 'Experience deleted successfully',
@@ -281,7 +282,7 @@ export default function StudentProfile() {
     if (!user || !newEducation.school) return
 
     try {
-      const response = await fetch('/api/education', {
+      const response = await authFetch('/api/education', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -322,7 +323,7 @@ export default function StudentProfile() {
     if (!user || !newSkill.name) return
 
     try {
-      const response = await fetch('/api/skills', {
+      const response = await authFetch('/api/skills', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -359,14 +360,14 @@ export default function StudentProfile() {
 
   const handleDeleteSkill = async (skillId: string) => {
     try {
-      const response = await fetch(`/api/skills/${skillId}`, {
+      const response = await authFetch(`/api/skills/${skillId}`, {
         method: 'DELETE',
       })
 
       const data = await response.json()
 
       if (data.success) {
-        setSkills(skills.filter(skill => skill.id !== skillId))
+        setSkills((skills || []).filter(skill => skill.id !== skillId))
         toast({
           title: 'Success',
           description: 'Skill deleted successfully',

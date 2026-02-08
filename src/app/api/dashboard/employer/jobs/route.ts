@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       take: limit
     })
 
-    const jobIds = jobs.map(j => j.id)
+    const jobIds = (jobs || []).map(j => j.id)
 
     const jobApplications = await db.jobApplication.findMany({
       where: { jobId: { in: jobIds } }
@@ -47,12 +47,12 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate stats
-    const totalActive = jobs.filter(j => j.published).length
-    const totalApplications = jobApplications.length
-    const totalViews = jobs.reduce((sum, j) => sum + (j.views || 0), 0)
+    const totalActive = (jobs || []).filter(j => j.published).length
+    const totalApplications = jobApplications?.length || 0
+    const totalViews = (jobs || []).reduce((sum, j) => sum + (j.views || 0), 0)
 
     // Transform to job posting format
-    const jobPostings = jobs.map(job => {
+    const jobPostings = (jobs || []).map(job => {
       const jobApps = applicationsByJob.get(job.id) || []
       const hiredCount = jobApps.filter(a => a.status === 'ACCEPTED').length
 

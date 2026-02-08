@@ -26,6 +26,7 @@ import {
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/api-response'
 
 export default function EmployerProfilePage() {
   const { user } = useAuth()
@@ -51,7 +52,7 @@ export default function EmployerProfilePage() {
       if (!user?.id) return
 
       try {
-        const response = await fetch(`/api/employer/profile`)
+        const response = await authFetch(`/api/employer/profile`)
         const data = await response.json()
 
         if (data.success) {
@@ -86,7 +87,7 @@ export default function EmployerProfilePage() {
 
     try {
       setLoading(true)
-      const response = await fetch(`/api/employer/profile`, {
+      const response = await authFetch(`/api/employer/profile`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profile),

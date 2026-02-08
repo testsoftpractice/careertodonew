@@ -37,6 +37,7 @@ import { useRoleAccess } from '@/hooks/use-role-access'
 import { toast } from '@/hooks/use-toast'
 import { logoutAndRedirect } from '@/lib/utils/logout'
 import { VerificationGate } from '@/components/verification-gate'
+import { authFetch } from '@/lib/api-response'
 
 interface DashboardStats {
   totalStudents: number
@@ -71,7 +72,7 @@ export default function UniversityDashboard() {
 
     try {
       setLoading(prev => ({ ...prev, stats: true }))
-      const response = await fetch(`/api/dashboard/university/stats?universityId=${user.university?.id || user.universityId}`)
+      const response = await authFetch(`/api/dashboard/university/stats?universityId=${user.university?.id || user.universityId}`)
 
       if (!response.ok) {
         throw new Error('Failed to fetch statistics')
@@ -101,7 +102,7 @@ export default function UniversityDashboard() {
 
     try {
       setLoading(prev => ({ ...prev, students: true }))
-      const response = await fetch(`/api/dashboard/university/students?limit=20`)
+      const response = await authFetch(`/api/dashboard/university/students?limit=20`)
 
       if (!response.ok) {
         throw new Error('Failed to fetch students')
@@ -131,7 +132,7 @@ export default function UniversityDashboard() {
 
     try {
       setLoading(prev => ({ ...prev, projects: true }))
-      const response = await fetch(`/api/dashboard/university/projects`)
+      const response = await authFetch(`/api/dashboard/university/projects`)
 
       if (!response.ok) {
         throw new Error('Failed to fetch projects')

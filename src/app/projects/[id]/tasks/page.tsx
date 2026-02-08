@@ -190,11 +190,20 @@ export default function ProjectTasksPage() {
         dueDate: taskData.dueDate ? new Date(taskData.dueDate).toISOString() : null,
       }
 
-      // Only include assigneeId if a user is selected
-      if (taskData.assigneeId && taskData.assigneeId !== 'none' && taskData.assigneeId !== '') {
+      // Support multiple assignees
+      if (taskData.assigneeIds && taskData.assigneeIds.length > 0) {
+        payload.assigneeIds = taskData.assigneeIds
+        // For backward compatibility, also set primary assignee
+        payload.assigneeId = taskData.assigneeIds[0]
+      } else if (taskData.assigneeId && taskData.assigneeId !== 'none' && taskData.assigneeId !== '') {
+        // Legacy support for single assigneeId
         payload.assigneeId = taskData.assigneeId
-      } else {
-        payload.assigneeId = undefined // Don't auto-assign
+        payload.assigneeIds = [taskData.assigneeId]
+      }
+
+      // Support subtasks
+      if (taskData.subtasks && taskData.subtasks.length > 0) {
+        payload.subtasks = taskData.subtasks
       }
 
       const response = await authFetch('/api/tasks', {
@@ -214,6 +223,35 @@ export default function ProjectTasksPage() {
       const data = await response.json()
 
       if (data.success || data.task) {
+        // Handle multiple assignees after task creation
+        const createdTaskId = data.task?.id || data.data?.id
+        if (createdTaskId && payload.assigneeIds && payload.assigneeIds.length > 0) {
+          try {
+            await authFetch(`/api/tasks/${createdTaskId}/assignees`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ assigneeIds: payload.assigneeIds }),
+            })
+          } catch (error) {
+            console.error('Failed to set task assignees:', error)
+          }
+        }
+
+        // Handle subtasks after task creation
+        if (createdTaskId && payload.subtasks && payload.subtasks.length > 0) {
+          try {
+            for (const subtask of payload.subtasks) {
+              await authFetch(`/api/tasks/${createdTaskId}/subtasks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: subtask.title }),
+              })
+            }
+          } catch (error) {
+            console.error('Failed to create subtasks:', error)
+          }
+        }
+
         toast({ title: 'Success', description: 'Task created successfully' })
         setShowTaskDialog(false)
         fetchProjectTasks()
@@ -266,9 +304,18 @@ export default function ProjectTasksPage() {
         payload.dueDate = new Date(taskData.dueDate).toISOString()
       }
 
-      // Only include assigneeId if a user is selected
-      if (taskData.assigneeId && taskData.assigneeId !== 'none' && taskData.assigneeId !== '') {
+      // Support multiple assignees
+      if (taskData.assigneeIds && taskData.assigneeIds.length > 0) {
+        payload.assigneeIds = taskData.assigneeIds
+        payload.assigneeId = taskData.assigneeIds[0]
+      } else if (taskData.assigneeId && taskData.assigneeId !== 'none' && taskData.assigneeId !== '') {
         payload.assigneeId = taskData.assigneeId
+        payload.assigneeIds = [taskData.assigneeId]
+      }
+
+      // Support subtasks
+      if (taskData.subtasks && taskData.subtasks.length > 0) {
+        payload.subtasks = taskData.subtasks
       }
 
       const taskUrl = `/api/tasks/${editingTask.id}`
@@ -295,6 +342,82 @@ export default function ProjectTasksPage() {
       console.log('[handleEditTaskSave] Update response:', data)
 
       if (data.success) {
+        // Handle multiple assignees after task update
+        if (payload.assigneeIds && payload.assigneeIds.length > 0) {
+          try {
+            // Get current assignees to determine changes
+            const currentAssigneesResponse = await authFetch(`/api/tasks/${editingTask.id}/assignees`)
+            const currentAssigneesData = await currentAssigneesResponse.json()
+            const currentAssigneeIds = currentAssigneesData.assignees?.map((a: any) => a.userId) || []
+
+            // Add new assignees
+            for (const assigneeId of payload.assigneeIds) {
+              if (!currentAssigneeIds.includes(assigneeId)) {
+                await authFetch(`/api/tasks/${editingTask.id}/assignees`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ assigneeIds: [assigneeId] }),
+                })
+              }
+            }
+
+            // Remove assignees that are no longer in the list
+            for (const currentId of currentAssigneeIds) {
+              if (!payload.assigneeIds.includes(currentId)) {
+                await authFetch(`/api/tasks/${editingTask.id}/assignees/${currentId}`, {
+                  method: 'DELETE',
+                })
+              }
+            }
+          } catch (error) {
+            console.error('Failed to update task assignees:', error)
+          }
+        }
+
+        // Handle subtasks after task update
+        if (payload.subtasks) {
+          try {
+            // Get current subtasks
+            const currentSubtasksResponse = await authFetch(`/api/tasks/${editingTask.id}/subtasks`)
+            const currentSubtasksData = await currentSubtasksResponse.json()
+            const currentSubtasks = currentSubtasksData.subtasks || []
+
+            // Delete subtasks that are no longer in the list
+            const newSubtaskIds = payload.subtasks.map((s: any) => s.id).filter(Boolean)
+            for (const currentSubtask of currentSubtasks) {
+              if (!newSubtaskIds.includes(currentSubtask.id)) {
+                await authFetch(`/api/tasks/${editingTask.id}/subtasks/${currentSubtask.id}`, {
+                  method: 'DELETE',
+                })
+              }
+            }
+
+            // Create or update subtasks
+            for (const subtask of payload.subtasks) {
+              if (subtask.id && currentSubtasks.find((s: any) => s.id === subtask.id)) {
+                // Update existing subtask
+                await authFetch(`/api/tasks/${editingTask.id}/subtasks/${subtask.id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    title: subtask.title,
+                    completed: subtask.completed || false,
+                  }),
+                })
+              } else if (!subtask.id) {
+                // Create new subtask
+                await authFetch(`/api/tasks/${editingTask.id}/subtasks`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ title: subtask.title }),
+                })
+              }
+            }
+          } catch (error) {
+            console.error('Failed to update subtasks:', error)
+          }
+        }
+
         toast({ title: 'Success', description: 'Task updated successfully' })
         // Update local state immediately for instant feedback
         const updatedTask = { ...editingTask, ...payload }

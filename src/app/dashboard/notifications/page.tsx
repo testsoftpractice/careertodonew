@@ -23,6 +23,7 @@ import {
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/api-response'
 
 type Notification = {
   id: string
@@ -48,7 +49,7 @@ export default function NotificationsPage() {
 
       try {
         setLoading(true)
-        const response = await fetch(`/api/notifications?userId=${user.id}`)
+        const response = await authFetch(`/api/notifications?userId=${user.id}`)
         const data = await response.json()
 
         if (data.success) {
@@ -115,7 +116,7 @@ export default function NotificationsPage() {
 
   const handleMarkAsRead = async (notificationId: string) => {
     try {
-      const response = await fetch(`/api/notifications/${notificationId}`, {
+      const response = await authFetch(`/api/notifications/${notificationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ read: true }),
@@ -136,7 +137,7 @@ export default function NotificationsPage() {
 
     try {
       setMarkingAll(true)
-      const response = await fetch('/api/notifications', {
+      const response = await authFetch('/api/notifications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id }),
@@ -163,7 +164,7 @@ export default function NotificationsPage() {
 
   const handleDeleteNotification = async (notificationId: string) => {
     try {
-      const response = await fetch(`/api/notifications/${notificationId}`, {
+      const response = await authFetch(`/api/notifications/${notificationId}`, {
         method: 'DELETE',
       })
 
@@ -179,14 +180,14 @@ export default function NotificationsPage() {
     }
   }
 
-  const filteredNotifications = notifications.filter(notification => {
+  const filteredNotifications = (notifications || []).filter(notification => {
     if (activeTab === 'all') return true
     if (activeTab === 'unread') return !notification.read
     if (activeTab === 'read') return notification.read
     return true
   })
 
-  const unreadCount = notifications.filter(n => !n.read).length
+  const unreadCount = (notifications || []).filter(n => !n.read).length
 
   return (
     <div className="min-h-screen bg-background">

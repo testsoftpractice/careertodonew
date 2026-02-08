@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       take: 50
     })
 
-    const jobIds = jobs.map(j => j.id)
+    const jobIds = (jobs || []).map(j => j.id)
 
     // Get job applications
     const applications = await db.jobApplication.findMany({
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     const hired = applications.filter(a => a.status === 'ACCEPTED').length
 
     // Calculate match score based on skills and experience
-    const candidates = applications.map(app => {
+    const candidates = (applications || []).map(app => {
       const applicant = app.user
       const reputation = (
         (applicant.executionScore || 0) +

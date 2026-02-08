@@ -23,12 +23,12 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate portfolio stats
-    const totalInvested = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0)
-    const activeInvestments = investments.filter(i => i.status === 'ACTIVE').length
-    const completedInvestments = investments.filter(i => i.status === 'COMPLETED').length
+    const totalInvested = (investments || []).reduce((sum, inv) => sum + (inv.amount || 0), 0)
+    const activeInvestments = (investments || []).filter(i => i.status === 'ACTIVE').length
+    const completedInvestments = (investments || []).filter(i => i.status === 'COMPLETED').length
 
     // Transform investments to expected format
-    const portfolioInvestments = investments.map((inv, index) => {
+    const portfolioInvestments = (investments || []).map((inv, index) => {
       const invested = inv.amount || 0
       // Since we don't have actual current values, use a simple calculation
       // In production, this would come from real-time valuation data
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const totalValue = portfolioInvestments.reduce((sum, inv) => sum + (inv.currentValue || 0), 0)
+    const totalValue = (portfolioInvestments || []).reduce((sum, inv) => sum + (inv.currentValue || 0), 0)
     const totalROI = totalValue - totalInvested
 
     return NextResponse.json({

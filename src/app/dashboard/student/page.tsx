@@ -154,7 +154,7 @@ function DashboardContent({ user }: { user: any }) {
   const getColumnTasks = (columnId: string) => {
     // Get tasks based on current view type
     const currentTasks = viewType === 'personal' ? personalTasks : projectTasks
-    return currentTasks.filter(t => t.status === columns.find(c => c.id === columnId)?.status)
+    return (currentTasks || []).filter(t => t.status === columns.find(c => c.id === columnId)?.status)
   }
 
   // Task dialog state
@@ -223,7 +223,13 @@ function DashboardContent({ user }: { user: any }) {
 
       // Check if response is ok before parsing
       if (!response.ok) {
-        console.error('Fetch projects error: Response not ok', response.status)
+        const errorText = await response.text()
+        console.error('Fetch projects error: Response not ok', response.status, errorText)
+        toast({
+          title: 'Error',
+          description: `Failed to fetch projects: ${response.status}`,
+          variant: 'destructive',
+        })
         return
       }
 
@@ -232,6 +238,11 @@ function DashboardContent({ user }: { user: any }) {
       // Check if response is empty
       if (!text || text.trim() === '') {
         console.error('Fetch projects error: Empty response')
+        toast({
+          title: 'Error',
+          description: 'Received empty response from server',
+          variant: 'destructive',
+        })
         return
       }
 
@@ -239,9 +250,21 @@ function DashboardContent({ user }: { user: any }) {
 
       if (data.success) {
         setProjects(data.data || [])
+      } else {
+        console.error('Fetch projects error:', data.error)
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to fetch projects',
+          variant: 'destructive',
+        })
       }
     } catch (error) {
       console.error('Fetch projects error:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch projects. Please try again.',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(prev => ({ ...prev, projects: false }))
     }

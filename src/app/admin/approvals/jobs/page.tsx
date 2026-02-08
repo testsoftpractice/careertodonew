@@ -44,6 +44,7 @@ import {
   MapPin,
 } from 'lucide-react'
 import Link from 'next/link'
+import { authFetch } from '@/lib/api-response'
 
 interface Job {
   id: string
@@ -107,7 +108,7 @@ export default function JobApprovalsPage() {
         ...(searchTerm && { search: searchTerm }),
       })
 
-      const response = await fetch(`/api/admin/approvals/jobs?${params}`)
+      const response = await authFetch(`/api/admin/approvals/jobs?${params}`)
       if (!response.ok) throw new Error('Failed to fetch jobs')
 
       const data = await response.json()
@@ -134,9 +135,8 @@ export default function JobApprovalsPage() {
 
     try {
       setProcessing(true)
-      const response = await fetch('/api/admin/approvals/jobs', {
+      const response = await authFetch('/api/admin/approvals/jobs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jobId: selectedJob.id,
         }),
@@ -175,9 +175,8 @@ export default function JobApprovalsPage() {
 
     try {
       setProcessing(true)
-      const response = await fetch(`/api/admin/approvals/jobs/${selectedJob.id}`, {
+      const response = await authFetch(`/api/admin/approvals/jobs/${selectedJob.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           rejectionReason: rejectionReason.trim(),
           reviewComments: reviewComments.trim() || undefined,

@@ -13,15 +13,21 @@ export async function GET(
     const authResult = await requireAuth(request)
     const currentUser = authResult.dbUser
 
-    if (currentUser.role !== 'PLATFORM_ADMIN') {
-      return forbidden('Only platform admins can access this endpoint')
+    if (currentUser.role !== 'PLATFORM_ADMIN' && currentUser.role !== 'UNIVERSITY_ADMIN') {
+      return forbidden('Only platform admins or university admins can access this endpoint')
     }
 
     const { id } = await params
 
+    // Build where clause - university admins can only see their university's projects
+    const where: any = { id }
+    if (currentUser.role === 'UNIVERSITY_ADMIN' && currentUser.universityId) {
+      where.universityId = currentUser.universityId
+    }
+
     // Get project with full details
-    const project = await db.project.findUnique({
-      where: { id },
+    const project = await db.project.findFirst({
+      where,
       include: {
         owner: {
           select: {
@@ -50,18 +56,11 @@ export async function GET(
         },
         university: true,
         members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar: true,
-                role: true,
-                major: true,
-              },
-            },
-          },
+          _count: {
+            select: {
+              count: true
+            }
+          }
         },
         tasks: {
           take: 10,
@@ -143,8 +142,8 @@ export async function PATCH(
     const authResult = await requireAuth(request)
     const currentUser = authResult.dbUser
 
-    if (currentUser.role !== 'PLATFORM_ADMIN') {
-      return forbidden('Only platform admins can reject projects')
+    if (currentUser.role !== 'PLATFORM_ADMIN' && currentUser.role !== 'UNIVERSITY_ADMIN') {
+      return forbidden('Only platform admins or university admins can reject projects')
     }
 
     const { id } = await params
@@ -155,9 +154,14 @@ export async function PATCH(
       return errorResponse('Rejection reason is required', 400)
     }
 
-    // Check if project exists
-    const project = await db.project.findUnique({
-      where: { id },
+    // Check if project exists and user has access
+    const where: any = { id }
+    if (currentUser.role === 'UNIVERSITY_ADMIN' && currentUser.universityId) {
+      where.universityId = currentUser.universityId
+    }
+
+    const project = await db.project.findFirst({
+      where,
       include: {
         owner: true,
       },
@@ -224,8 +228,8 @@ export async function PUT(
     const authResult = await requireAuth(request)
     const currentUser = authResult.dbUser
 
-    if (currentUser.role !== 'PLATFORM_ADMIN') {
-      return forbidden('Only platform admins can request changes')
+    if (currentUser.role !== 'PLATFORM_ADMIN' && currentUser.role !== 'UNIVERSITY_ADMIN') {
+      return forbidden('Only platform admins or university admins can request changes')
     }
 
     const { id } = await params
@@ -236,9 +240,14 @@ export async function PUT(
       return errorResponse('Review comments are required', 400)
     }
 
-    // Check if project exists
-    const project = await db.project.findUnique({
-      where: { id },
+    // Check if project exists and user has access
+    const where: any = { id }
+    if (currentUser.role === 'UNIVERSITY_ADMIN' && currentUser.universityId) {
+      where.universityId = currentUser.universityId
+    }
+
+    const project = await db.project.findFirst({
+      where,
       include: {
         owner: true,
       },

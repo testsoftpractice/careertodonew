@@ -30,17 +30,19 @@ export async function GET(request: NextRequest) {
       select: { universityId: true }
     })
 
-    if (!token) {
+    if (!user || !user.universityId) {
       return NextResponse.json(
         { success: false, error: 'No university associated' },
         { status: 400 }
       )
     }
 
-    // Get departments
+    // Get departments for this university (via projects)
     const departments = await db.department.findMany({
       where: {
-        universityId: user.universityId
+        project: {
+          universityId: user.universityId
+        }
       },
       include: {
         _count: {

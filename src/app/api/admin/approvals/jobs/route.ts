@@ -109,6 +109,9 @@ export async function GET(request: NextRequest) {
     const approvedCount = await db.job.count({
       where: { approvalStatus: 'APPROVED' }
     })
+    const rejectedCount = await db.job.count({
+      where: { approvalStatus: 'REJECTED' }
+    })
 
     return successResponse({
       jobs,
@@ -122,7 +125,7 @@ export async function GET(request: NextRequest) {
         pending: pendingCount,
         underReview: underReviewCount,
         approved: approvedCount,
-        rejected,
+        rejected: rejectedCount,
         total: totalCount,
       },
     })
@@ -187,11 +190,11 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create notification for business
+    // Create notification for business owner
     if (job.businessId) {
       await db.notification.create({
         data: {
-          userId: job.business.userId,
+          userId: job.business.ownerId,
           type: 'JOB_APPROVAL',
           title: '🎉 Job Approved!',
           message: `Your job "${job.title}" has been approved and published.`,

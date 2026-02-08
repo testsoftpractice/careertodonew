@@ -36,6 +36,7 @@ import {
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/api-response'
 
 export default function InvestorDealsPage() {
   const { user } = useAuth()
@@ -58,7 +59,7 @@ export default function InvestorDealsPage() {
 
       try {
         setLoading(true)
-        const response = await fetch(
+        const response = await authFetch(
           `/api/investments/deals?investorId=${user.id}&status=${statusFilter}`
         )
         const data = await response.json()
@@ -83,10 +84,10 @@ export default function InvestorDealsPage() {
   }, [user, statusFilter])
 
   // Filter deals
-  const filteredDeals = deals.filter((deal) => {
+  const filteredDeals = (deals || []).filter((deal) => {
     const matchesSearch =
       searchQuery === '' ||
-      deal.project?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      deal.project?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       deal.project?.description?.toLowerCase().includes(searchQuery.toLowerCase())
 
     return matchesSearch
@@ -215,7 +216,7 @@ export default function InvestorDealsPage() {
                       <TableRow key={deal.id}>
                         <TableCell>
                           <div className="space-y-1">
-                            <div className="font-medium">{deal.project?.title}</div>
+                            <div className="font-medium">{deal.project?.name || 'Unknown Project'}</div>
                             <div className="text-sm text-muted-foreground line-clamp-1 max-w-[200px]">
                               {deal.project?.description}
                             </div>

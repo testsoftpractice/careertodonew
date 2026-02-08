@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { useRoleAccess } from '@/hooks/use-role-access'
 import { toast } from '@/hooks/use-toast'
 import { VerificationGate } from '@/components/verification-gate'
+import { authFetch } from '@/lib/api-response'
 
 interface ActivityItem {
   id: string
@@ -55,7 +56,7 @@ export default function UniversityActivityPage() {
 
     try {
       setLoading(true)
-      const response = await fetch(`/api/dashboard/university/activity?universityId=${user.universityId || user.university?.id}&timeRange=${timeRange}`)
+      const response = await authFetch(`/api/dashboard/university/activity?universityId=${user.universityId || user.university?.id}&timeRange=${timeRange}`)
       const data = await response.json()
 
       if (data.success) {
@@ -156,7 +157,7 @@ export default function UniversityActivityPage() {
     }
   }
 
-  const filteredActivities = activities.filter((activity: ActivityItem) =>
+  const filteredActivities = (activities || []).filter((activity: ActivityItem) =>
     (filterType === 'ALL' || activity.type === filterType) &&
     (activity.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
      activity.description?.toLowerCase().includes(searchTerm.toLowerCase()))

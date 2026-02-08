@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate current month metrics
-    const totalInvested = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0)
+    const totalInvested = (investments || []).reduce((sum, inv) => sum + (inv.amount || 0), 0)
     const currentRevenue = totalInvested * 0.1 + Math.random() * 50000
     const currentExpenses = totalInvested * 0.05
     const currentProfit = currentRevenue - currentExpenses

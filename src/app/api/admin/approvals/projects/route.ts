@@ -10,8 +10,8 @@ export async function GET(request: NextRequest) {
     const authResult = await requireAuth(request)
     const currentUser = authResult.dbUser
 
-    if (currentUser.role !== 'PLATFORM_ADMIN') {
-      return forbidden('Only platform admins can access this endpoint')
+    if (currentUser.role !== 'PLATFORM_ADMIN' && currentUser.role !== 'UNIVERSITY_ADMIN') {
+      return forbidden('Only platform admins or university admins can access this endpoint')
     }
 
     const { searchParams } = new URL(request.url)
@@ -22,6 +22,11 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const where: any = {}
+
+    // University admins can only see their university's projects
+    if (currentUser.role === 'UNIVERSITY_ADMIN' && currentUser.universityId) {
+      where.universityId = currentUser.universityId
+    }
 
     if (status) {
       where.approvalStatus = status
@@ -101,19 +106,24 @@ export async function GET(request: NextRequest) {
       take: limit,
     })
 
-    // Get counts
+    // Get counts - also filter by university for UNIVERSITY_ADMIN
+    const universityFilter: any = {}
+    if (currentUser.role === 'UNIVERSITY_ADMIN' && currentUser.universityId) {
+      universityFilter.universityId = currentUser.universityId
+    }
+
     const totalCount = await db.project.count({ where })
     const pendingCount = await db.project.count({
-      where: { approvalStatus: 'PENDING' }
+      where: { approvalStatus: 'PENDING', ...universityFilter }
     })
     const underReviewCount = await db.project.count({
-      where: { approvalStatus: 'UNDER_REVIEW' }
+      where: { approvalStatus: 'UNDER_REVIEW', ...universityFilter }
     })
     const approvedCount = await db.project.count({
-      where: { approvalStatus: 'APPROVED' }
+      where: { approvalStatus: 'APPROVED', ...universityFilter }
     })
     const rejectedCount = await db.project.count({
-      where: { approvalStatus: 'REJECTED' }
+      where: { approvalStatus: 'REJECTED', ...universityFilter }
     })
 
     return successResponse({
@@ -148,8 +158,8 @@ export async function POST(request: NextRequest) {
     const authResult = await requireAuth(request)
     const currentUser = authResult.dbUser
 
-    if (currentUser.role !== 'PLATFORM_ADMIN') {
-      return forbidden('Only platform admins can approve projects')
+    if (currentUser.role !== 'PLATFORM_ADMIN' && currentUser.role !== 'UNIVERSITY_ADMIN') {
+      return forbidden('Only platform admins or university admins can approve projects')
     }
 
     const body = await request.json()
@@ -159,9 +169,14 @@ export async function POST(request: NextRequest) {
       return errorResponse('Project ID is required', 400)
     }
 
-    // Check if project exists
-    const project = await db.project.findUnique({
-      where: { id: projectId },
+    // Check if project exists and user has access
+    const where: any = { id: projectId }
+    if (currentUser.role === 'UNIVERSITY_ADMIN' && currentUser.universityId) {
+      where.universityId = currentUser.universityId
+    }
+
+    const project = await db.project.findFirst({
+      where,
       include: {
         owner: true,
       },

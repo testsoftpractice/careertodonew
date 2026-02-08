@@ -30,6 +30,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { toast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/api-response'
 
 interface PendingBusiness {
   id: string
@@ -73,7 +74,7 @@ export default function UniversityApprovals() {
   useEffect(() => {
     const fetchPendingBusinesses = async () => {
       try {
-        const response = await fetch('/api/dashboard/university/pending-approvals')
+        const response = await authFetch('/api/dashboard/university/pending-approvals')
 
         if (!response.ok) {
           throw new Error('Failed to fetch pending businesses')
@@ -104,9 +105,8 @@ export default function UniversityApprovals() {
     try {
       setProcessing(businessId)
 
-      const response = await fetch(`/api/dashboard/university/approvals/${businessId}`, {
+      const response = await authFetch(`/api/dashboard/university/approvals/${businessId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, ...(reason ? { reason } : {}) }),
       })
 

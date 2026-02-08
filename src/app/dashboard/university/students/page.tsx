@@ -25,6 +25,7 @@ import {
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/api-response'
 
 export default function UniversityStudentsPage() {
   const { user } = useAuth()
@@ -38,7 +39,7 @@ export default function UniversityStudentsPage() {
 
       try {
         setLoading(true)
-        const response = await fetch(`/api/dashboard/university/students?limit=50`)
+        const response = await authFetch(`/api/dashboard/university/students?limit=50`)
 
         if (!response.ok) {
           throw new Error('Failed to fetch students')
@@ -66,7 +67,7 @@ export default function UniversityStudentsPage() {
     fetchStudents()
   }, [user])
 
-  const filteredStudents = students.filter(student =>
+  const filteredStudents = (students || []).filter(student =>
     student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.major?.toLowerCase().includes(searchTerm.toLowerCase())

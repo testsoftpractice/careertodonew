@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     const user = authResult.user
 
-    // Get employer's jobs with application counts
+    // Get employer's jobs
     const jobs = await db.job.findMany({
       where: { userId: user.id },
       include: {
@@ -26,10 +26,60 @@ export async function GET(request: NextRequest) {
 
     const jobIds = jobs.map(j => j.id)
 
-    // Get all applications
+    // Get all applications with user details
     const applications = await db.jobApplication.findMany({
       where: { jobId: { in: jobIds } },
+      include: {
+        job: {
+          select: { id: true, title: true }
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+            major: true,
+            university: {
+              select: {
+                id: true,
+                name: true,
+                code: true
+              }
+            },
+            totalPoints: true,
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' }
+    })
+
+    // Map applications to pipeline format
+    const pipelineData = applications.map(app => {
+      let status = 'APPLIED'
+      if (app.status === 'PENDING') status = 'APPLIED'
+      else if (app.status === 'REVIEW') status = 'SCREENING'
+      else if (app.status === 'INTERVIEW') status = 'INTERVIEW'
+      else if (app.status === 'OFFER') status = 'OFFER'
+      else if (app.status === 'ACCEPTED') status = 'HIRED'
+      else if (app.status === 'REJECTED') status = 'REJECTED'
+
+      return {
+        id: app.id,
+        candidate: {
+          id: app.user.id,
+          name: app.user.name,
+          email: app.user.email,
+          avatar: app.user.avatar,
+          university: app.user.university,
+          major: app.user.major,
+          totalPoints: app.user.totalPoints || 0,
+        },
+        job: app.job,
+        status: status,
+        appliedDate: app.createdAt,
+        updatedAt: app.updatedAt,
+      }
     })
 
     // Calculate pipeline stages
@@ -45,7 +95,7 @@ export async function GET(request: NextRequest) {
     const hiredApplications = applications.filter(a => a.status === 'ACCEPTED')
     let avgTimeToHire = 0
     if (hiredApplications.length > 0) {
-      const timeToHireTotal = hiredApplications.reduce((sum, app) => {
+      const timeToHireTotal = (hiredApplications || []).reduce((sum, app) => {
         const appliedDate = new Date(app.createdAt)
         const hiredDate = new Date(app.updatedAt || app.createdAt)
         const daysDiff = Math.ceil((hiredDate.getTime() - appliedDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -68,7 +118,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: {
+      data: pipelineData,
+      metadata: {
         stages,
         totalCandidates,
         avgTimeToHire,

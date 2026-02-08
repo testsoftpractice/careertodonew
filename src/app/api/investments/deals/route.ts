@@ -1,15 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { verifyToken } from '@/lib/auth/jwt'
 
 // GET /api/investments/deals - List deals
 export async function GET(request: NextRequest) {
   try {
+    // Verify authentication
+    const sessionCookie = request.cookies.get('session')
+    const token = sessionCookie?.value
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const decoded = verifyToken(token)
+    if (!decoded) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid token' },
+        { status: 401 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('investorId') || searchParams.get('userId')
     const projectId = searchParams.get('projectId')
     const status = searchParams.get('status')
 
     const where: any = {}
+
+    // Only allow users to see their own deals unless they are platform admin
+    const isAdmin = decoded.role === 'PLATFORM_ADMIN'
+    if (!isAdmin && userId !== decoded.userId) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: Can only view your own deals' },
+        { status: 403 }
+      )
+    }
 
     // Default to active deal statuses if no filter provided
     if (!status || status === 'all') {
@@ -124,6 +153,25 @@ export async function PUT(
   { params }: { params: Promise<{}> }
 ) {
   try {
+    // Verify authentication
+    const sessionCookie = request.cookies.get('session')
+    const token = sessionCookie?.value
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const decoded = verifyToken(token)
+    if (!decoded) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid token' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { id, status, terms, agreementId } = body
     const dealId = id
@@ -141,6 +189,15 @@ export async function PUT(
       return NextResponse.json(
         { success: false, error: 'Deal not found' },
         { status: 404 }
+      )
+    }
+
+    // Check if user has permission to update this deal
+    const isAdmin = decoded.role === 'PLATFORM_ADMIN'
+    if (!isAdmin && deal.userId !== decoded.userId) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: Can only update your own deals' },
+        { status: 403 }
       )
     }
 
@@ -212,22 +269,24 @@ export async function PUT(
       await db.notification.create({
         data: {
           userId: deal.userId,
-          type: 'DEAL_FUNDED',
+          type: 'INVESTMENT',
           title: 'Deal Funded',
-          message: `Your investment in "${deal.project.name}" has been funded successfully`,
+          message: `Your investment in "${deal.project?.name || 'Unknown Project'}" has been funded successfully`,
           link: `/dashboard/investor/portfolio/${dealId}`,
         },
       })
 
-      await db.notification.create({
-        data: {
-          userId: deal.project.ownerId,
-          type: 'DEAL_FUNDED',
-          title: 'Deal Funded',
-          message: `The investment from ${deal.user.name} has been funded`,
-          link: `/projects/${deal.projectId}/investments`,
-        },
-      })
+      if (deal.project) {
+        await db.notification.create({
+          data: {
+            userId: deal.project.ownerId,
+            type: 'INVESTMENT',
+            title: 'Deal Funded',
+            message: `The investment from ${deal.user.name} has been funded`,
+            link: `/projects/${deal.projectId}/investments`,
+          },
+        })
+      }
     }
 
     return NextResponse.json({

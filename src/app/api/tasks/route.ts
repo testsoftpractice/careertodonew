@@ -58,7 +58,20 @@ export async function GET(request: NextRequest) {
         },
         subTasks: {
           orderBy: { sortOrder: 'asc' }
-        }
+        },
+        taskAssignees: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              },
+            },
+          },
+          orderBy: { assignedAt: 'asc' },
+        },
       },
       orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }]
     })
@@ -86,7 +99,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
 
-    // Validate request body
+    // Validate request body (accepts both old and new format)
     const validation = validateRequest(createTaskSchema, body)
 
     if (!validation.valid) {
@@ -122,12 +135,17 @@ export async function POST(request: NextRequest) {
       return forbidden('You are not a member of this project')
     }
 
+    // Handle assignees - support both old single assigneeId and new assigneeIds array
+    const assigneeIds = body.assigneeIds || []
+    const primaryAssigneeId = data.assigneeId || assigneeIds[0] || undefined
+
+    // Create task with primary assignee
     const task = await db.task.create({
       data: {
         title: data.title,
         description: data.description,
         projectId: data.projectId,
-        assignedTo: data.assigneeId || undefined,
+        assignedTo: primaryAssigneeId,
         assignedBy: authResult.dbUser.id,
         status: data.status || 'TODO',
         priority: data.priority,
@@ -135,6 +153,39 @@ export async function POST(request: NextRequest) {
         estimatedHours: data.estimatedHours ? parseFloat(data.estimatedHours.toString()) : null,
       }
     })
+
+    // Create TaskAssignee entries for multiple assignees
+    if (assigneeIds.length > 0) {
+      const assigneesToCreate = assigneeIds
+        .filter(id => id !== primaryAssigneeId) // Skip primary as they're already set
+        .map((userId, index) => ({
+          taskId: task.id,
+          userId,
+          assignedAt: new Date(),
+          sortOrder: index, // Preserve order from the array
+        }))
+
+      if (assigneesToCreate.length > 0) {
+        await db.taskAssignee.createMany({
+          data: assigneesToCreate,
+        })
+      }
+    }
+
+    // Create SubTasks if provided
+    if (body.subtasks && Array.isArray(body.subtasks) && body.subtasks.length > 0) {
+      const subtasksToCreate = body.subtasks
+        .map((subtask: any, index: number) => ({
+          taskId: task.id,
+          title: subtask.title,
+          sortOrder: index,
+          completed: false,
+        }))
+
+      await db.subTask.createMany({
+        data: subtasksToCreate,
+      })
+    }
 
     return successResponse(task, 'Task created successfully', { status: 201 })
   } catch (error: any) {

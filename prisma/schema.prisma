@@ -317,6 +317,7 @@ model User {
   projectsMembered      ProjectMember[]
   tasksAssigned         Task[]             @relation("AssignedTasks")
   tasksCreated          Task[]             @relation("CreatedTasks")
+  taskAssignees        TaskAssignee[]     @relation("TaskAssignees")
   timeEntries           TimeEntry[]
   workSessions          WorkSession[]
   professionalRecords   ProfessionalRecord[]
@@ -537,7 +538,7 @@ model Task {
   currentStepId String?     @default("1")
 
   // Assignments
-  assignedTo    String?
+  assignedTo    String?     // Primary assignee (kept for backward compatibility)
   assignedBy    String
 
   // Dates
@@ -551,6 +552,7 @@ model Task {
   assignee      User?       @relation("AssignedTasks", fields: [assignedTo], references: [id], onDelete: SetNull)
   creator       User        @relation("CreatedTasks", fields: [assignedBy], references: [id], onDelete: Cascade)
   subTasks      SubTask[]
+  taskAssignees TaskAssignee[]
   timeEntries   TimeEntry[]
   workSessions  WorkSession[]   // Work sessions linked to this task
   dependencies  TaskDependency[] @relation("DependentTasks")
@@ -573,6 +575,21 @@ model Task {
   @@index([currentStepId])
   @@index([createdAt])
   @@index([dueDate])
+}
+
+model TaskAssignee {
+  id         String   @id @default(cuid())
+  taskId     String
+  userId     String
+  assignedAt DateTime @default(now())
+
+  // Relations
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user       User     @relation("TaskAssignees", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
 }
 
 model SubTask {

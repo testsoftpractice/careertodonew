@@ -11,9 +11,14 @@ const projectTaskSchema = z.object({
   description: z.string().max(1000, 'description must be less than 1000 characters').optional(),
   status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED', 'CANCELLED', 'BACKLOG']).default('TODO'),
   priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).default('MEDIUM'),
-  dueDate: z.string().datetime('Invalid due date format').optional(),
+  dueDate: z.string().optional().refine((val) => {
+    if (!val) return true
+    // Try to parse the date - allow various formats
+    const date = new Date(val)
+    return !isNaN(date.getTime())
+  }, { message: 'Invalid due date format' }),
   estimatedHours: z.union([z.number().min(0).max(1000), z.string().transform(val => parseFloat(val))]).optional(),
-  assigneeId: z.string().cuid('Invalid assignee ID').optional(),
+  assigneeId: z.string().cuid('Invalid assignee ID').optional().or(z.literal('')),
   tags: z.array(z.string()).max(10).optional(),
 })
 
@@ -76,6 +81,19 @@ export async function GET(
         subTasks: {
           orderBy: { sortOrder: 'asc' }
         },
+        taskAssignees: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              },
+            },
+          },
+          orderBy: { assignedAt: 'asc' },
+        },
       },
       orderBy: [
         { priority: 'desc' },
@@ -115,8 +133,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const validation = projectTaskSchema.safeParse(body)
 
     if (!validation.success) {
-      // Defensive check for error object
-      const errorMessage = validation.error?.errors?.[0]?.message || 'Invalid request body'
+      // Defensive check for error object - ZodError has 'issues' property
+      const errorObj = validation.error
+      const errorMessage = errorObj?.issues?.[0]?.message || 'Invalid request body'
       return errorResponse(errorMessage, 400)
     }
 

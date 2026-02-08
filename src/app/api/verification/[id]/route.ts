@@ -206,7 +206,7 @@ export async function PATCH(
           where: { ratedId: verificationRequest.subjectId },
         })
 
-        const avgExecution = ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length
+        const avgExecution = ratings.length > 0 ? ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length : 0
 
         await db.user.update({
           where: { id: verificationRequest.subjectId },

@@ -35,8 +35,13 @@ import {
   Loader2,
   Sparkles,
   Users,
+  Plus,
+  Trash2,
+  Check,
 } from 'lucide-react'
 import { Task } from './ProfessionalKanbanBoard'
+import TaskComments from './TaskComments'
+import { authFetch } from '@/lib/api-response'
 
 interface TaskFormDialogProps {
   open: boolean
@@ -57,7 +62,13 @@ interface FormData {
   status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE'
   dueDate: string
   projectId: string
-  assigneeId?: string
+  assigneeIds: string[]
+  subtasks: { title: string }[]
+}
+
+interface SubTaskInput {
+  id: string
+  title: string
 }
 
 const priorityConfig = {
@@ -123,30 +134,83 @@ export default function TaskFormDialog({
     status: 'TODO',
     dueDate: '',
     projectId: '',
-    assigneeId: '',
+    assigneeIds: [],
+    subtasks: [],
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [isInitialized, setIsInitialized] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  
+  // Subtasks input state
+  const [subtaskInput, setSubtaskInput] = useState('')
+  const [subtasks, setSubtasks] = useState<SubTaskInput[]>([])
 
   useEffect(() => {
     if (open && !isInitialized) {
       // First initialization
       if (task && mode === 'edit') {
-        const newFormData = {
-          title: task.title || '',
-          description: task.description || '',
-          priority: task.priority || 'MEDIUM',
-          status: task.status || 'TODO',
-          dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
-          projectId: task.projectId || '',
-          assigneeId: task.assigneeId || task.assignedTo || '', // Support both field names
+        // Fetch existing subtasks and assignees for edit mode
+        const fetchTaskData = async () => {
+          try {
+            // Fetch subtasks
+            const subtasksResponse = await authFetch(`/api/tasks/${task.id}/subtasks`)
+            const subtasksData = await subtasksResponse.json()
+            const loadedSubtasks = (subtasksData.subtasks || []).map((s: any) => ({
+              id: s.id,
+              title: s.title,
+              completed: s.completed,
+            }))
+            setSubtasks(loadedSubtasks)
+
+            // Fetch multiple assignees
+            const assigneesResponse = await authFetch(`/api/tasks/${task.id}/assignees`)
+            const assigneesData = await assigneesResponse.json()
+            const loadedAssigneeIds = (assigneesData.assignees || []).map((a: any) => a.userId)
+            
+            // Parse task.assigneeId or task.assignedTo for backward compatibility
+            const assigneeIds = [...loadedAssigneeIds]
+            if (task.assigneeId || task.assignedTo) {
+              const legacyAssigneeId = task.assigneeId || task.assignedTo
+              if (!assigneeIds.includes(legacyAssigneeId)) {
+                assigneeIds.push(legacyAssigneeId)
+              }
+            }
+            
+            const newFormData = {
+              title: task.title || '',
+              description: task.description || '',
+              priority: task.priority || 'MEDIUM',
+              status: task.status || 'TODO',
+              dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+              projectId: task.projectId || '',
+              assigneeIds,
+              subtasks: [],
+            }
+            setFormData(newFormData)
+          } catch (error) {
+            console.error('Failed to fetch task data:', error)
+            // Fallback to basic task data
+            const assigneeIds = []
+            if (task.assigneeId || task.assignedTo) {
+              assigneeIds.push(task.assigneeId || task.assignedTo)
+            }
+            const newFormData = {
+              title: task.title || '',
+              description: task.description || '',
+              priority: task.priority || 'MEDIUM',
+              status: task.status || 'TODO',
+              dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+              projectId: task.projectId || '',
+              assigneeIds,
+              subtasks: [],
+            }
+            setFormData(newFormData)
+            setSubtasks([])
+          }
         }
-        console.log('[TaskFormDialog] Initializing edit mode with task:', task)
-        console.log('[TaskFormDialog] Form data set to:', newFormData)
-        setFormData(newFormData)
+        fetchTaskData()
       } else if (!task && mode === 'create') {
         const newFormData = {
           title: '',
@@ -155,11 +219,11 @@ export default function TaskFormDialog({
           status: 'TODO',
           dueDate: '',
           projectId: projects.length === 1 ? projects[0].id : '',
-          assigneeId: '',
+          assigneeIds: [],
+          subtasks: [],
         }
-        console.log('[TaskFormDialog] Initializing create mode')
-        console.log('[TaskFormDialog] Form data set to:', newFormData)
         setFormData(newFormData)
+        setSubtasks([])
       }
       setIsInitialized(true)
       setErrors({})
@@ -168,19 +232,23 @@ export default function TaskFormDialog({
       // Reset when dialog closes
       setIsInitialized(false)
       setIsSubmitting(false)
+      setSubtaskInput('')
+      setSubtasks([])
     }
   }, [task, mode, open, isInitialized, projects.length === 1 && projects[0]?.id])
 
-  const handleChange = (field: keyof FormData, value: string) => {
+  const handleChange = (field: keyof FormData, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
-    setTouched(prev => ({ ...prev, [field]: true }))
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev }
-        delete newErrors[field]
-        return newErrors
-      })
+    if (typeof value === 'string') {
+      setTouched(prev => ({ ...prev, [field]: true }))
+      // Clear error when user starts typing
+      if (errors[field]) {
+        setErrors(prev => {
+          const newErrors = { ...prev }
+          delete newErrors[field]
+          return newErrors
+        })
+      }
     }
   }
 
@@ -215,19 +283,21 @@ export default function TaskFormDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    console.log('[TaskFormDialog] Submitting form...', { mode, formData, errors })
-
     if (!validate() || isSubmitting) {
-      console.log('[TaskFormDialog] Validation failed or already submitting', { errors, isSubmitting })
       return
     }
 
     setIsSubmitting(true)
 
     try {
-      await onSave(formData)
+      // Include subtasks in the form data
+      const submitData = {
+        ...formData,
+        subtasks: subtasks,
+      }
+      
+      await onSave(submitData)
       onOpenChange(false)
-      // Reset form and submitting state after successful save
       setIsSubmitting(false)
       if (mode === 'create') {
         setFormData({
@@ -237,7 +307,11 @@ export default function TaskFormDialog({
           status: 'TODO',
           dueDate: '',
           projectId: '',
+          assigneeIds: [],
+          subtasks: [],
         })
+        setSubtasks([])
+        setSubtaskInput('')
       }
     } catch (error) {
       console.error('[TaskFormDialog] Error saving task:', error)
@@ -250,7 +324,53 @@ export default function TaskFormDialog({
     setTimeout(() => {
       setErrors({})
       setTouched({})
+      setSubtaskInput('')
+      setSubtasks([])
     }, 300)
+  }
+
+  // Subtask handlers
+  const addSubtask = () => {
+    if (!subtaskInput.trim()) return
+    
+    const newSubtask: SubTaskInput = {
+      id: Date.now().toString(),
+      title: subtaskInput.trim(),
+    }
+    
+    setSubtasks(prev => [...prev, newSubtask])
+    setSubtaskInput('')
+  }
+
+  const removeSubtask = (id: string) => {
+    setSubtasks(prev => prev.filter(s => s.id !== id))
+  }
+
+  const toggleSubtaskComplete = (id: string) => {
+    setSubtasks(prev => prev.map(s => 
+      s.id === id ? { ...s, completed: !s.completed } : s
+    ))
+  }
+
+  // Assignee handlers
+  const addAssignee = (userId: string) => {
+    if (!formData.assigneeIds.includes(userId)) {
+      setFormData(prev => ({
+        ...prev,
+        assigneeIds: [...prev.assigneeIds, userId],
+      }))
+    }
+  }
+
+  const removeAssignee = (userId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      assigneeIds: prev.assigneeIds.filter(id => id !== userId),
+    }))
+  }
+
+  const getAvailableUsersForAssignee = () => {
+    return availableUsers.filter(user => !formData.assigneeIds.includes(user.id))
   }
 
   return (
@@ -419,36 +539,63 @@ export default function TaskFormDialog({
               )}
             </div>
 
-            {/* Assignee (For Project Tasks) */}
+            {/* Multiple Assignees (For Project Tasks) */}
             {(mode === 'create' || mode === 'edit') && availableUsers.length > 0 && (
               <div className="space-y-2">
-                <Label htmlFor="assignee" className="text-sm font-semibold flex items-center gap-2">
+                <Label className="text-sm font-semibold flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  Assign to <span className="text-muted-foreground font-normal">(Optional)</span>
+                  Assign to <span className="text-muted- font-normal">(Optional)</span>
+                  {formData.assigneeIds.length > 0 && (
+                    <Badge variant="secondary" className="ml-auto">
+                      {formData.assigneeIds.length} selected
+                    </Badge>
+                  )}
                 </Label>
-                <Select
-                  value={formData.assigneeId || 'none'}
-                  onValueChange={(value) => handleChange('assigneeId', value === 'none' ? '' : value)}
-                >
-                  <SelectTrigger id="assignee" className="w-full">
-                    <SelectValue placeholder="Unassigned" />
-                  </SelectTrigger>
-                  <SelectContent className="z-[100001]">
-                    <SelectItem value="none">Unassigned</SelectItem>
-                    {availableUsers.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{user.name}</span>
-                          {user.email && (
-                            <span className="text-xs text-muted-foreground">
-                              ({user.email})
-                            </span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                
+                {/* Selected Assignees */}
+                {formData.assigneeIds.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.assigneeIds.map((assigneeId) => {
+                      const user = availableUsers.find(u => u.id === assigneeId)
+                      if (!user) return null
+                      return (
+                        <Badge key={assigneeId} variant="secondary" className="gap-1">
+                          {user.name}
+                          <button
+                            type="button"
+                            onClick={() => removeAssignee(assigneeId)}
+                            className="hover:bg-destructive/20 hover:text-destructive rounded-full p-0.5 transition-colors"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </Badge>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {/* Add Assignee Dropdown */}
+                {getAvailableUsersForAssignee().length > 0 && (
+                  <Select onValueChange={addAssignee}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="+ Add assignee" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[100001]">
+                      {getAvailableUsersForAssignee().map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{user.name}</span>
+                            {user.email && (
+                              <span className="text-xs text-muted-foreground">
+                                ({user.email})
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             )}
 
@@ -483,6 +630,100 @@ export default function TaskFormDialog({
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Subtasks */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                Subtasks <span className="text-muted-foreground font-normal">(Optional)</span>
+                {subtasks.length > 0 && (
+                  <Badge variant="secondary" className="ml-auto">
+                    {subtasks.length} items
+                  </Badge>
+                )}
+              </Label>
+              
+              {/* Subtasks List */}
+              {subtasks.length > 0 && (
+                <div className="space-y-2">
+                  {subtasks.map((subtask, index) => (
+                    <div 
+                      key={subtask.id}
+                      className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 group hover:bg-muted/80 transition-colors"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleSubtaskComplete(subtask.id)}
+                        className="flex-shrink-0"
+                      >
+                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
+                          subtask.completed 
+                            ? 'bg-emerald-500 border-emerald-600' 
+                            : 'border-muted-foreground hover:border-emerald-500'
+                        }`}>
+                          {subtask.completed && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                      </button>
+                      <Input
+                        value={subtask.title}
+                        onChange={(e) => {
+                          const updatedSubtasks = [...subtasks]
+                          updatedSubtasks[index].title = e.target.value
+                          setSubtasks(updatedSubtasks)
+                        }}
+                        className="flex-1 min-w-0 bg-transparent border-0 focus-visible:ring-0 focus-visible:bg-transparent text-sm"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 hover:bg-destructive/20 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeSubtask(subtask.id)}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add Subtask Input */}
+              <div className="flex gap-2">
+                <Input
+                  value={subtaskInput}
+                  onChange={(e) => setSubtaskInput(e.target.value)}
+                  placeholder="Add a subtask..."
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addSubtask()
+                    }
+                  }}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  onClick={addSubtask}
+                  variant="outline"
+                  size="sm"
+                  disabled={!subtaskInput.trim()}
+                  className="gap-1"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add
+                </Button>
+              </div>
+            </div>
+
+            {/* Discussion/Comments (Edit Mode Only) */}
+            {mode === 'edit' && task && (
+              <>
+                <Separator />
+                <div className="space-y-4">
+                  <TaskComments taskId={task.id} projectId={task.projectId} />
+                </div>
+              </>
+            )}
 
             {/* Project (Optional) */}
             {mode === 'create' && projects.length > 0 && (

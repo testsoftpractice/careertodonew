@@ -37,8 +37,18 @@ export const createTaskSchema = z.object({
   status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED', 'CANCELLED', 'BACKLOG']).default('TODO'),
   priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).default('MEDIUM'),
   projectId: z.string().cuid('Invalid project ID'),
-  assigneeId: z.string().cuid('Invalid assignee ID').optional(),
-  dueDate: z.string().datetime('Invalid due date format').optional(),
+  assigneeId: z.string().cuid('Invalid assignee ID').optional().or(z.literal('')),
+  assigneeIds: z.array(z.string().cuid()).optional(),
+  subtasks: z.array(z.object({
+    title: z.string().min(1, 'Subtask title is required'),
+    completed: z.boolean().optional(),
+  })).optional(),
+  dueDate: z.string().optional().refine((val) => {
+    if (!val) return true
+    // Try to parse the date - allow various formats
+    const date = new Date(val)
+    return !isNaN(date.getTime())
+  }, { message: 'Invalid due date format' }),
   estimatedHours: z.union([z.number().min(0).max(1000), z.string().transform(val => parseFloat(val))]).optional(),
 }).strip()  // Strip unknown fields like 'assignedBy'
 
@@ -47,7 +57,19 @@ export const updateTaskSchema = z.object({
   description: z.string().max(1000).optional(),
   status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED', 'CANCELLED', 'BACKLOG']).optional(),
   priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).optional(),
-  dueDate: z.string().datetime().optional(),
+  assigneeId: z.string().cuid().optional().or(z.literal('')),
+  assigneeIds: z.array(z.string().cuid()).optional(),
+  subtasks: z.array(z.object({
+    id: z.string().cuid().optional(),
+    title: z.string().min(1, 'Subtask title is required'),
+    completed: z.boolean().optional(),
+  })).optional(),
+  dueDate: z.string().optional().refine((val) => {
+    if (!val) return true
+    // Try to parse the date - allow various formats
+    const date = new Date(val)
+    return !isNaN(date.getTime())
+  }, { message: 'Invalid due date format' }),
   estimatedHours: z.number().min(0).max(1000).optional(),
   actualHours: z.number().min(0).max(1000).optional(),
 })
@@ -66,7 +88,8 @@ export function validateRequest<T>(schema: z.ZodSchema<T>, data: unknown) {
       }
     }
 
-    const errors = (errorObj.issues || errorObj.errors || []).map((err: any) => ({
+    // ZodError has 'issues' property, not 'errors'
+    const errors = errorObj.issues.map((err: any) => ({
       field: Array.isArray(err.path) ? err.path.join('.') : 'unknown',
       message: err.message,
     }))

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
+import { getAuthUser, AuthError } from '@/lib/auth/verify'
 import { unauthorized, forbidden, errorResponse } from '@/lib/api-response'
 import { buildProjectVisibilityWhereClause } from '@/lib/visibility-controls'
 
@@ -8,8 +8,8 @@ import { buildProjectVisibilityWhereClause } from '@/lib/visibility-controls'
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await verifyAuth(request)
-    if (!authResult) {
+    const authResult = await getAuthUser(request)
+    if (!authResult.success || !authResult.dbUser) {
       return unauthorized('Authentication required')
     }
 
@@ -111,7 +111,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Require authentication
-    const authResult = await requireAuth(request)
+    const authResult = await getAuthUser(request)
+
+    if (!authResult.success || !authResult.dbUser) {
+      return unauthorized('Authentication required')
+    }
+
     const currentUser = authResult.dbUser
 
     const body = await request.json()

@@ -119,7 +119,8 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
   const [showEditVacancyDialog, setShowEditVacancyDialog] = useState(false)
 
   // Form states
-  const [newMember, setNewMember] = useState({ userId: "", role: "TEAM_MEMBER" })
+  const [newMember, setNewMember] = useState({ userId: "", email: "", role: "TEAM_MEMBER" })
+  const [inviteMode, setInviteMode] = useState<'select' | 'email'>('select')
   const [newMilestone, setNewMilestone] = useState({ title: "", description: "", dueDate: "" })
   const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null)
   const [newVacancy, setNewVacancy] = useState({
@@ -918,7 +919,8 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
   }
 
   const handleAddMember = async () => {
-    if (!newMember.userId) {
+    // Validate based on invite mode
+    if (inviteMode === 'select' && !newMember.userId) {
       toast({
         title: 'Validation Error',
         description: 'Please select a user to add',
@@ -927,33 +929,51 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
       return
     }
 
+    if (inviteMode === 'email' && !newMember.email) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please enter an email address',
+        variant: 'destructive',
+      })
+      return
+    }
+
     try {
       setLoading(prev => ({ ...prev, update: true }))
-      const response = await authFetch(`/api/projects/${projectId2}/members`, {
+
+      // Use invite endpoint which supports both userId and email
+      const payload: any = {
+        role: newMember.role,
+      }
+
+      if (inviteMode === 'select') {
+        payload.userId = newMember.userId
+      } else {
+        payload.email = newMember.email
+      }
+
+      const response = await authFetch(`/api/projects/${projectId2}/members/invite`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          userId: newMember.userId,
-          role: newMember.role,
-        }),
+        body: JSON.stringify(payload),
       })
 
       const data = await response.json()
 
       if (data.success) {
         await fetchTeamMembers()
-        setNewMember({ userId: "", role: "TEAM_MEMBER" })
+        setNewMember({ userId: "", email: "", role: "TEAM_MEMBER" })
         setShowAddMemberDialog(false)
         toast({
           title: 'Success',
-          description: 'Team member added successfully',
+          description: data.message || 'Team member added successfully',
         })
       } else {
         toast({
           title: 'Error',
-          description: data.error || 'Failed to add team member',
+          description: data.error || data.message || 'Failed to add team member',
           variant: 'destructive',
         })
       }
@@ -1770,24 +1790,68 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
             <DialogTitle>Add Team Member</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="user">User</Label>
-              <Select value={newMember.userId} onValueChange={(value) => setNewMember({ ...newMember, userId: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a user" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableUsers.map(u => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.name} ({u.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Invite Mode Toggle */}
+            <div className="flex gap-2 p-1 bg-muted rounded-lg">
+              <Button
+                type="button"
+                variant={inviteMode === 'select' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setInviteMode('select')}
+                className="flex-1"
+              >
+                Select User
+              </Button>
+              <Button
+                type="button"
+                variant={inviteMode === 'email' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setInviteMode('email')}
+                className="flex-1"
+              >
+                Invite by Email
+              </Button>
             </div>
+
+            {/* User Selection Mode */}
+            {inviteMode === 'select' ? (
+              <div>
+                <Label htmlFor="user">User</Label>
+                <Select
+                  value={newMember.userId}
+                  onValueChange={(value) => setNewMember({ ...newMember, userId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a user" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableUsers.map(u => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name} ({u.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div>
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="user@example.com"
+                  value={newMember.email}
+                  onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+                />
+              </div>
+            )}
+
+            {/* Role Selection */}
             <div>
               <Label htmlFor="role">Role</Label>
-              <Select value={newMember.role} onValueChange={(value) => setNewMember({ ...newMember, role: value })}>
+              <Select
+                value={newMember.role}
+                onValueChange={(value) => setNewMember({ ...newMember, role: value })}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -1802,7 +1866,11 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddMemberDialog(false)}>
+            <Button variant="outline" onClick={() => {
+              setShowAddMemberDialog(false)
+              setInviteMode('select')
+              setNewMember({ userId: "", email: "", role: "TEAM_MEMBER" })
+            }}>
               Cancel
             </Button>
             <Button onClick={handleAddMember} disabled={loading.update}>

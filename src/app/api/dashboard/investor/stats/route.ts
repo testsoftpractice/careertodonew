@@ -27,17 +27,17 @@ export async function GET(request: NextRequest) {
 
     // Calculate statistics
     const totalInvestments = investments.length
-    const activeInvestments = investments.filter(i => i.status === 'ACTIVE').length
-    const completedInvestments = investments.filter(i => i.status === 'COMPLETED').length
-    const totalInvested = investments.reduce((sum, i) => sum + (i.amount || 0), 0)
+    const activeInvestments = (investments || []).filter(i => i.status === 'ACTIVE').length
+    const completedInvestments = (investments || []).filter(i => i.status === 'COMPLETED').length
+    const totalInvested = (investments || []).reduce((sum, i) => sum + (i.amount || 0), 0)
 
     // Calculate average return
-    const completedInvestmentsWithValue = investments.filter(i => i.status === 'COMPLETED' && (i.projectedReturn || 0) > 0)
-    const totalProjectedReturn = completedInvestmentsWithValue.reduce((sum, i) => sum + (i.projectedReturn || 0), 0)
+    const completedInvestmentsWithValue = (investments || []).filter(i => i.status === 'COMPLETED' && (i.projectedReturn || 0) > 0)
+    const totalProjectedReturn = (completedInvestmentsWithValue || []).reduce((sum, i) => sum + (i.projectedReturn || 0), 0)
     const avgReturn = completedInvestmentsWithValue.length > 0 ? totalProjectedReturn / completedInvestmentsWithValue.length : 0
 
     // Calculate equity (equity percentage)
-    const totalEquity = investments.reduce((sum, i) => sum + (i.equity || 0), 0)
+    const totalEquity = (investments || []).reduce((sum, i) => sum + (i.equity || 0), 0)
 
     // Get opportunity pipeline (projects seeking investment)
     const opportunities = await db.project.findMany({

@@ -300,7 +300,6 @@ export async function POST(request: NextRequest) {
           projectId,
           type: type as CollaborationType,
           message,
-          proposedContribution,
           status: 'PENDING',
         },
       })

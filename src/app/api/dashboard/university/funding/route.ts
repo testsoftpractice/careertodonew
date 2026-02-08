@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     const decoded = verifyToken(token)
 
-    if (!token) {
+    if (!decoded) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
         { status: 401 }
@@ -30,7 +30,14 @@ export async function GET(request: NextRequest) {
       select: { universityId: true }
     })
 
-    if (!token) {
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    if (!user.universityId) {
       return NextResponse.json(
         { success: false, error: 'No university associated' },
         { status: 400 }

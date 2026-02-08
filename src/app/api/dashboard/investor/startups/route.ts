@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const totalInvested = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0)
-    const totalValue = investments.reduce((sum, inv) => sum + ((inv.amount || 0) * 0.8 + Math.random() * 0.4), 0)
+    const totalInvested = (investments || []).reduce((sum, inv) => sum + (inv.amount || 0), 0)
+    const totalValue = (investments || []).reduce((sum, inv) => sum + ((inv.amount || 0) * 0.8 + Math.random() * 0.4), 0)
 
     // Group by project to create startup list
     const startupsByProject = new Map<string, any>()
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
         startups,
         totalInvested: totalInvested.toFixed(2),
         totalValue: totalValue.toFixed(2),
-        avgROI: startups.length > 0 ? startups.reduce((sum, s) => sum + s.roi, 0) / startups.length : 0
+        avgROI: startups.length > 0 ? (startups || []).reduce((sum, s) => sum + s.roi, 0) / startups.length : 0
       }
     })
   } catch (error) {

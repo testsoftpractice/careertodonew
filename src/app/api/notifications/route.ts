@@ -6,18 +6,49 @@ import { logError, formatErrorResponse, AppError, UnauthorizedError } from '@/li
 // GET /api/notifications - Get notifications for user
 export async function GET(request: NextRequest) {
   try {
+    // Verify authentication
+    const sessionCookie = request.cookies.get('session')
+    const token = sessionCookie?.value
+
+    if (!token) {
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized',
+      }, { status: 401 })
+    }
+
+    const decoded = verifyToken(token)
+    if (!decoded) {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid token',
+      }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     const unreadOnly = searchParams.get('unread') === 'true'
 
-    if (!userId) {
+    // Users can only view their own notifications unless they are platform admin
+    const isAdmin = decoded.role === 'PLATFORM_ADMIN'
+    if (!isAdmin && userId !== decoded.userId) {
+      return NextResponse.json({
+        success: false,
+        error: 'Forbidden: Can only view your own notifications',
+      }, { status: 403 })
+    }
+
+    // Default to authenticated user's ID
+    const targetUserId = userId || decoded.userId
+
+    if (!targetUserId) {
       return NextResponse.json({
         success: false,
         error: 'User ID is required',
       }, { status: 400 })
     }
 
-    const where: any = { userId }
+    const where: any = { userId: targetUserId }
 
     if (unreadOnly) {
       where.read = false
@@ -31,7 +62,7 @@ export async function GET(request: NextRequest) {
 
     // Count unread
     const unreadCount = await db.notification.count({
-      where: { userId, read: false },
+      where: { userId: targetUserId, read: false },
     })
 
     return NextResponse.json({

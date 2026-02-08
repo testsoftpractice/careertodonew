@@ -57,6 +57,7 @@ import { useRoleAccess } from '@/hooks/use-role-access'
 import { toast } from '@/hooks/use-toast'
 import { logoutAndRedirect } from '@/lib/utils/logout'
 import { VerificationGate } from '@/components/verification-gate'
+import { authFetch } from '@/lib/api-response'
 
 function DashboardContent({ user }: { user: any }) {
   useRoleAccess(['EMPLOYER', 'PLATFORM_ADMIN'])
@@ -95,7 +96,7 @@ function DashboardContent({ user }: { user: any }) {
 
     try {
       setLoading(prev => ({ ...prev, stats: true }))
-      const response = await fetch(`/api/dashboard/employer/stats?userId=${user.id}`)
+      const response = await authFetch(`/api/dashboard/employer/stats?userId=${user.id}`)
 
       if (!response.ok) {
         console.error('Fetch stats error: Response not ok', response.status)
@@ -137,7 +138,7 @@ function DashboardContent({ user }: { user: any }) {
 
     try {
       setLoading(prev => ({ ...prev, requests: true }))
-      const response = await fetch(`/api/verification-requests?requesterId=${user.id}`)
+      const response = await authFetch(`/api/verification-requests?requesterId=${user.id}`)
 
       if (!response.ok) {
         console.error('Fetch requests error: Response not ok', response.status)
@@ -179,7 +180,7 @@ function DashboardContent({ user }: { user: any }) {
 
     try {
       setLoading(prev => ({ ...prev, candidates: true }))
-      const response = await fetch(`/api/dashboard/employer/candidates?employerId=${user.id}`)
+      const response = await authFetch(`/api/dashboard/employer/candidates?employerId=${user.id}`)
 
       if (!response.ok) {
         throw new Error('Failed to fetch candidates')
@@ -188,10 +189,12 @@ function DashboardContent({ user }: { user: any }) {
       const data = await response.json()
 
       if (data.success) {
-        setCandidates(data.data || [])
+        // Extract candidates array from nested response
+        setCandidates(data.data?.candidates || [])
       }
     } catch (error) {
       console.error('Fetch candidates error:', error)
+      setCandidates([]) // Reset to empty array on error
       toast({
         title: 'Error',
         description: 'Failed to fetch candidates',
@@ -207,7 +210,7 @@ function DashboardContent({ user }: { user: any }) {
 
     try {
       setLoading(prev => ({ ...prev, pipeline: true }))
-      const response = await fetch(`/api/dashboard/employer/pipeline?employerId=${user.id}`)
+      const response = await authFetch(`/api/dashboard/employer/pipeline?employerId=${user.id}`)
 
       if (!response.ok) {
         throw new Error('Failed to fetch pipeline')
@@ -216,10 +219,12 @@ function DashboardContent({ user }: { user: any }) {
       const data = await response.json()
 
       if (data.success) {
-        setPipeline(data.data || [])
+        // API now returns pipeline data directly as an array
+        setPipeline(Array.isArray(data.data) ? data.data : [])
       }
     } catch (error) {
       console.error('Fetch pipeline error:', error)
+      setPipeline([]) // Reset to empty array on error
       toast({
         title: 'Error',
         description: 'Failed to fetch pipeline',
@@ -235,7 +240,7 @@ function DashboardContent({ user }: { user: any }) {
 
     try {
       setLoading(prev => ({ ...prev, jobs: true }))
-      const response = await fetch(`/api/jobs?employerId=${user.id}`)
+      const response = await authFetch(`/api/jobs?userId=${user.id}`)
 
       if (!response.ok) {
         throw new Error('Failed to fetch jobs')
@@ -244,10 +249,12 @@ function DashboardContent({ user }: { user: any }) {
       const data = await response.json()
 
       if (data.success) {
-        setJobs(data.data || [])
+        // Extract jobs array from nested response
+        setJobs(Array.isArray(data.data) ? data.data : data.data?.jobs || [])
       }
     } catch (error) {
       console.error('Fetch jobs error:', error)
+      setJobs([]) // Reset to empty array on error
       toast({
         title: 'Error',
         description: 'Failed to fetch jobs',
@@ -263,7 +270,7 @@ function DashboardContent({ user }: { user: any }) {
 
     try {
       setLoading(prev => ({ ...prev, team: true }))
-      const response = await fetch(`/api/dashboard/employer/team?employerId=${user.id}`)
+      const response = await authFetch(`/api/dashboard/employer/team?employerId=${user.id}`)
 
       if (!response.ok) {
         throw new Error('Failed to fetch team')
@@ -312,13 +319,13 @@ function DashboardContent({ user }: { user: any }) {
     }
   }
 
-  const filteredCandidates = candidates.filter(candidate =>
-    candidate.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    candidate.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    candidate.appliedPosition?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCandidates = (candidates || []).filter(candidate =>
+    candidate.candidate?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    candidate.candidate?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    candidate.job?.title?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const filteredJobs = jobs.filter(job =>
+  const filteredJobs = (jobs || []).filter(job =>
     job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     job.description?.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -610,16 +617,16 @@ function DashboardContent({ user }: { user: any }) {
                       <TableBody>
                         {filteredCandidates.map((candidate: any) => (
                           <TableRow key={candidate.id}>
-                            <TableCell className="font-medium">{candidate.name}</TableCell>
-                            <TableCell>{candidate.email}</TableCell>
-                            <TableCell>{candidate.appliedPosition}</TableCell>
+                            <TableCell className="font-medium">{candidate.candidate?.name}</TableCell>
+                            <TableCell>{candidate.candidate?.email}</TableCell>
+                            <TableCell>{candidate.job?.title}</TableCell>
                             <TableCell>
                               <Badge className={getStatusColor(candidate.status)}>
                                 {candidate.status}
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {new Date(candidate.appliedAt).toLocaleDateString()}
+                              {new Date(candidate.appliedDate).toLocaleDateString()}
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
@@ -648,7 +655,7 @@ function DashboardContent({ user }: { user: any }) {
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-base font-semibold capitalize">{stage}</CardTitle>
-                      <Badge variant="outline">{pipeline.filter((p: any) => p.status === stage).length}</Badge>
+                      <Badge variant="outline">{(pipeline || []).filter((p: any) => p.status === stage).length}</Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-2 max-h-96 overflow-y-auto">
@@ -657,24 +664,27 @@ function DashboardContent({ user }: { user: any }) {
                         <div className="h-6 w-6 border-4 border-t-primary border-r-transparent rounded-full animate-spin mx-auto" />
                       </div>
                     ) : (
-                      pipeline.filter((p: any) => p.status === stage).map((candidate: any) => (
-                        <Card key={candidate.id} className="p-3 border border-slate-200 dark:border-slate-700 hover:border-primary transition-colors cursor-pointer">
-                          <div className="flex items-start gap-3">
-                            <Avatar className="h-10 w-10">
-                              <AvatarFallback className="bg-primary text-white text-xs">
-                                {candidate.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'C'}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">{candidate.name}</p>
-                              <p className="text-xs text-muted-foreground truncate">{candidate.appliedPosition}</p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {new Date(candidate.appliedAt).toLocaleDateString()}
-                              </p>
+                      <>
+                        {(pipeline || []).filter((p: any) => p.status === stage).map((candidate: any) => (
+                          <Card key={candidate.id} className="p-3 border border-slate-200 dark:border-slate-700 hover:border-primary transition-colors cursor-pointer">
+                            <div className="flex items-start gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src={candidate.candidate?.avatar} />
+                                <AvatarFallback className="bg-primary text-white text-xs">
+                                  {candidate.candidate?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'C'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{candidate.candidate?.name}</p>
+                                <p className="text-xs text-muted-foreground truncate">{candidate.job?.title}</p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {new Date(candidate.appliedDate).toLocaleDateString()}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        </Card>
-                      ))
+                          </Card>
+                        ))}
+                      </>
                     )}
                   </CardContent>
                 </Card>

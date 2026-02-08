@@ -80,11 +80,13 @@ export async function PATCH(
       title,
       description,
       assigneeId,
+      assigneeIds,
       status,
       priority,
       dueDate,
       estimatedHours,
       actualHours,
+      subtasks,
     } = body
 
     // Check if task exists
@@ -96,6 +98,7 @@ export async function PATCH(
             id: true,
             name: true,
             status: true,
+            ownerId: true,  // Include ownerId for ownership check
           },
         },
         assignee: {
@@ -109,6 +112,10 @@ export async function PATCH(
             id: true,
             name: true,
           },
+        },
+        taskAssignees: true,
+        subTasks: {
+          orderBy: { sortOrder: 'asc' }
         },
       },
     })
@@ -149,6 +156,84 @@ export async function PATCH(
     if (estimatedHours !== undefined) updateData.estimatedHours = estimatedHours ? parseFloat(estimatedHours) : null
     if (actualHours !== undefined) updateData.actualHours = actualHours ? parseFloat(actualHours) : null
 
+    // Handle assignees - support both old single assigneeId and new assigneeIds array
+    if (assigneeIds !== undefined) {
+      // Use the new assigneeIds array if provided
+      const newAssigneeIds = assigneeIds.filter(id => id !== '') // Remove empty strings
+      
+      // Set primary assignee to first assignee
+      if (newAssigneeIds.length > 0) {
+        updateData.assignedTo = newAssigneeIds[0]
+      } else {
+        updateData.assignedTo = null
+      }
+
+      // Update TaskAssignees - sync with new assigneeIds
+      const currentAssigneeIds = existingTask.taskAssignees.map(ta => ta.userId)
+      
+      const assigneesToRemove = currentAssigneeIds.filter(id => !newAssigneeIds.includes(id))
+      const assigneesToAdd = newAssigneeIds.filter(id => !currentAssigneeIds.includes(id))
+
+      // Remove old assignees
+      if (assigneesToRemove.length > 0) {
+        await db.taskAssignee.deleteMany({
+          where: {
+            taskId: id,
+            userId: { in: assigneesToRemove },
+          },
+        })
+      }
+
+      // Add new assignees
+      if (assigneesToAdd.length > 0) {
+        await db.taskAssignee.createMany({
+          data: assigneesToAdd.map((userId, index) => ({
+            taskId: id,
+            userId,
+            assignedAt: new Date(),
+            sortOrder: index,
+          })),
+        })
+      }
+    } else if (assigneeId !== undefined) {
+      // Support old single assigneeId for backward compatibility
+      updateData.assignedTo = assigneeId || null
+    }
+
+    // Handle subtasks if provided
+    if (subtasks !== undefined && Array.isArray(subtasks)) {
+      const currentSubtaskIds = existingTask.subTasks.map(st => st.id)
+      
+      const subtasksToRemove = currentSubtaskIds.filter(id => 
+        !subtasks.some(st => st.id === id)
+      )
+      const subtasksToAdd = subtasks.filter(st => 
+        !currentSubtaskIds.includes(st.id)
+      )
+
+      // Remove old subtasks
+      if (subtasksToRemove.length > 0) {
+        await db.subTask.deleteMany({
+          where: {
+            taskId: id,
+            id: { in: subtasksToRemove },
+          },
+        })
+      }
+
+      // Add new subtasks
+      if (subtasksToAdd.length > 0) {
+        await db.subTask.createMany({
+          data: subtasksToAdd.map((st, index) => ({
+            taskId: id,
+            title: st.title,
+            sortOrder: index,
+            completed: false,
+          })),
+        })
+      }
+    }
+
     const updatedTask = await db.task.update({
       where: { id },
       data: updateData,
@@ -171,6 +256,21 @@ export async function PATCH(
             id: true,
             name: true,
           },
+        },
+        taskAssignees: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: { assignedAt: 'asc' },
+        },
+        subTasks: {
+          orderBy: { sortOrder: 'asc' }
         },
       },
     })

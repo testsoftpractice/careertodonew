@@ -34,6 +34,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { useRoleAccess } from '@/hooks/use-role-access'
 import { toast } from '@/hooks/use-toast'
 import { VerificationGate } from '@/components/verification-gate'
+import { authFetch } from '@/lib/api-response'
 
 export default function InvestorDashboard() {
   const { user } = useAuth()
@@ -71,7 +72,7 @@ export default function InvestorDashboard() {
 
     try {
       setLoading(prev => ({ ...prev, stats: true }))
-      const response = await fetch('/api/dashboard/investor/stats')
+      const response = await authFetch('/api/dashboard/investor/stats')
       const data = await response.json()
 
       if (data.success) {
@@ -107,7 +108,7 @@ export default function InvestorDashboard() {
 
     try {
       setLoading(prev => ({ ...prev, portfolio: true }))
-      const response = await fetch('/api/dashboard/investor/portfolio')
+      const response = await authFetch('/api/dashboard/investor/portfolio')
       const data = await response.json()
 
       if (data.success) {
@@ -136,7 +137,7 @@ export default function InvestorDashboard() {
 
     try {
       setLoading(prev => ({ ...prev, opportunities: true }))
-      const response = await fetch('/api/projects?status=IN_PROGRESS')
+      const response = await authFetch('/api/projects?status=IN_PROGRESS')
       const data = await response.json()
 
       if (data.success) {
@@ -165,11 +166,11 @@ export default function InvestorDashboard() {
 
     try {
       setLoading(prev => ({ ...prev, deals: true }))
-      const response = await fetch('/api/investments/deals')
+      const response = await authFetch('/api/investments/deals')
       const data = await response.json()
 
       if (data.success) {
-        setDeals(data.data || [])
+        setDeals(Array.isArray(data.data) ? data.data : data.data?.deals || [])
       } else {
         toast({
           title: 'Error',
@@ -194,7 +195,7 @@ export default function InvestorDashboard() {
 
     try {
       setLoading(prev => ({ ...prev, financial: true }))
-      const response = await fetch('/api/dashboard/investor/financial')
+      const response = await authFetch('/api/dashboard/investor/financial')
       const data = await response.json()
 
       if (data.success) {
@@ -223,7 +224,7 @@ export default function InvestorDashboard() {
 
     try {
       setLoading(prev => ({ ...prev, startups: true }))
-      const response = await fetch('/api/dashboard/investor/startups')
+      const response = await authFetch('/api/dashboard/investor/startups')
       const data = await response.json()
 
       if (data.success) {
@@ -265,7 +266,7 @@ export default function InvestorDashboard() {
   }, [user, activeTab])
 
   const handleLogout = async () => {
-    const success = await fetch('/api/auth/logout')
+    const success = await authFetch('/api/auth/logout', { method: 'POST' })
     if (success) {
       toast({
         title: 'Success',
@@ -579,7 +580,7 @@ export default function InvestorDashboard() {
                     </div>
                   ) : (
                     <div className="max-h-96 overflow-y-auto space-y-3">
-                      {deals
+                      {(deals || [])
                         .filter((deal: any) => filterStage === 'ALL' || deal.status === filterStage)
                         .map((deal: any) => (
                           <Card key={deal.id} className="p-4 border border-slate-200 dark:border-slate-700 hover:border-primary transition-colors">

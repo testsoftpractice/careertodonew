@@ -41,6 +41,7 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import Link from 'next/link'
+import { authFetch } from '@/lib/api-response'
 
 interface Project {
   id: string
@@ -106,7 +107,7 @@ export default function ProjectApprovalsPage() {
         ...(searchTerm && { search: searchTerm }),
       })
 
-      const response = await fetch(`/api/admin/approvals/projects?${params}`)
+      const response = await authFetch(`/api/admin/approvals/projects?${params}`)
       if (!response.ok) throw new Error('Failed to fetch projects')
 
       const data = await response.json()
@@ -133,9 +134,8 @@ export default function ProjectApprovalsPage() {
 
     try {
       setProcessing(true)
-      const response = await fetch('/api/admin/approvals/projects', {
+      const response = await authFetch('/api/admin/approvals/projects', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectId: selectedProject.id,
           publishImmediately,
@@ -175,9 +175,8 @@ export default function ProjectApprovalsPage() {
 
     try {
       setProcessing(true)
-      const response = await fetch(`/api/admin/approvals/projects/${selectedProject.id}`, {
+      const response = await authFetch(`/api/admin/approvals/projects/${selectedProject.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           rejectionReason: rejectionReason.trim(),
           reviewComments: reviewComments.trim() || undefined,
@@ -218,9 +217,8 @@ export default function ProjectApprovalsPage() {
 
     try {
       setProcessing(true)
-      const response = await fetch(`/api/admin/approvals/projects/${selectedProject.id}`, {
+      const response = await authFetch(`/api/admin/approvals/projects/${selectedProject.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           reviewComments: reviewComments.trim(),
         }),

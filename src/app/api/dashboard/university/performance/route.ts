@@ -80,9 +80,9 @@ export async function GET(request: NextRequest) {
       // University Project Metrics
       const projects = university.projects || []
       const totalProjects = projects.length
-      const activeProjects = projects.filter((p: any) => p.status === 'ACTIVE').length
-      const completedProjects = projects.filter((p: any) => p.status === 'COMPLETED').length
-      const totalMilestonesAll = projects.reduce((sum: any, p: any) => {
+      const activeProjects = (projects || []).filter((p: any) => p.status === 'ACTIVE').length
+      const completedProjects = (projects || []).filter((p: any) => p.status === 'COMPLETED').length
+      const totalMilestonesAll = (projects || []).reduce((sum: any, p: any) => {
         return sum + (p.milestones?.filter((m: any) => m.status === 'ACHIEVED')?.length || 0)
       }, 0)
 

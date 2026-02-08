@@ -32,6 +32,7 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { useRoleAccess } from '@/hooks/use-role-access'
 import { toast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/api-response'
 
 export default function InvestorProposalsPage() {
   const { user } = useAuth()
@@ -63,7 +64,7 @@ export default function InvestorProposalsPage() {
 
       try {
         setLoading(true)
-        const response = await fetch(
+        const response = await authFetch(
           `/api/investments/proposals?investorId=${user.id}&status=${statusFilter}`
         )
         const data = await response.json()
@@ -94,7 +95,7 @@ export default function InvestorProposalsPage() {
       if (!user) return
 
       try {
-        const response = await fetch('/api/projects?seekingInvestment=true')
+        const response = await authFetch('/api/projects?seekingInvestment=true')
         const data = await response.json()
         if (data.success) {
           setProjects(data.data || [])
@@ -110,7 +111,7 @@ export default function InvestorProposalsPage() {
   }, [activeTab, user])
 
   // Filter proposals
-  const filteredProposals = proposals.filter((proposal) => {
+  const filteredProposals = (proposals || []).filter((proposal) => {
     const matchesSearch =
       searchQuery === '' ||
       proposal.project?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -143,7 +144,7 @@ export default function InvestorProposalsPage() {
 
     try {
       setLoading(true)
-      const response = await fetch('/api/investments/proposals', {
+      const response = await authFetch('/api/investments/proposals', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -314,7 +315,7 @@ export default function InvestorProposalsPage() {
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Clock className="h-4 w-4" />
                             <span>
-                              Expires {new Date(proposal.expiresAt).toLocaleDateString()}
+                              Expires {proposal.expiresAt ? new Date(proposal.expiresAt).toLocaleDateString() : 'N/A'}
                             </span>
                           </div>
                         </div>

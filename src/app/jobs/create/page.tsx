@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import {
   X,
   Plus,
+  ArrowLeft,
   ArrowRight,
   Loader2,
   Briefcase,
@@ -669,12 +670,6 @@ export default function PostJobPage() {
                               ✅ Target by Reputation
                             </SelectItem>
                             <SelectItem value="false">Specific University</SelectItem>
-                            <SelectItem value="range">By Reputation Range</SelectItem>
-                            <SelectItem value="1">1 Star & Below</SelectItem>
-                            <SelectItem value="2">2 Stars & Above</SelectItem>
-                            <SelectItem value="3">3 Stars & Above</SelectItem>
-                            <SelectItem value="4">4 Stars & Above</SelectItem>
-                            <SelectItem value="5">5 Stars & Above</SelectItem>
                           </SelectContent>
                         </Select>
 
@@ -942,7 +937,7 @@ export default function PostJobPage() {
               asChild
             >
               <Link href="/jobs">
-                <ArrowRight className="h-4 w-4 mr-2" />
+                <ArrowLeft className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Back to Jobs</span>
                 <span className="sm:hidden">Back</span>
               </Link>

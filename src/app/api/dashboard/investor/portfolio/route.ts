@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       return {
         id: inv.id,
         name: inv.project?.name || `Investment ${index + 1}`,
-        project: inv.project,
+        project: inv.project || null,
         amount: invested,
         currentValue: currentVal,
         equity: inv.equity || 10,
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         investedAt: inv.investedAt,
         updatedAt: inv.updatedAt
       }
-    })
+    }).filter(inv => inv.project !== null) // Only include investments with valid projects
 
     const totalValue = (portfolioInvestments || []).reduce((sum, inv) => sum + (inv.currentValue || 0), 0)
     const totalROI = totalValue - totalInvested

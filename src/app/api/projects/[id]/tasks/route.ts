@@ -31,7 +31,7 @@ export async function GET(
     // Require authentication
     const authResult = await requireAuth(request)
 
-    const { id: projectId } = await params
+    const { id } = await params
     const currentUser = authResult.dbUser
 
     const { searchParams } = new URL(request.url)
@@ -40,7 +40,7 @@ export async function GET(
 
     // Build where clause for project tasks
     const where: Record<string, any> = {
-      projectId,
+      projectId: id,
     }
 
     // Add optional filters
@@ -56,14 +56,6 @@ export async function GET(
     const tasks = await db.task.findMany({
       where,
       include: {
-        assignee: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-          }
-        },
         creator: {
           select: {
             id: true,
@@ -124,7 +116,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Require authentication
     const authResult = await requireAuth(request)
 
-    const { id: projectId } = await params
+    const { id } = await params
     const currentUser = authResult.dbUser
 
     const body = await request.json()
@@ -143,7 +135,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     // Check if project exists
     const project = await db.project.findUnique({
-      where: { id: projectId },
+      where: { id: id },
       select: { ownerId: true }
     })
     if (!project) {
@@ -155,7 +147,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const memberCount = await db.projectMember.count({
       where: {
-        projectId,
+        projectId: id,
         userId: currentUser.id,
       },
     })
@@ -173,22 +165,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         description: data.description || null,
         status: data.status || 'TODO',
         priority: data.priority,
-        projectId,
-        assignedTo: data.assigneeId || null,
+        projectId: id,
         assignedBy: currentUser.id,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         estimatedHours: data.estimatedHours ? parseFloat(String(data.estimatedHours)) : null,
         currentStepId: '1',
       },
       include: {
-        assignee: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-          }
-        },
         creator: {
           select: {
             id: true,
@@ -206,8 +189,35 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         subTasks: {
           orderBy: { sortOrder: 'asc' }
         },
+        taskAssignees: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              },
+            },
+          },
+          orderBy: { sortOrder: 'asc' },
+        },
       },
     })
+
+    // Handle task assignees if provided
+    if (data.assigneeIds && Array.isArray(data.assigneeIds) && data.assigneeIds.length > 0) {
+      const assigneesToCreate = data.assigneeIds.map((userId: string, index: number) => ({
+        taskId: task.id,
+        userId,
+        assignedAt: new Date(),
+        sortOrder: index,
+      }))
+
+      await db.taskAssignee.createMany({
+        data: assigneesToCreate,
+      })
+    }
 
     return successResponse(task, 'Task created successfully')
   } catch (error: any) {

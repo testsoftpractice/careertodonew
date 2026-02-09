@@ -36,8 +36,7 @@ export const createTaskSchema = z.object({
   description: z.string().max(1000, 'Description must be less than 1000 characters').optional(),
   status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED', 'CANCELLED', 'BACKLOG']).default('TODO'),
   priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).default('MEDIUM'),
-  projectId: z.string().cuid('Invalid project ID'),
-  assigneeId: z.string().cuid('Invalid assignee ID').optional().or(z.literal('')),
+  projectId: z.string().cuid('Invalid project ID').optional(),
   assigneeIds: z.array(z.string().cuid()).optional(),
   subtasks: z.array(z.object({
     title: z.string().min(1, 'Subtask title is required'),
@@ -57,7 +56,7 @@ export const updateTaskSchema = z.object({
   description: z.string().max(1000).optional(),
   status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED', 'CANCELLED', 'BACKLOG']).optional(),
   priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).optional(),
-  assigneeId: z.string().cuid().optional().or(z.literal('')),
+  projectId: z.string().cuid('Invalid project ID').optional(),
   assigneeIds: z.array(z.string().cuid()).optional(),
   subtasks: z.array(z.object({
     id: z.string().cuid().optional(),

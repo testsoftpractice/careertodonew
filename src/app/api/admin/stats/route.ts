@@ -1,27 +1,21 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { verifyToken } from "@/lib/auth/jwt"
+import { requireAuth, AuthError } from "@/lib/auth/verify"
+import { unauthorized } from "@/lib/api-response"
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify admin authentication
-    const tokenCookie = request.cookies.get('token')
-    const token = tokenCookie?.value
+    // Require admin authentication
+    const authResult = await requireAuth(request)
 
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
+    if (!authResult.success || !authResult.dbUser) {
+      return unauthorized('Authentication required')
     }
 
-    const decoded = verifyToken(decodeURIComponent(token))
+    const currentUser = authResult.dbUser
 
-    if (!decoded || decoded.role !== 'PLATFORM_ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
+    if (currentUser.role !== 'PLATFORM_ADMIN') {
+      return unauthorized('Admin access required')
     }
 
     const totalUsers = await db.user.count()
@@ -60,6 +54,9 @@ export async function GET(request: NextRequest) {
       data: stats,
     })
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return unauthorized(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error("Get admin stats error:", error)
     return NextResponse.json(
       { success: false, error: "Failed to fetch admin statistics" },

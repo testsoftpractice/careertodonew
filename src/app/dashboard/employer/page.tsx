@@ -279,7 +279,9 @@ function DashboardContent({ user }: { user: any }) {
       const data = await response.json()
 
       if (data.success) {
-        setTeam(data.data || [])
+        // Handle both array and object response formats
+        const teamData = Array.isArray(data.data) ? data.data : data.data?.members || []
+        setTeam(teamData)
       }
     } catch (error) {
       console.error('Fetch team error:', error)
@@ -355,8 +357,8 @@ function DashboardContent({ user }: { user: any }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-rose-50 dark:from-slate-950 dark:via-slate-900 dark:to-orange-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-        <header className="mb-6 sm:mb-8">
-          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl shadow-xl border border-orange-200 dark:border-slate-800 p-4 sm:p-6">
+        <header className="sticky top-0 z-50 mb-6 sm:mb-8">
+          <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-lg border border-orange-200 dark:border-slate-800 p-4 sm:p-6">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div className="flex items-center gap-3 sm:gap-4">
                 <Avatar className="h-12 w-12 sm:h-14 sm:w-14 shadow-lg ring-2 ring-orange-500/20">
@@ -914,7 +916,7 @@ function DashboardContent({ user }: { user: any }) {
 export default function EmployerDashboard() {
   const { user } = useAuth()
   return (
-    <VerificationGate user={user} restrictActions={false} showBadge={false}>
+    <VerificationGate user={user} restrictActions={true} showBadge={true}>
       <DashboardContent user={user} />
     </VerificationGate>
   )

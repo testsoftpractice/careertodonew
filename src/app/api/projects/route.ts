@@ -155,6 +155,7 @@ export async function POST(request: NextRequest) {
         name: body.name,
         description: body.description,
         ownerId: ownerId,
+        universityId: owner.universityId || null,
         status: 'IDEA', // Start with IDEA status
         approvalStatus: 'PENDING', // Requires admin approval
         submissionDate: new Date(),

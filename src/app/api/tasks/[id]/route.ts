@@ -21,14 +21,6 @@ export async function GET(
             status: true,
           },
         },
-        assignee: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            email: true,
-          },
-        },
         creator: {
           select: {
             id: true,
@@ -39,6 +31,19 @@ export async function GET(
           orderBy: {
             sortOrder: 'asc',
           },
+        },
+        taskAssignees: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: { sortOrder: 'asc' },
         },
       },
     })
@@ -79,7 +84,6 @@ export async function PATCH(
     const {
       title,
       description,
-      assigneeId,
       assigneeIds,
       status,
       priority,
@@ -98,13 +102,7 @@ export async function PATCH(
             id: true,
             name: true,
             status: true,
-            ownerId: true,  // Include ownerId for ownership check
-          },
-        },
-        assignee: {
-          select: {
-            id: true,
-            name: true,
+            ownerId: true,
           },
         },
         creator: {
@@ -132,12 +130,12 @@ export async function PATCH(
       },
     })
 
+    const isTaskAssignee = existingTask.taskAssignees.some(ta => ta.userId === currentUser.id)
     const isOwner = existingTask.assignedBy === currentUser.id || existingTask.project!.ownerId === currentUser.id
     const isProjectMember = !!projectMember
-    const isAssignee = existingTask.assignedTo === currentUser.id
 
     // Allow owner, project member, or task assignee to update
-    if (!isOwner && !isProjectMember && !isAssignee) {
+    if (!isOwner && !isProjectMember && !isTaskAssignee) {
       return forbidden('You do not have permission to update this task')
     }
 
@@ -156,19 +154,11 @@ export async function PATCH(
     if (estimatedHours !== undefined) updateData.estimatedHours = estimatedHours ? parseFloat(estimatedHours) : null
     if (actualHours !== undefined) updateData.actualHours = actualHours ? parseFloat(actualHours) : null
 
-    // Handle assignees - support both old single assigneeId and new assigneeIds array
-    if (assigneeIds !== undefined) {
-      // Use the new assigneeIds array if provided
-      const newAssigneeIds = assigneeIds.filter(id => id !== '') // Remove empty strings
+    // Handle assignees - use only TaskAssignee junction table
+    if (assigneeIds !== undefined && Array.isArray(assigneeIds)) {
+      const newAssigneeIds = assigneeIds.filter(id => id && id !== '') // Remove empty/null strings
       
-      // Set primary assignee to first assignee
-      if (newAssigneeIds.length > 0) {
-        updateData.assignedTo = newAssigneeIds[0]
-      } else {
-        updateData.assignedTo = null
-      }
-
-      // Update TaskAssignees - sync with new assigneeIds
+      // Get current assignees
       const currentAssigneeIds = existingTask.taskAssignees.map(ta => ta.userId)
       
       const assigneesToRemove = currentAssigneeIds.filter(id => !newAssigneeIds.includes(id))
@@ -195,23 +185,26 @@ export async function PATCH(
           })),
         })
       }
-    } else if (assigneeId !== undefined) {
-      // Support old single assigneeId for backward compatibility
-      updateData.assignedTo = assigneeId || null
     }
 
     // Handle subtasks if provided
     if (subtasks !== undefined && Array.isArray(subtasks)) {
       const currentSubtaskIds = existingTask.subTasks.map(st => st.id)
       
-      const subtasksToRemove = currentSubtaskIds.filter(id => 
-        !subtasks.some(st => st.id === id)
-      )
+      // Identify subtasks to keep (those present in the new array with valid IDs)
+      const subtaskIdsToKeep = subtasks
+        .filter(st => st.id && currentSubtaskIds.includes(st.id))
+        .map(st => st.id)
+      
+      // Subtasks to remove (existing but not in the keep list)
+      const subtasksToRemove = currentSubtaskIds.filter(id => !subtaskIdsToKeep.includes(id))
+      
+      // Subtasks to add (new subtasks without IDs, or subtasks with IDs not in current list)
       const subtasksToAdd = subtasks.filter(st => 
         !currentSubtaskIds.includes(st.id)
       )
 
-      // Remove old subtasks
+      // Remove old subtasks that weren't sent in the update
       if (subtasksToRemove.length > 0) {
         await db.subTask.deleteMany({
           where: {
@@ -221,14 +214,14 @@ export async function PATCH(
         })
       }
 
-      // Add new subtasks
+      // Add new subtasks (those without IDs or new IDs)
       if (subtasksToAdd.length > 0) {
         await db.subTask.createMany({
           data: subtasksToAdd.map((st, index) => ({
             taskId: id,
-            title: st.title,
-            sortOrder: index,
-            completed: false,
+            title: st.title || st.name || 'Untitled Subtask',
+            completed: st.completed || false,
+            sortOrder: st.sortOrder !== undefined ? st.sortOrder : index,
           })),
         })
       }
@@ -243,12 +236,6 @@ export async function PATCH(
             id: true,
             name: true,
             status: true,
-          },
-        },
-        assignee: {
-          select: {
-            id: true,
-            name: true,
           },
         },
         creator: {
@@ -267,7 +254,7 @@ export async function PATCH(
               },
             },
           },
-          orderBy: { assignedAt: 'asc' },
+          orderBy: { sortOrder: 'asc' },
         },
         subTasks: {
           orderBy: { sortOrder: 'asc' }
@@ -317,7 +304,10 @@ export async function DELETE(
     // Check if task exists and user has permission
     const existingTask = await db.task.findUnique({
       where: { id },
-      include: { project: true },
+      include: { 
+        project: true,
+        taskAssignees: true,
+      },
     })
 
     if (!existingTask) {
@@ -325,7 +315,9 @@ export async function DELETE(
     }
 
     // Check permission
-    const isOwner = existingTask.assignedBy === currentUser.id || existingTask.project!.ownerId === currentUser.id
+    const isCreator = existingTask.assignedBy === currentUser.id
+    const isProjectOwner = existingTask.project!.ownerId === currentUser.id
+    const isTaskAssignee = existingTask.taskAssignees.some(ta => ta.userId === currentUser.id)
     const projectMember = await db.projectMember.findFirst({
       where: {
         projectId: existingTask.projectId!,
@@ -333,7 +325,8 @@ export async function DELETE(
       },
     })
 
-    if (!isOwner && !projectMember) {
+    // Allow creator, project owner, project member, or task assignee to delete
+    if (!isCreator && !isProjectOwner && !projectMember && !isTaskAssignee) {
       return forbidden('You do not have permission to delete this task')
     }
 

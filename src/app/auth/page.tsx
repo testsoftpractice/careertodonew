@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import PublicHeader from '@/components/public-header'
@@ -15,6 +15,15 @@ export default function AuthPage() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [selectedUniversity, setSelectedUniversity] = useState<any>(null)
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null)
+
+  // Get redirect URL from query params on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const redirect = params.get('redirect')
+    console.log('[Auth] Redirect URL from params:', redirect)
+    setRedirectUrl(redirect)
+  }, [])
 
   const [signupData, setSignupData] = useState({
     firstName: '',
@@ -101,6 +110,10 @@ export default function AuthPage() {
     setError('')
     setLoading(true)
 
+    // Get redirect URL from current URL at the time of login
+    const currentRedirect = new URLSearchParams(window.location.search).get('redirect')
+    console.log('[Auth] Login clicked. Current redirect URL:', currentRedirect)
+
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -116,20 +129,30 @@ export default function AuthPage() {
       if (data.success) {
         login(data.user, data.token)
         setMessage('Login successful! Redirecting...')
+        console.log('[Auth] Login successful. User role:', data.user.role)
 
         setTimeout(() => {
-          if (data.user.role === 'STUDENT') {
-            router.push('/dashboard/student')
+          // If there's a redirect URL, use it. Otherwise, redirect based on role.
+          if (currentRedirect) {
+            console.log('[Auth] Redirecting to:', currentRedirect)
+            window.location.href = currentRedirect
+          } else if (data.user.role === 'STUDENT') {
+            console.log('[Auth] Redirecting to student dashboard')
+            window.location.href = '/dashboard/student'
           } else if (data.user.role === 'UNIVERSITY') {
-            router.push('/dashboard/university')
+            console.log('[Auth] Redirecting to university dashboard')
+            window.location.href = '/dashboard/university'
           } else if (data.user.role === 'EMPLOYER') {
-            router.push('/dashboard/employer')
+            console.log('[Auth] Redirecting to employer dashboard')
+            window.location.href = '/dashboard/employer'
           } else if (data.user.role === 'INVESTOR') {
-            router.push('/dashboard/investor')
+            console.log('[Auth] Redirecting to investor dashboard')
+            window.location.href = '/dashboard/investor'
           } else if (data.user.role === 'PLATFORM_ADMIN') {
-            router.push('/admin')
+            console.log('[Auth] Redirecting to admin dashboard')
+            window.location.href = '/admin'
           }
-        }, 1000)
+        }, 500)
       } else {
         setError(data.error || 'Invalid email or password')
       }

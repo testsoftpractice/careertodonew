@@ -28,8 +28,9 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { logoutAndRedirect, adminLogoutAndRedirect } from '@/lib/utils/logout'
+import { AdminAuthGuard } from '@/components/admin/admin-auth-guard'
 
-export default function AdminPage() {
+function AdminDashboard() {
   const router = useRouter()
 
   const handleLogout = async () => {
@@ -338,5 +339,13 @@ export default function AdminPage() {
         </main>
       </div>
     </div>
+  )
+}
+
+export default function AdminPage() {
+  return (
+    <AdminAuthGuard>
+      <AdminDashboard />
+    </AdminAuthGuard>
   )
 }

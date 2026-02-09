@@ -27,15 +27,16 @@ export async function GET(request: NextRequest) {
       .map(inv => inv.project!.id)
 
     // Get businesses for projects
-    const businesses = await db.business.findMany({
+    const businessIds = investments
+      .filter(inv => inv.project?.businessId)
+      .map(inv => inv.project!.businessId!)
+      .filter((id, index, self) => self.indexOf(id) === index) // Remove duplicates
+
+    const businesses = businessIds.length > 0 ? await db.business.findMany({
       where: {
-        id: {
-          in: investments
-            .filter(inv => inv.project?.businessId)
-            .map(inv => inv.project!.businessId!)
-        }
+        id: { in: businessIds }
       }
-    })
+    }) : []
 
     const totalInvested = (investments || []).reduce((sum, inv) => sum + (inv.amount || 0), 0)
     const totalValue = (investments || []).reduce((sum, inv) => sum + ((inv.amount || 0) * 0.8 + Math.random() * 0.4), 0)

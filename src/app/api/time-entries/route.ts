@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId') as string | undefined
     const taskId = searchParams.get('taskId') as string | undefined
+    const projectId = searchParams.get('projectId') as string | undefined
 
     const where: Record<string, string | undefined> = {}
 
@@ -42,7 +43,9 @@ export async function GET(request: NextRequest) {
 
       // Allow viewing time entries for tasks in own projects or assigned to you
       const isProjectMember = task.project?.ownerId === authResult.user!.id
-      const isAssignee = task.assignedTo === authResult.user!.id
+      const isAssignee = await db.taskAssignee.findFirst({
+        where: { taskId, userId: authResult.user!.id }
+      })
       const isAdmin = authResult.user!.role === 'PLATFORM_ADMIN'
 
       if (!isProjectMember && !isAssignee && !isAdmin) {
@@ -50,6 +53,28 @@ export async function GET(request: NextRequest) {
       }
 
       where.taskId = taskId
+    }
+
+    // If filtering by projectId, verify user has access to the project
+    if (projectId) {
+      const project = await db.project.findUnique({
+        where: { id: projectId },
+        include: { members: true }
+      })
+
+      if (!project) {
+        return forbidden('Project not found')
+      }
+
+      const isOwner = project.ownerId === authResult.user!.id
+      const isMember = project.members.some(m => m.userId === authResult.user!.id)
+      const isAdmin = authResult.user!.role === 'PLATFORM_ADMIN'
+
+      if (!isOwner && !isMember && !isAdmin) {
+        return forbidden('You do not have access to this project')
+      }
+
+      where.projectId = projectId
     }
 
     const timeEntries = await db.timeEntry.findMany({
@@ -119,11 +144,11 @@ export async function POST(request: NextRequest) {
     // Users can only create time entries for themselves
     const userId = currentUser.id
 
-    // Validate required fields
-    if (!body.taskId) {
+    // Validate required fields - at least one of taskId or projectId must be provided
+    if (!body.taskId && !body.projectId) {
       return NextResponse.json({
         success: false,
-        error: 'Task ID is required'
+        error: 'Either Task ID or Project ID is required'
       }, { status: 400 })
     }
 
@@ -168,32 +193,61 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Verify task exists and user has access to task
-    const task = await db.task.findUnique({
-      where: { id: body.taskId },
-      include: { project: true }
-    })
+    // Verify task exists and user has access if taskId is provided
+    if (body.taskId) {
+      const task = await db.task.findUnique({
+        where: { id: body.taskId },
+        include: { project: true }
+      })
 
-    if (!task) {
-      return NextResponse.json({
-        success: false,
-        error: 'Task not found'
-      }, { status: 404 })
+      if (!task) {
+        return NextResponse.json({
+          success: false,
+          error: 'Task not found'
+        }, { status: 404 })
+      }
+
+      // Only allow time entry if user is assigned to task or is project member
+      const isAssignee = await db.taskAssignee.findFirst({
+        where: { taskId: body.taskId, userId }
+      })
+      const isProjectOwner = task.project?.ownerId === userId
+      const isAdmin = currentUser.role === 'PLATFORM_ADMIN'
+
+      if (!isAssignee && !isProjectOwner && !isAdmin) {
+        return forbidden('You can only log time for tasks assigned to you or in your projects')
+      }
     }
 
-    // Only allow time entry if user is assigned to task or is project member
-    const isAssignee = task.assignedTo === userId
-    const isProjectOwner = task.project?.ownerId === userId
-    const isAdmin = currentUser.role === 'PLATFORM_ADMIN'
+    // Verify project exists and user has access if only projectId is provided
+    if (!body.taskId && body.projectId) {
+      const project = await db.project.findUnique({
+        where: { id: body.projectId },
+        include: { members: true }
+      })
 
-    if (!isAssignee && !isProjectOwner && !isAdmin) {
-      return forbidden('You can only log time for tasks assigned to you or in your projects')
+      if (!project) {
+        return NextResponse.json({
+          success: false,
+          error: 'Project not found'
+        }, { status: 404 })
+      }
+
+      const isOwner = project.ownerId === userId
+      const isMember = project.members.some(m => m.userId === userId)
+      const isAdmin = currentUser.role === 'PLATFORM_ADMIN'
+
+      if (!isOwner && !isMember && !isAdmin) {
+        return forbidden('You can only log time for projects you own or are a member of')
+      }
     }
 
     const timeEntry = await db.timeEntry.create({
       data: {
         userId: userId,
-        taskId: body.taskId,
+        taskId: body.taskId || null,
+        projectId: body.projectId || null,
+        workSessionId: body.workSessionId || null,
         date: entryDate,
         hours: hoursValue,
         description: body.description || null,
@@ -211,6 +265,12 @@ export async function POST(request: NextRequest) {
                 name: true,
               }
             }
+          }
+        },
+        project: {
+          select: {
+            id: true,
+            name: true,
           }
         },
         user: {

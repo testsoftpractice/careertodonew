@@ -41,17 +41,24 @@ export interface Task {
   createdAt: string
   updatedAt: string
   projectId?: string | null
-  assignedTo?: string | null
   assignedBy?: string
   project?: {
     id: string
     name: string
   }
-  assignee?: {
+  taskAssignees?: Array<{
     id: string
-    name: string
-    avatar?: string
-  }
+    taskId: string
+    userId: string
+    user: {
+      id: string
+      name: string
+      avatar?: string
+      email?: string
+    }
+    assignedAt: string
+    sortOrder: number
+  }>
 }
 
 export interface Column {
@@ -283,15 +290,18 @@ function TaskCard({ task, onClick, onEdit, onDelete, id }: TaskCardProps) {
                 <ListTodo className="w-3 h-3" />
                 {task.project.name}
               </div>
-            ) : task.assignee && (
+            ) : task.taskAssignees && task.taskAssignees.length > 0 ? (
               <div
                 className="flex items-center gap-1 text-xs text-muted-foreground max-w-[100px] truncate"
-                title={task.assignee.name}
+                title={task.taskAssignees.map(ta => ta.user.name).join(', ')}
               >
                 <User className="w-3 h-3" />
-                {task.assignee.name}
+                {task.taskAssignees.length === 1
+                  ? task.taskAssignees[0].user.name
+                  : `${task.taskAssignees[0].user.name} +${task.taskAssignees.length - 1}`
+                }
               </div>
-            )}
+            ) : null}
           </div>
         </CardContent>
       </Card>

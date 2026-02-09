@@ -68,17 +68,17 @@ export function PracticeGround({ compact = false }: PracticeGroundProps) {
               <Button
                 key={area.title}
                 variant="outline"
-                className="w-full justify-start gap-3"
+                className="w-full justify-start gap-3 h-auto py-3"
                 disabled
               >
-                <area.icon className={`h-4 w-4 ${area.color}`} />
-                <div className="text-left flex-1">
-                  <div className="font-medium text-sm">{area.title}</div>
-                  <div className="text-xs text-muted-foreground line-clamp-1">
+                <area.icon className={`h-4 w-4 ${area.color} shrink-0`} />
+                <div className="text-left flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate">{area.title}</div>
+                  <div className="text-xs text-muted-foreground line-clamp-2">
                     {area.description}
                   </div>
                 </div>
-                <Zap className="h-4 w-4 text-amber-500 shrink-0" />
+                <Zap className="h-4 w-4 text-amber-500 shrink-0 ml-2" />
               </Button>
             ))}
             <Button variant="outline" size="sm" className="w-full mt-3" disabled>
@@ -110,22 +110,22 @@ export function PracticeGround({ compact = false }: PracticeGroundProps) {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {practiceAreas.map((area) => (
             <div
               key={area.title}
-              className="p-4 rounded-xl border-2 bg-white/50 dark:bg-slate-900/50 hover:bg-white/80 dark:hover:bg-slate-900/80 transition-all hover:shadow-lg"
+              className="p-4 rounded-xl border-2 bg-white/50 dark:bg-slate-900/50 hover:bg-white/80 dark:hover:bg-slate-900/80 transition-all hover:shadow-lg flex flex-col h-full"
             >
-              <div className={`flex items-center gap-3 mb-3 ${area.bgColor} w-fit p-3 rounded-lg`}>
-                <area.icon className={`h-6 w-6 ${area.color}`} />
+              <div className={`flex items-center gap-3 mb-3 ${area.bgColor} p-3 rounded-lg w-fit max-w-full`}>
+                <area.icon className={`h-6 w-6 ${area.color} shrink-0`} />
               </div>
-              <h4 className="font-semibold mb-2">{area.title}</h4>
-              <p className="text-sm text-muted-foreground mb-4">
+              <h4 className="font-semibold mb-2 break-words">{area.title}</h4>
+              <p className="text-sm text-muted-foreground mb-4 flex-1 line-clamp-3">
                 {area.description}
               </p>
               <Button variant="outline" className="w-full" disabled>
-                <Zap className="mr-2 h-4 w-4" />
-                Start Practice
+                <Zap className="mr-2 h-4 w-4 shrink-0" />
+                <span className="truncate">Start Practice</span>
               </Button>
             </div>
           ))}

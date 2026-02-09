@@ -21,7 +21,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (assigneeId) {
-      where.assignedTo = assigneeId  // Fix: use correct field name from Prisma schema
+      where.taskAssignees = {
+        some: {
+          userId: assigneeId
+        }
+      }
     }
 
     if (status) {
@@ -35,14 +39,6 @@ export async function GET(request: NextRequest) {
     const tasks = await db.task.findMany({
       where,
       include: {
-        assignee: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-          }
-        },
         creator: {
           select: {
             id: true,
@@ -70,7 +66,7 @@ export async function GET(request: NextRequest) {
               },
             },
           },
-          orderBy: { assignedAt: 'asc' },
+          orderBy: { sortOrder: 'asc' },
         },
       },
       orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }]
@@ -108,6 +104,11 @@ export async function POST(request: NextRequest) {
 
     const data = validation.data!
 
+    // Check if projectId is provided
+    if (!data.projectId) {
+      return badRequest('projectId is required to create a task')
+    }
+
     // Check if user is project owner or member
     const project = await db.project.findUnique({
       where: { id: data.projectId },
@@ -137,15 +138,13 @@ export async function POST(request: NextRequest) {
 
     // Handle assignees - support both old single assigneeId and new assigneeIds array
     const assigneeIds = body.assigneeIds || []
-    const primaryAssigneeId = data.assigneeId || assigneeIds[0] || undefined
 
-    // Create task with primary assignee
+    // Create task without primary assignee field
     const task = await db.task.create({
       data: {
         title: data.title,
         description: data.description,
         projectId: data.projectId,
-        assignedTo: primaryAssigneeId,
         assignedBy: authResult.dbUser.id,
         status: data.status || 'TODO',
         priority: data.priority,
@@ -154,22 +153,18 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Create TaskAssignee entries for multiple assignees
+    // Create TaskAssignee entries for all assignees
     if (assigneeIds.length > 0) {
-      const assigneesToCreate = assigneeIds
-        .filter(id => id !== primaryAssigneeId) // Skip primary as they're already set
-        .map((userId, index) => ({
-          taskId: task.id,
-          userId,
-          assignedAt: new Date(),
-          sortOrder: index, // Preserve order from the array
-        }))
+      const assigneesToCreate = assigneeIds.map((userId, index) => ({
+        taskId: task.id,
+        userId,
+        assignedAt: new Date(),
+        sortOrder: index, // Preserve order from the array
+      }))
 
-      if (assigneesToCreate.length > 0) {
-        await db.taskAssignee.createMany({
-          data: assigneesToCreate,
-        })
-      }
+      await db.taskAssignee.createMany({
+        data: assigneesToCreate,
+      })
     }
 
     // Create SubTasks if provided

@@ -29,7 +29,19 @@ interface Task {
   status: string
   priority: string
   projectId?: string | null
-  assignedTo?: string | null
+  taskAssignees?: Array<{
+    id: string
+    taskId: string
+    userId: string
+    user: {
+      id: string
+      name: string
+      avatar?: string
+      email?: string
+    }
+    assignedAt: string
+    sortOrder: number
+  }>
 }
 
 export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimerProps) {

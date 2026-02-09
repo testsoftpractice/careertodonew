@@ -169,15 +169,6 @@ export default function TaskFormDialog({
             const assigneesData = await assigneesResponse.json()
             const loadedAssigneeIds = (assigneesData.assignees || []).map((a: any) => a.userId)
             
-            // Parse task.assigneeId or task.assignedTo for backward compatibility
-            const assigneeIds = [...loadedAssigneeIds]
-            if (task.assigneeId || task.assignedTo) {
-              const legacyAssigneeId = task.assigneeId || task.assignedTo
-              if (!assigneeIds.includes(legacyAssigneeId)) {
-                assigneeIds.push(legacyAssigneeId)
-              }
-            }
-            
             const newFormData = {
               title: task.title || '',
               description: task.description || '',
@@ -185,17 +176,13 @@ export default function TaskFormDialog({
               status: task.status || 'TODO',
               dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
               projectId: task.projectId || '',
-              assigneeIds,
+              assigneeIds: loadedAssigneeIds,
               subtasks: [],
             }
             setFormData(newFormData)
           } catch (error) {
             console.error('Failed to fetch task data:', error)
             // Fallback to basic task data
-            const assigneeIds = []
-            if (task.assigneeId || task.assignedTo) {
-              assigneeIds.push(task.assigneeId || task.assignedTo)
-            }
             const newFormData = {
               title: task.title || '',
               description: task.description || '',
@@ -203,7 +190,7 @@ export default function TaskFormDialog({
               status: task.status || 'TODO',
               dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
               projectId: task.projectId || '',
-              assigneeIds,
+              assigneeIds: [],
               subtasks: [],
             }
             setFormData(newFormData)

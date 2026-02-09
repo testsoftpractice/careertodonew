@@ -322,6 +322,32 @@ export async function PATCH(request: NextRequest) {
       }
     })
 
+    // When checking out, create a time entry record
+    if (updateData.endTime) {
+      const hours = updateData.duration ? updateData.duration / 3600 : 0
+      const timeEntry = await db.timeEntry.create({
+        data: {
+          userId: existingSession.userId,
+          taskId: existingSession.taskId,
+          projectId: existingSession.projectId && !existingSession.taskId ? existingSession.projectId : null,
+          workSessionId: sessionId,
+          date: existingSession.startTime,
+          hours: Math.round(hours * 100) / 100,
+          description: updateData.notes || `${existingSession.type} work session`,
+          billable: existingSession.type === 'ONSITE' || existingSession.type === 'REMOTE',
+        }
+      })
+      console.log('[WorkSessions PATCH] Created time entry:', {
+        id: timeEntry.id,
+        userId: existingSession.userId,
+        taskId: existingSession.taskId,
+        projectId: existingSession.projectId,
+        workSessionId: sessionId,
+        durationHours: hours,
+        sessionType: existingSession.type
+      })
+    }
+
     return NextResponse.json({
       success: true,
       data: {

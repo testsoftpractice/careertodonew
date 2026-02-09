@@ -315,7 +315,6 @@ model User {
   leaveRequests         LeaveRequest[]
   projectsOwned         Project[]          @relation("ProjectOwner")
   projectsMembered      ProjectMember[]
-  tasksAssigned         Task[]             @relation("AssignedTasks")
   tasksCreated          Task[]             @relation("CreatedTasks")
   taskAssignees        TaskAssignee[]     @relation("TaskAssignees")
   timeEntries           TimeEntry[]
@@ -492,8 +491,10 @@ model Project {
   ratings           Rating[]
   agreements        Agreement[]
   workSessions      WorkSession[]
+  timeEntries       TimeEntry[]
   investments       Investment[]  @relation("InvestmentProject")
   approvals         ProjectApproval[]
+  notifications     Notification[]
 
   // Timestamps
   createdAt         DateTime      @default(now())
@@ -538,7 +539,6 @@ model Task {
   currentStepId String?     @default("1")
 
   // Assignments
-  assignedTo    String?     // Primary assignee (kept for backward compatibility)
   assignedBy    String
 
   // Dates
@@ -549,16 +549,16 @@ model Task {
 
   // Relations
   project       Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  assignee      User?       @relation("AssignedTasks", fields: [assignedTo], references: [id], onDelete: SetNull)
   creator       User        @relation("CreatedTasks", fields: [assignedBy], references: [id], onDelete: Cascade)
   subTasks      SubTask[]
   taskAssignees TaskAssignee[]
   timeEntries   TimeEntry[]
-  workSessions  WorkSession[]   // Work sessions linked to this task
+  workSessions  WorkSession[]
   dependencies  TaskDependency[] @relation("DependentTasks")
   blockers      TaskDependency[] @relation("BlockingTasks")
   steps         TaskStep[]
   comments      TaskComment[]
+  notifications Notification[]
 
   // Timestamps
   createdAt     DateTime    @default(now())
@@ -566,10 +566,8 @@ model Task {
 
   // Indexes
   @@index([projectId, status])  // For project task lists
-  @@index([assignedTo, status]) // For user task lists
   @@index([projectId, priority, status]) // For prioritized task lists
   @@index([projectId])
-  @@index([assignedTo])
   @@index([status])
   @@index([priority])
   @@index([currentStepId])
@@ -582,6 +580,7 @@ model TaskAssignee {
   taskId     String
   userId     String
   assignedAt DateTime @default(now())
+  sortOrder  Int      @default(0) // To track order of assignees
 
   // Relations
   task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
@@ -692,21 +691,27 @@ model Vacancy {
 }
 
 model TimeEntry {
-  id        String   @id @default(cuid())
-  taskId    String
-  userId    String
-  date      DateTime
-  hours     Float
-  description String?
-  billable  Boolean  @default(false)
-  hourlyRate Float?
+  id            String   @id @default(cuid())
+  taskId        String?
+  projectId     String?
+  userId        String
+  date          DateTime
+  hours         Float
+  description   String?
+  billable      Boolean  @default(false)
+  hourlyRate    Float?
+  workSessionId String?
 
   // Relations
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task          Task?        @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  project       Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workSession   WorkSession? @relation(fields: [workSessionId], references: [id], onDelete: SetNull)
 
-  @@index([taskId])
   @@index([userId])
+  @@index([taskId])
+  @@index([projectId])
+  @@index([workSessionId])
   @@index([date])
 }
 
@@ -714,11 +719,11 @@ model WorkSession {
   id        String          @id @default(cuid())
   userId    String
   projectId String?
-  taskId    String?         // Optional: Link to specific task for time tracking
+  taskId    String?
   type      WorkSessionType @default(ONSITE)
   notes     String?
-  checkInLocation  String?  // Location when checking in (e.g., "Office", "Home")
-  checkOutLocation String?  // Location when checking out (e.g., "Office", "Home")
+  checkInLocation  String?
+  checkOutLocation String?
   startTime DateTime
   endTime   DateTime?
   duration  Int?           // in seconds
@@ -727,6 +732,7 @@ model WorkSession {
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   project   Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
   task      Task?           @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  timeEntries TimeEntry[]
 
   @@index([userId])
   @@index([projectId])
@@ -788,9 +794,15 @@ model Notification {
   link      String?
   priority  NotificationPriority @default(MEDIUM)
   read      Boolean             @default(false)
+  projectId String?
+  taskId    String?
+  jobId     String?
 
   // Relations
   user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project?            @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  task      Task?               @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  job       Job?                @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
   // Timestamps
   createdAt DateTime            @default(now())
@@ -798,6 +810,9 @@ model Notification {
   @@index([userId])
   @@index([read])
   @@index([type])
+  @@index([projectId])
+  @@index([taskId])
+  @@index([jobId])
 }
 
 model AuditLog {
@@ -869,7 +884,7 @@ model Agreement {
 model Investment {
   id          String   @id @default(cuid())
   userId      String
-  projectId   String?
+  projectId   String
   amount      Float
   type        String
   status      String  @default("PENDING")
@@ -885,7 +900,7 @@ model Investment {
 
   // Relations
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project     Project? @relation("InvestmentProject", fields: [projectId], references: [id], onDelete: SetNull)
+  project     Project  @relation("InvestmentProject", fields: [projectId], references: [id], onDelete: Cascade)
 
   // Timestamps
   createdAt   DateTime @default(now())
@@ -977,6 +992,7 @@ model Job {
   business    Business?       @relation("BusinessJobs", fields: [businessId], references: [id], onDelete: Cascade)
   applications JobApplication[]
   approvals   JobApproval[]
+  notifications Notification[]
 
   // Timestamps
   createdAt   DateTime       @default(now())

@@ -83,8 +83,19 @@ interface Task {
   createdAt: string
   updatedAt: string
   projectId?: string | null
-  assigneeId?: string | null
-  assignedTo?: string | null
+  taskAssignees?: Array<{
+    id: string
+    taskId: string
+    userId: string
+    user: {
+      id: string
+      name: string
+      avatar?: string
+      email?: string
+    }
+    assignedAt: string
+    sortOrder: number
+  }>
 }
 
 export default function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
@@ -321,7 +332,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
         priority: taskData.priority,
         dueDate: taskData.dueDate || undefined,
         projectId: projectId2,
-        assigneeId: taskData.assigneeId || undefined,
+        assigneeIds: taskData.assigneeIds || [],
       }
 
       const response = await authFetch(`/api/projects/${projectId2}/tasks`, {
@@ -371,7 +382,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
         priority: task.priority,
         status: task.status,
         projectId: editingTask.projectId || projectId2,
-        assigneeId: task.assigneeId || undefined,
+        assigneeIds: task.assigneeIds?.map(ta => ta.userId) || [],
       }
 
       if (task.dueDate) {
@@ -1024,8 +1035,8 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex flex-col">
-      {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+      {/* Sticky Header with Blur Glass Effect */}
+      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/dashboard/student">

@@ -17,8 +17,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       return NextResponse.json(
@@ -122,8 +122,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       return NextResponse.json(

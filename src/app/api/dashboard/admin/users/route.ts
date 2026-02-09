@@ -14,8 +14,8 @@ const updateUserSchema = z.object({
 // GET /api/dashboard/admin/users - Get user management data
 export async function GET(request: NextRequest) {
   try {
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       return NextResponse.json(

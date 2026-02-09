@@ -13,8 +13,8 @@ interface PlatformSettings {
 // GET /api/admin/settings - Get platform settings
 export async function GET(request: NextRequest) {
   try {
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       return NextResponse.json(
@@ -58,8 +58,8 @@ export async function GET(request: NextRequest) {
 // PUT /api/admin/settings - Update platform settings
 export async function PUT(request: NextRequest) {
   try {
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       return NextResponse.json(

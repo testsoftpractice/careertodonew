@@ -15,8 +15,8 @@ export async function PATCH(
     const { read } = body
 
     // Authentication
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       throw new UnauthorizedError('Authentication required')
@@ -80,8 +80,8 @@ export async function DELETE(
     const { id } = await params
 
     // Authentication
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       throw new UnauthorizedError('Authentication required')

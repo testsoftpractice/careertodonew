@@ -5,8 +5,8 @@ import { verifyToken } from '@/lib/auth/jwt'
 // GET /api/dashboard/university/funding - Get university funding overview
 export async function GET(request: NextRequest) {
   try {
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       return NextResponse.json(

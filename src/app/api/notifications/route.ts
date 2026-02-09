@@ -7,8 +7,8 @@ import { logError, formatErrorResponse, AppError, UnauthorizedError } from '@/li
 export async function GET(request: NextRequest) {
   try {
     // Verify authentication
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       return NextResponse.json({
@@ -89,8 +89,8 @@ export async function POST(request: NextRequest) {
     const { targetUserId, type, title, message, link } = body
 
     // Authentication check for creating notifications
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       throw new UnauthorizedError('Authentication required')

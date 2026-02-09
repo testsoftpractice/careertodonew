@@ -97,8 +97,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   let userId: string | null = null
   try {
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       throw new UnauthorizedError('Authentication required')

@@ -6,8 +6,8 @@ import { VerificationStatus } from '@prisma/client'
 // GET /api/admin/verification/users - List users with filters
 export async function GET(request: NextRequest) {
   try {
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       return NextResponse.json(
@@ -100,8 +100,8 @@ export async function GET(request: NextRequest) {
 // PUT /api/admin/verification/users - Bulk update user verification status
 export async function PUT(request: NextRequest) {
   try {
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       return NextResponse.json(

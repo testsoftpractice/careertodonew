@@ -11,8 +11,8 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId') // Owner's businesses
 
     // Authentication check
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     let authenticatedUserId: string | null = null
     let userRole: string | null = null
@@ -96,8 +96,8 @@ export async function POST(request: NextRequest) {
   let userRole: string | null = null
   try {
     // Authentication
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       throw new UnauthorizedError('Authentication required')

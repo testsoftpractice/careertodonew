@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
 
     // Try to get auth info if available
     try {
-      const sessionCookie = request.cookies.get('session')
-      const token = sessionCookie?.value
+      const tokenCookie = request.cookies.get('token')
+      const token = tokenCookie?.value
       if (token) {
         const decoded = verifyToken(token)
         authUserId = decoded.userId
@@ -112,8 +112,8 @@ export async function POST(request: NextRequest) {
   let userId: string | null = null
   try {
     // Authentication
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       throw new UnauthorizedError('Authentication required')

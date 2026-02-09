@@ -68,8 +68,8 @@ export async function GET(
     const businessId = id
 
     // Authentication
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     let userId: string | null = null
     let userRole: string | null = null
@@ -188,8 +188,8 @@ export async function PATCH(
     const businessId = id
 
     // Authentication
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       throw new UnauthorizedError('Authentication required')
@@ -273,8 +273,8 @@ export async function DELETE(
     const businessId = id
 
     // Authentication
-    const sessionCookie = request.cookies.get('session')
-    const token = sessionCookie?.value
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
 
     if (!token) {
       throw new UnauthorizedError('Authentication required')

@@ -2,12 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireAuth } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
-import { canPerformAction } from '@/lib/models/project-roles'
 import { isFeatureEnabled, TASK_MANAGEMENT } from '@/lib/features/flags'
 
 // Validation schemas
 const createTimeEntrySchema = z.object({
-  taskId: z.string(),
   hours: z.number().min(0.5).max(24).step(0.25),
   description: z.string().optional(),
   billable: z.boolean().default(false),
@@ -17,6 +15,7 @@ const createTimeEntrySchema = z.object({
 const updateTimeEntrySchema = z.object({
   hours: z.number().min(0.5).max(24).step(0.25).optional(),
   description: z.string().optional(),
+  entryId: z.string(),
 })
 
 // GET /api/tasks/[id]/time-entries - Get time entries for task
@@ -38,14 +37,22 @@ export async function GET(
     // Check if user has access (task owner or with time tracking permission)
     const task = await db.task.findUnique({
       where: { id: taskId },
-      select: { assignedTo: true },
+      include: {
+        taskAssignees: {
+          where: { userId: user.id },
+          take: 1,
+        },
+      },
     })
 
     if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
-    if (!canPerformAction({ user, action: 'view' }) && task.assignedTo !== user.id) {
+    const isTaskAssignee = task.taskAssignees.length > 0
+    const isCreator = task.assignedBy === user.id
+
+    if (!isCreator && !isTaskAssignee) {
       return NextResponse.json({ error: 'Forbidden - No access to this task' }, { status: 403 })
     }
 
@@ -100,7 +107,12 @@ export async function POST(
     // Check if user has access - allow task owner, task assignee, or project owner
     const task = await db.task.findUnique({
       where: { id: taskId },
-      select: { assignedTo: true, projectId: true, assignedBy: true },
+      include: {
+        taskAssignees: {
+          where: { userId: user.id },
+          take: 1,
+        },
+      },
     })
 
     if (!task) {
@@ -108,16 +120,20 @@ export async function POST(
     }
 
     // Get project to check ownership
+    if (!task.projectId) {
+      return NextResponse.json({ error: 'Task must belong to a project' }, { status: 400 })
+    }
+
     const project = await db.project.findUnique({
-      where: { id: task.projectId! },
+      where: { id: task.projectId },
       select: { ownerId: true },
     })
 
-    const isTaskAssignee = task.assignedTo === user.userId
-    const isProjectOwner = project?.ownerId === user.userId
+    const isTaskAssignee = task.taskAssignees.length > 0
+    const isProjectOwner = project?.ownerId === user.id
 
-    // Allow if task assignee or project owner
-    if (!isTaskAssignee && !isProjectOwner) {
+    // Allow if task assignee, creator, or project owner
+    if (!isTaskAssignee && task.assignedBy !== user.id && !isProjectOwner) {
       return NextResponse.json({ error: 'Forbidden - No access to add time entries to this task' }, { status: 403 })
     }
 
@@ -128,7 +144,7 @@ export async function POST(
     const timeEntry = await db.timeEntry.create({
       data: {
         taskId,
-        userId: user.userId,
+        userId: user.id,
         hours: validatedData.hours,
         description: validatedData.description,
         billable: validatedData.billable,
@@ -151,7 +167,7 @@ export async function POST(
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Validation error', details: error.issues }, { status: 400 })
     }
     console.error('Create time entry error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -175,15 +191,15 @@ export async function PUT(
 
   try {
     const body = await request.json()
-    const { entryId, ...validatedData } = updateTimeEntrySchema.parse(body)
+    const validatedData = updateTimeEntrySchema.parse(body)
 
-    if (!entryId) {
+    if (!validatedData.entryId) {
       return NextResponse.json({ error: 'Entry ID is required' }, { status: 400 })
     }
 
     // Get time entry
     const timeEntry = await db.timeEntry.findUnique({
-      where: { id: entryId },
+      where: { id: validatedData.entryId },
     })
 
     if (!timeEntry) {
@@ -191,16 +207,16 @@ export async function PUT(
     }
 
     // Check ownership
-    if (timeEntry.userId !== user.id && !canPerformAction({ user, action: 'manage' })) {
+    if (timeEntry.userId !== user.id) {
       return NextResponse.json({ error: 'Forbidden - No access to update this time entry' }, { status: 403 })
     }
 
     // Update time entry
     const updatedEntry = await db.timeEntry.update({
-      where: { id: entryId },
+      where: { id: validatedData.entryId },
       data: {
-        ...validatedData,
-        updatedAt: new Date(),
+        hours: validatedData.hours,
+        description: validatedData.description,
       },
     })
 
@@ -218,7 +234,7 @@ export async function PUT(
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Validation error', details: error.issues }, { status: 400 })
     }
     console.error('Update time entry error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -258,7 +274,7 @@ export async function DELETE(
     }
 
     // Check ownership
-    if (timeEntry.userId !== user.id && !canPerformAction({ user, action: 'delete' })) {
+    if (timeEntry.userId !== user.id) {
       return NextResponse.json({ error: 'Forbidden - No access to delete this time entry' }, { status: 403 })
     }
 

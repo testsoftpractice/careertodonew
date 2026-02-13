@@ -457,7 +457,7 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
                 </Badge>
               )}
             </div>
-            <div className="text-3xl font-bold font-mono bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            <div className="text-3xl font-bold font-mono text-slate-900 dark:text-slate-100">
               {formatDuration(elapsed)}
             </div>
           </div>

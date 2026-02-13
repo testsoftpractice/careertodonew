@@ -26,7 +26,7 @@ export async function PATCH(
     // Validate request body
     const validation = updateSubtaskSchema.safeParse(body)
     if (!validation.success) {
-      return errorResponse(validation.error.errors[0]?.message || 'Invalid input', 400)
+      return errorResponse(validation.error.issues[0]?.message || 'Invalid input', 400)
     }
 
     const data = validation.data
@@ -52,10 +52,9 @@ export async function PATCH(
     // Check access permission
     const task = subtask.task
     const isCreator = task.assignedBy === currentUser.id
-    const isAssignee = task.assignedTo === currentUser.id
     const isProjectOwner = task.project?.ownerId === currentUser.id
 
-    let hasAccess = isCreator || isAssignee || isProjectOwner
+    let hasAccess = isCreator || isProjectOwner
 
     if (!hasAccess && task.projectId) {
       const member = await db.projectMember.findFirst({

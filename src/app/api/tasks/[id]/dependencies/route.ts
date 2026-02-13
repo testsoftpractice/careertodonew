@@ -38,19 +38,7 @@ export async function GET(
             id: true,
             title: true,
             projectId: true,
-            ownerId: true,
-          },
-        },
-        taskAssignees: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar: true,
-              },
-            },
+            assignedBy: true,
           },
         },
       },
@@ -96,6 +84,12 @@ export async function POST(
     }
 
     // Only task creator or project owner can add dependencies
+    if (!task || !task.projectId) {
+      return NextResponse.json({
+        error: task ? 'Task must belong to a project' : 'Task not found',
+      }, { status: task ? 400 : 404 })
+    }
+
     const project = await db.project.findUnique({
       where: { id: task.projectId },
       select: { ownerId: true },
@@ -203,6 +197,10 @@ export async function DELETE(
       where: { id: dependency.taskId },
       select: { projectId: true, assignedBy: true },
     })
+
+    if (!task || !task.projectId) {
+      return NextResponse.json({ error: 'Task not found or not in a project' }, { status: 404 })
+    }
 
     const project = await db.project.findUnique({
       where: { id: task.projectId },

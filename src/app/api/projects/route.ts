@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     // Get user info for visibility control
     const userId = authResult.dbUser?.id || null
     const userRole = authResult.dbUser?.role || null
+    const userUniversityId = authResult.dbUser?.universityId || null
 
     const where: Record<string, string | undefined> = {}
 
@@ -35,8 +36,8 @@ export async function GET(request: NextRequest) {
       where.status = status as any
     }
 
-    // Apply visibility control
-    const visibilityWhere = buildProjectVisibilityWhereClause(userId, userRole, where)
+    // Apply visibility control with university ID
+    const visibilityWhere = buildProjectVisibilityWhereClause(userId, userRole, userUniversityId, where)
 
     const projects = await db.project.findMany({
       where: visibilityWhere,

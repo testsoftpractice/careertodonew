@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { TaskStatus } from "@prisma/client"
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -10,8 +11,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const task = await db.task.update({
       where: { id: taskId },
       data: {
-        status: "SUBMITTED",
-        submittedAt: new Date(),
+        status: TaskStatus.REVIEW,
         description,
       }
     })

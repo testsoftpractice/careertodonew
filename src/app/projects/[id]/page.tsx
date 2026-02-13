@@ -18,6 +18,8 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import ProfessionalKanbanBoard from '@/components/task/ProfessionalKanbanBoard'
 import TaskFormDialog from '@/components/task/TaskFormDialog'
+import ProjectMemberManagement from '@/components/project/ProjectMemberManagement'
+import DepartmentManagement from '@/components/project/DepartmentManagement'
 import {
   ArrowLeft,
   Plus,
@@ -1284,47 +1286,16 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
 
           {/* Team & Roles Tab */}
           <TabsContent value="team" className="space-y-6 mt-6">
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border-2 shadow-sm border-slate-200 dark:border-slate-800">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Team Members</CardTitle>
-                  <Button onClick={() => setShowAddMemberDialog(true)} size="sm">
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Add Member
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {loading.members ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                    <p className="text-muted-foreground">Loading team...</p>
-                  </div>
-                ) : teamMembers.length === 0 ? (
-                  <div className="text-center py-16">
-                    <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">No team members yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {teamMembers.map(member => (
-                      <div key={member.id} className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:shadow-lg transition-all duration-200">
-                        <Avatar className="h-12 w-12 rounded-full">
-                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-semibold">
-                            {member.user?.name?.charAt(0) || '?'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <p className="font-medium">{member.user?.name || 'Unknown'}</p>
-                          <p className="text-sm text-muted-foreground">{member.user?.email || ''}</p>
-                          <Badge variant="outline">{member.role}</Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <ProjectMemberManagement
+              projectId={projectId2}
+              currentUserRole={user?.role}
+              currentUserId={user?.id}
+            />
+            <DepartmentManagement
+              projectId={projectId2}
+              canManageDepartments={user?.role === 'OWNER' || user?.role === 'PROJECT_MANAGER' || user?.role === 'PLATFORM_ADMIN'}
+              projectMembers={teamMembers}
+            />
           </TabsContent>
 
           {/* Vacancies Tab */}

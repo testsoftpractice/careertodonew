@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { TaskStatus } from '@prisma/client'
 import { requireAuth, AuthError } from '@/lib/auth/verify'
-import { forbidden, notFound, unauthorized } from '@/lib/api-response'
+import { forbidden, notFound, unauthorized, errorResponse } from '@/lib/api-response'
 
 // GET /api/tasks/[id] - Get a specific task
 export async function GET(

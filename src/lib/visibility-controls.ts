@@ -6,11 +6,11 @@
 // Project visibility rules
 export const PROJECT_VISIBILITY = {
   // Who can see projects with these approval statuses
-  PENDING: ['owner', 'members', 'platform_admin'],
-  UNDER_REVIEW: ['owner', 'members', 'platform_admin'],
+  PENDING: ['owner', 'members', 'platform_admin', 'university_admin'],
+  UNDER_REVIEW: ['owner', 'members', 'platform_admin', 'university_admin'],
   APPROVED: ['everyone'],
-  REJECTED: ['owner', 'members', 'platform_admin'],
-  REQUIRE_CHANGES: ['owner', 'members', 'platform_admin'],
+  REJECTED: ['owner', 'members', 'platform_admin', 'university_admin'],
+  REQUIRE_CHANGES: ['owner', 'members', 'platform_admin', 'university_admin'],
 }
 
 // Job visibility rules
@@ -27,14 +27,16 @@ export const JOB_VISIBILITY = {
 export function canUserSeeProject(
   project: any,
   userId: string | null,
-  userRole: string | null
+  userRole: string | null,
+  userUniversityId?: string | null
 ): boolean {
   const isOwner = project.ownerId === userId
   const isMember = project.members?.some((m: any) => m.userId === userId)
   const isAdmin = userRole === 'PLATFORM_ADMIN'
+  const isUniversityAdmin = userRole === 'UNIVERSITY_ADMIN' && project.universityId === userUniversityId
   const statusVisibility = PROJECT_VISIBILITY[project.approvalStatus as keyof typeof PROJECT_VISIBILITY]
 
-  if (isOwner || isMember || isAdmin) {
+  if (isOwner || isMember || isAdmin || isUniversityAdmin) {
     return true
   }
 
@@ -80,6 +82,7 @@ export function filterJobsByVisibility(
 export function buildProjectVisibilityWhereClause(
   userId: string | null,
   userRole: string | null,
+  userUniversityId: string | null = null,
   additionalWhere?: any
 ): any {
   const where: any = additionalWhere || {}
@@ -92,6 +95,23 @@ export function buildProjectVisibilityWhereClause(
   // If not logged in, only show approved projects
   if (!userId) {
     where.approvalStatus = 'APPROVED'
+    return where
+  }
+
+  // University admins can see approved projects or projects from their university
+  if (userRole === 'UNIVERSITY_ADMIN') {
+    where.OR = [
+      { approvalStatus: 'APPROVED' },
+      { universityId: userUniversityId },
+      { ownerId: userId },
+      {
+        members: {
+          some: {
+            userId: userId,
+          },
+        },
+      },
+    ]
     return where
   }
 

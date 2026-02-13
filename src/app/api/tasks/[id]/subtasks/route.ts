@@ -37,10 +37,9 @@ export async function GET(
 
     // Check access permission
     const isCreator = task.assignedBy === currentUser.id
-    const isAssignee = task.assignedTo === currentUser.id
     const isProjectOwner = task.project?.ownerId === currentUser.id
 
-    let hasAccess = isCreator || isAssignee || isProjectOwner
+    let hasAccess = isCreator || isProjectOwner
 
     if (!hasAccess && task.projectId) {
       const member = await db.projectMember.findFirst({
@@ -91,7 +90,7 @@ export async function POST(
     // Validate request body
     const validation = createSubtaskSchema.safeParse(body)
     if (!validation.success) {
-      return errorResponse(validation.error.errors[0]?.message || 'Invalid input', 400)
+      return errorResponse(validation.error.issues[0]?.message || 'Invalid input', 400)
     }
 
     const data = validation.data
@@ -110,12 +109,11 @@ export async function POST(
       return notFound('Task not found')
     }
 
-    // Check if user can add subtasks (task creator, assignee, project owner, or project member)
+    // Check if user can add subtasks (task creator, project owner, or project member)
     const isCreator = task.assignedBy === currentUser.id
-    const isAssignee = task.assignedTo === currentUser.id
     const isProjectOwner = task.project?.ownerId === currentUser.id
 
-    let hasAccess = isCreator || isAssignee || isProjectOwner
+    let hasAccess = isCreator || isProjectOwner
 
     if (!hasAccess && task.projectId) {
       const member = await db.projectMember.findFirst({

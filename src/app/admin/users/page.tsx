@@ -157,9 +157,9 @@ export default function AdminUsersPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-background sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
+      {/* Dashboard Header with Glass Blur Effect */}
+      <header className="border-b bg-background/90 backdrop-blur-md">
+        <div className="container mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/admin" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">

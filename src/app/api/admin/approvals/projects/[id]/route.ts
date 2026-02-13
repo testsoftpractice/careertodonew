@@ -55,23 +55,21 @@ export async function GET(
           },
         },
         university: true,
-        members: {
-          _count: {
-            select: {
-              count: true
-            }
-          }
-        },
+        members: true,
         tasks: {
           take: 10,
           orderBy: { createdAt: 'desc' },
           include: {
-            assignee: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar: true,
+            taskAssignees: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    avatar: true,
+                  },
+                },
               },
             },
           },

@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     // Get student's tasks as schedule items (mock schedule)
     const tasks = await db.task.findMany({
-      where: { assignedTo: decoded.userId },
+      where: { taskAssignees: { some: { userId: decoded.userId } } },
       include: {
         project: {
           select: { name: true }

@@ -1,38 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { RatingDimension, RatingSource } from '@prisma/client'
+import { RatingType } from '@prisma/client'
 
 // GET /api/ratings - List ratings with filters
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const ratedId = searchParams.get('ratedId')
-    const raterId = searchParams.get('raterId')
-    const dimension = searchParams.get('dimension')
+    const toUserId = searchParams.get('toUserId')
+    const fromUserId = searchParams.get('fromUserId')
+    const type = searchParams.get('type')
     const projectId = searchParams.get('projectId')
 
     const where: any = {}
 
-    if (!dimension) {
-      where.ratedId = ratedId
+    if (toUserId) {
+      where.toUserId = toUserId
     }
 
-    if (!raterId) {
-      where.raterId = raterId
+    if (fromUserId) {
+      where.fromUserId = fromUserId
     }
 
-    if (!request.nextUrl.searchParams.isEmpty()) {
-      where.dimension = dimension as RatingDimension
+    if (searchParams.size > 0 && type) {
+      where.type = type as RatingType
     }
 
-    if (!request.nextUrl.searchParams.isEmpty()) {
+    if (searchParams.size > 0 && projectId) {
       where.projectId = projectId
     }
 
     const ratings = await db.rating.findMany({
       where,
       include: {
-        rater: {
+        fromUser: {
           select: {
             id: true,
             name: true,
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
             role: true,
           },
         },
-        rated: {
+        toUser: {
           select: {
             id: true,
             name: true,
@@ -69,61 +69,94 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const {
-      raterId,
-      ratedId,
-      dimension,
-      source,
+      fromUserId,
+      toUserId,
+      type,
       projectId,
       taskId,
       score,
       comment,
     } = body
 
+    // Validate required fields
+    if (!fromUserId || !toUserId || !type || !score) {
+      return NextResponse.json(
+        { error: 'Missing required fields: fromUserId, toUserId, type, and score are required' },
+        { status: 400 }
+      )
+    }
+
     // Validate score is between 1 and 5
-    if (!request.nextUrl.searchParams.isEmpty()) {
+    const scoreNum = parseFloat(score)
+    if (isNaN(scoreNum) || scoreNum < 1 || scoreNum > 5) {
       return NextResponse.json(
         { error: 'Score must be between 1 and 5' },
         { status: 400 }
       )
     }
 
-    // Check if rater already rated this person for this dimension and project
+    // Check if user already rated this person for this type in this project
     const existingRating = await db.rating.findFirst({
       where: {
-        raterId,
-        ratedId,
-        dimension: dimension as RatingDimension,
+        fromUserId,
+        toUserId,
+        type: type as RatingType,
         projectId,
       },
     })
 
-    if (!existingRating) {
+    if (existingRating) {
+      // Update existing rating instead of creating new one
+      const updatedRating = await db.rating.update({
+        where: { id: existingRating.id },
+        data: {
+          score: scoreNum,
+          comment: comment || existingRating.comment,
+        },
+        include: {
+          fromUser: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
+          toUser: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      })
+
       return NextResponse.json(
-        { error: 'You have already rated this user for this dimension in this project' },
-        { status: 400 }
+        {
+          message: 'Rating updated successfully',
+          rating: updatedRating,
+        },
+        { status: 200 }
       )
     }
 
     const rating = await db.rating.create({
       data: {
-        raterId,
-        ratedId,
-        dimension: dimension as RatingDimension,
-        source: source || RatingSource.PEER,
-        projectId,
-        taskId,
-        score: parseFloat(score),
-        comment,
+        fromUserId,
+        toUserId,
+        type: type as RatingType,
+        projectId: projectId || null,
+        score: scoreNum,
+        comment: comment,
       },
       include: {
-        rater: {
+        fromUser: {
           select: {
             id: true,
             name: true,
             avatar: true,
           },
         },
-        rated: {
+        toUser: {
           select: {
             id: true,
             name: true,
@@ -133,15 +166,15 @@ export async function POST(request: NextRequest) {
     })
 
     // Update user's cached scores
-    await updateUserReputationScores(ratedId)
+    await updateUserReputationScores(toUserId)
 
     // Create notification for rated user
     await db.notification.create({
       data: {
-        userId: ratedId,
-        type: 'RATING_RECEIVED',
+        userId: toUserId,
+        type: 'PROJECT_UPDATE',
         title: 'New Rating Received',
-        message: `You received a ${score}-star rating for ${dimension.toLowerCase()}`,
+        message: `You received a ${scoreNum}-star rating for ${type.toLowerCase()}`,
         link: `/dashboard/student?tab=reputation`,
       },
     })
@@ -165,21 +198,21 @@ export async function POST(request: NextRequest) {
 // Helper function to update user's cached reputation scores
 async function updateUserReputationScores(userId: string) {
   const ratings = await db.rating.findMany({
-    where: { ratedId: userId },
+    where: { toUserId: userId },
   })
 
-  const calculateAverage = (dimension: RatingDimension) => {
-    const dimensionRatings = ratings.filter(r => r.dimension === dimension)
-    if (dimensionRatings.length === 0) return 0
-    return dimensionRatings.reduce((sum, r) => sum + r.score, 0) / dimensionRatings.length
+  const calculateAverage = (ratingType: RatingType) => {
+    const typeRatings = ratings.filter(r => r.type === ratingType)
+    if (typeRatings.length === 0) return 0
+    return typeRatings.reduce((sum, r) => sum + r.score, 0) / typeRatings.length
   }
 
   const scores = {
-    executionScore: calculateAverage(RatingDimension.EXECUTION),
-    collaborationScore: calculateAverage(RatingDimension.COLLABORATION),
-    leadershipScore: calculateAverage(RatingDimension.LEADERSHIP),
-    ethicsScore: calculateAverage(RatingDimension.ETHICS),
-    reliabilityScore: calculateAverage(RatingDimension.RELIABILITY),
+    executionScore: calculateAverage(RatingType.EXECUTION),
+    collaborationScore: calculateAverage(RatingType.COLLABORATION),
+    leadershipScore: calculateAverage(RatingType.LEADERSHIP),
+    ethicsScore: calculateAverage(RatingType.ETHICS),
+    reliabilityScore: calculateAverage(RatingType.RELIABILITY),
   }
 
   await db.user.update({

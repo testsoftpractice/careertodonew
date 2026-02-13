@@ -3,16 +3,13 @@ import { z } from 'zod'
 import { requireAuth, AuthError } from '@/lib/auth/verify'
 import { db } from '@/lib/db'
 import { isFeatureEnabled, PROJECT_ROLES } from '@/lib/features/flags'
-import { errorResponse, forbidden, notFound, unauthorized, validationError } from '@/lib/api-response'
+import { errorResponse, forbidden, notFound, validationError } from '@/lib/api-response'
+import { ProjectRole } from '@prisma/client'
 
 // Validation schemas - using correct ProjectRole enum values from schema
 const addMemberSchema = z.object({
   userId: z.string().cuid('Invalid user ID'),
-  role: z.enum(['OWNER', 'PROJECT_MANAGER', 'TEAM_LEAD', 'TEAM_MEMBER', 'VIEWER']),
-})
-
-const updateMemberRoleSchema = z.object({
-  role: z.enum(['OWNER', 'PROJECT_MANAGER', 'TEAM_LEAD', 'TEAM_MEMBER', 'VIEWER']),
+  role: z.nativeEnum(ProjectRole),
 })
 
 const inviteMemberSchema = z.object({
@@ -41,7 +38,7 @@ export async function GET(
     // Get project
     const project = await db.project.findUnique({
       where: { id },
-      select: { ownerId: true },
+      select: { id: true, ownerId: true, name: true },
     })
     if (!project) {
       return notFound('Project not found')
@@ -79,6 +76,7 @@ export async function GET(
         project: {
           id: project.id,
           ownerId: project.ownerId,
+          name: project.name,
         },
         members,
         totalMembers: members.length,
@@ -114,7 +112,7 @@ export async function POST(
     // Get project first
     const project = await db.project.findUnique({
       where: { id },
-      select: { ownerId: true, name: true },
+      select: { id: true, ownerId: true, name: true },
     })
     if (!project) {
       return notFound('Project not found')
@@ -185,157 +183,12 @@ export async function POST(
       return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
     }
     if (error instanceof z.ZodError) {
-      return validationError(error.errors)
+      return validationError(error.issues.map(e => ({ field: e.path.join('.'), message: e.message })))
     }
     console.error('Add team member error:', error)
     return errorResponse('Failed to add team member', 500)
   }
 }
 
-// PATCH /api/projects/[id]/members/[memberId] - Update member role
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; memberId: string }> }
-) {
-  if (!isFeatureEnabled(PROJECT_ROLES)) {
-    return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
-  }
-
-  try {
-    const authResult = await requireAuth(request)
-    const currentUser = authResult.dbUser
-
-    const { id: projectId, memberId } = await params
-
-    const body = await request.json()
-    const validatedData = updateMemberSchema.parse(body)
-
-    // Get project
-    const project = await db.project.findUnique({
-      where: { id: projectId },
-      select: { ownerId: true },
-    })
-    if (!project) {
-      return notFound('Project not found')
-    }
-
-    // Check if user is project owner or admin
-    const isProjectOwner = project.ownerId === currentUser.id
-    const isAdmin = currentUser.role === 'PLATFORM_ADMIN' || currentUser.role === 'UNIVERSITY_ADMIN'
-
-    if (!isProjectOwner && !isAdmin) {
-      return forbidden('Only project owner can update member roles')
-    }
-
-    // Get member to update
-    const member = await db.projectMember.findUnique({
-      where: { id: memberId, projectId },
-      include: { user: true },
-    })
-
-    if (!member) {
-      return notFound('Member not found')
-    }
-
-    // Update member role
-    const updatedMember = await db.projectMember.update({
-      where: { id: memberId },
-      data: {
-        role: validatedData.role,
-        accessLevel: validatedData.role === 'OWNER' ? 'OWNER' : 'VIEW',
-      },
-    })
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        member: updatedMember,
-        message: `Member role updated to ${validatedData.role}`,
-      },
-    })
-  } catch (error: any) {
-    if (error instanceof AuthError) {
-      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
-    }
-    if (error instanceof z.ZodError) {
-      return validationError(error.errors)
-    }
-    console.error('Update member role error:', error)
-    return errorResponse('Failed to update member role', 500)
-  }
-}
-
-// DELETE /api/projects/[id]/members/[memberId] - Remove team member
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; memberId: string }> }
-) {
-  if (!isFeatureEnabled(PROJECT_ROLES)) {
-    return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
-  }
-
-  try {
-    const authResult = await requireAuth(request)
-    const currentUser = authResult.dbUser
-
-    const { id: projectId, memberId } = await params
-
-    // Get project
-    const project = await db.project.findUnique({
-      where: { id: projectId },
-      select: { ownerId: true },
-    })
-    if (!project) {
-      return notFound('Project not found')
-    }
-
-    // Check if user is project owner or admin
-    const isProjectOwner = project.ownerId === currentUser.id
-    const isAdmin = currentUser.role === 'PLATFORM_ADMIN' || currentUser.role === 'UNIVERSITY_ADMIN'
-
-    if (!isProjectOwner && !isAdmin) {
-      return forbidden('Only project owner can remove members')
-    }
-
-    // Get member to remove
-    const member = await db.projectMember.findUnique({
-      where: { id: memberId, projectId },
-    })
-
-    if (!member) {
-      return notFound('Member not found')
-    }
-
-    // Don't allow removing the project owner
-    if (member.userId === project.ownerId) {
-      return errorResponse('Cannot remove project owner', 400)
-    }
-
-    // Delete member
-    await db.projectMember.delete({
-      where: { id: memberId },
-    })
-
-    // Create notification for removed user
-    await db.notification.create({
-      data: {
-        userId: member.userId,
-        type: 'PROJECT_UPDATE',
-        title: 'ℹ️ Removed from Project',
-        message: `You have been removed from project: ${project.name}`,
-        link: `/projects`,
-      },
-    })
-
-    return NextResponse.json({
-      success: true,
-      message: 'Member removed successfully',
-    })
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
-    }
-    console.error('Remove member error:', error)
-    return errorResponse('Failed to remove member', 500)
-  }
-}
+// Note: PATCH and DELETE operations should be at /api/projects/[id]/members/[memberId]/route.ts
+// Create a new file at src/app/api/projects/[id]/members/[memberId]/route.ts for those operations

@@ -96,6 +96,22 @@ interface Task {
     assignedAt: string
     sortOrder: number
   }>
+  subTasks?: Array<{
+    id: string
+    taskId: string
+    title: string
+    completed: boolean
+    sortOrder: number
+  }>
+  steps?: Array<{
+    id: string
+    taskId: string
+    stepNumber: string
+    name: string
+    description: string | null
+    movedBy: string
+    movedAt: string
+  }>
 }
 
 export default function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
@@ -346,6 +362,26 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
       const data = await response.json()
 
       if (data.success) {
+        const createdTask = data.data
+        
+        // Create subtasks if provided
+        if (taskData.subtasks && Array.isArray(taskData.subtasks) && taskData.subtasks.length > 0) {
+          for (const subtask of taskData.subtasks) {
+            try {
+              await authFetch(`/api/tasks/${createdTask.id}/subtasks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  title: subtask.title,
+                  sortOrder: subtask.sortOrder || 0,
+                }),
+              })
+            } catch (error) {
+              console.error('Failed to create subtask:', error)
+            }
+          }
+        }
+        
         toast({
           title: 'Success',
           description: 'Task created successfully',
@@ -371,25 +407,28 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
     }
   }
 
-  const handleEditTaskSave = async (task: Task) => {
+  const handleEditTaskSave = async (taskData: any) => {
     if (!user || !editingTask) return
 
     try {
       setLoading(prev => ({ ...prev, update: true }))
-      const payload = {
-        title: task.title,
-        description: task.description || null,
-        priority: task.priority,
-        status: task.status,
+      const payload: any = {
+        title: taskData.title,
+        description: taskData.description || null,
+        priority: taskData.priority,
+        status: taskData.status,
         projectId: editingTask.projectId || projectId2,
-        assigneeIds: task.assigneeIds?.map(ta => ta.userId) || [],
+        assigneeIds: Array.isArray(taskData.assigneeIds) 
+          ? taskData.assigneeIds 
+          : (taskData.taskAssignees?.map((ta: any) => ta.userId) || []),
+        subtasks: taskData.subtasks,
       }
 
-      if (task.dueDate) {
-        payload.dueDate = new Date(task.dueDate).toISOString()
+      if (taskData.dueDate) {
+        payload.dueDate = new Date(taskData.dueDate).toISOString()
       }
 
-      const response = await authFetch(`/api/tasks/${task.id}`, {
+      const response = await authFetch(`/api/tasks/${editingTask.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -404,8 +443,6 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
           title: 'Success',
           description: 'Task updated successfully',
         })
-        const updatedTask = { ...editingTask, ...payload }
-        setTasks(tasks.map(t => t.id === editingTask.id ? updatedTask : t))
         setEditingTask(null)
         setShowTaskDialog(false)
         fetchProjectTasks()

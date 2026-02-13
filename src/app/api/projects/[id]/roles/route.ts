@@ -101,10 +101,10 @@ export async function POST(
 
     // Create invites
     // In production, these would be stored and sent
-    const invites = validatedData.emails.map(email => ({
+    const invites = validatedData.emails.map((email, index) => ({
       projectId: id,
       email,
-      role: validatedData.roles[0], // Assign first role to all
+      role: validatedData.roles[index % validatedData.roles.length] || 'TEAM_MEMBER', // Distribute roles evenly
       message: validatedData.message,
       expiresAt: validatedData.expiresAt ? new Date(validatedData.expiresAt) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default 7 days
       status: 'PENDING',
@@ -119,9 +119,10 @@ export async function POST(
         message: `Invited ${invites.length} member(s) to project`,
       },
     }, { status: 201 })
-  } catch (error) {
-    if (!request.nextUrl.searchParams.isEmpty()) {
-      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
+  } catch (error: any) {
+    if (error instanceof Error && 'name' in error && error.name === 'ZodError') {
+      const zodError = error as any
+      return NextResponse.json({ error: 'Validation error', details: zodError.issues }, { status: 400 })
     }
     console.error('Invite members error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

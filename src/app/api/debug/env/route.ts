@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
   // Try database connection
   let dbStatus = 'Unknown'
-  let dbError = null
+  let dbError: { message: string; name: string; code: string } | null = null
 
   try {
     console.log('[DEBUG] Testing database connection...')
@@ -23,10 +23,12 @@ export async function GET(request: NextRequest) {
     await db.$disconnect()
   } catch (error: any) {
     dbStatus = 'Failed ✗'
-    dbError = {
-      message: error.message,
-      name: error.name,
-      code: error.code,
+    if (error) {
+      dbError = {
+        message: error.message || 'Unknown error',
+        name: error.name || 'Error',
+        code: error.code || 'UNKNOWN',
+      }
     }
     console.error('[DEBUG] Database connection failed:', dbError)
   }

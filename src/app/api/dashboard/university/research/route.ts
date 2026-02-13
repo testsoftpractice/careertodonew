@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       select: { universityId: true }
     })
 
-    if (!token) {
+    if (!user || !user.universityId) {
       return NextResponse.json(
         { success: false, error: 'No university associated' },
         { status: 400 }

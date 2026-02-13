@@ -157,7 +157,7 @@ export default function TaskFormDialog({
             // Fetch subtasks
             const subtasksResponse = await authFetch(`/api/tasks/${task.id}/subtasks`)
             const subtasksData = await subtasksResponse.json()
-            const loadedSubtasks = (subtasksData.subtasks || []).map((s: any) => ({
+            const loadedSubtasks = (subtasksData.data || []).map((s: any) => ({
               id: s.id,
               title: s.title,
               completed: s.completed,
@@ -167,7 +167,7 @@ export default function TaskFormDialog({
             // Fetch multiple assignees
             const assigneesResponse = await authFetch(`/api/tasks/${task.id}/assignees`)
             const assigneesData = await assigneesResponse.json()
-            const loadedAssigneeIds = (assigneesData.assignees || []).map((a: any) => a.userId)
+            const loadedAssigneeIds = (assigneesData.data || assigneesData.assignees || []).map((a: any) => a.userId)
             
             const newFormData = {
               title: task.title || '',

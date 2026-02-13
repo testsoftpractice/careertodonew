@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
         projectId,
         userId,
         type,
-        amount: amount ? Number(amount) : null,
+        amount: amount != null ? Number(amount) : 0,
         equity: equity ? Number(equity) : null,
         terms: terms ? JSON.stringify(terms) : null,
         status: 'PENDING',

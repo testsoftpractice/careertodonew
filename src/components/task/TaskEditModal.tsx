@@ -95,7 +95,7 @@ export default function TaskEditModal({ task, users, onClose, onSave }: TaskEdit
         },
         body: JSON.stringify({
           ...formData,
-          assignees: selectedUsers,
+          assigneeIds: selectedUsers,
           subtasks,
           attachments,
         }),

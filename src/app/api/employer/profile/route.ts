@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       include: {
         _count: {
           select: {
-            projectMembers: true,
+            members: true,
           }
         }
       }
@@ -112,10 +112,7 @@ export async function PATCH(request: NextRequest) {
           ownerId: user.id,
           name: name || `${user.name}'s Business`,
           description: companyDescription,
-          website: companyWebsite,
-          size: companySize ? parseInt(companySize) : 10,
-          category: companyIndustry,
-          status: VerificationStatus.PENDING,
+          status: 'IDEA',
           universityId: user.universityId,
         }
       })

@@ -51,12 +51,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
   }
 
-  const auth = await requireAuth(request, ['PLATFORM_ADMIN', 'UNIVERSITY_ADMIN'])
+  const auth = requireAuth(request)
   if ('status' in auth) return auth
 
-  const user = auth.user
+  const user = auth
 
-  if (!auth) {
+  // Check if user is platform admin (required for this operation)
+  if (user.role !== 'PLATFORM_ADMIN' && user.role !== 'UNIVERSITY_ADMIN') {
     return NextResponse.json({ error: 'Forbidden - Only admins can create stage templates' }, { status: 403 })
   }
 
@@ -81,8 +82,8 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    if (!request.nextUrl.searchParams.isEmpty()) {
-      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validation error', details: error.issues }, { status: 400 })
     }
     console.error('Create stage error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -98,10 +99,15 @@ export async function PUT(
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
   }
 
-  const auth = await requireAuth(request, ['PLATFORM_ADMIN'])
+  const auth = requireAuth(request)
   if ('status' in auth) return auth
 
-  const user = auth.user
+  const user = auth
+
+  // Check if user is platform admin (required for this operation)
+  if (user.role !== 'PLATFORM_ADMIN') {
+    return NextResponse.json({ error: 'Forbidden - Only platform admins can update stage templates' }, { status: 403 })
+  }
 
   try {
     const body = await request.json()
@@ -128,7 +134,7 @@ export async function PUT(
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Validation error', details: error.issues }, { status: 400 })
     }
     console.error('Update stage error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -144,10 +150,15 @@ export async function DELETE(
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
   }
 
-  const auth = await requireAuth(request, ['PLATFORM_ADMIN'])
+  const auth = requireAuth(request)
   if ('status' in auth) return auth
 
-  const user = auth.user
+  const user = auth
+
+  // Check if user is platform admin (required for this operation)
+  if (user.role !== 'PLATFORM_ADMIN') {
+    return NextResponse.json({ error: 'Forbidden - Only platform admins can delete stage templates' }, { status: 403 })
+  }
 
   try {
     const body = await request.json()

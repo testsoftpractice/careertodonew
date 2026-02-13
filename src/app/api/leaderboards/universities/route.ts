@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
 
       switch (sortBy) {
         case 'rankingScore':
-          comparison = b.rankingScore - a.rankingScore
+          comparison = (b.rankingScore || 0) - (a.rankingScore || 0)
           break
         case 'totalStudents':
           comparison = b.totalStudents - a.totalStudents
@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
           break
         case 'rankingPosition':
         default:
-          comparison = a.rankingPosition - b.rankingPosition
+          comparison = (a.rankingPosition || 999) - (b.rankingPosition || 999)
           break
       }
 

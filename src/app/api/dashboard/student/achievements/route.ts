@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     const completedTasks = await db.task.findMany({
       where: {
-        assignedTo: decoded.userId,
+        taskAssignees: { some: { userId: decoded.userId } },
         status: 'DONE'
       },
       orderBy: { updatedAt: 'desc' },

@@ -143,14 +143,14 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!body.title) {
-      throw new AppError('Job title is required', 400)
+      throw new AppError('Job title is required', 'VALIDATION_ERROR', 400)
     }
 
     // Prepare metadata for additional fields
     const metadata = {
       companyName: body.companyName || null,
       category: body.category || null,
-      positions: body.positions || '1',
+      positions: String(body.positions || '1'),
       requirements: body.requirements || [],
       responsibilities: body.responsibilities || [],
       benefits: body.benefits || [],
@@ -159,26 +159,27 @@ export async function POST(request: NextRequest) {
       remoteLocations: body.remoteLocations || [],
       universityIds: body.universityIds || [],
       targetByReputation: body.targetByReputation || false,
-      minReputation: body.minReputation || null,
+      minReputation: body.minReputation !== null ? String(body.minReputation) : undefined,
     }
 
     // Create job with PENDING approval status
     const job = await db.job.create({
       data: {
         userId: userId,
-        businessId: body.businessId || null,
+        businessId: body.businessId ?? undefined,
         title: body.title,
-        description: body.description || null,
-        type: body.type || 'FULL_TIME',
-        location: body.location || null,
-        salary: body.salary || null,
-        salaryMin: body.salaryRange?.min ? parseFloat(body.salaryRange.min) : null,
-        salaryMax: body.salaryRange?.max ? parseFloat(body.salaryRange.max) : null,
-        department: body.department || null,
-        deadline: body.deadline ? new Date(body.deadline) : null,
+        description: body.description ?? undefined,
+        type: body.type ?? 'FULL_TIME',
+        employmentType: body.employmentType ?? 'FULL_TIME',
+        location: body.location ?? undefined,
+        salary: body.salary ?? undefined,
+        salaryMin: body.salaryRange?.min ? parseFloat(body.salaryRange.min) : undefined,
+        salaryMax: body.salaryRange?.max ? parseFloat(body.salaryRange.max) : undefined,
+        department: body.department ?? undefined,
+        deadline: body.deadline ? new Date(body.deadline) : undefined,
         published: false, // Always start as not published
-        publishedAt: null,
-        approvalStatus: 'PENDING',
+        publishedAt: undefined,
+        approvalStatus: 'DRAFT' as any,
         metadata: JSON.stringify(metadata),
       },
       include: {

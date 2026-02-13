@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
 
 // GET /api/suppliers/[id] - Get a specific supplier
 export async function GET(
@@ -9,53 +8,11 @@ export async function GET(
   try {
     const { id } = await params
 
-    const supplier = await db.supplier.findUnique({
-      where: { id },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    })
-
-    if (!supplier) {
-      return NextResponse.json(
-        { success: false, error: 'Supplier not found' },
-        { status: 404 }
-      )
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        supplier: {
-          id: supplier.id,
-          name: supplier.name,
-          description: supplier.description,
-          category: supplier.category,
-          contactEmail: supplier.contactEmail,
-          contactPhone: supplier.contactPhone,
-          location: supplier.location,
-          website: supplier.website,
-          hourlyRate: supplier.hourlyRate,
-          rating: supplier.rating,
-          projectsCompleted: supplier.projectsCompleted,
-          verified: supplier.verified,
-          skills: supplier.skills ? JSON.parse(supplier.skills) : [],
-          services: supplier.services ? JSON.parse(supplier.services) : [],
-          certifications: supplier.certifications ? JSON.parse(supplier.certifications) : [],
-          portfolioLinks: supplier.portfolioLinks ? JSON.parse(supplier.portfolioLinks) : [],
-          companySize: supplier.companySize,
-          yearsInBusiness: supplier.yearsInBusiness,
-          createdAt: supplier.createdAt.toISOString(),
-          owner: supplier.owner,
-        },
-      },
-    })
+    // Supplier model doesn't exist in the schema
+    return NextResponse.json(
+      { success: false, error: 'Supplier model not found in database schema' },
+      { status: 501 }
+    )
   } catch (error: any) {
     console.error('Get supplier error:', error)
     return NextResponse.json(

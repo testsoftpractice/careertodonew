@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
       averageInvestmentAmount: 0,
       successRate: 0,
       rankingPosition: 0,
+      rankingChange: 0,
       studentEngagementRate: 0,
       projectCompletionRate: 0,
       proposalAcceptanceRate: 0,

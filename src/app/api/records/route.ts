@@ -1,62 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { RecordType } from '@prisma/client'
-import crypto from 'crypto'
 
-// Helper function to generate content hash
-function generateContentHash(content: string): string {
-  return crypto.createHash('sha256').update(content).digest('hex')
-}
-
-// GET /api/records - List records with filters
+// GET /api/records - Get all professional records
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     const type = searchParams.get('type')
-    const projectId = searchParams.get('projectId')
-    const isVerified = searchParams.get('isVerified')
+    const status = searchParams.get('status')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '20')
 
     const where: any = {}
 
-    if (!projectId) {
+    if (userId) {
       where.userId = userId
     }
 
-    if (!type) {
-      where.type = type as RecordType
+    if (type) {
+      where.recordType = type
     }
 
-    if (projectId) {
-      where.projectId = projectId
+    if (status) {
+      where.verified = status === 'verified'
     }
 
-    if (isVerified) {
-      where.isVerified = isVerified === 'true'
-    }
-
-    const records = await db.professionalRecord.findMany({
-      where,
-      include: {
-        user: {
+    const [records, totalCount] = await Promise.all([
+      db.professionalRecord.findMany({
+        where,
+        include: {
+          user: {
           select: {
             id: true,
             name: true,
+            email: true,
             avatar: true,
           },
+          },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: 100,
-    })
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: (page - 1) * limit,
+      }),
+      db.professionalRecord.count({ where }),
+    ])
 
-    return NextResponse.json({ records })
-  } catch (error) {
+    return NextResponse.json({
+      success: true,
+      data: {
+        records,
+        total: totalCount,
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+    })
+  } catch (error: any) {
     console.error('Get records error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Failed to fetch records' },
       { status: 500 }
     )
   }
@@ -66,74 +67,43 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const {
-      userId,
-      type,
-      title,
-      description,
-      projectId,
-      roleName,
-      department,
-      startDate,
-      endDate,
-      metadata,
-    } = body
+    const { title, description, startDate, endDate, recordType, metadata } = body
 
-    // Create immutable content for hashing
-    const content = JSON.stringify({
-      userId,
-      type,
-      title,
-      description,
-      projectId,
-      roleName,
-      department,
-      startDate,
-      endDate,
-      timestamp: new Date().toISOString(),
-    })
+    // Get user from token
+    const tokenCookie = request.cookies.get('token')
+    if (!tokenCookie) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
 
-    const hash = generateContentHash(content)
+    // Decode JWT to get user info
+    const decoded = JSON.parse(atob(tokenCookie.value))
 
+    // Create record
     const record = await db.professionalRecord.create({
       data: {
-        userId,
-        type: type as RecordType,
+        userId: decoded.userId,
         title,
         description,
-        projectId,
-        roleName,
-        department,
         startDate: new Date(startDate),
         endDate: endDate ? new Date(endDate) : null,
+        recordType: recordType || 'EXPERIENCE',
+        verified: false,
         metadata: metadata ? JSON.stringify(metadata) : null,
-        hash,
-        isVerified: false,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
       },
     })
 
-    return NextResponse.json(
-      {
-        message: 'Professional record created successfully',
-        record: {
-          ...record,
-          hash, // Return hash for verification purposes
-        },
-      },
-      { status: 201 }
-    )
-  } catch (error) {
+    return NextResponse.json({
+      success: true,
+      data: record,
+      message: 'Record created successfully',
+    }, { status: 201 })
+  } catch (error: any) {
     console.error('Create record error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Failed to create record' },
       { status: 500 }
     )
   }

@@ -14,7 +14,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAuth(request)
+  const auth = requireAuth(request)
   if ('status' in auth) return auth
 
   const { id: taskId } = await params
@@ -31,7 +31,26 @@ export async function GET(
             title: true,
             status: true,
             priority: true,
-            assigneeId: true,
+          },
+        },
+        task: {
+          select: {
+            id: true,
+            title: true,
+            projectId: true,
+            ownerId: true,
+          },
+        },
+        taskAssignees: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              },
+            },
           },
         },
       },
@@ -56,7 +75,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAuth(request)
+  const auth = requireAuth(request)
   if ('status' in auth) return auth
 
   const { id: taskId } = await params
@@ -142,7 +161,7 @@ export async function POST(
     }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Validation error', details: error.issues }, { status: 400 })
     }
     console.error('Add task dependency error:', error)
     return NextResponse.json({
@@ -157,7 +176,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAuth(request)
+  const auth = requireAuth(request)
   if ('status' in auth) return auth
 
   const { id: taskId } = await params

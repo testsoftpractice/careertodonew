@@ -1,58 +1,68 @@
-import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/db"
+import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/lib/db'
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// POST /api/records/[id]/verify-request - Request verification for a record
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id: recordId } = await params
+    const { id } = await params
     const body = await request.json()
-    const { employerId, type, purpose, accessDuration, autoAccept } = body
+    const { employerId, comment, type } = body
 
-    if (!id) {
-      return NextResponse.json({ success: false, error: "Employer ID is required" }, { status: 400 })
-    }
-
-    // Calculate expiration date
-    const accessDurationDays = parseInt(accessDuration) || 7
-    const expiresAt = new Date(Date.now() + accessDurationDays * 24 * 60 * 60 * 1000)
-
-    const verificationRequest = await db.verificationRequest.create({
-      data: {
-        employerId,
-        studentId: recordId.split("-")[1], // Extract student ID from record ID
-        recordId: recordId,
-        type,
-        purpose,
-        accessDuration,
-        autoAccept: autoAccept || false,
-        expiresAt,
-        status: "PENDING",
-      }
+    // Check if record exists
+    const record = await db.professionalRecord.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     })
 
-    // Notify student
+    if (!record) {
+      return NextResponse.json(
+        { success: false, error: 'Record not found' },
+        { status: 404 }
+      )
+    }
+
+    // Create verification request
+    await db.verificationRequest.create({
+      data: {
+        userId: record.userId,
+        type: type || 'RECORD_VERIFICATION',
+        title: `Verification Request: ${record.title}`,
+        description: comment || `Employer requested verification for ${record.title}`,
+        projectId: null, // Record is not project-based
+      },
+    })
+
+    // Notify the record owner about the verification request
     await db.notification.create({
       data: {
-        userId: verificationRequest.studentId,
-        type: "VERIFICATION",
-        title: "New Verification Request",
-        message: `${verificationRequest.employer?.name || "An employer"} has requested to verify your professional record: ${type}`,
-        link: `/dashboard/student/verifications/${verificationRequest.id}`,
-      }
+        userId: record.userId,
+        type: 'VERIFICATION',
+        title: 'Verification Request Received',
+        message: `A verification request has been submitted for your record "${record.title}"`,
+        link: `/records/${id}/verify`,
+      },
     })
 
     return NextResponse.json({
       success: true,
-      data: {
-        id: verificationRequest.id,
-        employerId: verificationRequest.employerId,
-        type,
-        purpose,
-        status: "PENDING",
-        expiresAt: expiresAt.toISOString(),
-      }
+      message: 'Verification request submitted successfully',
     })
   } catch (error: any) {
-    console.error("Create verification request error:", error)
-    return NextResponse.json({ success: false, error: "Failed to create verification request" }, { status: 500 })
+    console.error('Create verification request error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to create verification request' },
+      { status: 500 }
+    )
   }
 }

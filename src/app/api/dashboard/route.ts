@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
           project: {
             include: {
               tasks: {
-                where: { assignedTo: userId },
+                where: { taskAssignees: { some: { userId } } },
                 take: 5,
                 orderBy: { dueDate: 'asc' }
               }

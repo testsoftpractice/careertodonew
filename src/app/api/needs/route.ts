@@ -18,7 +18,17 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
 
-    let mockNeeds = []
+    let mockNeeds: Array<{
+      id: string
+      projectId: string | null
+      title: string
+      description: string
+      category: string
+      urgency: string
+      skills: string[]
+      budget: number
+      createdAt: Date
+    }> = []
 
     // If projectId is provided, get needs for that project
     if (!authResult) {
@@ -110,18 +120,18 @@ export async function GET(request: NextRequest) {
     // Filter needs
     let filteredNeeds = mockNeeds
 
-    if (!authResult) {
+    if (category) {
       filteredNeeds = filteredNeeds.filter((n) => n.category === category)
     }
 
-    if (!authResult) {
+    if (urgency) {
       filteredNeeds = filteredNeeds.filter((n) => n.urgency === urgency)
     }
 
     // Sort by urgency and date
     const urgencyOrder = { HIGH: 1, MEDIUM: 2, LOW: 3 }
     filteredNeeds.sort((a, b) => {
-      const urgencyDiff = urgencyOrder[a.urgency] - urgencyOrder[b.urgency]
+      const urgencyDiff = urgencyOrder[a.urgency as keyof typeof urgencyOrder] - urgencyOrder[b.urgency as keyof typeof urgencyOrder]
       if (urgencyDiff !== 0) return urgencyDiff
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     })

@@ -67,7 +67,7 @@ export async function PATCH(
     await db.notification.create({
       data: {
         userId: project.ownerId,
-        type: 'PROJECT_PUBLISHED',
+        type: 'PROJECT_UPDATE',
         title: '📢 Project Published!',
         message: `Your project "${project.name}" has been published and is now visible to others.`,
         link: `/projects/${id}`,
@@ -154,7 +154,7 @@ export async function DELETE(
       data: {
         published: false,
         publishedAt: null,
-        approvalStatus: 'DRAFT',
+        approvalStatus: 'PENDING',
         status: 'IDEA',
       },
     })

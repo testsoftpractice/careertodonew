@@ -80,10 +80,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (body.title) updates.title = body.title
     if (body.description) updates.description = body.description
     if (body.dueDate) updates.dueDate = new Date(body.dueDate)
-    if (!request.nextUrl.searchParams.isEmpty()) {
+    if (body.status && body.status.trim() !== '') {
       updates.status = body.status
-      if (!request.nextUrl.searchParams.isEmpty()) {
-        updates.completedAt = new Date()
+      if (body.completedAt && body.completedAt.trim() !== '') {
+        updates.completedAt = new Date(body.completedAt)
       }
     }
 
@@ -106,7 +106,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       })
 
       // Award points for milestone achievement
-      if (!request.nextUrl.searchParams.isEmpty()) {
+      if (body.status && body.status.trim() !== 'COMPLETED') {
         try {
           await tx.pointTransaction.create({
             data: {

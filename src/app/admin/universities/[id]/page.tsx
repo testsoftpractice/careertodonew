@@ -53,6 +53,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from '@/hooks/use-toast'
+import DashboardHeader from '@/components/dashboard/DashboardHeader'
 
 interface University {
   id: string
@@ -287,128 +288,17 @@ export default function UniversityDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-background sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/admin/universities" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="h-5 w-5" />
-                <span className="font-semibold">Back to Universities</span>
-              </Link>
-              <div className="h-6 w-px bg-border" />
-              <div>
-                <h1 className="text-xl font-bold">{university.name}</h1>
-                <p className="text-sm text-muted-foreground">University Details</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" onClick={openEditDialog}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Edit University</DialogTitle>
-                    <DialogDescription>
-                      Update university information
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">University Name</label>
-                        <Input
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">University Code</label>
-                        <Input
-                          value={formData.code}
-                          onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Description</label>
-                      <Textarea
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        rows={3}
-                      />
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Location</label>
-                        <Input
-                          value={formData.location}
-                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Website</label>
-                        <Input
-                          type="url"
-                          value={formData.website}
-                          onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Ranking Score</label>
-                        <Input
-                          type="number"
-                          value={formData.rankingScore}
-                          onChange={(e) => setFormData({ ...formData, rankingScore: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Ranking Position</label>
-                        <Input
-                          type="number"
-                          value={formData.rankingPosition}
-                          onChange={(e) => setFormData({ ...formData, rankingPosition: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Verification Status</label>
-                      <Select value={formData.verificationStatus} onValueChange={(value) => setFormData({ ...formData, verificationStatus: value })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="PENDING">Pending</SelectItem>
-                          <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
-                          <SelectItem value="VERIFIED">Verified</SelectItem>
-                          <SelectItem value="SUSPENDED">Suspended</SelectItem>
-                          <SelectItem value="REJECTED">Rejected</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleUpdate}>Update University</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              <Button variant="outline" size="sm" onClick={() => fetchUniversity(universityId)}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Dashboard Header with Glass Blur Effect */}
+      <DashboardHeader
+        title={university.name}
+        subtitle={`University Details • ${university.code}`}
+        backTo="/admin/universities"
+        showEdit={true}
+        showRefresh={true}
+        onRefresh={() => fetchUniversity(universityId)}
+        badge={university.verificationStatus}
+        onEdit={openEditDialog}
+      />
 
       <main className="container mx-auto px-4 py-8">
         {/* University Overview */}

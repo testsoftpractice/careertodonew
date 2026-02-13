@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { requireAuth, AuthError } from '@/lib/auth/verify'
+import { requireAuth } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
 import { successResponse, errorResponse, notFound, forbidden } from '@/lib/api-response'
+import { ProjectRole } from '@prisma/client'
 
 const inviteByUserIdSchema = z.object({
   userId: z.string().cuid('Invalid user ID'),
-  role: z.enum(['OWNER', 'PROJECT_MANAGER', 'TEAM_LEAD', 'TEAM_MEMBER', 'VIEWER']).default('TEAM_MEMBER'),
+  role: z.nativeEnum(ProjectRole).default('TEAM_MEMBER'),
 })
 
 const inviteByEmailSchema = z.object({
   email: z.string().email('Invalid email address'),
-  role: z.enum(['OWNER', 'PROJECT_MANAGER', 'TEAM_LEAD', 'TEAM_MEMBER', 'VIEWER']).default('TEAM_MEMBER'),
+  role: z.nativeEnum(ProjectRole).default('TEAM_MEMBER'),
 })
 
 // POST /api/projects/[id]/members/invite - Invite member by user ID or email
@@ -20,8 +21,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = await requireAuth(request)
-    const currentUser = authResult.dbUser
+    const auth = requireAuth(request)
+    if ('status' in auth) return auth
 
     const { id: projectId } = await params
     const body = await request.json()
@@ -37,19 +38,19 @@ export async function POST(
     }
 
     // Check if user is project owner
-    if (project.ownerId !== currentUser.id) {
+    if (project.ownerId !== auth.userId) {
       return forbidden('Only project owner can invite members')
     }
 
     // Determine if inviting by user ID or email
     let targetUser: any = null
-    let role: string
+    let role: 'TEAM_MEMBER' | 'PROJECT_MANAGER' | 'TEAM_LEAD' | 'OWNER' | 'VIEWER' = 'TEAM_MEMBER'
 
     if (body.userId) {
       // Validate and invite by user ID
       const validation = inviteByUserIdSchema.safeParse(body)
       if (!validation.success) {
-        return errorResponse(validation.error.errors[0]?.message || 'Invalid input', 400)
+        return errorResponse(validation.error.issues[0]?.message || 'Invalid input', 400)
       }
 
       targetUser = await db.user.findUnique({
@@ -66,7 +67,7 @@ export async function POST(
       // Validate and find user by email
       const validation = inviteByEmailSchema.safeParse(body)
       if (!validation.success) {
-        return errorResponse(validation.error.errors[0]?.message || 'Invalid input', 400)
+        return errorResponse(validation.error.issues[0]?.message || 'Invalid input', 400)
       }
 
       targetUser = await db.user.findUnique({
@@ -134,15 +135,7 @@ export async function POST(
       `Successfully added ${targetUser.name} to the project`
     )
   } catch (error: any) {
-    if (error instanceof AuthError) {
-      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
-    }
     console.error('Invite member error:', error)
-
-    if (error.name === 'AuthError') {
-      return errorResponse(error.message || 'Authentication required', 401)
-    }
-
     return errorResponse('Failed to invite member', 500)
   }
 }

@@ -5,11 +5,11 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const search = searchParams.get("search") || ""
-    const category = searchParams.get("category") || null
-    const university = searchParams.get("university") || null
-    const status = searchParams.get("status") || null
-    const reputationMin = searchParams.get("reputationMin") ? parseFloat(searchParams.get("reputationMin")) : null
-    const reputationMax = searchParams.get("reputationMax") ? parseFloat(searchParams.get("reputationMax")) : null
+    const category = searchParams.get("category") || undefined
+    const university = searchParams.get("university") || undefined
+    const status = searchParams.get("status") || undefined
+    const reputationMin = searchParams.get("reputationMin") ? Number(searchParams.get("reputationMin")) : null
+    const reputationMax = searchParams.get("reputationMax") ? Number(searchParams.get("reputationMax")) : null
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "20")
 
@@ -23,12 +23,8 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    if (category) {
-      where.category = category
-    }
-
     if (university) {
-      where.university = { name: { contains: university, mode: "insensitive" } }
+      where.university = { name: { contains: university } }
     }
 
     if (status) {
@@ -68,15 +64,15 @@ export async function GET(request: NextRequest) {
     const projectsWithMeta = projects.map(p => ({
       id: p.id,
       projectId: p.id,
-      projectName: p.title,
-      projectDescription: p.description,
+      projectName: p.name || '',
+      projectDescription: p.description || '',
       university: p.university?.name || "",
       category: p.category || "",
       status: p.status || "",
       teamReputation: 4.5,
       owner: p.owner?.name || "",
       deadline: p.createdAt?.toISOString().split("T")[0] || "",
-      investmentGoal: p.investmentGoal || 0,
+      investmentGoal: p.budget || 0,
       currentRaised: 0,
       equitySplit: 50,
     }))

@@ -205,17 +205,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       },
     })
 
-    // Handle task assignees if provided
-    if (data.assigneeIds && Array.isArray(data.assigneeIds) && data.assigneeIds.length > 0) {
-      const assigneesToCreate = data.assigneeIds.map((userId: string, index: number) => ({
-        taskId: task.id,
-        userId,
-        assignedAt: new Date(),
-        sortOrder: index,
-      }))
-
-      await db.taskAssignee.createMany({
-        data: assigneesToCreate,
+    // Handle task assignee if provided
+    if (data.assigneeId && typeof data.assigneeId === 'string' && data.assigneeId !== '') {
+      // Create single assignee
+      await db.taskAssignee.create({
+        data: {
+          taskId: task.id,
+          userId: data.assigneeId,
+          assignedAt: new Date(),
+          sortOrder: 0,
+        },
       })
     }
 

@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const pendingBusinesses = await db.project.findMany({
       where: {
         ...where,
-        status: 'PROPOSED',
+        status: 'IDEA',
         universityId,
       },
       include: {
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
             location: true,
           },
         },
-        projectMembers: {
+        members: {
           include: {
             user: {
               select: {
@@ -68,11 +68,6 @@ export async function GET(request: NextRequest) {
             },
           },
           take: 10,
-        },
-        _count: {
-          select: {
-            projectMembers: true,
-          },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -95,7 +90,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  let userId: string | null = null
+  let userId: string | undefined = undefined
   try {
     const tokenCookie = request.cookies.get('token')
     const token = tokenCookie?.value
@@ -110,9 +105,20 @@ export async function POST(request: NextRequest) {
     }
 
     userId = decoded.userId
+
     const user = await db.user.findUnique({
       where: { id: userId },
-      select: { id: true, role: true, universityId: true, university: { select: { name: true } } },
+      select: {
+        id: true,
+        role: true,
+        universityId: true,
+        university: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     })
 
     if (!user) {
@@ -129,7 +135,7 @@ export async function POST(request: NextRequest) {
     if (!body.businessId) {
       return NextResponse.json({
       success: false,
-      error: 'Business ID is required',
+        error: 'Business ID is required',
       }, { status: 400 })
     }
 
@@ -161,7 +167,7 @@ export async function POST(request: NextRequest) {
             location: true,
           },
         },
-        projectMembers: {
+        members: {
           include: {
             user: {
               select: {
@@ -176,25 +182,20 @@ export async function POST(request: NextRequest) {
           },
           take: 10,
         },
-        _count: {
-          select: {
-            projectMembers: true,
-          },
-        },
       },
     })
 
     if (!business) {
       return NextResponse.json({
-      success: false,
-      error: 'Business not found',
+        success: false,
+        error: 'Business not found',
       }, { status: 404 })
     }
 
-    if (business.status !== 'PROPOSED' as any) {
+    if (business.status !== 'IDEA') {
       return NextResponse.json({
         success: false,
-        error: 'Business is not in PROPOSED status',
+        error: 'Business is not in IDEA status',
       }, { status: 400 })
     }
 
@@ -202,7 +203,7 @@ export async function POST(request: NextRequest) {
 
     // Prepare update data
     const updateData: any = {
-      status: action === 'approve' ? 'ACTIVE' : 'CANCELLED',
+      status: action === 'approve' ? 'IN_PROGRESS' : 'CANCELLED',
       approvalDate: action === 'approve' ? new Date() : null,
       terminationReason: action === 'reject' ? (body.reason || '') : null,
       terminationDate: action === 'reject' ? new Date() : null,
@@ -284,12 +285,12 @@ export async function POST(request: NextRequest) {
         type: action === 'approve' ? 'BUSINESS_APPROVAL' : 'BUSINESS_REJECTION',
         title: action === 'approve' ? '🎉 Business Approved!' : '❌ Business Rejected',
         message: `Your business "${business.name}" has been ${action.toLowerCase()}.`,
-        link: `/businesses/${business.id}`,
+        link: `/projects/${business.id}`,
       },
     })
 
     // Send notification to all business members
-    const memberIds = (business as any).projectMembers?.map((m: any) => m.userId) || []
+    const memberIds = (business as any).members?.map((m: any) => m.userId) || []
 
     if (memberIds.length > 0) {
       await db.notification.createMany({
@@ -298,7 +299,7 @@ export async function POST(request: NextRequest) {
           type: action === 'approve' ? 'BUSINESS_APPROVAL' : 'BUSINESS_REJECTION',
           title: action === 'approve' ? 'Team Business Approved!' : 'Team Business Rejected',
           message: `A business you're part of "${business.name}" has been ${action.toLowerCase()}`,
-          link: `/businesses/${business.id}`,
+          link: `/projects/${business.id}`,
         })),
       })
     }

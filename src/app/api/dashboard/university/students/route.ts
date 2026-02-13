@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
         _count: {
           select: {
             tasksCreated: true,
-            tasksAssigned: true,
+            taskAssignees: true,
             timeEntries: true,
             workSessions: true,
           }
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate additional metrics for each student
     const studentsWithMetrics = students.map(student => {
-      const studentWithCount = student as typeof student & { _count?: { tasksCreated?: number; tasksAssigned?: number; timeEntries?: number; workSessions?: number } }
+      const studentWithCount = student as typeof student & { _count?: { tasksCreated?: number; taskAssignees?: number; timeEntries?: number; workSessions?: number } }
       const overallReputation = (
         (student.executionScore || 0) +
         (student.collaborationScore || 0) +
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
         verificationStatus: student.verificationStatus,
         createdAt: student.createdAt,
         projectCount: studentWithCount._count?.tasksCreated || 0,
-        assignedTasks: studentWithCount._count?.tasksAssigned || 0,
+        assignedTasks: studentWithCount._count?.taskAssignees || 0,
         timeEntries: studentWithCount._count?.timeEntries || 0,
         workSessions: studentWithCount._count?.workSessions || 0,
       }

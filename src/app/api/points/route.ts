@@ -14,6 +14,7 @@ const awardPointsSchema = z.object({
 })
 
 const adjustPointsSchema = z.object({
+  userId: z.string(),
   amount: z.number().int().min(-1000).max(1000),
   reason: z.string().min(10).max(500),
 })

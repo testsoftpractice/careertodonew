@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Create notification for business owner
-    if (job.businessId) {
+    if (job.businessId && job.business) {
       await db.notification.create({
         data: {
           userId: job.business.ownerId,

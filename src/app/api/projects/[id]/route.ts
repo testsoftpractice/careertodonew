@@ -53,14 +53,22 @@ export async function GET(
         },
         tasks: {
           include: {
-            assignee: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
+            taskAssignees: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    avatar: true,
+                    email: true,
+                  },
+                },
               },
+              orderBy: { sortOrder: 'asc' },
             },
-            subTasks: true,
+            subTasks: {
+              orderBy: { sortOrder: 'asc' }
+            },
           },
           orderBy: {
             dueDate: 'asc',

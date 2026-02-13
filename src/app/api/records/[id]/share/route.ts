@@ -1,103 +1,140 @@
-import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/db"
+import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/lib/db'
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// POST /api/records/[id]/share - Create share link for a record
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id: recordId } = await params
-    const body = await request.json()
-    const { expires, allowDownload, accessCode } = body
+    const { id } = await params
 
-    // Generate share URL with unique token
-    const shareToken = Buffer.from(`${recordId}-${Date.now()}-${Math.random().toString(36)}`).toString('base64').substring(0, 32)
-    
-    // Generate share URL
-    const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/records/${recordId}/share?token=${shareToken}`
-    
-    // Calculate expiration date (default 30 days)
-    const expiresAt = expires ? new Date(expires) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-    
-    // Update record with share metadata
-    await db.professionalRecord.update({
-      where: { id: recordId },
-      data: {
-        shareToken,
-        shareUrl,
-        shareExpiresAt: expiresAt,
-        shareAllowDownload: allowDownload !== false,
-        shareAccessCount: { increment: 1 },
-      }
-    })
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        shareUrl,
-        token: shareToken,
-        expiresAt: expiresAt.toISOString(),
-        daysUntilExpiry: Math.ceil((expiresAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000)),
-      }
-    })
-  } catch (error: any) {
-    console.error("Share record error:", error)
-    return NextResponse.json({ success: false, error: "Failed to generate share URL" }, { status: 500 })
-  }
-}
-
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const token = request.nextUrl.searchParams.get("token")
-    
-    if (!token) {
-      return NextResponse.json({ success: false, error: "Share token required" }, { status: 400 })
-    }
-
-    const record = await db.professionalRecord.findFirst({
-      where: { shareToken: token },
+    // Check if record exists
+    const record = await db.professionalRecord.findUnique({
+      where: { id },
       include: {
         user: {
           select: {
             id: true,
             name: true,
             email: true,
-            avatarUrl: true,
-          }
-        }
-      }
+            avatar: true,
+          },
+        },
+      },
     })
 
     if (!record) {
-      return NextResponse.json({ success: false, error: "Invalid or expired share link" }, { status: 404 })
+      return NextResponse.json(
+        { success: false, error: 'Record not found' },
+        { status: 404 }
+      )
     }
 
-    // Check if share has expired
-    if (record.shareExpiresAt && record.shareExpiresAt < new Date()) {
-      return NextResponse.json({ success: false, error: "Share link has expired" }, { status: 410 })
-    }
+    // Generate a simple share token (in production, use a proper JWT or UUID)
+    const shareToken = `share_${id}_${Date.now()}`
 
-    // Update share access count
+    // Update record with share info (using metadata field)
+    const metadata = record.metadata ? JSON.parse(record.metadata) : {}
+    metadata.shareToken = shareToken
+    metadata.shareExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+    metadata.shareAccessCount = (metadata.shareAccessCount || 0) + 1
+
     await db.professionalRecord.update({
-      where: { id: record.id },
-      data: { shareAccessCount: { increment: 1 } }
+      where: { id },
+      data: {
+        metadata: JSON.stringify(metadata),
+      },
     })
 
+    const shareUrl = `/records/${id}/share?token=${shareToken}`
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        shareUrl,
+        shareToken,
+        expiresAt: metadata.shareExpiresAt,
+      },
+    })
+  } catch (error: any) {
+    console.error('Create share link error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to create share link' },
+      { status: 500 }
+    )
+  }
+}
+
+// GET /api/records/[id]/share - Access shared record
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const token = request.nextUrl.searchParams.get('token')
+
+    // Check if record exists
+    const record = await db.professionalRecord.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          },
+        },
+      },
+    })
+
+    if (!record) {
+      return NextResponse.json(
+        { success: false, error: 'Record not found' },
+        { status: 404 }
+      )
+    }
+
+    // Parse metadata
+    const metadata = record.metadata ? JSON.parse(record.metadata) : {}
+
+    // Verify token if provided
+    if (token) {
+      if (!metadata.shareToken || metadata.shareToken !== token) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid or expired share link' },
+          { status: 401 }
+        )
+      }
+    }
+
+    // Return public record data (excluding sensitive info)
     return NextResponse.json({
       success: true,
       data: {
         id: record.id,
         title: record.title,
-        type: record.type,
         description: record.description,
-        startDate: record.startDate?.toISOString() || null,
-        endDate: record.endDate?.toISOString() || null,
+        startDate: record.startDate,
+        endDate: record.endDate,
+        type: record.recordType || 'Professional Record',
         verified: record.verified,
-        user: record.user,
-        shareExpiresAt: record.shareExpiresAt?.toISOString() || null,
-        shareAllowDownload: record.shareAllowDownload,
-        daysUntilExpiry: record.shareExpiresAt ? Math.ceil((record.shareExpiresAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000)) : null,
-      }
+        shareUrl: `/records/${id}/share?token=${metadata.shareToken || ''}`,
+        shareExpiresAt: metadata.shareExpiresAt || null,
+        shareAccessCount: metadata.shareAccessCount || 0,
+        user: {
+          name: record.user.name,
+          avatar: record.user.avatar,
+        },
+      },
     })
   } catch (error: any) {
-    console.error("Get shared record error:", error)
-    return NextResponse.json({ success: false, error: "Failed to fetch shared record" }, { status: 500 })
+    console.error('Access shared record error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to access shared record' },
+      { status: 500 }
+    )
   }
 }

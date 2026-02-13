@@ -9,26 +9,12 @@ export async function POST(
   try {
     const { id } = await params
     const body = await request.json()
-    const { userId, coverLetter, resumeUrl, portfolioUrl, linkedInUrl } = body
+    const { userId } = body
 
     // Validate input
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'User ID is required' },
-        { status: 400 }
-      )
-    }
-
-    if (!coverLetter || coverLetter.trim().length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Cover letter is required' },
-        { status: 400 }
-      )
-    }
-
-    if (!resumeUrl) {
-      return NextResponse.json(
-        { success: false, error: 'Resume URL is required' },
         { status: 400 }
       )
     }
@@ -47,24 +33,18 @@ export async function POST(
         throw new Error('Already applied to this job')
       }
 
+      // Get job title for notifications
+      const job = await tx.job.findUnique({
+        where: { id },
+        select: { title: true },
+      })
+
       // Create application
       const application = await tx.jobApplication.create({
         data: {
           jobId: id,
           userId,
-          coverLetter,
-          resumeUrl,
-          portfolioUrl: portfolioUrl || null,
-          linkedInUrl: linkedInUrl || null,
           status: 'PENDING',
-        },
-        include: {
-          job: {
-            select: {
-              id: true,
-              title: true,
-            },
-          },
         },
       })
 
@@ -75,10 +55,10 @@ export async function POST(
             userId: userId,
             points: 5, // JOB_APPLICATION points
             source: 'JOB_APPLICATION',
-            description: `Applied to job: ${application.job.title}`,
+            description: `Applied to job: ${job?.title || 'Job'}`,
             metadata: JSON.stringify({
               jobId: id,
-              jobTitle: application.job.title,
+              jobTitle: job?.title || 'Job',
             }),
           }
         })

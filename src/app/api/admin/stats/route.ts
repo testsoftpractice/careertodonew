@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     if (error instanceof AuthError) {
-      return unauthorized(error.message || 'Authentication required', error.statusCode || 401)
+      return unauthorized(error.message || 'Authentication required')
     }
     console.error("Get admin stats error:", error)
     return NextResponse.json(

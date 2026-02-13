@@ -44,11 +44,6 @@ export async function GET(request: NextRequest) {
           universityId: user.universityId
         }
       },
-      include: {
-        _count: {
-          select: { project: true }
-        }
-      },
       take: 10
     })
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/api/auth-middleware'
+import { requireAuth, requireRole } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
 import { UniversityVerificationStatus } from '@prisma/client'
 
@@ -49,7 +49,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAuth(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
+  const auth = await requireRole(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
   if ('status' in auth) return auth
 
   const user = auth.user
@@ -102,7 +102,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAuth(request, ['PLATFORM_ADMIN'])
+  const auth = await requireRole(request, ['PLATFORM_ADMIN'])
   if ('status' in auth) return auth
 
   try {

@@ -89,8 +89,8 @@ export function validateRequest<T>(schema: z.ZodSchema<T>, data: unknown) {
 
     // ZodError has 'issues' property, not 'errors'
     const errors = errorObj.issues.map((err: any) => ({
-      field: Array.isArray(err.path) ? err.path.join('.') : 'unknown',
-      message: err.message,
+      field: Array.isArray(err.path) ? err.path.map(p => String(p)).join('.') : 'unknown',
+      message: err.message || 'Invalid value',
     }))
 
     return {

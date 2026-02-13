@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     const userId = request.nextUrl.searchParams.get('userId')
+    const projectId = request.nextUrl.searchParams.get('projectId')
     const status = request.nextUrl.searchParams.get('status')
 
     // Build where clause
@@ -23,13 +24,26 @@ export async function GET(request: NextRequest) {
     }
     where.userId = userId
 
+    // Filter by projectId if provided
+    if (projectId) {
+      where.projectId = projectId
+    }
+
     if (status) {
       where.status = status as any
     }
 
-    // Fetch leave requests
+    // Fetch leave requests with project data
     const requests = await db.leaveRequest.findMany({
       where,
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' },
     })
 
@@ -98,6 +112,7 @@ export async function POST(request: NextRequest) {
     const leaveRequest = await db.leaveRequest.create({
       data: {
         userId: currentUser.id,
+        projectId: body.projectId || null,
         leaveType: body.leaveType,
         startDate: new Date(body.startDate),
         endDate: new Date(body.endDate),

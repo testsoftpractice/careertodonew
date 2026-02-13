@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { VerificationRequestStatus } from '@prisma/client'
+import { VerificationStatus } from '@prisma/client'
 
 // GET /api/verification/[id] - Get a specific verification request
 export async function GET(
@@ -8,59 +8,17 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+
     const verificationRequest = await db.verificationRequest.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
-        requester: {
+        user: {
           select: {
             id: true,
             name: true,
             email: true,
             role: true,
-          },
-        },
-        subject: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            email: true,
-            university: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-            records: {
-              orderBy: { createdAt: 'desc' },
-              take: 50,
-            },
-            receivedRatings: {
-              include: {
-                rater: {
-                  select: {
-                    id: true,
-                    name: true,
-                    role: true,
-                  },
-                },
-              },
-              orderBy: { createdAt: 'desc' },
-              take: 20,
-            },
-            projectMemberships: {
-              include: {
-                project: {
-                  select: {
-                    id: true,
-                    title: true,
-                    category: true,
-                    status: true,
-                  },
-                },
-              },
-              orderBy: { startDate: 'desc' },
-            },
           },
         },
       },
@@ -71,15 +29,6 @@ export async function GET(
         { error: 'Verification request not found' },
         { status: 404 }
       )
-    }
-
-    // Check if expired
-    if (verificationRequest.expiresAt && new Date() > verificationRequest.expiresAt) {
-      // Update to expired
-      await db.verificationRequest.update({
-        where: { id: params.id },
-        data: { status: VerificationRequestStatus.EXPIRED },
-      })
     }
 
     return NextResponse.json({ request: verificationRequest })
@@ -98,17 +47,15 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     const {
       action, // 'approve' or 'reject'
-      approvedBy,
-      rejectionReason,
-      employerRating,
-      employerComment,
+      reviewNote,
     } = body
 
     const verificationRequest = await db.verificationRequest.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!verificationRequest) {
@@ -119,7 +66,7 @@ export async function PATCH(
     }
 
     // Only pending requests can be updated
-    if (verificationRequest.status !== VerificationRequestStatus.PENDING) {
+    if (verificationRequest.status !== VerificationStatus.PENDING) {
       return NextResponse.json(
         { error: 'This request has already been processed' },
         { status: 400 }
@@ -128,24 +75,22 @@ export async function PATCH(
 
     if (action === 'approve') {
       const updatedRequest = await db.verificationRequest.update({
-        where: { id: params.id },
+        where: { id },
         data: {
-          status: VerificationRequestStatus.APPROVED,
-          approvedBy,
-          approvedAt: new Date(),
-          accessedAt: new Date(),
-          accessCount: { increment: 1 },
+          status: VerificationStatus.VERIFIED,
+          reviewedAt: new Date(),
+          reviewNote,
         },
       })
 
-      // Create notification for employer
+      // Create notification for user
       await db.notification.create({
         data: {
-          userId: verificationRequest.requesterId,
-          type: 'VERIFICATION_REQUEST',
+          userId: verificationRequest.userId,
+          type: 'VERIFICATION_STATUS',
           title: 'Verification Request Approved',
-          message: `Your verification request for ${verificationRequest.subjectId} has been approved`,
-          link: `/dashboard/employer/verification/${params.id}`,
+          message: 'Your verification request has been approved',
+          link: `/dashboard/student/verifications/${id}`,
         },
       })
 
@@ -155,21 +100,22 @@ export async function PATCH(
       })
     } else if (action === 'reject') {
       const updatedRequest = await db.verificationRequest.update({
-        where: { id: params.id },
+        where: { id },
         data: {
-          status: VerificationRequestStatus.REJECTED,
-          rejectionReason,
+          status: VerificationStatus.REJECTED,
+          reviewedAt: new Date(),
+          reviewNote,
         },
       })
 
-      // Create notification for employer
+      // Create notification for user
       await db.notification.create({
         data: {
-          userId: verificationRequest.requesterId,
-          type: 'VERIFICATION_REQUEST',
+          userId: verificationRequest.userId,
+          type: 'VERIFICATION_STATUS',
           title: 'Verification Request Rejected',
-          message: `Your verification request was rejected: ${rejectionReason}`,
-          link: `/dashboard/employer/verification/${params.id}`,
+          message: `Your verification request was rejected: ${reviewNote || 'No reason provided'}`,
+          link: `/dashboard/student/verifications/${id}`,
         },
       })
 
@@ -177,50 +123,9 @@ export async function PATCH(
         message: 'Verification request rejected successfully',
         request: updatedRequest,
       })
-    } else if (action === 'rate') {
-      // Employer can rate the subject after verification
-      const updatedRequest = await db.verificationRequest.update({
-        where: { id: params.id },
-        data: {
-          employerRating: employerRating ? parseFloat(employerRating) : null,
-          employerComment,
-          ratedAt: new Date(),
-        },
-      })
-
-      // Create a rating record for the user
-      if (employerRating) {
-        await db.rating.create({
-          data: {
-            raterId: verificationRequest.requesterId,
-            ratedId: verificationRequest.subjectId,
-            dimension: 'EXECUTION', // Default dimension for employer ratings
-            source: 'EMPLOYER',
-            score: parseFloat(employerRating),
-            comment: employerComment,
-          },
-        })
-
-        // Update user's reputation scores
-        const ratings = await db.rating.findMany({
-          where: { ratedId: verificationRequest.subjectId },
-        })
-
-        const avgExecution = ratings.length > 0 ? ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length : 0
-
-        await db.user.update({
-          where: { id: verificationRequest.subjectId },
-          data: { executionScore: avgExecution },
-        })
-      }
-
-      return NextResponse.json({
-        message: 'Employer rating submitted successfully',
-        request: updatedRequest,
-      })
     } else {
       return NextResponse.json(
-        { error: 'Invalid action. Must be "approve", "reject", or "rate"' },
+        { error: 'Invalid action. Must be "approve" or "reject"' },
         { status: 400 }
       )
     }

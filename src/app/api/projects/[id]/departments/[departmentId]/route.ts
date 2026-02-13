@@ -6,12 +6,12 @@ import { unauthorized, forbidden, notFound } from "@/lib/api-response"
 // PATCH /api/projects/[id]/departments/[id] - Update a department
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; id: string }> }
+  { params }: { params: Promise<{ id: string; departmentId: string }> }
 ) {
   try {
     const authResult = await requireAuth(request)
     const currentUser = authResult.dbUser
-    const { id: projectId, id: departmentId } = await params
+    const { id: projectId, departmentId } = await params
 
     // Check if project exists
     const project = await db.project.findUnique({
@@ -113,12 +113,12 @@ export async function PATCH(
 // DELETE /api/projects/[id]/departments/[id] - Delete a department
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; id: string }> }
+  { params }: { params: Promise<{ id: string; departmentId: string }> }
 ) {
   try {
     const authResult = await requireAuth(request)
     const currentUser = authResult.dbUser
-    const { id: projectId, id: departmentId } = await params
+    const { id: projectId, departmentId } = await params
 
     // Check if project exists
     const project = await db.project.findUnique({

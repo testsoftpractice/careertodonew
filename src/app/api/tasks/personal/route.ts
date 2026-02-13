@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     )
 
     if (!validation.valid) {
-      return validationError(validation.errors)
+      return validationError(validation.errors || [])
     }
 
     const data = validation.data!
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return successResponse(task, 'Task created successfully', { status: 201 })
+    return successResponse(task, 'Task created successfully', undefined, 201)
   } catch (error) {
     console.error('Error creating personal task:', error)
     return errorResponse('Failed to create personal task')
@@ -112,13 +112,13 @@ export async function PATCH(request: NextRequest) {
 
     // Check if task belongs to user
     const task = await db.personalTask.findUnique({
-      where: { id },
+      where: { id: id as string },
     })
     if (!task) {
       return errorResponse('Task not found', 404)
     }
 
-    if (task.userId !== userId) {
+    if (task.userId !== (userId as string)) {
       return errorResponse('Unauthorized', 403)
     }
 
@@ -135,7 +135,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const updatedTask = await db.personalTask.update({
-      where: { id },
+      where: { id: id as string },
       data: updateData,
     })
 
@@ -156,7 +156,7 @@ export async function DELETE(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const id = searchParams.get('id')
     const userId = searchParams.get('userId')
-    if (!userId) {
+    if (!id || !userId) {
       return NextResponse.json(
         { error: 'id and userId are required' },
         { status: 400 }
@@ -165,7 +165,7 @@ export async function DELETE(request: NextRequest) {
 
     // Check if task belongs to user
     const task = await db.personalTask.findUnique({
-      where: { id },
+      where: { id: id as string },
     })
     if (!task) {
       return NextResponse.json(
@@ -174,7 +174,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    if (task.userId !== userId) {
+    if (task.userId !== (userId as string)) {
       return NextResponse.json(
         { error: 'Unauthorized: You can only delete your own tasks' },
         { status: 403 }
@@ -182,7 +182,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     await db.personalTask.delete({
-      where: { id },
+      where: { id: id as string },
     })
 
     return NextResponse.json({ message: 'Task deleted successfully' })

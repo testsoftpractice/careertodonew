@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
       const data = projectTimeMap.get(projectId)!
 
       // Add work session duration (in seconds) converted to hours
-      if (data) {
+      if (data && session.duration) {
         data.totalHours += session.duration / 3600
       }
       data.totalEntries += 1

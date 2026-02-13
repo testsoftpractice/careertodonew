@@ -1,43 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { VerificationRequestStatus } from '@prisma/client'
+import { VerificationStatus } from '@prisma/client'
 
 // GET /api/verification - List verification requests
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const requesterId = searchParams.get('requesterId')
-    const subjectId = searchParams.get('subjectId')
+    const userId = searchParams.get('userId')
     const status = searchParams.get('status')
 
     const where: any = {}
 
-    if (requesterId) {
-      where.requesterId = requesterId
-    }
-
-    if (subjectId) {
-      where.subjectId = subjectId
+    if (userId) {
+      where.userId = userId
     }
 
     if (status) {
-      where.status = status as VerificationRequestStatus
+      where.status = status as VerificationStatus
     }
 
     const requests = await db.verificationRequest.findMany({
       where,
       include: {
-        requester: {
+        user: {
           select: {
             id: true,
             name: true,
+            email: true,
             role: true,
-          },
-        },
-        subject: {
-          select: {
-            id: true,
-            name: true,
             avatar: true,
             university: {
               select: {
@@ -69,46 +59,49 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const {
-      requesterId, // Employer ID
-      subjectId, // Student/User ID
-      purpose,
-      accessDuration,
+      userId,
+      type,
+      title,
+      description,
+      projectId,
     } = body
+
+    if (!userId || !type) {
+      return NextResponse.json(
+        { error: 'userId and type are required' },
+        { status: 400 }
+      )
+    }
 
     // Check if there's already a pending request
     const existingRequest = await db.verificationRequest.findFirst({
       where: {
-        requesterId,
-        subjectId,
-        status: VerificationRequestStatus.PENDING,
+        userId,
+        type,
+        status: VerificationStatus.PENDING,
       },
     })
 
     if (existingRequest) {
       return NextResponse.json(
-        { error: 'You already have a pending verification request for this user' },
+        { error: 'You already have a pending verification request of this type' },
         { status: 400 }
       )
     }
 
     const verificationRequest = await db.verificationRequest.create({
       data: {
-        requesterId,
-        subjectId,
-        purpose,
-        status: VerificationRequestStatus.PENDING,
-        accessDuration: accessDuration ? parseInt(accessDuration) : 30, // Default 30 days
-        expiresAt: new Date(Date.now() + (accessDuration || 30) * 24 * 60 * 60 * 1000), // days in milliseconds
+        userId,
+        type,
+        title: title || null,
+        description: description || null,
+        projectId: projectId || null,
+        status: VerificationStatus.PENDING,
+        submittedAt: new Date(),
+        createdAt: new Date(),
       },
       include: {
-        requester: {
-          select: {
-            id: true,
-            name: true,
-            role: true,
-          },
-        },
-        subject: {
+        user: {
           select: {
             id: true,
             name: true,
@@ -118,14 +111,14 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create notification for the subject
+    // Create notification for the user
     await db.notification.create({
       data: {
-        userId: subjectId,
-        type: 'VERIFICATION_REQUEST',
-        title: 'Employer Verification Request',
-        message: `${verificationRequest.requester.name} has requested access to verify your professional records`,
-        link: `/dashboard/student/verification/${verificationRequest.id}`,
+        userId: userId,
+        type: 'VERIFICATION',
+        title: 'Verification Request Submitted',
+        message: `Your verification request for "${type}" has been submitted`,
+        link: `/dashboard/student/verifications/${verificationRequest.id}`,
       },
     })
 

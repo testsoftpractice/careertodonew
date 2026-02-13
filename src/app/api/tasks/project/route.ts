@@ -25,12 +25,16 @@ export async function GET(request: NextRequest) {
       where: { projectId },
       orderBy: { createdAt: 'desc' },
       include: {
-        assignee: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
+        taskAssignees: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              },
+            },
           },
         },
         creator: {
@@ -154,7 +158,7 @@ export async function DELETE(request: NextRequest) {
 
     // Check if task exists and belongs to project
     const task = await db.task.findUnique({
-      where: { id },
+      where: { id: id as string },
     })
     if (!task) {
       return NextResponse.json(
@@ -174,8 +178,8 @@ export async function DELETE(request: NextRequest) {
     const member = await db.projectMember.findUnique({
       where: {
         projectId_userId: {
-          projectId,
-          userId,
+          projectId: projectId as string,
+          userId: userId as string,
         },
       },
     })
@@ -198,7 +202,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     await db.task.delete({
-      where: { id },
+      where: { id: id as string },
     })
 
     return NextResponse.json({ message: 'Task deleted successfully' })

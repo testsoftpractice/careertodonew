@@ -36,12 +36,12 @@ export async function PATCH(
 
     // Validate request body
     const validation = updateVacancySchema.safeParse(body)
-    if (!validation) {
+    if (!validation.success) {
       return NextResponse.json({
         success: false,
         error: 'Validation error',
         details: validation.error.issues.map(issue => ({
-          field: issue.path[0] || 'unknown',
+          field: Array.isArray(issue.path) && issue.path[0] ? String(issue.path[0]) : 'unknown',
           message: issue.message
         }))
       }, { status: 400 })

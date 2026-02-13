@@ -168,9 +168,11 @@ export default function ProjectMemberManagement({ projectId, currentUserRole, cu
       const data = await response.json()
 
       if (data.success && data.data) {
-        // Filter leave requests for project members
+        // Filter leave requests for project members AND for this project
         const memberIds = members.map(m => m.userId)
-        const projectLeaveRequests = data.data.filter((lr: LeaveRequest) => memberIds.includes(lr.userId))
+        const projectLeaveRequests = data.data.filter((lr: LeaveRequest) => 
+          memberIds.includes(lr.userId) && lr.projectId === projectId
+        )
         setLeaveRequests(projectLeaveRequests)
       }
     } catch (error) {
@@ -448,7 +450,7 @@ export default function ProjectMemberManagement({ projectId, currentUserRole, cu
                   Invite Member
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-background">
+              <DialogContent className="bg-background/95 dark:bg-slate-950/95 backdrop-blur-xl">
                 <DialogHeader>
                   <DialogTitle>Invite Team Member</DialogTitle>
                   <DialogDescription>Send an invitation to join this project</DialogDescription>
@@ -693,7 +695,7 @@ export default function ProjectMemberManagement({ projectId, currentUserRole, cu
                     Request Leave
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-background">
+                <DialogContent className="bg-background/95 dark:bg-slate-950/95 backdrop-blur-xl">
                   <DialogHeader>
                     <DialogTitle>Submit Leave Request</DialogTitle>
                     <DialogDescription>Request time off from the project</DialogDescription>
@@ -833,7 +835,7 @@ export default function ProjectMemberManagement({ projectId, currentUserRole, cu
 
       {/* Role Update Dialog */}
       <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
-        <DialogContent className="bg-background">
+        <DialogContent className="bg-background/95 dark:bg-slate-950/95 backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle>Update Member Role</DialogTitle>
             <DialogDescription>

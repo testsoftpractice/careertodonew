@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     if (!validation.success) {
       return validationError(validation.error.issues.map(issue => ({
-        field: issue.path[0] || 'unknown',
+        field: Array.isArray(issue.path) && issue.path[0] ? String(issue.path[0]) : 'unknown',
         message: issue.message,
       })))
     }

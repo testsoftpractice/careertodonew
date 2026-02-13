@@ -101,6 +101,7 @@ function DashboardContent({ user }: { user: any }) {
     startDate: '',
     endDate: '',
     reason: '',
+    projectId: '',
   })
 
   // View type for Tasks tab: personal vs project
@@ -753,6 +754,7 @@ function DashboardContent({ user }: { user: any }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
+          projectId: leaveForm.projectId || null,
           leaveType: leaveForm.leaveType,
           startDate: leaveForm.startDate,
           endDate: leaveForm.endDate,
@@ -772,7 +774,7 @@ function DashboardContent({ user }: { user: any }) {
       if (data.success) {
         toast({ title: 'Success', description: 'Leave request submitted successfully' })
         setShowLeaveDialog(false)
-        setLeaveForm({ leaveType: '', startDate: '', endDate: '', reason: '' })
+        setLeaveForm({ leaveType: '', startDate: '', endDate: '', reason: '', projectId: '' })
         fetchLeaveRequests()
       } else {
         const errorMsg = data.error || data.message || 'Failed to submit leave request'
@@ -1493,7 +1495,7 @@ function DashboardContent({ user }: { user: any }) {
                         className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent/50 cursor-pointer"
                       >
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <Badge
                               variant={
                                 request.status === 'APPROVED'
@@ -1507,8 +1509,13 @@ function DashboardContent({ user }: { user: any }) {
                               {request.status}
                             </Badge>
                             <span className="font-semibold">
-                              {request.leaveType}
+                              {request.leaveType.replace('_', ' ')}
                             </span>
+                            {request.project && (
+                              <Badge variant="outline" className="ml-2">
+                                {request.project.name}
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {new Date(request.startDate).toLocaleDateString()} -{' '}
@@ -1658,6 +1665,25 @@ function DashboardContent({ user }: { user: any }) {
                   <SelectItem value="BEREAVEMENT" className="cursor-pointer">Bereavement</SelectItem>
                   <SelectItem value="MATERNITY" className="cursor-pointer">Maternity Leave</SelectItem>
                   <SelectItem value="PATERNITY" className="cursor-pointer">Paternity Leave</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="leave-project">Project (Optional)</Label>
+              <Select
+                value={leaveForm.projectId}
+                onValueChange={(value) => setLeaveForm({ ...leaveForm, projectId: value })}
+              >
+                <SelectTrigger id="leave-project" className="cursor-pointer">
+                  <SelectValue placeholder="Select project (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No Project</SelectItem>
+                  {availableProjects.map((project: any) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

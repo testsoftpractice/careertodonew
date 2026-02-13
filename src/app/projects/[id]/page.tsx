@@ -1810,7 +1810,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
 
       {/* Add Member Dialog */}
       <Dialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog}>
-        <DialogContent className="bg-white dark:bg-slate-950">
+        <DialogContent className="bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle>Add Team Member</DialogTitle>
           </DialogHeader>

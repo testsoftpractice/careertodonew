@@ -18,13 +18,13 @@ export interface ApiError {
   details?: any
 }
 
-export function successResponse<T>(data: T, message?: string, meta?: ApiResponse<T>['meta']): NextResponse<ApiResponse<T>> {
+export function successResponse<T>(data: T, message?: string, meta?: ApiResponse<T>['meta'], statusCode: number = 200): NextResponse<ApiResponse<T>> {
   return NextResponse.json({
     success: true,
     data,
     message,
     ...meta ? { meta } : {},
-  })
+  }, { status: statusCode })
 }
 
 export function errorResponse(

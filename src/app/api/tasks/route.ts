@@ -55,6 +55,19 @@ export async function GET(request: NextRequest) {
         subTasks: {
           orderBy: { sortOrder: 'asc' }
         },
+        comments: {
+          include: {
+            author: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              }
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
         taskAssignees: {
           include: {
             user: {
@@ -99,7 +112,7 @@ export async function POST(request: NextRequest) {
     const validation = validateRequest(createTaskSchema, body)
 
     if (!validation.valid) {
-      return validationError(validation.errors)
+      return validationError(validation.errors || [])
     }
 
     const data = validation.data!
@@ -182,7 +195,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    return successResponse(task, 'Task created successfully', { status: 201 })
+    return successResponse(task, 'Task created successfully', undefined, 201)
   } catch (error: any) {
     if (error instanceof AuthError) {
       return errorResponse(error.message || 'Authentication required', error.statusCode || 401)

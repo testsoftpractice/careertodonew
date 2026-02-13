@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/jobs - Create a new job
 export async function POST(request: NextRequest) {
-  let userId: string | null = null
+  let userId: string = ''
   try {
     // Authentication
     const tokenCookie = request.cookies.get('token')
@@ -122,6 +122,10 @@ export async function POST(request: NextRequest) {
     const decoded = verifyToken(token)
     if (!decoded) {
       throw new UnauthorizedError('Invalid token')
+    }
+
+    if (!decoded.userId) {
+      throw new UnauthorizedError('Invalid user token')
     }
 
     userId = decoded.userId

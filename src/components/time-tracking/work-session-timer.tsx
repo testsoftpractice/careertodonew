@@ -344,14 +344,21 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
   // Helper function to fetch projects
   const fetchProjects = async () => {
     if (!user) return
-    
+
     try {
       const response = await authFetch('/api/projects')
       if (!response.ok) return
-      
+
       const data = await response.json()
-      if (data.success && data.data?.projects) {
-        setProjects(data.data.projects)
+      // Projects API returns data directly in data.data, not data.data.projects
+      if (data.success && data.data) {
+        // Map the projects to the expected format
+        const mappedProjects = Array.isArray(data.data) ? data.data.map((p: any) => ({
+          id: p.id,
+          title: p.name || p.title,
+          description: p.description,
+        })) : []
+        setProjects(mappedProjects)
       }
     } catch (error) {
       console.error('Failed to fetch projects:', error)
@@ -361,14 +368,16 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
   // Helper function to fetch tasks for a project
   const fetchProjectTasks = async (projectId: string) => {
     if (!user) return
-    
+
     try {
       const response = await authFetch(`/api/projects/${projectId}/tasks`)
       if (!response.ok) return
-      
+
       const data = await response.json()
-      if (data.success && data.data?.tasks) {
-        setTasks(data.data.tasks)
+      // Tasks API returns data directly in data.data, not data.data.tasks
+      if (data.success && data.data) {
+        const mappedTasks = Array.isArray(data.data) ? data.data : []
+        setTasks(mappedTasks)
       }
     } catch (error) {
       console.error('Failed to fetch tasks:', error)
@@ -378,14 +387,16 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
   // Helper function to fetch all personal tasks
   const fetchTasks = async () => {
     if (!user) return
-    
+
     try {
       const response = await authFetch('/api/tasks/personal')
       if (!response.ok) return
-      
+
       const data = await response.json()
-      if (data.success && data.data?.tasks) {
-        setTasks(data.data.tasks)
+      // Personal tasks API returns data directly in data.data
+      if (data.success && data.data) {
+        const mappedTasks = Array.isArray(data.data) ? data.data : []
+        setTasks(mappedTasks)
       }
     } catch (error) {
       console.error('Failed to fetch tasks:', error)

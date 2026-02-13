@@ -69,6 +69,7 @@ interface FormData {
 interface SubTaskInput {
   id: string
   title: string
+  completed?: boolean
 }
 
 const priorityConfig = {

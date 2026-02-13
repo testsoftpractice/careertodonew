@@ -118,7 +118,7 @@ export default function TaskComments({ taskId, projectId }: TaskCommentsProps) {
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault()
-              handleAddComment(e)
+              handleAddComment()
             }
           }}
         />

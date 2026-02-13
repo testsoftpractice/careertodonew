@@ -124,6 +124,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
 
   const [project, setProject] = useState<Project | null>(null)
   const [teamMembers, setTeamMembers] = useState<any[]>([])
+  const [userProjectRole, setUserProjectRole] = useState<string | null>(null)
   const [vacancies, setVacancies] = useState<Vacancy[]>([])
   const [milestones, setMilestones] = useState<Milestone[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
@@ -177,7 +178,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
       fetchVacancies()
       fetchAvailableUsers()
     }
-  }, [projectId2])
+  }, [projectId2, user?.id])
 
   const fetchProject = async () => {
     try {
@@ -231,6 +232,11 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
       const data = await response.json()
       if (data.success) {
         setTeamMembers(data.data.members || [])
+        // Set the user's project role
+        if (user && data.data.members) {
+          const userMember = data.data.members.find((m: any) => m.userId === user.id || m.user?.id === user.id)
+          setUserProjectRole(userMember?.role || null)
+        }
       } else {
         toast({
           title: 'Error',
@@ -1288,12 +1294,12 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
           <TabsContent value="team" className="space-y-6 mt-6">
             <ProjectMemberManagement
               projectId={projectId2}
-              currentUserRole={user?.role}
+              currentUserRole={userProjectRole || undefined}
               currentUserId={user?.id}
             />
             <DepartmentManagement
               projectId={projectId2}
-              canManageDepartments={user?.role === 'OWNER' || user?.role === 'PROJECT_MANAGER' || user?.role === 'PLATFORM_ADMIN'}
+              canManageDepartments={userProjectRole === 'OWNER' || userProjectRole === 'PROJECT_MANAGER' || user?.role === 'PLATFORM_ADMIN'}
               projectMembers={teamMembers}
             />
           </TabsContent>

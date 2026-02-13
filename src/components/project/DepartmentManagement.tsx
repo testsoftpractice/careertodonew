@@ -76,27 +76,9 @@ export default function DepartmentManagement({
       const data = await response.json()
 
       if (data.success && data.data) {
-        // Calculate member count for each department
-        const departmentsWithCounts = await Promise.all(
-          data.data.departments.map(async (dept: Department) => {
-            try {
-              const membersResponse = await authFetch(`/api/projects/${projectId}/members`)
-              const membersData = await membersResponse.json()
-              
-              // For now, assign members randomly to departments for demo
-              // In a real app, you'd have a proper department-member relationship
-              const memberCount = membersData.data?.members?.length || 0
-              
-              return {
-                ...dept,
-                memberCount: Math.max(1, Math.floor(Math.random() * memberCount)),
-              }
-            } catch (error) {
-              return { ...dept, memberCount: 0 }
-            }
-          })
-        )
-        setDepartments(departmentsWithCounts)
+        // API returns data directly, not data.data.departments
+        const departmentsList = Array.isArray(data.data) ? data.data : []
+        setDepartments(departmentsList)
       } else if (data.departments) {
         setDepartments(data.departments)
       }
@@ -274,7 +256,7 @@ export default function DepartmentManagement({
                   Add Department
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="bg-background">
                 <DialogHeader>
                   <DialogTitle>Create New Department</DialogTitle>
                   <DialogDescription>Add a new department to organize your team</DialogDescription>
@@ -438,7 +420,7 @@ export default function DepartmentManagement({
 
       {/* Edit Department Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
+        <DialogContent className="bg-background">
           <DialogHeader>
             <DialogTitle>Edit Department</DialogTitle>
             <DialogDescription>
@@ -482,7 +464,7 @@ export default function DepartmentManagement({
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
+        <DialogContent className="bg-background">
           <DialogHeader>
             <DialogTitle>Delete Department</DialogTitle>
             <DialogDescription>

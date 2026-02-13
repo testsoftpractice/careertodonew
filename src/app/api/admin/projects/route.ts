@@ -29,19 +29,24 @@ export async function GET(request: NextRequest) {
     const statusParam = searchParams.get("status") || null
     const limit = parseInt(searchParams.get("limit") || "20")
 
-    // Map PENDING to UNDER_REVIEW for backward compatibility
-    let status: ProjectStatus | null = null
-    if (statusParam) {
-      if (statusParam === "PENDING") {
-        status = "UNDER_REVIEW" as ProjectStatus
-      } else if (statusParam === "PROPOSED") {
+    // Build where clause based on status filter
+    const where: any = {}
+
+    if (statusParam === "PENDING") {
+      // For pending projects, filter by approvalStatus instead of status
+      where.approvalStatus = "PENDING"
+    } else if (statusParam) {
+      // Map other status filters
+      let status: ProjectStatus
+      if (statusParam === "PROPOSED") {
         status = "IDEA" as ProjectStatus
+      } else if (statusParam === "UNDER_REVIEW") {
+        status = "UNDER_REVIEW" as ProjectStatus
       } else {
         status = statusParam as ProjectStatus
       }
+      where.status = status
     }
-
-    const where = status ? { status } : {}
 
     const [projects, totalCount] = await Promise.all([
       db.project.findMany({
@@ -87,6 +92,7 @@ export async function GET(request: NextRequest) {
             description: p.description || "",
             category: p.category || "",
             status: mappedStatus,
+            approvalStatus: p.approvalStatus,
             ownerId: p.ownerId,
             university: p.owner.university?.name || "No University",
             owner: {

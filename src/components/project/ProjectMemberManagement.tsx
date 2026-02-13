@@ -448,7 +448,7 @@ export default function ProjectMemberManagement({ projectId, currentUserRole, cu
                   Invite Member
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="bg-background">
                 <DialogHeader>
                   <DialogTitle>Invite Team Member</DialogTitle>
                   <DialogDescription>Send an invitation to join this project</DialogDescription>
@@ -693,7 +693,7 @@ export default function ProjectMemberManagement({ projectId, currentUserRole, cu
                     Request Leave
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="bg-background">
                   <DialogHeader>
                     <DialogTitle>Submit Leave Request</DialogTitle>
                     <DialogDescription>Request time off from the project</DialogDescription>
@@ -833,7 +833,7 @@ export default function ProjectMemberManagement({ projectId, currentUserRole, cu
 
       {/* Role Update Dialog */}
       <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
-        <DialogContent>
+        <DialogContent className="bg-background">
           <DialogHeader>
             <DialogTitle>Update Member Role</DialogTitle>
             <DialogDescription>

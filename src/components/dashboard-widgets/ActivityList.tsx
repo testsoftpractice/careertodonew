@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { LucideIcon } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 interface ActivityItem {
   id: string
@@ -24,10 +25,60 @@ interface ActivityListProps {
 }
 
 const statusColors = {
-  success: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200',
-  pending: 'bg-amber-100 text-amber-700 hover:bg-amber-200',
-  warning: 'bg-orange-100 text-orange-700 hover:bg-orange-200',
-  error: 'bg-rose-100 text-rose-700 hover:bg-rose-200',
+  success: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:hover:bg-emerald-900',
+  pending: 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/50 dark:text-amber-300 dark:hover:bg-amber-900',
+  warning: 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:hover:bg-orange-900',
+  error: 'bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/50 dark:text-rose-300 dark:hover:bg-rose-900',
+}
+
+function ActivityItemComponent({ item, formatTimeAgo }: { item: ActivityItem; formatTimeAgo: (date: Date) => string }) {
+  const router = useRouter()
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      if (item.actionUrl) {
+        router.push(item.actionUrl)
+      }
+    }
+  }
+
+  return (
+    <div
+      key={item.id}
+      tabIndex={item.actionUrl ? 0 : undefined}
+      role={item.actionUrl ? 'button' : undefined}
+      onKeyDown={item.actionUrl ? handleKeyDown : undefined}
+      className="group flex items-start gap-3 sm:gap-4 p-3 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+      aria-label={item.actionUrl ? `${item.title}. ${item.description}. Press Enter to view details.` : undefined}
+    >
+      <div className={`${statusColors[item.status || 'pending']} p-2 rounded-lg flex-shrink-0`} aria-hidden="true">
+        <item.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm sm:text-base font-medium line-clamp-1">
+            {item.title}
+          </p>
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            {formatTimeAgo(item.timestamp)}
+          </span>
+        </div>
+        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mt-1">
+          {item.description}
+        </p>
+        {item.actionUrl && (
+          <Link
+            href={item.actionUrl}
+            className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-primary hover:text-primary/80 mt-2 transition-colors"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {item.actionLabel || 'View Details'}
+          </Link>
+        )}
+      </div>
+    </div>
+  )
 }
 
 export function ActivityList({
@@ -73,35 +124,7 @@ export function ActivityList({
       <CardContent className="pt-0">
         <div className="space-y-2 sm:space-y-3">
           {displayItems.map((item) => (
-            <div
-              key={item.id}
-              className="group flex items-start gap-3 sm:gap-4 p-3 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
-            >
-              <div className={`${statusColors[item.status || 'pending']} p-2 rounded-lg flex-shrink-0`}>
-                <item.icon className="w-4 h-4 sm:w-5 sm:h-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm sm:text-base font-medium line-clamp-1">
-                    {item.title}
-                  </p>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {formatTimeAgo(item.timestamp)}
-                  </span>
-                </div>
-                <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mt-1">
-                  {item.description}
-                </p>
-                {item.actionUrl && (
-                  <Link
-                    href={item.actionUrl}
-                    className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-primary hover:text-primary/80 mt-2 transition-colors"
-                  >
-                    {item.actionLabel || 'View Details'}
-                  </Link>
-                )}
-              </div>
-            </div>
+            <ActivityItemComponent key={item.id} item={item} formatTimeAgo={formatTimeAgo} />
           ))}
           {items.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">

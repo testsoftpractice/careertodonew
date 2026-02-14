@@ -16,7 +16,22 @@ import Link from 'next/link'
 
 export default function SupplierCreatePage() {
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    businessName: string
+    description: string
+    category: string
+    expertise: string[]
+    services: string[]
+    certifications: string[]
+    hourlyRate: string
+    location: string
+    website: string
+    contactEmail: string
+    contactPhone: string
+    companySize: string
+    yearsInBusiness: string
+    portfolioLinks: string[]
+  }>({
     businessName: '',
     description: '',
     category: 'Technology',
@@ -133,10 +148,16 @@ export default function SupplierCreatePage() {
   }
 
   const handleRemoveItem = (field: string, item: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: prev[field as keyof typeof prev].filter((i: string) => i !== item)
-    }))
+    setFormData((prev) => {
+      const fieldValue = prev[field as keyof typeof prev]
+      if (Array.isArray(fieldValue)) {
+        return {
+          ...prev,
+          [field]: fieldValue.filter((i: string) => i !== item)
+        }
+      }
+      return prev
+    })
   }
 
   // Submit form

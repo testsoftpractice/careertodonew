@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAuth } from '@/lib/auth/verify'
 
 export async function GET(
   request: NextRequest,
@@ -90,7 +91,7 @@ export async function GET(
   } catch (error) {
     console.error('Get user error:', error)
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
@@ -101,7 +102,20 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate user
+    const authResult = await requireAuth(request)
     const { id } = await params
+
+    // Check if user is updating their own profile or is an admin
+    const isSelf = id === authResult.dbUser.id
+    const isAdmin = authResult.dbUser.role === 'PLATFORM_ADMIN'
+
+    if (!isSelf && !isAdmin) {
+      return NextResponse.json(
+        { error: 'You do not have permission to update this user' },
+        { status: 403 }
+      )
+    }
     
     const body = await request.json()
     const {
@@ -141,6 +155,12 @@ export async function PATCH(
       },
     })
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
     console.error('Update user error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

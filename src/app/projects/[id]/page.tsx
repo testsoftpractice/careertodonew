@@ -70,6 +70,14 @@ interface Vacancy {
   skills: string | null
   slots: number
   filled: number
+  responsibilities?: string | null
+  requirements?: string | null
+  expertise?: string | null
+  salaryMin?: number | null
+  salaryMax?: number | null
+  location?: string | null
+  experience?: string | null
+  status?: string
   createdAt: string
   updatedAt: string
 }

@@ -57,6 +57,7 @@ interface Education {
 }
 
 interface Skill {
+  id: string
   name: string
   level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert'
   endorsements: number
@@ -597,7 +598,7 @@ export default function StudentProfile() {
           {/* Left Column - Experiences and Education */}
           <div className="lg:col-span-2 space-y-6">
             {/* University Profile */}
-            <UniversityProfileEnhanced userId={user?.id} />
+            {user?.id && <UniversityProfileEnhanced userId={user.id} />}
 
             {/* Experiences Section */}
             <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800">
@@ -959,7 +960,7 @@ export default function StudentProfile() {
                       <Input
                         id="endDate"
                         type="date"
-                        value={newExperience.endDate}
+                        value={newExperience.endDate ?? ''}
                         onChange={(e) => setNewExperience({ ...newExperience, endDate: e.target.value })}
                         disabled={newExperience.current}
                       />

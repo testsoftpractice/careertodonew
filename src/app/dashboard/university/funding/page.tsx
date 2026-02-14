@@ -63,7 +63,7 @@ export default function UniversityFundingPage() {
 
     try {
       setLoading(prev => ({ ...prev, requests: true }))
-      const response = await authFetch(`/api/dashboard/university/funding?universityId=${user.universityId || user.university?.id}`)
+      const response = await authFetch(`/api/dashboard/university/funding?universityId=${user.university?.id}`)
       const data = await response.json()
 
       if (data.success) {

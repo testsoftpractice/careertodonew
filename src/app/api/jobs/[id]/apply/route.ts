@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAuth } from '@/lib/auth/verify'
 
 // POST /api/jobs/[id]/apply - Apply to a job
 export async function POST(
@@ -7,17 +8,10 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate user - use their ID, not from request body
+    const authResult = await requireAuth(request)
+    const userId = authResult.dbUser.id // Use authenticated user's ID
     const { id } = await params
-    const body = await request.json()
-    const { userId } = body
-
-    // Validate input
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'User ID is required' },
-        { status: 400 }
-      )
-    }
 
     // Create application and award points in a transaction
     const result = await db.$transaction(async (tx) => {
@@ -88,14 +82,20 @@ export async function POST(
       },
       { status: 201 }
     )
-  } catch (error: any) {
-    console.error('Apply to job error:', error)
-    if (error.message === 'Already applied to this job') {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+    if (error instanceof Error && error.message === 'Already applied to this job') {
       return NextResponse.json(
         { success: false, error: 'You have already applied to this job' },
         { status: 400 }
       )
     }
+    console.error('Apply to job error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

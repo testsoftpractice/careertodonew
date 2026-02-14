@@ -19,6 +19,7 @@ import {
   Filter,
   Search,
   MoreVertical,
+  DollarSign,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
@@ -56,7 +57,7 @@ export default function UniversityActivityPage() {
 
     try {
       setLoading(true)
-      const response = await authFetch(`/api/dashboard/university/activity?universityId=${user.universityId || user.university?.id}&timeRange=${timeRange}`)
+      const response = await authFetch(`/api/dashboard/university/activity?universityId=${user.university?.id}&timeRange=${timeRange}`)
       const data = await response.json()
 
       if (data.success) {

@@ -142,7 +142,7 @@ export default function InvestorDiscoveryPage() {
 
   const calculateInvestmentPotential = (business: any) => {
     const leadRep = business.owner
-      ? (leadRep.executionScore + leadRep.collaborationScore) / 2
+      ? (business.owner.executionScore + business.owner.collaborationScore) / 2
       : 0
 
     const progressScore = business.completionRate || 0

@@ -1,8 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAuth } from '@/lib/auth/verify'
 
-// GET /api/debug/env - Check environment variables
+// GET /api/debug/env - Check environment variables (DEV ONLY)
 export async function GET(request: NextRequest) {
+  // Disable in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'Not found' },
+      { status: 404 }
+    )
+  }
+
+  // Require authentication and admin role in development
+  try {
+    const authResult = await requireAuth(request)
+    if (authResult.dbUser.role !== 'PLATFORM_ADMIN') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+  } catch {
+    return NextResponse.json(
+      { error: 'Authentication required' },
+      { status: 401 }
+    )
+  }
+
   const envCheck = {
     DATABASE_URL: process.env.DATABASE_URL ? 'SET ✓' : 'NOT SET ✗',
     DIRECT_URL: process.env.DIRECT_URL ? 'SET ✓' : 'NOT SET ✗',
@@ -17,20 +42,18 @@ export async function GET(request: NextRequest) {
   let dbError: { message: string; name: string; code: string } | null = null
 
   try {
-    console.log('[DEBUG] Testing database connection...')
     await db.$connect()
     dbStatus = 'Connected ✓'
     await db.$disconnect()
-  } catch (error: any) {
+  } catch (error: unknown) {
     dbStatus = 'Failed ✗'
-    if (error) {
+    if (error instanceof Error) {
       dbError = {
         message: error.message || 'Unknown error',
         name: error.name || 'Error',
-        code: error.code || 'UNKNOWN',
+        code: (error as { code?: string }).code || 'UNKNOWN',
       }
     }
-    console.error('[DEBUG] Database connection failed:', dbError)
   }
 
   return NextResponse.json({

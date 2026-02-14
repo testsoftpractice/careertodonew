@@ -7,7 +7,7 @@ interface QuickAction {
   icon: LucideIcon
   onClick?: () => void
   href?: string
-  variant?: 'default' | 'primary' | 'secondary' | 'outline' | 'ghost' | 'link'
+  variant?: 'default' | 'secondary' | 'outline' | 'ghost' | 'link'
   disabled?: boolean
   badge?: string | number
 }
@@ -19,9 +19,8 @@ interface QuickActionsProps {
   className?: string
 }
 
-const buttonVariants = {
+const buttonVariants: Record<string, string> = {
   default: 'bg-primary hover:bg-primary/90 text-primary-foreground',
-  primary: 'bg-primary hover:bg-primary/90 text-primary-foreground',
   secondary: 'bg-secondary hover:bg-secondary/80 text-secondary-foreground',
   outline: 'border-2 hover:bg-accent',
   ghost: 'hover:bg-accent text-foreground',
@@ -56,7 +55,7 @@ export function QuickActions({
               disabled={action.disabled}
               asChild
               className={`
-                ${buttonVariants[action.variant || 'outline']}
+                ${buttonVariants[action.variant || 'outline'] || ''}
                 flex items-center gap-2 w-full
                 hover:shadow-md hover:-translate-y-0.5
                 transition-all duration-200
@@ -83,7 +82,7 @@ export function QuickActions({
               onClick={action.onClick}
               disabled={action.disabled}
               className={`
-                ${buttonVariants[action.variant || 'outline']}
+                ${buttonVariants[action.variant || 'outline'] || ''}
                 flex items-center gap-2 w-full
                 hover:shadow-md hover:-translate-y-0.5
                 transition-all duration-200

@@ -38,19 +38,19 @@ interface TaskCardProps {
 }
 
 const priorityColors = {
-  CRITICAL: 'bg-rose-500 text-white hover:bg-rose-600',
-  HIGH: 'bg-orange-500 text-white hover:bg-orange-600',
-  MEDIUM: 'bg-amber-500 text-white hover:bg-amber-600',
-  LOW: 'bg-emerald-500 text-white hover:bg-emerald-600',
+  CRITICAL: 'bg-rose-600 text-white hover:bg-rose-700 dark:bg-rose-700 dark:hover:bg-rose-600',
+  HIGH: 'bg-orange-600 text-white hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-600',
+  MEDIUM: 'bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600',
+  LOW: 'bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600',
 }
 
 const statusConfig = {
   BACKLOG: { icon: Circle, label: 'Backlog', color: 'text-muted-foreground' },
-  TODO: { icon: Circle, label: 'To Do', color: 'text-blue-500' },
-  IN_PROGRESS: { icon: Play, label: 'In Progress', color: 'text-amber-500' },
-  REVIEW: { icon: AlertCircle, label: 'In Review', color: 'text-orange-500' },
-  DONE: { icon: CheckCircle2, label: 'Completed', color: 'text-emerald-500' },
-  BLOCKED: { icon: AlertCircle, label: 'Blocked', color: 'text-rose-500' },
+  TODO: { icon: Circle, label: 'To Do', color: 'text-blue-500 dark:text-blue-400' },
+  IN_PROGRESS: { icon: Play, label: 'In Progress', color: 'text-amber-500 dark:text-amber-400' },
+  REVIEW: { icon: AlertCircle, label: 'In Review', color: 'text-orange-500 dark:text-orange-400' },
+  DONE: { icon: CheckCircle2, label: 'Completed', color: 'text-emerald-500 dark:text-emerald-400' },
+  BLOCKED: { icon: AlertCircle, label: 'Blocked', color: 'text-rose-500 dark:text-rose-400' },
   CANCELLED: { icon: Circle, label: 'Cancelled', color: 'text-muted-foreground' },
 }
 

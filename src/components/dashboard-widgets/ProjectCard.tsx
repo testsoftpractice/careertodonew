@@ -33,13 +33,13 @@ interface ProjectCardProps {
 }
 
 const statusConfig = {
-  IDEA: { label: 'Idea', color: 'bg-slate-100 text-slate-700 hover:bg-slate-200', icon: '📝' },
-  UNDER_REVIEW: { label: 'Under Review', color: 'bg-amber-100 text-amber-700 hover:bg-amber-200', icon: '🔍' },
-  FUNDING: { label: 'Funding', color: 'bg-blue-100 text-blue-700 hover:bg-blue-200', icon: '💰' },
-  IN_PROGRESS: { label: 'In Progress', color: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200', icon: '🚀' },
-  COMPLETED: { label: 'Completed', color: 'bg-green-100 text-green-700 hover:bg-green-200', icon: '✅' },
-  CANCELLED: { label: 'Cancelled', color: 'bg-rose-100 text-rose-700 hover:bg-rose-200', icon: '❌' },
-  ON_HOLD: { label: 'On Hold', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200', icon: '⏸' },
+  IDEA: { label: 'Idea', color: 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700', icon: '📝' },
+  UNDER_REVIEW: { label: 'Under Review', color: 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/50 dark:text-amber-300 dark:hover:bg-amber-900', icon: '🔍' },
+  FUNDING: { label: 'Funding', color: 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-900', icon: '💰' },
+  IN_PROGRESS: { label: 'In Progress', color: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:hover:bg-emerald-900', icon: '🚀' },
+  COMPLETED: { label: 'Completed', color: 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:hover:bg-green-900', icon: '✅' },
+  CANCELLED: { label: 'Cancelled', color: 'bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/50 dark:text-rose-300 dark:hover:bg-rose-900', icon: '❌' },
+  ON_HOLD: { label: 'On Hold', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700', icon: '⏸' },
 }
 
 export function ProjectCard({

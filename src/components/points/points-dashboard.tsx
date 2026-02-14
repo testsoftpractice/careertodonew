@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Award, TrendingUp, Calendar, Target, Zap, Trophy, Star } from 'lucide-react'
+import { Award, TrendingUp, Calendar, Target, Zap, Trophy, Star, CheckCircle2, Briefcase, Users, GraduationCap, Share2 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
 

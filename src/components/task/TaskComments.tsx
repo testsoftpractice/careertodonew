@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -32,25 +32,44 @@ export default function TaskComments({ taskId, projectId }: TaskCommentsProps) {
   const [newComment, setNewComment] = useState('')
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    isMountedRef.current = true
+    
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  const fetchComments = useCallback(async () => {
+    if (!taskId) return
+    
+    try {
+      setLoading(true)
+      const response = await authFetch(`/api/tasks/comments?taskId=${taskId}`)
+      const data = await response.json()
+      
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setComments(data.comments || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch comments:', error)
+    } finally {
+      if (isMountedRef.current) {
+        setLoading(false)
+      }
+    }
+  }, [taskId])
 
   useEffect(() => {
     if (taskId) {
       fetchComments()
     }
-  }, [taskId])
-
-  const fetchComments = async () => {
-    try {
-      setLoading(true)
-      const response = await authFetch(`/api/tasks/comments?taskId=${taskId}`)
-      const data = await response.json()
-      setComments(data.comments || [])
-    } catch (error) {
-      console.error('Failed to fetch comments:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [taskId, fetchComments])
 
   const handleAddComment = async () => {
     if (!user || !newComment.trim()) return

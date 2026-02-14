@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAuth } from '@/lib/auth/verify'
 
 // GET /api/records - Get all professional records
 export async function GET(request: NextRequest) {
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
 
-    const where: any = {}
+    const where: Record<string, unknown> = {}
 
     if (userId) {
       where.userId = userId
@@ -30,12 +31,12 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-          },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+            },
           },
         },
         orderBy: { createdAt: 'desc' },
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(totalCount / limit),
       },
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Get records error:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch records' },
@@ -66,25 +67,17 @@ export async function GET(request: NextRequest) {
 // POST /api/records - Create a new professional record
 export async function POST(request: NextRequest) {
   try {
+    // Properly authenticate user
+    const authResult = await requireAuth(request)
+    const userId = authResult.dbUser.id
+
     const body = await request.json()
     const { title, description, startDate, endDate, recordType, metadata } = body
-
-    // Get user from token
-    const tokenCookie = request.cookies.get('token')
-    if (!tokenCookie) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    // Decode JWT to get user info
-    const decoded = JSON.parse(atob(tokenCookie.value))
 
     // Create record
     const record = await db.professionalRecord.create({
       data: {
-        userId: decoded.userId,
+        userId,
         title,
         description,
         startDate: new Date(startDate),
@@ -100,7 +93,13 @@ export async function POST(request: NextRequest) {
       data: record,
       message: 'Record created successfully',
     }, { status: 201 })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
     console.error('Create record error:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to create record' },

@@ -1,6 +1,6 @@
 // Dashboard Configuration System
 export { DashboardEditor } from './DashboardEditor'
-export type { DashboardWidget, DashboardConfig, DashboardEditorProps } from './DashboardEditor'
+export type { DashboardWidget, DashboardConfig } from './DashboardEditor'
 
 // Core Dashboard Widgets (Reusable across roles)
 export { StatsCard } from '@/components/dashboard-widgets/StatsCard'

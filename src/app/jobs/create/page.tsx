@@ -660,7 +660,7 @@ export default function PostJobPage() {
                   </Label>
                   <Select
                     value={formData.targetByReputation ? 'true' : 'false'}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, targetByReputation: value }))}
+                    onValueChange={(value) => setFormData((prev) => ({ ...prev, targetByReputation: value === 'true' }))}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -673,7 +673,7 @@ export default function PostJobPage() {
                           </SelectContent>
                         </Select>
 
-                {formData.targetByReputation === 'range' && (
+                {formData.targetByReputation && (
                   <div className="mt-4">
                     <div className="grid grid-cols-5 gap-4">
                       <div className="space-y-2">
@@ -689,30 +689,45 @@ export default function PostJobPage() {
 
                 <div className="space-y-4">
                   <Label htmlFor="remoteLocations">
-                    Select multiple universities
+                    Select universities
                   </Label>
-                  <Select
-                    multiple={true}
-                    value={formData.remoteLocations}
-                    onValueChange={(value) => handleInputChange('remoteLocations', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                          <SelectContent>
-                            {universities.map((uni) => (
-                              <SelectItem key={uni.id} value={uni.id}>
-                                {uni.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                  <div className="border rounded-md p-4 space-y-2 max-h-60 overflow-y-auto">
+                    {universities.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No universities available</p>
+                    ) : (
+                      universities.map((uni) => (
+                        <div key={uni.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={uni.id}
+                            checked={formData.remoteLocations.includes(uni.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  remoteLocations: [...prev.remoteLocations, uni.id]
+                                }))
+                              } else {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  remoteLocations: prev.remoteLocations.filter((id) => id !== uni.id)
+                                }))
+                              }
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <label htmlFor={uni.id} className="text-sm">
+                            {uni.name}
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </div>
 
                 <Button
                   variant="outline"
                   onClick={() => {
-                    const selected = universities.filter((uni) => formData.remoteLocations.includes(uni.id))
-                    setFormData((prev) => ({ ...prev, remoteLocations: selected.length > 0 ? selected : [] }))
+                    setFormData((prev) => ({ ...prev, remoteLocations: [] }))
                   }}
                 >
                   Clear Selection

@@ -15,7 +15,7 @@ export interface PlatformStats {
   premiumSubscribers: number
 }
 
-interface PlatformStatisticsProps {
+export interface PlatformStatisticsProps {
   stats: PlatformStats
   className?: string
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { ProjectStatus } from '@prisma/client'
+import { requireAuth } from '@/lib/auth/verify'
 
 // GET /api/projects/[id] - Get a specific project
 export async function GET(
@@ -113,11 +114,11 @@ export async function GET(
         updatedAt: project.updatedAt,
         // Computed fields
         completionRate: project.tasks && project.tasks.length > 0
-          ? Math.round((project.tasks.filter((t: any) => t.status === 'DONE').length / project.tasks.length) * 100)
+          ? Math.round((project.tasks.filter((t) => t.status === 'DONE').length / project.tasks.length) * 100)
           : 0,
-        tasksCompleted: project.tasks ? project.tasks.filter((t: any) => t.status === 'DONE').length : 0,
-        totalPoints: project.members?.reduce((sum: any, m: any) => sum + (m.user?.totalPoints || 0), 0) || 0,
-        projectLead: project.members?.find((m: any) => m.role === 'OWNER' || m.role === 'PROJECT_MANAGER')?.user || project.owner,
+        tasksCompleted: project.tasks ? project.tasks.filter((t) => t.status === 'DONE').length : 0,
+        totalPoints: project.members?.reduce((sum, m) => sum + (m.user?.totalPoints || 0), 0) || 0,
+        projectLead: project.members?.find((m) => m.role === 'OWNER' || m.role === 'PROJECT_MANAGER')?.user || project.owner,
       },
     })
   } catch (error) {
@@ -135,7 +136,34 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate user
+    const authResult = await requireAuth(request)
     const { id } = await params
+
+    // Check if project exists and user has permission
+    const existingProject = await db.project.findUnique({
+      where: { id },
+      select: { ownerId: true },
+    })
+
+    if (!existingProject) {
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check if user is owner or admin
+    const isOwner = existingProject.ownerId === authResult.dbUser.id
+    const isAdmin = authResult.dbUser.role === 'PLATFORM_ADMIN'
+
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json(
+        { error: 'You do not have permission to update this project' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const {
       name,
@@ -167,6 +195,12 @@ export async function PATCH(
       project,
     })
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
     console.error('Update project error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -181,7 +215,34 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate user
+    const authResult = await requireAuth(request)
     const { id } = await params
+
+    // Check if project exists and user has permission
+    const existingProject = await db.project.findUnique({
+      where: { id },
+      select: { ownerId: true },
+    })
+
+    if (!existingProject) {
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check if user is owner or admin
+    const isOwner = existingProject.ownerId === authResult.dbUser.id
+    const isAdmin = authResult.dbUser.role === 'PLATFORM_ADMIN'
+
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json(
+        { error: 'You do not have permission to delete this project' },
+        { status: 403 }
+      )
+    }
+
     await db.project.delete({
       where: { id },
     })
@@ -190,6 +251,12 @@ export async function DELETE(
       message: 'Project deleted successfully',
     })
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
     console.error('Delete project error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

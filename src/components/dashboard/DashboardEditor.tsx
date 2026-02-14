@@ -9,8 +9,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { GripVertical, RotateCcw, Save, X, Settings, Plus, Briefcase } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { DndContext, DndContextType, DragEndEvent, MouseSensor, TouchSensor, useSensor, useDraggable, DragOverlay, DragOverlay } from '@dnd-kit/core'
-import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/sortable'
 
 // Widget Configuration
 export interface DashboardWidget {
@@ -44,42 +42,6 @@ export function DashboardEditor({
 }: DashboardEditorProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [localWidgets, setLocalWidgets] = useState<DashboardWidget[]>(config.widgets)
-
-  // Handle widget drag and drop
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 10,
-        tolerance: 5,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 100,
-        tolerance: 5,
-      },
-    }),
-  )
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-    const overId = over.data.current?.id
-    const activeId = active.data.current?.id
-
-    if (activeId && overId && activeId !== overId) {
-      const activeIndex = localWidgets.findIndex(w => w.id === activeId)
-      const overIndex = localWidgets.findIndex(w => w.id === overId)
-
-      if (activeIndex !== -1 && overIndex !== -1) {
-        const newIndex = direction === 'up' ? activeIndex - 1 : activeIndex + 1
-        if (newIndex < 0 || newIndex >= localWidgets.length) return
-
-        const newWidgets = [...localWidgets]
-        newWidgets.splice(newIndex, 0, moved)
-        setLocalWidgets(newWidgets)
-      }
-    }
-  }
 
   const toggleWidget = (widgetId: string) => {
     setLocalWidgets(prev =>

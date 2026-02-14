@@ -71,32 +71,32 @@ export default function UniversityApprovals() {
   const [processing, setProcessing] = useState<string | null>(null)
 
   // Fetch pending businesses for this university
-  useEffect(() => {
-    const fetchPendingBusinesses = async () => {
-      try {
-        const response = await authFetch('/api/dashboard/university/pending-approvals')
+  const fetchPendingBusinesses = async () => {
+    try {
+      const response = await authFetch('/api/dashboard/university/pending-approvals')
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch pending businesses')
-        }
-
-        const data = await response.json()
-
-        if (data.success) {
-          setPendingBusinesses(data.data.businesses || [])
-        } else {
-          throw new Error(data.error || 'Failed to fetch pending businesses')
-        }
-      } catch (error) {
-        console.error('Fetch pending businesses error:', error)
-        toast({
-          title: 'Error',
-          description: 'Failed to fetch pending businesses',
-          variant: 'destructive',
-        })
+      if (!response.ok) {
+        throw new Error('Failed to fetch pending businesses')
       }
-    }
 
+      const data = await response.json()
+
+      if (data.success) {
+        setPendingBusinesses(data.data.businesses || [])
+      } else {
+        throw new Error(data.error || 'Failed to fetch pending businesses')
+      }
+    } catch (error) {
+      console.error('Fetch pending businesses error:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch pending businesses',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  useEffect(() => {
     fetchPendingBusinesses()
   }, [activeTab])
 
@@ -136,9 +136,8 @@ export default function UniversityApprovals() {
         description: `Failed to ${action} business`,
         variant: 'destructive',
       })
-      } finally {
-        setProcessing(null)
-      }
+    } finally {
+      setProcessing(null)
     }
   }
 
@@ -156,6 +155,7 @@ export default function UniversityApprovals() {
         return <Badge variant="outline" className="bg-gray-100 text-gray-800">Completed</Badge>
       default:
         return <Badge variant="secondary">{status}</Badge>
+    }
   }
 
   return (
@@ -168,7 +168,7 @@ export default function UniversityApprovals() {
               <h1 className="text-xl sm:text-2xl font-bold">University Dashboard</h1>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sh" asChild>
+              <Button variant="ghost" size="sm">
                 <Shield className="h-5 w-5 sm:h-5 sm:w-6" />
                 <span className="hidden sm:inline">Dashboard</span>
               </Button>

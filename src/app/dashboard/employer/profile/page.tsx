@@ -47,38 +47,38 @@ export default function EmployerProfilePage() {
 
   const [userData, setUserData] = useState<any>(null)
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!user?.id) return
+  const fetchUserData = async () => {
+    if (!user?.id) return
 
-      try {
-        const response = await authFetch(`/api/employer/profile`)
-        const data = await response.json()
+    try {
+      const response = await authFetch(`/api/employer/profile`)
+      const data = await response.json()
 
-        if (data.success) {
-          setUserData(data.data)
-          setProfile({
-            name: data.data.name || '',
-            email: data.data.email || '',
-            bio: data.data.bio || '',
-            avatar: data.data.avatar || '',
-            location: data.data.location || '',
-            linkedinUrl: data.data.linkedinUrl || '',
-            websiteUrl: data.data.websiteUrl || '',
-            companySize: '',
-            industry: '',
-          })
-        }
-      } catch (error) {
-        console.error('Fetch user error:', error)
-        toast({
-          title: 'Error',
-          description: 'Failed to load profile data',
-          variant: 'destructive',
+      if (data.success) {
+        setUserData(data.data)
+        setProfile({
+          name: data.data.name || '',
+          email: data.data.email || '',
+          bio: data.data.bio || '',
+          avatar: data.data.avatar || '',
+          location: data.data.location || '',
+          linkedinUrl: data.data.linkedinUrl || '',
+          websiteUrl: data.data.websiteUrl || '',
+          companySize: '',
+          industry: '',
         })
       }
+    } catch (error) {
+      console.error('Fetch user error:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load profile data',
+        variant: 'destructive',
+      })
     }
+  }
 
+  useEffect(() => {
     fetchUserData()
   }, [user])
 

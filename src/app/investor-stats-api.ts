@@ -5,24 +5,24 @@ export async function GET(request: NextRequest) {
   try {
     const userId = request.nextUrl.searchParams.get("userId")
     
-    if ($1) {
+    if (!userId) {
       return NextResponse.json({ success: false, error: "User ID required" }, { status: 400 })
     }
 
     const [portfolio, totalInvestments, totalEquity, avgReturn, opportunities] = await Promise.all([
       db.investment.findMany({
-        where: { investorId: userId },
+        where: { userId: userId },
         orderBy: { investedAt: "desc" },
         take: 20,
       }),
-      db.investment.count({ where: { investorId: userId } }),
+      db.investment.count({ where: { userId: userId } }),
       db.investment.aggregate({
-        where: { investorId: userId },
+        where: { userId: userId },
         _sum: { equity: true },
       }),
       db.investment.aggregate({
-        where: { investorId: userId },
-        _avg: { actualReturn: true },
+        where: { userId: userId },
+        _avg: { projectedReturn: true },
       }),
       db.project.findMany({
         where: { seekingInvestment: true, status: "ACTIVE" },
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         portfolio: portfolio,
         totalInvestments,
         totalEquity,
-        averageReturn: avgReturn._avg.actualReturn || 0,
+        averageReturn: avgReturn._avg.projectedReturn || 0,
         opportunities,
       },
     })

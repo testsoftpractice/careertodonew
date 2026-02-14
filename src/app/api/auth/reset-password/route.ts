@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { hashPassword } from '@/lib/auth/jwt'
 
-// POST /api/auth/reset-password - Actually reset password
+// POST /api/auth/reset-password - Reset password with valid token
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -22,52 +22,77 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // TODO: In production, validate token against database
-    // For now, basic validation (token should be 32 chars)
-    if (!token || token.length !== 32) {
+    // Find the reset token in the database
+    const resetToken = await db.passwordResetToken.findUnique({
+      where: { token },
+      include: { user: true },
+    })
+
+    // Check if token exists and is valid
+    if (!resetToken) {
       return NextResponse.json(
         { success: false, error: 'Invalid or expired token' },
         { status: 400 }
       )
     }
 
-    // Decode token to get email (simple validation)
-    const decoded = Buffer.from(token, 'base64').toString()
-    const [email] = decoded.split(':')
-
-    // Find user by email
-    const user = await db.user.findUnique({
-      where: { email },
-    })
-
-    if (!user) {
+    // Check if token has been used
+    if (resetToken.used) {
       return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
+        { success: false, error: 'This reset link has already been used' },
+        { status: 400 }
       )
     }
 
-    // Hash new password
+    // Check if token has expired
+    if (resetToken.expiresAt < new Date()) {
+      return NextResponse.json(
+        { success: false, error: 'This reset link has expired. Please request a new one.' },
+        { status: 400 }
+      )
+    }
+
+    // Hash the new password
     const hashedPassword = await hashPassword(password)
 
-    // Update user password
-    await db.user.update({
-      where: { id: user.id },
-      data: {
-        password: hashedPassword,
+    // Use a transaction to update password and mark token as used
+    await db.$transaction([
+      db.user.update({
+        where: { id: resetToken.userId },
+        data: {
+          password: hashedPassword,
+          lastPasswordChange: new Date(),
+        },
+      }),
+      db.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: {
+          used: true,
+          usedAt: new Date(),
+        },
+      }),
+    ])
+
+    // Invalidate all other reset tokens for this user
+    await db.passwordResetToken.deleteMany({
+      where: {
+        userId: resetToken.userId,
+        id: { not: resetToken.id },
       },
     })
 
-    console.log('Password reset successfully for:', email)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Password reset successfully for user:', resetToken.user.email)
+    }
 
     return NextResponse.json({
       success: true,
-      message: 'Password reset successfully',
+      message: 'Password reset successfully. You can now log in with your new password.',
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Reset password error:', error)
     return NextResponse.json(
-      { success: false, error: 'An error occurred' },
+      { success: false, error: 'An error occurred while resetting your password' },
       { status: 500 }
     )
   }

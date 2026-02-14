@@ -9,6 +9,7 @@ interface User {
   name: string
   role: string
   avatar?: string
+  universityId?: string
   university?: any
   major?: string
   graduationYear?: number

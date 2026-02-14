@@ -123,10 +123,10 @@ export function WelcomeHeader({
             {/* Notifications */}
             {showNotifications && (
               <Button variant="ghost" size="sm" className="relative" asChild>
-                <Link href="/dashboard/notifications">
-                  <Bell className="h-5 w-5 sm:h-6" />
+                <Link href="/dashboard/notifications" aria-label={`View notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}>
+                  <Bell className="h-5 w-5 sm:h-6" aria-hidden="true" />
                   {notificationCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                    <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full" aria-hidden="true">
                       {notificationCount > 99 ? '99+' : notificationCount}
                     </span>
                   )}
@@ -135,8 +135,8 @@ export function WelcomeHeader({
             )}
 
             {/* Settings */}
-            <Button variant="ghost" size="sm" onClick={onSettings} className="hidden sm:flex">
-              <Settings className="h-5 w-5" />
+            <Button variant="ghost" size="sm" onClick={onSettings} className="hidden sm:flex" aria-label="Open settings">
+              <Settings className="h-5 w-5" aria-hidden="true" />
             </Button>
 
             {/* Additional Actions */}
@@ -150,7 +150,7 @@ export function WelcomeHeader({
                   asChild
                   className="hidden sm:flex"
                 >
-                  <a href={(action as any).href} className="flex items-center">
+                  <a href={(action as { href: string }).href} className="flex items-center">
                     {action.label}
                   </a>
                 </Button>
@@ -159,7 +159,7 @@ export function WelcomeHeader({
                   key={index}
                   variant="outline"
                   size="sm"
-                  onClick={(action as any).onClick}
+                  onClick={(action as { onClick: () => void }).onClick}
                   className="hidden sm:flex"
                 >
                   {action.label}
@@ -168,8 +168,8 @@ export function WelcomeHeader({
             })}
 
             {/* Logout */}
-            <Button variant="ghost" size="sm" onClick={onLogout} className="text-rose-500 hover:text-rose-600 hover:bg-rose-50">
-              <LogOut className="h-5 w-5" />
+            <Button variant="ghost" size="sm" onClick={onLogout} className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950" aria-label="Log out">
+              <LogOut className="h-5 w-5" aria-hidden="true" />
             </Button>
           </div>
         </div>

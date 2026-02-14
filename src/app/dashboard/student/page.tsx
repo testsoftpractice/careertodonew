@@ -643,11 +643,14 @@ function DashboardContent({ user }: { user: any }) {
         userId: user?.id,
       }
       
+      // Find the full task object to get projectId
+      const taskForTimer = selectedTaskForTimer ? (tasks || []).find(t => t.id === selectedTaskForTimer) : null
+      
       // Add projectId if task is associated with a project
-      if (selectedTaskForTimer.projectId) {
-        sessionPayload.projectId = selectedTaskForTimer.projectId
+      if (taskForTimer?.projectId) {
+        sessionPayload.projectId = taskForTimer.projectId
       } else if (selectedProjectForTimeTracking) {
-        sessionPayload.projectId = selectedProjectForTimeTracking.id
+        sessionPayload.projectId = selectedProjectForTimeTracking
       }
       
       // Always include type

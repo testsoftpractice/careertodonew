@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { randomBytes } from 'crypto'
 
-// Generate password reset token
-const generateResetToken = (email: string) => {
-  const timestamp = Date.now()
-  const data = `${email}:${timestamp}`
-  const token = Buffer.from(data).toString('base64').slice(0, 32)
-  const expiresAt = new Date(timestamp + 24 * 60 * 60 * 1000)
-
-  return { token, expiresAt }
+// Generate a cryptographically secure password reset token
+const generateSecureResetToken = () => {
+  return randomBytes(32).toString('hex')
 }
 
-// POST /api/auth/forgot-password - Send password reset email (placeholder for development)
+// POST /api/auth/forgot-password - Send password reset email
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -29,33 +25,67 @@ export async function POST(request: NextRequest) {
       where: { email },
     })
 
+    // Don't reveal if user exists or not (security best practice)
     if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'User with this email does not exist' },
-        { status: 404 }
-      )
+      // Return success even if user doesn't exist to prevent email enumeration
+      return NextResponse.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.',
+      })
     }
 
-    // Generate reset token
-    const { token, expiresAt } = generateResetToken(email)
+    // Invalidate any existing reset tokens for this user
+    await db.passwordResetToken.deleteMany({
+      where: {
+        userId: user.id,
+        used: false,
+      },
+    })
+
+    // Generate a new secure reset token
+    const token = generateSecureResetToken()
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour expiration
+
+    // Store token in database
+    await db.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        token,
+        expiresAt,
+      },
+    })
 
     // Generate reset URL
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${token}`
+    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/auth/reset-password?token=${token}`
 
-    console.log('Password reset request for:', email)
-    console.log('Generated token:', token)
-    console.log('Reset URL (for testing):', resetUrl)
+    // In development, log the reset URL for testing
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Password reset request for:', email)
+      console.log('Reset URL (for testing):', resetUrl)
+    }
 
-    // In production, store token in database and send email via SendGrid/Mailgun
+    // In production, send email via SendGrid/Mailgun/etc
     // Uncomment this code for production email sending:
     /*
     const sgMail = require('@sendgrid/mail')
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
     const msg = {
       to: email,
       from: process.env.SENDGRID_FROM_EMAIL || 'noreply@careertodo.com',
       subject: 'Reset Your Password - CareerToDo Platform',
-      html: '<!DOCTYPE html><html><body><div style="font-family: Arial, sans-serif; padding: 20px;"><h1>Reset Your Password</h1><p>Click the link below to reset your password:</p><a href="' + resetUrl + '">Reset Password</a></div></body></html>',
+      html: `<!DOCTYPE html>
+        <html>
+        <body>
+          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
+            <h1>Reset Your Password</h1>
+            <p>You requested a password reset. Click the link below to reset your password:</p>
+            <p><a href="${resetUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a></p>
+            <p>This link will expire in 1 hour.</p>
+            <p>If you didn't request this, please ignore this email.</p>
+          </div>
+        </body>
+        </html>`,
     }
 
     await sgMail.send(msg)
@@ -63,12 +93,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Password reset email sent successfully (development mode - see console for token)',
-      resetToken: token,
-      resetUrl: resetUrl,
-      note: 'In production, actual email would be sent. For development, token and URL are returned in response.'
+      message: 'If an account with that email exists, a password reset link has been sent.',
+      // Only include reset URL in development for testing
+      ...(process.env.NODE_ENV === 'development' && {
+        resetUrl,
+        note: 'Development mode: In production, actual email would be sent.',
+      }),
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Forgot password error:', error)
     return NextResponse.json(
       { success: false, error: 'An error occurred while processing your request' },

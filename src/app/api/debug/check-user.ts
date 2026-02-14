@@ -1,7 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAuth } from '@/lib/auth/verify'
 
+// GET /api/debug/check-user - Check user details (DEV ONLY)
 export async function GET(request: NextRequest) {
+  // Disable in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'Not found' },
+      { status: 404 }
+    )
+  }
+
+  // Require authentication and admin role in development
+  try {
+    const authResult = await requireAuth(request)
+    if (authResult.dbUser.role !== 'PLATFORM_ADMIN') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+  } catch {
+    return NextResponse.json(
+      { error: 'Authentication required' },
+      { status: 401 }
+    )
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
@@ -37,7 +63,7 @@ export async function GET(request: NextRequest) {
       success: true,
       user
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Check user error:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to check user' },

@@ -8,7 +8,7 @@ export type VerificationStatus = 'PENDING' | 'UNDER_REVIEW' | 'VERIFIED' | 'REJE
 
 interface VerificationGateProps {
   user: {
-    verificationStatus: VerificationStatus
+    verificationStatus?: VerificationStatus | string
   } | null
   children: React.ReactNode
   fallback?: React.ReactNode
@@ -27,7 +27,7 @@ export function VerificationGate({
 }: VerificationGateProps) {
   const isVerified = user?.verificationStatus === 'VERIFIED'
 
-  const getStatusConfig = (status: VerificationStatus) => {
+  const getStatusConfig = (status?: VerificationStatus | string) => {
     switch (status) {
       case 'PENDING':
         return {
@@ -77,7 +77,7 @@ export function VerificationGate({
     }
   }
 
-  const statusConfig = user ? getStatusConfig(user.verificationStatus) : null
+  const statusConfig = user ? getStatusConfig(user.verificationStatus as VerificationStatus) : null
   const StatusIcon = statusConfig?.icon
 
   // Early return if user is null or statusConfig is null

@@ -24,7 +24,7 @@ export async function GET(
   }
 
   const auth = await requireAuth(request)
-  if ('status' in auth) return auth
+  if (auth instanceof NextResponse) return auth
 
   const { id } = await params
   const user = auth.user
@@ -47,7 +47,7 @@ export async function GET(
         roleCounts: members.reduce((counts, m) => {
           counts[m.role] = (counts[m.role] || 0) + 1
           return counts
-        }, {}),
+        }, {} as Record<string, number>),
       },
     })
   } catch (error) {
@@ -66,7 +66,7 @@ export async function POST(
   }
 
   const auth = await requireAuth(request)
-  if ('status' in auth) return auth
+  if (auth instanceof NextResponse) return auth
 
   const { id } = await params
   const user = auth.user
@@ -84,8 +84,8 @@ export async function POST(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
-    const canInvite = project.ownerId === user.id ||
-                      user.userRole === 'PLATFORM_ADMIN'
+    const canInvite = project.ownerId === user.userId ||
+                      user.role === 'PLATFORM_ADMIN'
 
     if (!canInvite) {
       return NextResponse.json({ error: 'Forbidden - Only project lead or admins can invite members' }, { status: 403 })
@@ -108,7 +108,7 @@ export async function POST(
       message: validatedData.message,
       expiresAt: validatedData.expiresAt ? new Date(validatedData.expiresAt) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default 7 days
       status: 'PENDING',
-      invitedBy: user.id,
+      invitedBy: user.userId,
       createdAt: new Date(),
     }))
 

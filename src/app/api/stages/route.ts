@@ -52,9 +52,9 @@ export async function POST(request: NextRequest) {
   }
 
   const auth = requireAuth(request)
-  if ('status' in auth) return auth
+  if (auth instanceof NextResponse) return auth
 
-  const user = auth
+  const user = auth.user
 
   // Check if user is platform admin (required for this operation)
   if (user.role !== 'PLATFORM_ADMIN' && user.role !== 'UNIVERSITY_ADMIN') {
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       id: `custom_${Date.now()}`,
       ...validatedData,
       createdAt: new Date(),
-      createdBy: user.id,
+      createdBy: user.userId,
     }
 
     return NextResponse.json({
@@ -100,9 +100,9 @@ export async function PUT(
   }
 
   const auth = requireAuth(request)
-  if ('status' in auth) return auth
+  if (auth instanceof NextResponse) return auth
 
-  const user = auth
+  const user = auth.user
 
   // Check if user is platform admin (required for this operation)
   if (user.role !== 'PLATFORM_ADMIN') {
@@ -122,7 +122,7 @@ export async function PUT(
       id,
       ...body,
       updatedAt: new Date(),
-      updatedBy: user.id,
+      updatedBy: user.userId,
     }
 
     return NextResponse.json({
@@ -151,9 +151,9 @@ export async function DELETE(
   }
 
   const auth = requireAuth(request)
-  if ('status' in auth) return auth
+  if (auth instanceof NextResponse) return auth
 
-  const user = auth
+  const user = auth.user
 
   // Check if user is platform admin (required for this operation)
   if (user.role !== 'PLATFORM_ADMIN') {

@@ -10,14 +10,14 @@ export async function GET(request: NextRequest) {
   }
 
   const auth = await requireAuth(request)
-  if ('status' in auth) return auth
+  if (auth instanceof NextResponse) return auth
 
   const user = auth.user
 
   try {
     // Get all project memberships
     const memberships = await db.projectMember.findMany({
-      where: { userId: user.id },
+      where: { userId: user.userId },
       select: {
         projectId: true,
         role: true,
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        userId: user.id,
+        userId: user.userId,
         permissions,
         totalProjects: memberships.length,
       },

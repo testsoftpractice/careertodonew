@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Clock, MapPin, Play, Square, CheckCircle2, AlertCircle, Calendar, Briefcase, Pause, Timer, CheckOut, MoreVertical } from 'lucide-react'
+import { Clock, MapPin, Play, Square, CheckCircle2, AlertCircle, Calendar, Briefcase, Pause, Timer, LogOut, MoreVertical } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
 import { authFetch } from '@/lib/api-response'
@@ -55,7 +55,7 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
   const [sessionType, setSessionType] = useState<'ONSITE' | 'REMOTE' | 'HYBRID' | 'BREAK' | 'MEETING' | 'TRAINING' | 'RESEARCH'>('ONSITE')
   const [notes, setNotes] = useState('')
   const [checkInLocation, setCheckInLocation] = useState('')
-  const [checkOutLocation, setCheckOutLocation] = useState('')
+  const [checkOutLocation, setLogOutLocation] = useState('')
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [projects, setProjects] = useState<Project[]>([])
@@ -63,7 +63,7 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
   const [tasks, setTasks] = useState<Task[]>([])
   const [selectedTask, setSelectedTask] = useState<string>('none')
   const [mode, setMode] = useState<'project' | 'personal'>('project')
-  const timerRef = useRef<NodeJS.Timeout>()
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Fetch data on mount
   useEffect(() => {
@@ -251,7 +251,7 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
     })
   }
 
-  const handleCheckOut = async () => {
+  const handleLogOut = async () => {
     if (!activeSessionId) {
       toast({
         title: 'Error',
@@ -264,13 +264,13 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
     // Ensure minimum duration (at least 1 second)
     const totalElapsed = Math.max(elapsed, 1)
 
-    console.log('[handleCheckOut] Total elapsed seconds:', totalElapsed)
+    console.log('[handleLogOut] Total elapsed seconds:', totalElapsed)
 
     if (totalElapsed < 1) {
       toast({
         title: 'Error',
         description: 'Session must be at least 1 second to save',
-        variant: 'error',
+        variant: 'destructive',
       })
       return
     }
@@ -290,11 +290,11 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
         }),
       })
 
-      console.log('[handleCheckOut] PATCH response status:', response.status)
+      console.log('[handleLogOut] PATCH response status:', response.status)
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('[handleCheckOut] Update failed:', response.status, errorText)
+        console.error('[handleLogOut] Update failed:', response.status, errorText)
         toast({
           title: 'Check out failed',
           description: errorText || `Failed to check out (${response.status})`,
@@ -305,7 +305,7 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
       }
 
       const data = await response.json()
-      console.log('[handleCheckOut] Response:', data)
+      console.log('[handleLogOut] Response:', data)
 
       if (data.success) {
         setSessionState('idle')
@@ -330,7 +330,7 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
         })
       }
     } catch (error) {
-      console.error('[handleCheckOut] Check out error:', error)
+      console.error('[handleLogOut] Check out error:', error)
       toast({
         title: 'Check out failed',
         description: 'Failed to check out. Please try again.',
@@ -517,8 +517,8 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
                   fetchProjectTasks(value)
                 }
               }}
-              disabled={sessionState !== 'idle'}
-              className="w-full"
+              disabled={sessionState !== 'idle' }
+              disabled={sessionState !== 'idle' }
             >
               <SelectTrigger className="cursor-pointer">
                 <SelectValue placeholder={selectedProject === 'none' ? "Select a project..." : "Selected project"} />
@@ -550,8 +550,8 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
             <Select
               value={selectedTask || 'none'}
               onValueChange={(value: any) => setSelectedTask(value)}
-              disabled={sessionState !== 'idle'}
-              className="w-full"
+              disabled={sessionState !== 'idle' }
+              disabled={sessionState !== 'idle' }
             >
               <SelectTrigger className="cursor-pointer">
                 <SelectValue placeholder="Select a task (optional)" />
@@ -591,7 +591,7 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
             value={sessionType}
             onValueChange={(value: any) => setSessionType(value)}
             disabled={!!activeSessionId}
-            className="w-full"
+            disabled={sessionState !== 'idle' }
           >
             <SelectTrigger className="w-full cursor-pointer">
               <SelectValue placeholder="Select session type" />
@@ -655,7 +655,7 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
             placeholder="Enter location (e.g., Office, Home, Library)"
             value={checkInLocation}
             onChange={(e) => setCheckInLocation(e.target.value)}
-            disabled={sessionState !== 'idle'}
+            disabled={sessionState !== 'idle' }
           />
         </div>
 
@@ -667,7 +667,7 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
             rows={3}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            disabled={sessionState !== 'idle'}
+            disabled={sessionState !== 'idle' }
             className="resize-none"
           />
         </div>
@@ -728,7 +728,7 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
               )}
             </Button>
             <Button
-              onClick={handleCheckOut}
+              onClick={handleLogOut}
               disabled={loading}
               className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-lg cursor-pointer"
               size="lg"

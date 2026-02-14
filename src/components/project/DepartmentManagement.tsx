@@ -35,6 +35,16 @@ interface Department {
     avatar?: string | null
   } | null
   memberCount?: number
+  members?: Array<{
+    id: string
+    userId: string
+    user: {
+      id: string
+      name: string
+      email: string
+      avatar?: string | null
+    }
+  }>
   createdAt: string
   updatedAt: string
 }
@@ -58,7 +68,9 @@ export default function DepartmentManagement({
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showAssignDialog, setShowAssignDialog] = useState(false)
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null)
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
 
   // Form states
   const [departmentName, setDepartmentName] = useState('')
@@ -231,6 +243,65 @@ export default function DepartmentManagement({
     setShowDeleteDialog(true)
   }
 
+  const openAssignDialog = (department: Department) => {
+    setSelectedDepartment(department)
+    // Pre-select members already in this department
+    const currentMemberIds = department.members?.map(m => m.userId) || []
+    setSelectedMemberIds(currentMemberIds)
+    setShowAssignDialog(true)
+  }
+
+  const handleAssignMembers = async () => {
+    if (!selectedDepartment) return
+
+    try {
+      const response = await authFetch(
+        `/api/projects/${projectId}/departments/${selectedDepartment.id}/members`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            memberIds: selectedMemberIds,
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(errorText || 'Failed to assign members')
+      }
+
+      const data = await response.json()
+      if (data.success || data.data) {
+        toast({
+          title: 'Success',
+          description: 'Members assigned to department successfully',
+        })
+        setShowAssignDialog(false)
+        setSelectedDepartment(null)
+        setSelectedMemberIds([])
+        fetchDepartments()
+      } else {
+        throw new Error(data.error || 'Failed to assign members')
+      }
+    } catch (error) {
+      console.error('Error assigning members:', error)
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to assign members',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const toggleMember = (userId: string) => {
+    setSelectedMemberIds(prev =>
+      prev.includes(userId)
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    )
+  }
+
   const filteredDepartments = departments.filter(dept =>
     dept.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -376,6 +447,15 @@ export default function DepartmentManagement({
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => openAssignDialog(department)}
+                            className="h-8 w-8 p-0"
+                            title="Assign Members"
+                          >
+                            <UserCheck className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => openEditDialog(department)}
                             className="h-8 w-8 p-0"
                           >
@@ -404,8 +484,22 @@ export default function DepartmentManagement({
                     <div className="flex items-center gap-2 text-sm">
                       <Users className="w-4 h-4 text-muted-foreground" />
                       <span className="text-muted-foreground">Members:</span>
-                      <Badge variant="secondary">{department.memberCount || 0}</Badge>
+                      <Badge variant="secondary">{department.members?.length || department.memberCount || 0}</Badge>
                     </div>
+                    {department.members && department.members.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {department.members.slice(0, 5).map((member) => (
+                          <Badge key={member.id} variant="outline" className="text-xs">
+                            {member.user.name}
+                          </Badge>
+                        ))}
+                        {department.members.length > 5 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{department.members.length - 5} more
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                     <div className="text-xs text-muted-foreground pt-2 border-t">
                       Created {new Date(department.createdAt).toLocaleDateString()}
                     </div>
@@ -475,6 +569,56 @@ export default function DepartmentManagement({
             </Button>
             <Button variant="destructive" onClick={handleDeleteDepartment}>
               Delete Department
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Members Dialog */}
+      <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
+        <DialogContent className="bg-background max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assign Members to {selectedDepartment?.name}</DialogTitle>
+            <DialogDescription>
+              Select project members to assign to this department
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-2">
+              {projectMembers.length === 0 ? (
+                <div className="text-sm text-muted-foreground text-center py-4">
+                  No project members available
+                </div>
+              ) : (
+                projectMembers.map((member) => (
+                  <label
+                    key={member.userId}
+                    className="flex items-center gap-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-lg transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedMemberIds.includes(member.userId)}
+                      onChange={() => toggleMember(member.userId)}
+                      className="h-4 w-4"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">{member.user.name}</div>
+                      <div className="text-xs text-muted-foreground">{member.user.email}</div>
+                    </div>
+                  </label>
+                ))
+              )}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {selectedMemberIds.length} member(s) selected
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAssignDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAssignMembers}>
+              Assign Members
             </Button>
           </DialogFooter>
         </DialogContent>

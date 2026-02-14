@@ -14,8 +14,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = requireAuth(request)
-  if ('status' in auth) return auth
+  const auth = await requireAuth(request)
+  if (auth instanceof NextResponse) return auth
 
   const { id: taskId } = await params
 
@@ -63,8 +63,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = requireAuth(request)
-  if ('status' in auth) return auth
+  const auth = await requireAuth(request)
+  if (auth instanceof NextResponse) return auth
 
   const { id: taskId } = await params
   const user = auth.user
@@ -84,10 +84,10 @@ export async function POST(
     }
 
     // Only task creator or project owner can add dependencies
-    if (!task || !task.projectId) {
+    if (!task.projectId) {
       return NextResponse.json({
-        error: task ? 'Task must belong to a project' : 'Task not found',
-      }, { status: task ? 400 : 404 })
+        error: 'Task must belong to a project',
+      }, { status: 400 })
     }
 
     const project = await db.project.findUnique({
@@ -95,7 +95,7 @@ export async function POST(
       select: { ownerId: true },
     })
 
-    if (!project || (task.assignedBy !== user.id && project.ownerId !== user.id)) {
+    if (!project || (task.assignedBy !== user.userId && project.ownerId !== user.userId)) {
       return NextResponse.json({
         error: 'Forbidden - Only task creator or project owner can add dependencies',
       }, { status: 403 })
@@ -170,8 +170,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = requireAuth(request)
-  if ('status' in auth) return auth
+  const auth = await requireAuth(request)
+  if (auth instanceof NextResponse) return auth
 
   const { id: taskId } = await params
   const user = auth.user
@@ -207,7 +207,7 @@ export async function DELETE(
       select: { ownerId: true },
     })
 
-    if (!project || (task.assignedBy !== user.id && project.ownerId !== user.id)) {
+    if (!project || (task.assignedBy !== user.userId && project.ownerId !== user.userId)) {
       return NextResponse.json({
         error: 'Forbidden - Only task creator or project owner can remove dependencies',
       }, { status: 403 })

@@ -28,7 +28,7 @@ export async function GET(
   }
 
   const auth = await requireAuth(request)
-  if ('status' in auth) return auth
+  if (auth instanceof NextResponse) return auth
 
   const { id: taskId } = await params
   const user = auth.user
@@ -39,7 +39,7 @@ export async function GET(
       where: { id: taskId },
       include: {
         taskAssignees: {
-          where: { userId: user.id },
+          where: { userId: user.userId },
           take: 1,
         },
       },
@@ -50,7 +50,7 @@ export async function GET(
     }
 
     const isTaskAssignee = task.taskAssignees.length > 0
-    const isCreator = task.assignedBy === user.id
+    const isCreator = task.assignedBy === user.userId
 
     if (!isCreator && !isTaskAssignee) {
       return NextResponse.json({ error: 'Forbidden - No access to this task' }, { status: 403 })
@@ -97,7 +97,7 @@ export async function POST(
   }
 
   const auth = await requireAuth(request)
-  if ('status' in auth) return auth
+  if (auth instanceof NextResponse) return auth
 
   const paramsResolved = await params
   const taskId = paramsResolved.id
@@ -109,7 +109,7 @@ export async function POST(
       where: { id: taskId },
       include: {
         taskAssignees: {
-          where: { userId: user.id },
+          where: { userId: user.userId },
           take: 1,
         },
       },
@@ -130,10 +130,10 @@ export async function POST(
     })
 
     const isTaskAssignee = task.taskAssignees.length > 0
-    const isProjectOwner = project?.ownerId === user.id
+    const isProjectOwner = project?.ownerId === user.userId
 
     // Allow if task assignee, creator, or project owner
-    if (!isTaskAssignee && task.assignedBy !== user.id && !isProjectOwner) {
+    if (!isTaskAssignee && task.assignedBy !== user.userId && !isProjectOwner) {
       return NextResponse.json({ error: 'Forbidden - No access to add time entries to this task' }, { status: 403 })
     }
 
@@ -144,7 +144,7 @@ export async function POST(
     const timeEntry = await db.timeEntry.create({
       data: {
         taskId,
-        userId: user.id,
+        userId: user.userId,
         hours: validatedData.hours,
         description: validatedData.description,
         billable: validatedData.billable,
@@ -184,7 +184,7 @@ export async function PUT(
   }
 
   const auth = await requireAuth(request)
-  if ('status' in auth) return auth
+  if (auth instanceof NextResponse) return auth
 
   const { id } = await params
   const user = auth.user
@@ -207,7 +207,7 @@ export async function PUT(
     }
 
     // Check ownership
-    if (timeEntry.userId !== user.id) {
+    if (timeEntry.userId !== user.userId) {
       return NextResponse.json({ error: 'Forbidden - No access to update this time entry' }, { status: 403 })
     }
 
@@ -251,7 +251,7 @@ export async function DELETE(
   }
 
   const auth = await requireAuth(request)
-  if ('status' in auth) return auth
+  if (auth instanceof NextResponse) return auth
 
   const { id } = await params
   const user = auth.user
@@ -274,7 +274,7 @@ export async function DELETE(
     }
 
     // Check ownership
-    if (timeEntry.userId !== user.id) {
+    if (timeEntry.userId !== user.userId) {
       return NextResponse.json({ error: 'Forbidden - No access to delete this time entry' }, { status: 403 })
     }
 

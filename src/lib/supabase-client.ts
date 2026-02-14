@@ -16,8 +16,13 @@ if (!supabaseUrl) {
   throw new Error('Supabase URL is not configured. Please set SUPABASE_URL in your .env file.')
 }
 
+if (!supabaseAnonKey) {
+  console.warn('Supabase Anon Key not configured.')
+  throw new Error('Supabase Anon Key is not configured. Please set SUPABASE_ANON_KEY in your .env file.')
+}
+
 // Create Supabase client
-export const supabase = createClient(supabaseUrl, {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -304,10 +309,10 @@ export async function supabaseUpdateUser(updates: any) {
 /**
  * Check if user is authenticated
  */
-export function supabaseIsAuthenticated() {
+export async function supabaseIsAuthenticated() {
   // Check for active session
-  const session = supabase.auth.getSession()
-  return !!session?.data?.session
+  const { data: { session } } = await supabase.auth.getSession()
+  return !!session
 }
 
 // ============================================

@@ -50,7 +50,7 @@ export default function TeamChat({ roomId, userId, userName }: TeamChatProps) {
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const socketRef = useRef<any>(null)
-  const typingTimeoutRef = useRef<NodeJS.Timeout>()
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = useCallback(() => {

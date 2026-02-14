@@ -5,14 +5,14 @@ import { db } from '@/lib/db'
 // GET /api/dashboard/investor/startups - Get investor's startup tracker
 export async function GET(request: NextRequest) {
   const auth = await requireAuth(request)
-  if ('status' in auth) return auth
+  if (auth instanceof NextResponse) return auth
 
   const user = auth.user
 
   try {
     // Get investments made by this investor
     const investments = await db.investment.findMany({
-      where: { userId: user.id },
+      where: { userId: user.userId },
       include: {
         project: {
           select: { id: true, name: true, status: true, businessId: true }

@@ -3,6 +3,8 @@
 // ============================================================================
 // Reusable transaction execution functions for database operations
 
+import { AppError, DatabaseError } from './error-handler'
+
 /**
  * Execute a database transaction with automatic commit or rollback
  * @param options - Transaction options (prisma transaction type, etc.)

@@ -196,7 +196,7 @@ export function createLeaderboardKey(category?: string, university?: string): st
     parts.push(`category:${category}`)
   }
   if (university) {
-    parts.push(`university:${universityId}`)
+    parts.push(`university:${university}`)
   }
   return parts.join(':')
 }

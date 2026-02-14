@@ -183,7 +183,8 @@ export async function POST(request: NextRequest) {
         deadline: body.deadline ? new Date(body.deadline) : undefined,
         published: false, // Always start as not published
         publishedAt: undefined,
-        approvalStatus: 'DRAFT' as any,
+        approvalStatus: 'PENDING' as any, // Jobs should be PENDING for admin approval
+        submissionDate: new Date(),
         metadata: JSON.stringify(metadata),
       },
       include: {

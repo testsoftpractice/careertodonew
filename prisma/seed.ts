@@ -5872,6 +5872,7 @@ async function main() {
       prisma.leaveRequest.create({
         data: {
           userId: students[0].id,
+          projectId: project1.id,
           leaveType: 'PERSONAL_LEAVE',
           startDate: new Date('2024-12-20'),
           endDate: new Date('2024-12-27'),
@@ -5885,6 +5886,7 @@ async function main() {
       prisma.leaveRequest.create({
         data: {
           userId: students[1].id,
+          projectId: project1.id,
           leaveType: 'SICK_LEAVE',
           startDate: new Date('2024-11-15'),
           endDate: new Date('2024-11-16'),
@@ -5898,6 +5900,7 @@ async function main() {
       prisma.leaveRequest.create({
         data: {
           userId: students[2].id,
+          projectId: project2.id,
           leaveType: 'VACATION',
           startDate: new Date('2025-01-15'),
           endDate: new Date('2025-01-22'),
@@ -5911,6 +5914,7 @@ async function main() {
       prisma.leaveRequest.create({
         data: {
           userId: students[3].id,
+          projectId: project2.id,
           leaveType: 'PERSONAL_LEAVE',
           startDate: new Date('2025-02-10'),
           endDate: new Date('2025-02-12'),
@@ -5924,6 +5928,7 @@ async function main() {
       prisma.leaveRequest.create({
         data: {
           userId: students[4].id,
+          projectId: project3.id,
           leaveType: 'SICK_LEAVE',
           startDate: new Date('2024-10-08'),
           endDate: new Date('2024-10-09'),
@@ -5937,6 +5942,7 @@ async function main() {
       prisma.leaveRequest.create({
         data: {
           userId: students[5].id,
+          projectId: project3.id,
           leaveType: 'VACATION',
           startDate: new Date('2025-03-20'),
           endDate: new Date('2025-03-27'),
@@ -5950,6 +5956,7 @@ async function main() {
       prisma.leaveRequest.create({
         data: {
           userId: employers[0].id,
+          projectId: project4.id,
           leaveType: 'PERSONAL_LEAVE',
           startDate: new Date('2024-12-24'),
           endDate: new Date('2025-01-02'),
@@ -6548,6 +6555,7 @@ async function main() {
           salaryMax: 80000,
           department: 'Due Diligence',
           status: 'ACTIVE',
+          approvalStatus: 'PENDING',
           views: 125,
           deadline: nextMonth,
           published: true,
@@ -6568,6 +6576,7 @@ async function main() {
           salaryMax: 90000,
           department: 'Risk Assessment',
           status: 'ACTIVE',
+          approvalStatus: 'PENDING',
           views: 98,
           deadline: nextMonth,
           published: true,
@@ -6588,6 +6597,7 @@ async function main() {
           salaryMax: 85000,
           department: 'Compliance',
           status: 'ACTIVE',
+          approvalStatus: 'PENDING',
           views: 87,
           deadline: nextWeek,
           published: true,
@@ -6608,6 +6618,7 @@ async function main() {
           salaryMax: 70000,
           department: 'Logistics',
           status: 'ACTIVE',
+          approvalStatus: 'PENDING',
           views: 76,
           deadline: nextMonth,
           published: true,
@@ -6628,6 +6639,7 @@ async function main() {
           salaryMax: 75000,
           department: 'Sourcing',
           status: 'ACTIVE',
+          approvalStatus: 'PENDING',
           views: 134,
           deadline: nextWeek,
           published: true,
@@ -6647,6 +6659,7 @@ async function main() {
           salaryMax: 25,
           department: 'Investment Analysis',
           status: 'ACTIVE',
+          approvalStatus: 'PENDING',
           views: 203,
           deadline: nextWeek,
           published: true,

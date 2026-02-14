@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth, requireRole, getUserFromRequest } from '@/lib/api/auth-middleware'
+import { requireRole } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
 
 // GET /api/dashboard/university/pending-approvals - Get pending project approvals
 export async function GET(request: NextRequest) {
-  const user = requireRole(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
-  if (user instanceof NextResponse) return user
+  const auth = requireRole(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
+  if (auth instanceof NextResponse) return auth
+  
+  const user = auth.user
   const universityId = user.universityId
 
   if (!universityId && user.role !== 'PLATFORM_ADMIN') {
@@ -16,7 +18,7 @@ export async function GET(request: NextRequest) {
   const status = (searchParams.get('status') as string) || 'PENDING'
 
   try {
-    const whereClause: any = {}
+    const whereClause: Record<string, unknown> = {}
 
     // Filter by university if not platform admin
     if (user.role !== 'PLATFORM_ADMIN' && universityId) {

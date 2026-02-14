@@ -22,8 +22,9 @@ export async function POST(
 ) {
   try {
     const auth = requireAuth(request)
-    if ('status' in auth) return auth
+    if (auth instanceof NextResponse) return auth
 
+    const user = auth.user
     const { id: projectId } = await params
     const body = await request.json()
 
@@ -38,12 +39,12 @@ export async function POST(
     }
 
     // Check if user is project owner
-    if (project.ownerId !== auth.userId) {
+    if (project.ownerId !== user.userId) {
       return forbidden('Only project owner can invite members')
     }
 
     // Determine if inviting by user ID or email
-    let targetUser: any = null
+    let targetUser: { id: string; name: string | null; email: string } | null = null
     let role: 'TEAM_MEMBER' | 'PROJECT_MANAGER' | 'TEAM_LEAD' | 'OWNER' | 'VIEWER' = 'TEAM_MEMBER'
 
     if (body.userId) {
@@ -134,7 +135,7 @@ export async function POST(
       },
       `Successfully added ${targetUser.name} to the project`
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Invite member error:', error)
     return errorResponse('Failed to invite member', 500)
   }

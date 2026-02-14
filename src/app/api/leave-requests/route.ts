@@ -5,7 +5,7 @@ import { unauthorized, forbidden, errorResponse } from '@/lib/api-response'
 import { cachedResponse, noCacheResponse, addCacheHeaders } from '@/lib/api-cache'
 import { z } from 'zod'
 
-// GET /api/leave-requests - Get all leave requests for a user
+// GET /api/leave-requests - Get all leave requests for a user or project
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
@@ -18,20 +18,21 @@ export async function GET(request: NextRequest) {
     const status = request.nextUrl.searchParams.get('status')
 
     // Build where clause
-    const where: Record<string, string | undefined> = {}
-    if (!userId) {
-      // Only allow viewing own requests or admin/manager
-      return forbidden('You can only view your own leave requests')
-    }
-    where.userId = userId
+    const where: Record<string, any> = {}
 
-    // Filter by projectId if provided
+    // If projectId is provided, fetch leave requests for that project
     if (projectId) {
       where.projectId = projectId
+    } else if (userId) {
+      // If userId is provided, fetch leave requests for that user
+      where.userId = userId
+    } else {
+      // If neither is provided, return forbidden
+      return forbidden('Please provide userId or projectId parameter')
     }
 
     if (status) {
-      where.status = status as any
+      where.status = status
     }
 
     // Fetch leave requests with project data
@@ -42,6 +43,14 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             name: true,
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
           }
         }
       },

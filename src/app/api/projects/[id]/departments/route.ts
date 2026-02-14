@@ -16,6 +16,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             email: true,
             avatar: true,
           }
+        },
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              }
+            }
+          }
         }
       },
       orderBy: {
@@ -23,9 +35,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     })
 
+    // Transform to include memberCount
+    const departmentsWithCount = departments.map(dept => ({
+      ...dept,
+      memberCount: dept.members?.length || 0
+    }))
+
     return NextResponse.json({
       success: true,
-      data: departments,
+      data: departmentsWithCount,
     })
   } catch (error: any) {
     console.error("Get departments error:", error)

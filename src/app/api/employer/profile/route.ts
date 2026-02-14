@@ -1,20 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth, requireRole, getUserFromRequest } from '@/lib/api/auth-middleware'
+import { requireRole } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
-import { VerificationStatus } from '@prisma/client'
 
 // GET /api/employer/profile - Get employer profile
 export async function GET(request: NextRequest) {
-  const user = requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
-  if (user instanceof NextResponse) return user
+  const auth = requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
+  if (auth instanceof NextResponse) return auth
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const user = auth.user
 
   try {
     const employer = await db.user.findUnique({
-      where: { id: user.id },
+      where: { id: user.userId },
       select: {
         id: true,
         name: true,
@@ -31,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     // Get employer's project
     const project = await db.project.findFirst({
-      where: { ownerId: user.id },
+      where: { ownerId: user.userId },
       include: {
         _count: {
           select: {
@@ -56,12 +53,10 @@ export async function GET(request: NextRequest) {
 
 // PATCH /api/employer/profile - Update employer profile
 export async function PATCH(request: NextRequest) {
-  const user = requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
-  if (user instanceof NextResponse) return user
+  const auth = requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
+  if (auth instanceof NextResponse) return auth
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const user = auth.user
 
   try {
     const body = await request.json()
@@ -76,7 +71,7 @@ export async function PATCH(request: NextRequest) {
       companyIndustry
     } = body
 
-    const updateData: any = {}
+    const updateData: Record<string, unknown> = {}
 
     if (name !== undefined) updateData.name = name
     if (bio !== undefined) updateData.bio = bio
@@ -85,17 +80,17 @@ export async function PATCH(request: NextRequest) {
 
     // Update user profile
     const updatedUser = await db.user.update({
-      where: { id: user.id },
+      where: { id: user.userId },
       data: updateData
     })
 
     // Update project if exists
     const project = await db.project.findFirst({
-      where: { ownerId: user.id }
+      where: { ownerId: user.userId }
     })
 
     if (project) {
-      const projectUpdateData: any = {}
+      const projectUpdateData: Record<string, unknown> = {}
       if (companyDescription) projectUpdateData.description = companyDescription
       if (companyWebsite) projectUpdateData.website = companyWebsite
       if (companySize) projectUpdateData.size = parseInt(companySize)
@@ -107,15 +102,20 @@ export async function PATCH(request: NextRequest) {
       })
     } else {
       // Create project if it doesn't exist
-      await db.project.create({
-        data: {
-          ownerId: user.id,
-          name: name || `${user.name}'s Business`,
-          description: companyDescription,
-          status: 'IDEA',
-          universityId: user.universityId,
-        }
-      })
+      const projectData: {
+        ownerId: string
+        name: string
+        description: string | undefined
+        status: 'IDEA'
+        universityId?: string | null
+      } = {
+        ownerId: user.userId,
+        name: name || `${user.name || 'User'}'s Business`,
+        description: companyDescription,
+        status: 'IDEA',
+        universityId: user.universityId ?? null,
+      }
+      await db.project.create({ data: projectData })
     }
 
     return NextResponse.json({

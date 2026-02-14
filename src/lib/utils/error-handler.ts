@@ -18,6 +18,8 @@ export class AppError extends Error {
 }
 
 export class ValidationError extends AppError {
+  details?: any
+
   constructor(message: string, details?: any) {
     super(message, 'VALIDATION_ERROR', 400)
     this.details = details
@@ -49,6 +51,8 @@ export class ConflictError extends AppError {
 }
 
 export class DatabaseError extends AppError {
+  originalError?: Error
+
   constructor(message: string, originalError?: Error) {
     super(message, 'DATABASE_ERROR', 500, false)
     this.originalError = originalError
@@ -88,7 +92,7 @@ export async function asyncHandler(fn: (req: any, res: any, next: any) => Promis
     try {
       return await fn(req, res, next)
     } catch (error) {
-      logError(error)
+      logError(error as Error)
 
       if (error instanceof AppError) {
         const response = formatErrorResponse(error)

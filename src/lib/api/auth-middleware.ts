@@ -33,7 +33,7 @@ export function getUserFromHeaders(request: NextRequest): JwtPayload | null {
 /**
  * Require authentication - returns 401 if no user
  */
-export function requireAuth(request: NextRequest): JwtPayload | NextResponse {
+export function requireAuth(request: NextRequest): { user: JwtPayload } | NextResponse {
   const user = getUserFromRequest(request)
 
   if (!user) {
@@ -43,7 +43,7 @@ export function requireAuth(request: NextRequest): JwtPayload | NextResponse {
     )
   }
 
-  return user
+  return { user }
 }
 
 /**
@@ -52,7 +52,7 @@ export function requireAuth(request: NextRequest): JwtPayload | NextResponse {
 export function requireRole(
   request: NextRequest,
   allowedRoles: string[]
-): JwtPayload | NextResponse {
+): { user: JwtPayload } | NextResponse {
   const user = getUserFromRequest(request)
 
   if (!user) {
@@ -69,7 +69,7 @@ export function requireRole(
     )
   }
 
-  return user
+  return { user }
 }
 
 /**

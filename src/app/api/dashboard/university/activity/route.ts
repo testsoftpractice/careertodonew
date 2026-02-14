@@ -9,12 +9,13 @@ export async function GET(request: NextRequest) {
   }
 
   const auth = await requireAuth(request)
-  if ('status' in auth) return auth
+  if (auth instanceof NextResponse) return auth
 
   const { searchParams } = new URL(request.url)
   const type = (searchParams.get('type') as string) || 'ALL'
   const limit = Number(searchParams.get('limit')) || 20
   const user = auth.user
+
   const universityId = user.universityId
 
   if (!universityId) {

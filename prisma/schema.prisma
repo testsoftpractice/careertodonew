@@ -516,21 +516,24 @@ model Project {
 }
 
 model ProjectMember {
-  id          String         @id @default(cuid())
-  projectId   String
-  userId      String
-  role        ProjectRole    @default(TEAM_MEMBER)
-  accessLevel TaskAccessLevel @default(VIEW)
-  joinedAt    DateTime       @default(now())
+  id           String         @id @default(cuid())
+  projectId    String
+  userId       String
+  role         ProjectRole    @default(TEAM_MEMBER)
+  accessLevel  TaskAccessLevel @default(VIEW)
+  departmentId String?
+  joinedAt     DateTime       @default(now())
 
   // Relations
-  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project      Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department   Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
 
   @@unique([projectId, userId])
   @@index([projectId])
   @@index([userId])
   @@index([accessLevel])
+  @@index([departmentId])
 }
 
 model Task {
@@ -660,8 +663,9 @@ model Department {
   headId    String?
 
   // Relations
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  head      User?    @relation(fields: [headId], references: [id], onDelete: SetNull)
+  project   Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  head      User?          @relation(fields: [headId], references: [id], onDelete: SetNull)
+  members   ProjectMember[]
 
   @@index([projectId])
   @@index([headId])

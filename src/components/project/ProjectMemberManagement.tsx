@@ -169,16 +169,11 @@ export default function ProjectMemberManagement({ projectId, currentUserRole, cu
 
   const fetchLeaveRequests = async () => {
     try {
-      const response = await authFetch(`/api/leave-requests`)
+      const response = await authFetch(`/api/leave-requests?projectId=${projectId}`)
       const data = await response.json()
 
       if (data.success && data.data) {
-        // Filter leave requests for project members AND for this project
-        const memberIds = members.map(m => m.userId)
-        const projectLeaveRequests = data.data.filter((lr: LeaveRequest) => 
-          memberIds.includes(lr.userId) && lr.projectId === projectId
-        )
-        setLeaveRequests(projectLeaveRequests)
+        setLeaveRequests(data.data)
       }
     } catch (error) {
       console.error('Error fetching leave requests:', error)

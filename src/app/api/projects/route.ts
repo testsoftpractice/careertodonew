@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') as string | undefined
     const ownerId = searchParams.get('ownerId') as string | undefined
+    const includeMembers = searchParams.get('includeMembers') === 'true'
+    const includeTasks = searchParams.get('includeTasks') === 'true'
 
     // Get user info for visibility control
     const userId = authResult.dbUser?.id || null
@@ -39,56 +41,66 @@ export async function GET(request: NextRequest) {
     // Apply visibility control with university ID
     const visibilityWhere = buildProjectVisibilityWhereClause(userId, userRole, userUniversityId, where)
 
-    const projects = await db.project.findMany({
-      where: visibilityWhere,
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-            role: true,
-            university: {
-              select: {
-                id: true,
-                name: true,
-                code: true,
-              },
-            },
-          },
-        },
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar: true,
-                role: true,
-                major: true,
-              },
-            },
-          },
-          take: 10,
-        },
-        tasks: {
-          take: 5,
-          orderBy: { dueDate: 'asc' },
+    // Build optimized include - only include what's requested
+    const include: Record<string, any> = {
+      owner: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          avatar: true,
+          role: true,
         },
       },
+    }
+
+    if (includeMembers) {
+      include.members = {
+        select: {
+          id: true,
+          userId: true,
+          role: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+            },
+          },
+        },
+        take: 5, // Only fetch first 5 members for performance
+      }
+    }
+
+    if (includeTasks) {
+      include.tasks = {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          priority: true,
+          dueDate: true,
+        },
+        take: 3, // Only fetch first 3 tasks for performance
+        orderBy: { dueDate: 'asc' },
+      }
+    }
+
+    const projects = await db.project.findMany({
+      where: visibilityWhere,
+      include,
       orderBy: { createdAt: 'desc' },
+      take: 20, // Limit results for better performance
     })
 
     // Transform projects to match frontend expectations
     const transformedProjects = projects.map(project => ({
       ...project,
-      title: project.name, // Map 'name' to 'title'
+      title: project.name,
       teamSize: project.members?.length || 1,
-      university: project.owner?.university || null,
       investmentGoal: project.budget || null,
-      investmentRaised: null, // This would need to be calculated from investments
+      investmentRaised: null,
       completionRate: project.progress || 0,
     }))
 
@@ -96,6 +108,10 @@ export async function GET(request: NextRequest) {
       success: true,
       data: transformedProjects,
       count: transformedProjects.length,
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30',
+      },
     })
   } catch (error) {
     if (error instanceof AuthError) {
@@ -119,11 +135,7 @@ export async function POST(request: NextRequest) {
     }
 
     const currentUser = authResult.dbUser
-
     const body = await request.json()
-
-    // Use authenticated user's ID
-    const ownerId = currentUser.id
 
     console.log('Project creation request body:', JSON.stringify(body, null, 2))
 
@@ -135,30 +147,15 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Verify owner exists (should exist since they're authenticated)
-    const owner = await db.user.findUnique({
-      where: { id: ownerId }
-    })
-
-    console.log('Owner lookup result:', owner ? `Found: ${owner.name} (${owner.id})` : 'Not found')
-
-    if (!owner) {
-      console.error('Owner not found for ID:', ownerId)
-      return NextResponse.json({
-        success: false,
-        error: 'Owner not found. Please log in and try again.'
-      }, { status: 404 })
-    }
-
     // Create project with owner as member and PENDING approval status
     const project = await db.project.create({
       data: {
         name: body.name,
         description: body.description,
-        ownerId: ownerId,
-        universityId: owner.universityId || null,
-        status: 'IDEA', // Start with IDEA status
-        approvalStatus: 'PENDING', // Requires admin approval
+        ownerId: currentUser.id,
+        universityId: currentUser.universityId || null,
+        status: 'IDEA',
+        approvalStatus: 'PENDING',
         submissionDate: new Date(),
         startDate: body.startDate ? new Date(body.startDate) : null,
         endDate: body.endDate ? new Date(body.endDate) : null,
@@ -169,15 +166,29 @@ export async function POST(request: NextRequest) {
         publishedAt: body.publishImmediately ? new Date() : null,
         members: {
           create: {
-            userId: ownerId,
+            userId: currentUser.id,
             role: 'OWNER',
             accessLevel: 'OWNER',
             joinedAt: new Date(),
           }
         }
       },
-      include: {
-        members: true,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        ownerId: true,
+        universityId: true,
+        status: true,
+        approvalStatus: true,
+        submissionDate: true,
+        startDate: true,
+        endDate: true,
+        budget: true,
+        category: true,
+        seekingInvestment: true,
+        published: true,
+        publishedAt: true,
       }
     })
 

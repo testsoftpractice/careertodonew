@@ -182,7 +182,6 @@ export default function CoFounderDiscoveryPage() {
                       <SelectValue placeholder="All universities" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All universities</SelectItem>
                       <SelectItem value="same">My university</SelectItem>
                     </SelectContent>
                   </Select>

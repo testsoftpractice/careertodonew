@@ -60,6 +60,7 @@ interface Member {
 interface LeaveRequest {
   id: string
   userId: string
+  projectId?: string | null
   leaveType: string
   startDate: string
   endDate: string
@@ -68,6 +69,10 @@ interface LeaveRequest {
   rejectionReason?: string
   reviewedBy?: string
   reviewedAt?: string
+  project?: {
+    id: string
+    name: string
+  }
 }
 
 interface ProjectMemberManagementProps {

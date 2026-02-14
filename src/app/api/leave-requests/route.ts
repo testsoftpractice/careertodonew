@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
 import { unauthorized, forbidden, errorResponse } from '@/lib/api-response'
+import { cachedResponse, noCacheResponse, addCacheHeaders } from '@/lib/api-cache'
 import { z } from 'zod'
 
 // GET /api/leave-requests - Get all leave requests for a user
@@ -51,6 +52,10 @@ export async function GET(request: NextRequest) {
       success: true,
       data: requests,
       message: 'Leave requests fetched successfully',
+    }, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=60',
+      },
     })
   } catch (error) {
     if (error instanceof AuthError) {
@@ -75,7 +80,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Validate required fields
-    if (!currentUser) {
+    if (!body.leaveType) {
       return NextResponse.json({
         success: false,
         error: 'Leave type is required',

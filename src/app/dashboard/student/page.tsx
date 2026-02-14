@@ -220,7 +220,7 @@ function DashboardContent({ user }: { user: any }) {
 
     try {
       setLoading(prev => ({ ...prev, projects: true }))
-      const response = await authFetch(`/api/projects?ownerId=${user.id}`)
+      const response = await authFetch(`/api/projects?ownerId=${user.id}&includeMembers=true&includeTasks=false`)
 
       // Check if response is ok before parsing
       if (!response.ok) {
@@ -277,10 +277,10 @@ function DashboardContent({ user }: { user: any }) {
     try {
       setLoading(prev => ({ ...prev, tasks: true }))
 
-      // Fetch both personal tasks and assigned project tasks
+      // Fetch both personal tasks and assigned project tasks with optimized parameters
       const [personalResponse, projectResponse] = await Promise.all([
         authFetch(`/api/tasks/personal?userId=${user.id}`),
-        authFetch(`/api/tasks?assigneeId=${user.id}`),
+        authFetch(`/api/tasks?assigneeId=${user.id}&limit=50&includeSubtasks=false&includeComments=false&includeAssignees=true`),
       ])
 
       // Check responses before parsing
@@ -502,26 +502,39 @@ function DashboardContent({ user }: { user: any }) {
     }
   }, [user?.id])
 
-  // Fetch data based on active tab
+  // Fetch data based on active tab - optimized with parallel calls
   useEffect(() => {
-    if (activeTab === 'overview') {
-      fetchStats()
-      fetchTasks()
-      fetchTimeEntries()
-      fetchLeaveRequests()
-      fetchAvailableProjects()
-    } else if (activeTab === 'projects') {
-      fetchProjects()
-    } else if (activeTab === 'tasks') {
-      fetchTasks()
-      fetchAvailableProjects()
-    } else if (activeTab === 'time-tracking') {
-      fetchTimeEntries()
-      fetchTimeSummary()
-      fetchTasks()
-    } else if (activeTab === 'leave-management') {
-      fetchLeaveRequests()
+    const fetchData = async () => {
+      if (activeTab === 'overview') {
+        // Parallel fetch for overview tab
+        await Promise.all([
+          fetchStats(),
+          fetchTasks(),
+          fetchTimeEntries(),
+          fetchLeaveRequests(),
+          fetchAvailableProjects(),
+        ])
+      } else if (activeTab === 'projects') {
+        await fetchProjects()
+      } else if (activeTab === 'tasks') {
+        // Parallel fetch for tasks tab
+        await Promise.all([
+          fetchTasks(),
+          fetchAvailableProjects(),
+        ])
+      } else if (activeTab === 'time-tracking') {
+        // Parallel fetch for time-tracking tab
+        await Promise.all([
+          fetchTimeEntries(),
+          fetchTimeSummary(),
+          fetchTasks(),
+        ])
+      } else if (activeTab === 'leave-management') {
+        await fetchLeaveRequests()
+      }
     }
+
+    fetchData()
   }, [activeTab, viewType, fetchStats, fetchTasks, fetchTimeEntries, fetchLeaveRequests, fetchAvailableProjects, fetchProjects, fetchTimeSummary])
 
   // Fetch project tasks when project is selected (for Tasks tab)
@@ -1678,7 +1691,6 @@ function DashboardContent({ user }: { user: any }) {
                   <SelectValue placeholder="Select project (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No Project</SelectItem>
                   {availableProjects.map((project: any) => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.name}

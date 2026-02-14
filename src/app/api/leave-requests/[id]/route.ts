@@ -9,7 +9,7 @@ export async function PATCH(
 ) {
   try {
     const session = await getServerSession(request)
-    if (!session) {
+    if (!session || !session.success) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
@@ -58,6 +58,10 @@ export async function PATCH(
       success: true,
       data: leaveRequest,
       message: `Leave request ${status?.toLowerCase()} successfully`,
+    }, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=60',
+      },
     })
   } catch (error) {
     console.error('PATCH leave-requests/[id] error:', error)
@@ -76,7 +80,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(request)
-    if (!session) {
+    if (!session || !session.success) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' })
     }
 
@@ -119,6 +123,10 @@ export async function DELETE(
     return NextResponse.json({
       success: true,
       message: 'Leave request deleted successfully',
+    }, {
+      headers: {
+        'Cache-Control': 'private, no-cache',
+      },
     })
   } catch (error) {
     console.error('DELETE leave-requests/[id] error:', error)

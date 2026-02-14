@@ -13,6 +13,10 @@ export async function GET(request: NextRequest) {
     const assigneeId = searchParams.get('assigneeId') as string | undefined
     const status = searchParams.get('status') as string | undefined
     const priority = searchParams.get('priority') as string | undefined
+    const includeSubtasks = searchParams.get('includeSubtasks') === 'true'
+    const includeComments = searchParams.get('includeComments') === 'true'
+    const includeAssignees = searchParams.get('includeAssignees') === 'true'
+    const limit = parseInt(searchParams.get('limit') || '100')
 
     const where: any = {}
 
@@ -36,59 +40,83 @@ export async function GET(request: NextRequest) {
       where.priority = priority as any
     }
 
-    const tasks = await db.task.findMany({
-      where,
-      include: {
-        creator: {
-          select: {
-            id: true,
-            name: true,
-          }
-        },
-        project: {
-          select: {
-            id: true,
-            name: true,
-            status: true,
-          }
-        },
-        subTasks: {
-          orderBy: { sortOrder: 'asc' }
-        },
-        comments: {
-          include: {
-            author: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar: true,
-              }
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-        },
-        taskAssignees: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar: true,
-              },
-            },
-          },
-          orderBy: { sortOrder: 'asc' },
+    // Build optimized include - only include what's requested
+    const include: Record<string, any> = {
+      creator: {
+        select: {
+          id: true,
+          name: true,
         },
       },
-      orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }]
+      project: {
+        select: {
+          id: true,
+          name: true,
+          status: true,
+        },
+      },
+    }
+
+    if (includeSubtasks) {
+      include.subTasks = {
+        select: {
+          id: true,
+          taskId: true,
+          title: true,
+          completed: true,
+          sortOrder: true,
+        },
+        orderBy: { sortOrder: 'asc' },
+      }
+    }
+
+    if (includeComments) {
+      include.comments = {
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10, // Limit comments per task to prevent performance issues
+      }
+    }
+
+    if (includeAssignees) {
+      include.taskAssignees = {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+            },
+          },
+        },
+        orderBy: { sortOrder: 'asc' },
+      }
+    }
+
+    const tasks = await db.task.findMany({
+      where,
+      include,
+      orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }],
+      take: limit, // Add pagination support
     })
 
     return NextResponse.json({
       success: true,
       data: tasks,
-      count: tasks.length
+      count: tasks.length,
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=15',
+      },
     })
   } catch (error) {
     if (error instanceof AuthError) {
@@ -97,7 +125,7 @@ export async function GET(request: NextRequest) {
     console.error('Tasks API error:', error)
     return NextResponse.json({
       success: false,
-      error: 'Failed to fetch tasks'
+      error: 'Failed to fetch tasks',
     }, { status: 500 })
   }
 }

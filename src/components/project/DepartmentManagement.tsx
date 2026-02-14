@@ -278,7 +278,6 @@ export default function DepartmentManagement({
                         <SelectValue placeholder="Select department head (optional)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No department head</SelectItem>
                         {projectMembers.map((member) => (
                           <SelectItem key={member.userId} value={member.userId}>
                             {member.user.name}
@@ -443,7 +442,6 @@ export default function DepartmentManagement({
                   <SelectValue placeholder="Select department head (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No department head</SelectItem>
                   {projectMembers.map((member) => (
                     <SelectItem key={member.userId} value={member.userId}>
                       {member.user.name}

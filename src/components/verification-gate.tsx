@@ -91,8 +91,8 @@ export function VerificationGate({
   if (restrictActions && !isVerified) {
     return (
       <div className="space-y-4">
-        <Alert className={statusConfig.bgColor} variant="outline">
-          <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
+        <Alert className={statusConfig.bgColor}>
+          {StatusIcon && <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />}
           <AlertTitle className={statusConfig.color}>{statusConfig.title}</AlertTitle>
           <AlertDescription>{statusConfig.description}</AlertDescription>
         </Alert>
@@ -109,12 +109,12 @@ export function VerificationGate({
       <div className="space-y-4">
         {showBadge && (
           <div className="flex items-center gap-2">
-            <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
+            {StatusIcon && <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />}
             <span className="text-sm font-medium text-muted-foreground">{statusConfig.title}</span>
           </div>
         )}
-        <Alert className={statusConfig.bgColor} variant="outline">
-          <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
+        <Alert className={statusConfig.bgColor}>
+          {StatusIcon && <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />}
           <AlertTitle>{statusConfig.title}</AlertTitle>
           <AlertDescription>{statusConfig.description}</AlertDescription>
         </Alert>

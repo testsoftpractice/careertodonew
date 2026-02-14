@@ -31,7 +31,7 @@ export function ScheduleCard({ schedule, showToday = false, className = '' }: Sc
   }
 
   const filteredSchedule = showToday
-    ? schedule.filter(item => item.day === new Date().toLocaleDateString('en-US', { weekday: 'upper' }))
+    ? schedule.filter(item => item.day === new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase())
     : schedule
 
   return (

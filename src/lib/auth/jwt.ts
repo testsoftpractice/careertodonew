@@ -11,6 +11,26 @@ if (!process.env.JWT_SECRET) {
 const JWT_EXPIRES_IN = '7d' // 7 days for access token
 const REFRESH_TOKEN_EXPIRES_IN = '30d' // 30 days for refresh token
 
+export interface JwtPayload {
+  userId: string
+  email: string
+  role: string
+  verificationStatus?: string
+  iat?: number
+  exp?: number
+  // Extended properties for API routes
+  user?: {
+    id: string
+    email: string
+    role: string
+    name?: string
+    universityId?: string | null
+  }
+  id?: string
+  name?: string
+  universityId?: string | null
+}
+
 export async function hashPassword(password: string): Promise<string> {
   const salt = await bcrypt.genSalt(10)
   return bcrypt.hash(password, salt)

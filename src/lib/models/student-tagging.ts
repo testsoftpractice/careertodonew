@@ -414,28 +414,68 @@ export function validateStudentTags(tags: StudentTag[]): {
     }
   })
   
-  return { validTags, invalidTags, duplicates }
+  return { valid: validTags, invalid: invalidTags, duplicates }
 }
 
 /**
  * Get tag statistics
  */
 export function getTagStatistics(tags: StudentTag[]): TagStatistics {
-  const byType: Record<TagType, number> = {}
-  const approvedTags = tags.filter(t => t.status === 'APPROVED')
-  const pendingTags = tags.filter(t => t.status === 'PENDING')
-  const rejectedTags = tags.filter(t => t.status === 'REJECTED')
-  
+  const byType: Record<TagType, number> = {
+    [TagType.MAJOR]: 0,
+    [TagType.CONCENTRATION]: 0,
+    [TagType.YEAR_LEVEL]: 0,
+    [TagType.DEPARTMENT]: 0,
+    [TagType.FACULTY]: 0,
+    [TagType.ACADEMIC_PROGRAM]: 0,
+    [TagType.TECHNICAL_SKILL]: 0,
+    [TagType.SOFT_SKILL]: 0,
+    [TagType.INDUSTRY_SKILL]: 0,
+    [TagType.CERTIFICATION]: 0,
+    [TagType.LANGUAGE]: 0,
+    [TagType.TOOL]: 0,
+    [TagType.PROJECT_ROLE]: 0,
+    [TagType.LEADERSHIP_POSITION]: 0,
+    [TagType.TEAM_ROLE]: 0,
+    [TagType.AWARDS]: 0,
+    [TagType.BADGE]: 0,
+    [TagType.CERTIFICATE]: 0,
+    [TagType.ACCOMPLISHMENT]: 0,
+  }
+  const byDepartment: Record<string, number> = {}
+  const byYearLevel: Record<string, number> = {}
+  const byMajor: Record<string, number> = {}
+
+  const approvedTags = tags.filter(t => t.status === TagApprovalStatus.APPROVED)
+  const pendingTags = tags.filter(t => t.status === TagApprovalStatus.PENDING)
+  const rejectedTags = tags.filter(t => t.status === TagApprovalStatus.REJECTED)
+  const universityVerifiedTags = tags.filter(t => t.verificationLevel === VerificationLevel.UNIVERSITY_VERIFIED).length
+  const platformVerifiedTags = tags.filter(t => t.verificationLevel === VerificationLevel.PLATFORM_VERIFIED).length
+
   tags.forEach(tag => {
     byType[tag.type] = (byType[tag.type] || 0) + 1
+    if (tag.department) {
+      byDepartment[tag.department] = (byDepartment[tag.department] || 0) + 1
+    }
+    if (tag.yearLevel) {
+      byYearLevel[tag.yearLevel] = (byYearLevel[tag.yearLevel] || 0) + 1
+    }
+    if (tag.major) {
+      byMajor[tag.major] = (byMajor[tag.major] || 0) + 1
+    }
   })
-  
+
   return {
-    universityId: '', // Would be set by caller
+    universityId: '',
     byType,
+    byDepartment,
+    byYearLevel,
+    byMajor,
     approvedTags: approvedTags.length,
     pendingTags: pendingTags.length,
     rejectedTags: rejectedTags.length,
     totalTags: tags.length,
+    universityVerifiedTags,
+    platformVerifiedTags,
   }
 }

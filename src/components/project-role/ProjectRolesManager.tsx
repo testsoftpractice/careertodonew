@@ -1,13 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Plus, Shield, Trash2, MoreHorizontal, Crown, Users } from 'lucide-react'
-import { ProjectRole } from '@/lib/models/project-roles'
-import { getAvailableActions, canPerformAction } from '@/lib/models/project-roles'
+import { ProjectRole, getAvailableActions, hasPermission } from '@/lib/models/project-roles'
 
 interface TeamMember {
   id: string
@@ -199,7 +198,7 @@ export default function ProjectRolesManager({ projectId, currentUserRole }: Proj
       case ProjectRole.FINANCE_LEAD:
         return 'Finance Lead'
       default:
-        return role.replace('_', ' ')
+        return String(role).replace('_', ' ')
     }
   }
 
@@ -215,7 +214,7 @@ export default function ProjectRolesManager({ projectId, currentUserRole }: Proj
     setMembers(members.map(m => m.id === memberId ? { ...m, role: newRole } : m))
   }
 
-  const availableActions = selectedMember ? getAvailableActions(selectedMember) : []
+  const availableActions = selectedMember ? getAvailableActions(selectedMember.role, projectId) : []
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
@@ -334,7 +333,7 @@ export default function ProjectRolesManager({ projectId, currentUserRole }: Proj
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRoleChange(member.id, ProjectRole.PROJECT_LEAD)}
-                          disabled={!canPerformAction({ role: currentUserRole, action: 'manage' })}
+                          disabled={!currentUserRole || !hasPermission(currentUserRole, 'canManageTeam')}
                         >
                           <span className="text-xs sm:text-sm hidden sm:inline">Set as Lead</span>
                         </Button>
@@ -346,7 +345,7 @@ export default function ProjectRolesManager({ projectId, currentUserRole }: Proj
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
 
-                        {canPerformAction({ role: currentUserRole, action: 'delete' }) && (
+                        {currentUserRole && hasPermission(currentUserRole, 'canRemoveMembers') && (
                           <Button
                             variant="ghost"
                             size="sm"

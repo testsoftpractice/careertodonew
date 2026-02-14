@@ -63,7 +63,7 @@ export function conflict(error: string, details?: any): NextResponse<ApiResponse
 }
 
 export function tooManyRequests(error: string = 'Too many requests', retryAfter?: number): NextResponse<ApiResponse> {
-  const headers = retryAfter ? { 'Retry-After': String(retryAfter) } : {}
+  const headers: Record<string, string> = retryAfter ? { 'Retry-After': String(retryAfter) } : {}
   return NextResponse.json(
     {
       success: false,

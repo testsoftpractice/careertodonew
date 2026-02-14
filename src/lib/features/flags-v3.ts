@@ -164,12 +164,13 @@ export function getEnabledFeaturesForUser(userRole: string): FeatureModule[] {
     .filter(([_, config]) => {
       if (!config.enabled) return false;
       if (!config.minUserRole) return true;
-      
+
       const minRoleLevel = roleHierarchy[config.minUserRole!] || 0;
       const userRoleLevel = roleHierarchy[userRole] || 0;
-      
+
       return userRoleLevel >= minRoleLevel;
     })
+    .map(([flag]) => flag as FeatureModule);
 }
 
 export function getFeatureConfig(flag: FeatureModule): FeatureConfig {
@@ -190,6 +191,11 @@ export const FEATURE_FLAGS: Record<FeatureModule, FeatureConfig> = {
   STUDENT_ENHANCEMENTS: {
     enabled: true,
     description: 'Project lifecycle stages (Idea → Draft → Approved → Active → Completed)',
+    rolloutPercentage: 100,
+  },
+  PROJECT_LIFECYCLE: {
+    enabled: true,
+    description: 'Project lifecycle management with stage transitions',
     rolloutPercentage: 100,
   },
   TASK_MANAGEMENT: {
@@ -286,31 +292,27 @@ export const FEATURE_FLAGS: Record<FeatureModule, FeatureConfig> = {
 
 export const ALL_FEATURES = [
   // Phase 1
-  STUDENT_ENHANCEMENTS,
-  TASK_MANAGEMENT,
-  PROJECT_ROLES,
+  FeatureModule.STUDENT_ENHANCEMENTS,
+  FeatureModule.TASK_MANAGEMENT,
+  FeatureModule.PROJECT_ROLES,
 
   // Phase 2
-  UNIVERSITY_DASHBOARD,
-  STUDENT_TAGGING,
-  GOVERNANCE_APPROVAL,
+  FeatureModule.UNIVERSITY_DASHBOARD,
+  FeatureModule.STUDENT_TAGGING,
+  FeatureModule.GOVERNANCE_APPROVAL,
 
   // Phase 3
-  // INVESTMENT_MARKETPLACE,
-  PROPOSAL_SYSTEM,
-  DEAL_FLOW,
+  FeatureModule.PROPOSAL_SYSTEM,
+  FeatureModule.DEAL_FLOW,
 
   // Phase 4
-  // SUPPLIER_MARKETPLACE,
-  NEED_BOARD,
+  FeatureModule.NEED_BOARD,
 
   // Phase 5
-  // CANDIDATE_MARKETPLACE,
-  EMPLOYER_VERIFICATION,
-  JOB_POSTING,
+  FeatureModule.EMPLOYER_VERIFICATION,
+  FeatureModule.JOB_POSTING,
 
   // Phase 6
-  // AUDIT_LOGGING,
-  ADVANCED_ANALYTICS,
-  DISPUTE_RESOLUTION,
+  FeatureModule.ADVANCED_ANALYTICS,
+  FeatureModule.DISPUTE_RESOLUTION,
 ] as FeatureModule[]

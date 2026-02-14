@@ -37,6 +37,7 @@ export async function GET(
                 avatar: true,
                 role: true,
                 progressionLevel: true,
+                totalPoints: true,
               },
             },
           },

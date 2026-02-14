@@ -12,7 +12,7 @@ if (!globalForPrisma.prisma) {
 
   // For Supabase, we use the connection pooler for better performance
   // The pooler URL is in DATABASE_URL with pgbouncer=true
-  const connectionString = process.env.DATABASE_URL
+  const connectionString = process.env.DATABASE_URL || ''
 
   const prismaConfig: any = {
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
@@ -25,7 +25,7 @@ if (!globalForPrisma.prisma) {
 
   // Connection pool settings for Supabase
   // These settings help prevent connection pool exhaustion errors
-  if (connectionString.includes('pooler.supabase.com')) {
+  if (connectionString && connectionString.includes('pooler.supabase.com')) {
     prismaConfig.datasources.db.url = connectionString
   }
 

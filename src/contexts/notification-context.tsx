@@ -17,6 +17,7 @@ export interface Notification {
 interface NotificationContextType {
   notifications: Notification[]
   unreadCount: number
+  addNotification: (notification: Notification) => void
   markAsRead: (id: string) => void
   markAllAsRead: () => void
 }

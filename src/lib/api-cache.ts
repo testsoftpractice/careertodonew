@@ -8,26 +8,27 @@ export const CACHE_DURATIONS = {
   MEDIUM: { sMaxAge: 30, staleWhileRevalidate: 60 },
   LONG: { sMaxAge: 60, staleWhileRevalidate: 300 },
   PRIVATE: { sMaxAge: 30, staleWhileRevalidate: 60 },
-  NO_CACHE: { sMaxAge: 0 },
+  NO_CACHE: { sMaxAge: 0, staleWhileRevalidate: 0 },
 } as const
+
+type CacheDurationKey = keyof typeof CACHE_DURATIONS
 
 /**
  * Add caching headers to API response
  */
 export function addCacheHeaders(
   response: NextResponse,
-  duration: keyof typeof CACHE_DURATIONS = 'MEDIUM',
+  duration: CacheDurationKey = 'MEDIUM',
   isPrivate = false
 ): NextResponse {
   const config = CACHE_DURATIONS[duration]
-  
-  return response.clone({
-    headers: {
-      'Cache-Control': isPrivate
-        ? `private, s-maxage=${config.sMaxAge}, stale-while-revalidate=${config.staleWhileRevalidate}`
-        : `public, s-maxage=${config.sMaxAge}, stale-while-revalidate=${config.staleWhileRevalidate}`,
-    },
-  })
+
+  const cacheControl = isPrivate
+    ? `private, s-maxage=${config.sMaxAge}, stale-while-revalidate=${config.staleWhileRevalidate}`
+    : `public, s-maxage=${config.sMaxAge}, stale-while-revalidate=${config.staleWhileRevalidate}`
+
+  response.headers.set('Cache-Control', cacheControl)
+  return response
 }
 
 /**
@@ -35,7 +36,7 @@ export function addCacheHeaders(
  */
 export function cachedResponse<T>(
   data: T,
-  duration: keyof typeof CACHE_DURATIONS = 'MEDIUM',
+  duration: CacheDurationKey = 'MEDIUM',
   isPrivate = false,
   message?: string
 ): NextResponse {
@@ -71,12 +72,8 @@ export function withRevalidationTag(
   response: NextResponse,
   tag: string
 ): NextResponse {
-  return response.clone({
-    headers: {
-      ...response.headers,
-      'Cache-Tag': tag,
-    },
-  })
+  response.headers.set('Cache-Tag', tag)
+  return response
 }
 
 /**
@@ -86,7 +83,7 @@ export function revalidatableResponse<T>(
   data: T,
   tag: string,
   message?: string,
-  duration: keyof typeof CACHE_DURATIONS = 'MEDIUM'
+  duration: CacheDurationKey = 'MEDIUM'
 ): NextResponse {
   const response = NextResponse.json({
     success: true,
@@ -94,8 +91,6 @@ export function revalidatableResponse<T>(
     message,
   })
 
-  return withRevalidationTag(
-    addCacheHeaders(response, duration),
-    tag
-  )
+  addCacheHeaders(response, duration)
+  return withRevalidationTag(response, tag)
 }

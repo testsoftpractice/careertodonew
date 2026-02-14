@@ -58,12 +58,12 @@ export interface GovernanceProposal {
   // Approval Process
   currentStage: 'SUBMITED' | 'UNDER_REVIEW' | 'REVIEWED' | 'FINAL_DECISION';
   reviewedBy: string[];
-  reviewedAt: Date?;
+  reviewedAt: Date | null;
   
   // Decision
   finalDecision: 'APPROVED' | 'REJECTED' | 'IMPLEMENTED' | 'ARCHIVED';
   decisionBy: string;
-  decisionDate: Date?;
+  decisionDate: Date | null;
   decisionReason?: string;
   
   // Related Entities
@@ -334,8 +334,8 @@ export function getApprovalChain(proposal: GovernanceProposal): GovernancePropos
  * Check if a proposal is ready for voting
  */
 export function isReadyForVoting(proposal: GovernanceProposal): boolean {
-  return proposal.status === 'SUBMITED' &&
-         (proposal.reviews?.length || 0) >= 2
+  return proposal.status === ProposalStatus.SUBMITTED &&
+         proposal.reviewedBy.length >= 2
 }
 
 /**

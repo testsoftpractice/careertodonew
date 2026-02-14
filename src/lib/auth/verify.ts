@@ -1,8 +1,6 @@
 import { NextRequest } from 'next/server'
 import { verifyToken, getTokenFromHeaders } from './jwt'
 import { db } from '@/lib/db'
-import { unauthorized } from './api-response'
-import type { User } from '@prisma/client'
 
 export interface AuthUser {
   id: string
@@ -11,10 +9,24 @@ export interface AuthUser {
   verificationStatus: string
 }
 
+export interface DbUser {
+  id: string
+  email: string
+  name: string
+  role: string
+  verificationStatus: string
+  avatar: string | null
+  universityId: string | null
+  major: string | null
+  graduationYear: number | null
+  bio: string | null
+  location: string | null
+}
+
 export interface AuthResult {
   success: boolean
   user?: AuthUser
-  dbUser?: User
+  dbUser?: DbUser
   error?: string
 }
 
@@ -91,14 +103,14 @@ export async function getAuthUser(request: NextRequest): Promise<AuthResult> {
  * Require authentication - return 401 if not authenticated
  * Use this in API routes that require authentication
  */
-export async function requireAuth(request: NextRequest): Promise<AuthResult & { dbUser: User }> {
+export async function requireAuth(request: NextRequest): Promise<AuthResult & { dbUser: DbUser }> {
   const result = await getAuthUser(request)
 
   if (!result.success || !result.dbUser) {
     throw new AuthError(result.error || 'Unauthorized', 401)
   }
 
-  return result as AuthResult & { dbUser: User }
+  return result as AuthResult & { dbUser: DbUser }
 }
 
 /**
@@ -107,7 +119,7 @@ export async function requireAuth(request: NextRequest): Promise<AuthResult & { 
 export async function requireRole(
   request: NextRequest,
   allowedRoles: string[]
-): Promise<AuthResult & { dbUser: User }> {
+): Promise<AuthResult & { dbUser: DbUser }> {
   const result = await requireAuth(request)
 
   if (!allowedRoles.includes(result.dbUser.role)) {
@@ -177,11 +189,11 @@ export async function checkProjectAccess(
 }
 
 export class AuthError extends Error {
-  constructor(message: string, public statusCode: number = 401) {
+  public statusCode: number
+
+  constructor(message: string, statusCode: number = 401) {
     super(message)
     this.name = 'AuthError'
     this.statusCode = statusCode
   }
-
-  statusCode: number
 }

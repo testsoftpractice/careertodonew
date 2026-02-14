@@ -61,8 +61,9 @@ export interface ProjectStageGate {
 /**
  * Example Stage Gates
  */
-export const PROJECT_STAGE_GATES: Record<ProjectStage, ProjectStageGate> = {
+export const PROJECT_STAGE_GATES: Record<string, ProjectStageGate> = {
   IDEA_PROPOSED: {
+    id: 'IDEA_PROPOSED',
     fromStage: ProjectStage.IDEA,
     toStage: ProjectStage.PROPOSED,
     requirements: [
@@ -75,6 +76,7 @@ export const PROJECT_STAGE_GATES: Record<ProjectStage, ProjectStageGate> = {
     autoAdvance: false,
   },
   PROPOSED_UNDER_REVIEW: {
+    id: 'PROPOSED_UNDER_REVIEW',
     fromStage: ProjectStage.PROPOSED,
     toStage: ProjectStage.UNDER_REVIEW,
     requirements: [
@@ -86,6 +88,7 @@ export const PROJECT_STAGE_GATES: Record<ProjectStage, ProjectStageGate> = {
     autoAdvance: false,
   },
   UNDER_REVIEW_APPROVED: {
+    id: 'UNDER_REVIEW_APPROVED',
     fromStage: ProjectStage.UNDER_REVIEW,
     toStage: ProjectStage.APPROVED,
     requirements: [
@@ -96,6 +99,7 @@ export const PROJECT_STAGE_GATES: Record<ProjectStage, ProjectStageGate> = {
     autoAdvance: false,
   },
   APPROVED_RECRUITING: {
+    id: 'APPROVED_RECRUITING',
     fromStage: ProjectStage.APPROVED,
     toStage: ProjectStage.RECRUITING,
     requirements: [
@@ -106,6 +110,7 @@ export const PROJECT_STAGE_GATES: Record<ProjectStage, ProjectStageGate> = {
     autoAdvance: false,
   },
   RECRUITING_ACTIVE: {
+    id: 'RECRUITING_ACTIVE',
     fromStage: ProjectStage.RECRUITING,
     toStage: ProjectStage.ACTIVE,
     requirements: [
@@ -116,6 +121,7 @@ export const PROJECT_STAGE_GATES: Record<ProjectStage, ProjectStageGate> = {
     autoAdvance: false,
   },
   ACTIVE_PAUSED: {
+    id: 'ACTIVE_PAUSED',
     fromStage: ProjectStage.ACTIVE,
     toStage: ProjectStage.PAUSED,
     requirements: [],
@@ -123,6 +129,7 @@ export const PROJECT_STAGE_GATES: Record<ProjectStage, ProjectStageGate> = {
     autoAdvance: true,
   },
   PAUSED_ACTIVE: {
+    id: 'PAUSED_ACTIVE',
     fromStage: ProjectStage.PAUSED,
     toStage: ProjectStage.ACTIVE,
     requirements: [
@@ -133,6 +140,7 @@ export const PROJECT_STAGE_GATES: Record<ProjectStage, ProjectStageGate> = {
     autoAdvance: true,
   },
   ACTIVE_COMPLETED: {
+    id: 'ACTIVE_COMPLETED',
     fromStage: ProjectStage.ACTIVE,
     toStage: ProjectStage.COMPLETED,
     requirements: [

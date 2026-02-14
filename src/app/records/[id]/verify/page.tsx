@@ -92,6 +92,15 @@ export default function RequestVerificationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    if (!user) {
+      toast({
+        title: 'Error',
+        description: 'You must be logged in to request verification',
+        variant: 'destructive',
+      })
+      return
+    }
+
     if (!requestVerification.purpose) {
       toast({
         title: 'Validation Error',

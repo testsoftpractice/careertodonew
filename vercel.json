@@ -1,8 +1,13 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "buildCommand": "prisma generate && next build",
   "installCommand": "npm install",
-  "framework": "vite",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     {
       "source": "/email-marketing/:path*",
@@ -111,10 +116,6 @@
     {
       "source": "/sales-workflow/:path*",
       "destination": "https://sales-workflow.vercel.app/:path*"
-    },
-    {
-      "source": "/:path*",
-      "destination": "/index.html"
     }
   ],
   "headers": [

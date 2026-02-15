@@ -489,7 +489,7 @@ export default function JobReviewDetailPage() {
 
         {/* Action Dialog */}
         <AlertDialog open={showActionDialog} onOpenChange={setShowActionDialog}>
-          <AlertDialogContent className="max-w-md">
+          <AlertDialogContent className="max-w-md w-full sm:max-w-md">
             <AlertDialogHeader>
               <AlertDialogTitle>
                 {actionType === 'approve' && 'Approve Job'}

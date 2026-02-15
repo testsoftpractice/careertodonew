@@ -1141,7 +1141,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
                 <CardContent className="space-y-6">
                   <p className="text-muted-foreground">{project.description}</p>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
                     <div className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
                       <Building2 className="h-8 w-8 text-primary mb-2" />
                       <h3 className="text-sm font-medium">Progress</h3>
@@ -1358,7 +1358,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
 
       {/* Add Milestone Dialog */}
       <Dialog open={showAddMilestoneDialog} onOpenChange={setShowAddMilestoneDialog}>
-        <DialogContent className="bg-white dark:bg-slate-950">
+        <DialogContent className="fixed z-50 left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full sm:max-w-md max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border">
           <DialogHeader>
             <DialogTitle>Add Milestone</DialogTitle>
           </DialogHeader>
@@ -1410,7 +1410,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
           setNewMilestone({ title: "", description: "", dueDate: "" })
         }
       }}>
-        <DialogContent className="bg-white dark:bg-slate-950">
+        <DialogContent className="fixed z-50 left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full sm:max-w-md max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border">
           <DialogHeader>
             <DialogTitle>Edit Milestone</DialogTitle>
           </DialogHeader>
@@ -1461,7 +1461,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
 
       {/* Add Vacancy Dialog */}
       <Dialog open={showAddVacancyDialog} onOpenChange={setShowAddVacancyDialog}>
-        <DialogContent className="bg-white dark:bg-slate-950 max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="fixed z-50 left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border">
           <DialogHeader>
             <DialogTitle>Create New Vacancy</DialogTitle>
           </DialogHeader>
@@ -1505,7 +1505,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
                 rows={4}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="skills">Required Skills (comma-separated)</Label>
                 <Input
@@ -1525,7 +1525,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="experience">Experience Level</Label>
                 <Select value={newVacancy.experience} onValueChange={(value) => setNewVacancy({ ...newVacancy, experience: value })}>
@@ -1551,7 +1551,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="salaryMin">Minimum Salary</Label>
                 <Input
@@ -1573,7 +1573,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="type">Employment Type *</Label>
                 <Select value={newVacancy.type} onValueChange={(value) => setNewVacancy({ ...newVacancy, type: value })}>
@@ -1633,7 +1633,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
           })
         }
       }}>
-        <DialogContent className="bg-white dark:bg-slate-950 max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="fixed z-50 left-[50%] translate-x-[-50%] translate-y[-50%] w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border">
           <DialogHeader>
             <DialogTitle>Edit Vacancy</DialogTitle>
           </DialogHeader>
@@ -1695,7 +1695,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
                 placeholder="e.g., Remote, On-site, Hybrid"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="edit-type">Employment Type *</Label>
                 <Select value={newVacancy.type} onValueChange={(value) => setNewVacancy({ ...newVacancy, type: value })}>
@@ -1722,7 +1722,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="edit-salary-min">Min Salary</Label>
                 <Input
@@ -1795,7 +1795,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
 
       {/* Add Member Dialog */}
       <Dialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog}>
-        <DialogContent className="bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl">
+        <DialogContent className="bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl sm:max-w-lg w-full max-w-[95vw]">
           <DialogHeader>
             <DialogTitle>Add Team Member</DialogTitle>
           </DialogHeader>

@@ -297,7 +297,7 @@ export default function ProjectApprovalsPage() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold">{stats.total}</div>
@@ -495,7 +495,7 @@ export default function ProjectApprovalsPage() {
 
         {/* Action Dialog */}
         <AlertDialog open={showActionDialog} onOpenChange={setShowActionDialog}>
-          <AlertDialogContent className="max-w-md">
+          <AlertDialogContent className="max-w-md w-full sm:max-w-md">
             <AlertDialogHeader>
               <AlertDialogTitle>
                 {actionType === 'approve' && 'Approve Project'}

@@ -81,9 +81,11 @@ export function PracticeGround({ compact = false }: PracticeGroundProps) {
                 <Zap className="h-4 w-4 text-amber-500 shrink-0 ml-2" />
               </Button>
             ))}
-            <Button variant="outline" size="sm" className="w-full mt-3" disabled>
-              Coming Soon
-              <ArrowRight className="ml-2 h-4 w-4" />
+            <Button variant="outline" size="sm" className="w-full mt-3" asChild>
+              <Link href="/practice-lab">
+                Visit Practice Lab
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
           </div>
         </CardContent>

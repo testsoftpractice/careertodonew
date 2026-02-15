@@ -381,7 +381,7 @@ export default function TaskFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleCancel} modal={true}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto z-[9999] shadow-2xl bg-white dark:bg-slate-900">
+      <DialogContent className="w-full sm:max-w-[600px] max-w-[95vw] max-h-[90vh] overflow-y-auto z-[9999] shadow-2xl bg-white dark:bg-slate-900">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

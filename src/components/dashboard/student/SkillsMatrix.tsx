@@ -53,7 +53,7 @@ export function SkillsMatrix({
       </CardHeader>
       <CardContent className="pt-0 space-y-4">
         {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="p-3 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 text-center">
             <div className="text-2xl sm:text-3xl font-bold text-primary">
               {totalSkills}

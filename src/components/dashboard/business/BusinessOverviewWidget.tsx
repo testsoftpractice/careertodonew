@@ -80,7 +80,7 @@ export function BusinessOverviewWidget({ business }: BusinessOverviewWidgetProps
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="flex flex-col items-center p-3 bg-muted/50 rounded-lg">
             <Users className="h-5 w-5 text-muted-foreground mb-1" />
             <span className="text-2xl font-bold">{business._count?.members || 0}</span>

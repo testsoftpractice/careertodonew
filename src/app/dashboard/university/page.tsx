@@ -239,7 +239,7 @@ export default function UniversityDashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white border-0 shadow-xl shadow-indigo-500/20 hover:shadow-2xl hover:shadow-indigo-500/30 transition-all duration-300 hover:-translate-y-1">
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-start justify-between">
@@ -289,7 +289,7 @@ export default function UniversityDashboard() {
               </Card>
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               <Card className="lg:col-span-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800">
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -476,7 +476,7 @@ export default function UniversityDashboard() {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {students.slice(0, 9).map((student: any) => (
                       <Card key={student.id} className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-700">
                         <CardContent className="p-4">
@@ -545,7 +545,7 @@ export default function UniversityDashboard() {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {projects.slice(0, 6).map((project: any) => (
                       <Link key={project.id} href={`/projects/${project.id}`} className="group">
                         <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-900/50 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 dark:border-slate-700 h-full">

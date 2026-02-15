@@ -450,7 +450,7 @@ export default function ProjectMemberManagement({ projectId, currentUserRole, cu
                   Invite Member
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-background/95 dark:bg-slate-950/95 backdrop-blur-xl">
+              <DialogContent className="w-full sm:max-w-lg bg-background/95 dark:bg-slate-950/95 backdrop-blur-xl">
                 <DialogHeader>
                   <DialogTitle>Invite Team Member</DialogTitle>
                   <DialogDescription>Send an invitation to join this project</DialogDescription>
@@ -695,7 +695,7 @@ export default function ProjectMemberManagement({ projectId, currentUserRole, cu
                     Request Leave
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-background/95 dark:bg-slate-950/95 backdrop-blur-xl">
+                <DialogContent className="w-full sm:max-w-lg bg-background/95 dark:bg-slate-950/95 backdrop-blur-xl">
                   <DialogHeader>
                     <DialogTitle>Submit Leave Request</DialogTitle>
                     <DialogDescription>Request time off from the project</DialogDescription>
@@ -716,7 +716,7 @@ export default function ProjectMemberManagement({ projectId, currentUserRole, cu
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="startDate">Start Date *</Label>
                         <Input
@@ -835,7 +835,7 @@ export default function ProjectMemberManagement({ projectId, currentUserRole, cu
 
       {/* Role Update Dialog */}
       <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
-        <DialogContent className="bg-background/95 dark:bg-slate-950/95 backdrop-blur-xl">
+        <DialogContent className="w-full sm:max-w-md bg-background/95 dark:bg-slate-950/95 backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle>Update Member Role</DialogTitle>
             <DialogDescription>

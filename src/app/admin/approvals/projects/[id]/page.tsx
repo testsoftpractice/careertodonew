@@ -572,7 +572,7 @@ export default function ProjectReviewDetailPage() {
 
         {/* Action Dialog */}
         <AlertDialog open={showActionDialog} onOpenChange={setShowActionDialog}>
-          <AlertDialogContent className="max-w-md">
+          <AlertDialogContent className="max-w-md w-full sm:max-w-md">
             <AlertDialogHeader>
               <AlertDialogTitle>
                 {actionType === 'approve' && 'Approve Project'}

@@ -1,0 +1,139 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/email-marketing/:path*",
+      "destination": "https://email-marketing-theta-five.vercel.app/:path*"
+    },
+    {
+      "source": "/study-pathways/:path*",
+      "destination": "https://study-pathways.vercel.app/:path*"
+    },
+    {
+      "source": "/zap/:path*",
+      "destination": "https://zap-smoky-one.vercel.app/:path*"
+    },
+    {
+      "source": "/roadmap/:path*",
+      "destination": "https://roadmap-seven-xi.vercel.app/:path*"
+    },
+    {
+      "source": "/nexus/:path*",
+      "destination": "https://nexux-app-delta.vercel.app/:path*"
+    },
+    {
+      "source": "/tax-submit/:path*",
+      "destination": "https://tax-submit.vercel.app/:path*"
+    },
+    {
+      "source": "/erp/:path*",
+      "destination": "https://erp-omega-blush.vercel.app/:path*"
+    },
+    {
+      "source": "/odoo/:path*",
+      "destination": "https://odoo-five.vercel.app/:path*"
+    },
+    {
+      "source": "/excel/:path*",
+      "destination": "https://excel-ashen-ten.vercel.app/:path*"
+    },
+    {
+      "source": "/powerbi/:path*",
+      "destination": "https://powerbi-livid.vercel.app/:path*"
+    },
+    {
+      "source": "/ghl-crm/:path*",
+      "destination": "https://ghl-crm.vercel.app/:path*"
+    },
+    {
+      "source": "/application-tracking/:path*",
+      "destination": "https://applicatrion-tracking.vercel.app/:path*"
+    },
+    {
+      "source": "/bpm/:path*",
+      "destination": "https://bpm-tau.vercel.app/:path*"
+    },
+    {
+      "source": "/appointment-booking/:path*",
+      "destination": "https://appointment-booking-steel.vercel.app/:path*"
+    },
+    {
+      "source": "/pos/:path*",
+      "destination": "https://pos-eight-blush.vercel.app/:path*"
+    },
+    {
+      "source": "/project-management/:path*",
+      "destination": "https://project-management-chi-eight.vercel.app/:path*"
+    },
+    {
+      "source": "/automation/:path*",
+      "destination": "https://automation-five-pi.vercel.app/:path*"
+    },
+    {
+      "source": "/typing/:path*",
+      "destination": "https://typing-kappa-gold.vercel.app/:path*"
+    },
+    {
+      "source": "/hrms/:path*",
+      "destination": "https://hrms-pi-virid.vercel.app/:path*"
+    },
+    {
+      "source": "/accounting/:path*",
+      "destination": "https://accounting-bwvq.vercel.app/:path*"
+    },
+    {
+      "source": "/ecommerce/:path*",
+      "destination": "https://ecommerce-lac-five.vercel.app/:path*"
+    },
+    {
+      "source": "/document-management/:path*",
+      "destination": "https://document-management-ochre.vercel.app/:path*"
+    },
+    {
+      "source": "/business-supply/:path*",
+      "destination": "https://business-supply.vercel.app/:path*"
+    },
+    {
+      "source": "/af-workflow/:path*",
+      "destination": "https://af-workflow.vercel.app/:path*"
+    },
+    {
+      "source": "/hr-workflow/:path*",
+      "destination": "https://hr-workflow-gamma.vercel.app/:path*"
+    },
+    {
+      "source": "/operations-tasks/:path*",
+      "destination": "https://operations-tasks.vercel.app/:path*"
+    },
+    {
+      "source": "/sales-workflow/:path*",
+      "destination": "https://sales-workflow.vercel.app/:path*"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { 
+          "key": "Access-Control-Allow-Origin", 
+          "value": "*" 
+        },
+        { 
+          "key": "Access-Control-Allow-Methods", 
+          "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" 
+        },
+        { 
+          "key": "Access-Control-Allow-Headers", 
+          "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" 
+        }
+      ]
+    }
+  ]
+}

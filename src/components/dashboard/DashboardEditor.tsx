@@ -103,7 +103,7 @@ export function DashboardEditor({
           Customize Dashboard
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+      <DialogContent className="w-full sm:max-w-2xl max-w-[95vw] max-h-[80vh] overflow-hidden">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>Customize Dashboard</DialogTitle>

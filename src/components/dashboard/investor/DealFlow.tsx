@@ -58,7 +58,7 @@ export function DealFlow({
       </CardHeader>
       <CardContent className="pt-0 space-y-4">
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="p-3 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 text-center">
             <div className="text-2xl sm:text-3xl font-bold text-primary">
               {totalDeals}
@@ -106,7 +106,7 @@ export function DealFlow({
                 </div>
 
                 {/* Investment Details */}
-                <div className="grid grid-cols-3 gap-2 mb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
                   <div>
                     <div className="text-[10px] text-muted-foreground">Investment</div>
                     <div className="text-sm font-semibold">${(deal.amount / 1000).toFixed(0)}k</div>

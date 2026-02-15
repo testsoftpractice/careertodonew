@@ -376,7 +376,7 @@ export default function InvestorDashboard() {
 
             {/* OVERVIEW TAB */}
             <TabsContent value="overview">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
                 <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white border-0 shadow-xl">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
@@ -426,7 +426,7 @@ export default function InvestorDashboard() {
                 </Card>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="bg-white dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800">
                   <CardHeader>
                     <CardTitle>Quick Actions</CardTitle>
@@ -522,7 +522,7 @@ export default function InvestorDashboard() {
                   </Button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {opportunities.map((project: any) => (
                     <div key={project.id} className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-200 transition-all duration-200 border border-blue-200 dark:border-blue-800 hover:shadow-2xl hover:translate-y-1">
                       <div className="flex items-start justify-between mb-2">
@@ -624,7 +624,7 @@ export default function InvestorDashboard() {
 
             {/* FINANCIAL ANALYTICS TAB */}
             <TabsContent value="financial">
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="bg-white dark:bg-slate-900/80 backdrop-blur-xl shadow-xl border border-slate-200 dark:border-slate-800">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -777,7 +777,7 @@ export default function InvestorDashboard() {
                       <p className="text-sm text-muted-foreground mt-2">Loading startups...</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto">
                       {startups.map((startup: any) => (
                         <Card key={startup.id} className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
                           <CardContent className="p-6">

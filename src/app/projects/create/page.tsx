@@ -465,7 +465,7 @@ export default function CreateProjectPage() {
                 {/* Step 2: Team & Resource Planning */}
                 {step === 2 && (
                   <div className="space-y-6">
-                    <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="startDate">Start Date *</Label>
                         <Input
@@ -496,7 +496,7 @@ export default function CreateProjectPage() {
                         <Users className="w-4 h-4" />
                         Team Size Requirements
                       </h4>
-                      <div className="grid gap-4 md:grid-cols-2">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                           <Label htmlFor="teamSizeMin">Minimum Team Size *</Label>
                           <Input
@@ -563,7 +563,7 @@ export default function CreateProjectPage() {
                         Add New Role
                       </h4>
 
-                      <div className="grid gap-4 md:grid-cols-2">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                           <Label htmlFor="roleTitle">Role Title *</Label>
                           <Input
@@ -825,7 +825,7 @@ export default function CreateProjectPage() {
 
                       <Separator />
 
-                      <div className="grid gap-4 md:grid-cols-2">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
                           <p className="text-sm font-semibold flex items-center gap-2 mb-1">
                             <Calendar className="w-4 h-4" />

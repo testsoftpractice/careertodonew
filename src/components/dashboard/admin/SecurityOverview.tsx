@@ -55,7 +55,7 @@ export function SecurityOverview({
       </CardHeader>
       <CardContent className="pt-0 space-y-4">
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="p-2 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 text-center">
             <div className="text-xl sm:text-2xl font-bold text-primary">
               {totalAlerts}

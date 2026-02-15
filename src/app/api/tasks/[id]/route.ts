@@ -190,19 +190,28 @@ export async function PATCH(
     // Handle subtasks if provided
     if (subtasks !== undefined && Array.isArray(subtasks)) {
       const currentSubtaskIds = existingTask.subTasks.map(st => st.id)
-      
+      const currentSubtasksMap = new Map(existingTask.subTasks.map(st => [st.id, st]))
+
       // Identify subtasks to keep (those present in the new array with valid IDs)
-      const subtaskIdsToKeep = subtasks
+      const subtasksToKeep = subtasks
         .filter(st => st.id && currentSubtaskIds.includes(st.id))
-        .map(st => st.id)
-      
+
       // Subtasks to remove (existing but not in the keep list)
-      const subtasksToRemove = currentSubtaskIds.filter(id => !subtaskIdsToKeep.includes(id))
-      
+      const subtasksToRemove = currentSubtaskIds.filter(id => !subtasksToKeep.find(st => st.id === id))
+
       // Subtasks to add (new subtasks without IDs, or subtasks with IDs not in current list)
-      const subtasksToAdd = subtasks.filter(st => 
-        !currentSubtaskIds.includes(st.id)
+      const subtasksToAdd = subtasks.filter(st =>
+        !st.id || !currentSubtaskIds.includes(st.id)
       )
+
+      // Subtasks to update (existing subtasks with changes)
+      const subtasksToUpdate = subtasks
+        .filter(st => st.id && currentSubtaskIds.includes(st.id))
+        .filter(st => {
+          const current = currentSubtasksMap.get(st.id)
+          if (!current) return false
+          return st.title !== current.title || st.completed !== current.completed || st.sortOrder !== current.sortOrder
+        })
 
       // Remove old subtasks that weren't sent in the update
       if (subtasksToRemove.length > 0) {
@@ -210,6 +219,18 @@ export async function PATCH(
           where: {
             taskId: id,
             id: { in: subtasksToRemove },
+          },
+        })
+      }
+
+      // Update existing subtasks
+      for (const st of subtasksToUpdate) {
+        await db.subTask.update({
+          where: { id: st.id },
+          data: {
+            title: st.title || st.name || 'Untitled Subtask',
+            completed: st.completed || false,
+            sortOrder: st.sortOrder !== undefined ? st.sortOrder : 0,
           },
         })
       }

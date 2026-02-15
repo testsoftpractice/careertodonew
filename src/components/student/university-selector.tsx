@@ -213,7 +213,7 @@ export function UniversitySelector({
         </PopoverTrigger>
 
         <PopoverContent
-          className="w-[600px] p-0 z-50 backdrop-blur-md bg-white/95 dark:bg-gray-900/95"
+          className="w-full sm:w-[600px] p-0 z-50 backdrop-blur-md bg-white/95 dark:bg-gray-900/95"
           align="start"
           sideOffset={4}
         >

@@ -34,7 +34,7 @@ export function PlatformStatistics({ stats, className = '' }: PlatformStatistics
       </CardHeader>
       <CardContent className="pt-0 space-y-4">
         {/* Main Stats */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="p-3 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 text-center">
             <div className="text-2xl sm:text-3xl font-bold text-primary">
               {stats.totalUsers.toLocaleString()}
@@ -62,7 +62,7 @@ export function PlatformStatistics({ stats, className = '' }: PlatformStatistics
         </div>
 
         {/* Growth & Engagement */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
@@ -91,7 +91,7 @@ export function PlatformStatistics({ stats, className = '' }: PlatformStatistics
             <Activity className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm font-medium">Engagement</span>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div className="text-center">
               <div className="text-lg font-bold text-primary">{stats.dailyActiveUsers.toLocaleString()}</div>
               <div className="text-[10px] text-muted-foreground">Daily Active</div>

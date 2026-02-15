@@ -125,7 +125,7 @@ export function LeaveRequestForm({ userId, onCreated }: LeaveRequestFormProps) {
           New Leave Request
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="w-full sm:max-w-2xl max-w-[95vw]">
         <DialogHeader>
           <DialogTitle>Submit Leave Request</DialogTitle>
           <DialogDescription>

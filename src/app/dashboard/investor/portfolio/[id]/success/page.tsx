@@ -42,7 +42,7 @@ export default function InvestmentSuccessPage() {
             </p>
 
             <div className="p-6 bg-white rounded-lg border text-left space-y-4 mb-8">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <div className="text-sm text-muted-foreground">Investment Type</div>
                   <div className="font-semibold">Equity</div>
@@ -52,7 +52,7 @@ export default function InvestmentSuccessPage() {
                   <div className="font-semibold text-green-600">$50,000</div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <div className="text-sm text-muted-foreground">Equity Stake</div>
                   <div className="font-semibold">5%</div>
@@ -89,7 +89,7 @@ export default function InvestmentSuccessPage() {
               <FileText className="h-6 w-6 text-primary" />
               What Happens Next?
             </h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 items-center justify-center bg-primary text-white rounded-full text-base font-bold shrink-0">1</div>
                 <div>
@@ -141,7 +141,7 @@ export default function InvestmentSuccessPage() {
         <Card>
           <CardContent className="p-6 space-y-4">
             <h3 className="font-semibold mb-3">Quick Resources</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Button variant="outline" asChild>
                 <Link href="/dashboard/investor/portfolio">
                   <Users className="mr-2 h-4 w-4" />

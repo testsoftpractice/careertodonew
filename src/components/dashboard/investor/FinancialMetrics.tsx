@@ -42,7 +42,7 @@ export function FinancialMetrics({
       </CardHeader>
       <CardContent className="pt-0 space-y-4">
         {/* Current Month Stats */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
               {revenueChange >= 0 ? (
@@ -85,7 +85,7 @@ export function FinancialMetrics({
               <span className="text-sm font-semibold">Year-to-Date</span>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <div className="text-xs text-muted-foreground mb-1">Total Revenue</div>
               <div className="flex items-center gap-2">

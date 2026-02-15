@@ -597,7 +597,7 @@ export default function PostJobPage() {
                   )}
 
                   {formData.salary === 'range' && formData.salaryRange.min && formData.salaryRange.max && (
-                    <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                       <div className="space-y-2">
                         <Label htmlFor="salaryMin">Min Salary ($/yr)</Label>
                         <Input

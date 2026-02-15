@@ -57,7 +57,7 @@ export function StartupTracker({
       </CardHeader>
       <CardContent className="pt-0 space-y-4">
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="p-3 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 text-center">
             <div className="text-2xl sm:text-3xl font-bold text-primary">
               {startups.length}
@@ -121,7 +121,7 @@ export function StartupTracker({
                 </div>
 
                 {/* Details */}
-                <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <DollarSign className="w-3.5 h-3.5" />
                     <span>${(startup.currentValue / 1000000).toFixed(1)}M</span>

@@ -327,7 +327,7 @@ export default function DepartmentManagement({
                   Add Department
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-background">
+              <DialogContent className="fixed z-50 left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full sm:max-w-md max-h-[90vh] overflow-y-auto bg-background/95 dark:bg-slate-900/95 backdrop-blur-xl border">
                 <DialogHeader>
                   <DialogTitle>Create New Department</DialogTitle>
                   <DialogDescription>Add a new department to organize your team</DialogDescription>
@@ -513,7 +513,7 @@ export default function DepartmentManagement({
 
       {/* Edit Department Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="bg-background">
+        <DialogContent className="fixed z-50 left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full sm:max-w-md max-h-[90vh] overflow-y-auto bg-background/95 dark:bg-slate-900/95 backdrop-blur-xl border">
           <DialogHeader>
             <DialogTitle>Edit Department</DialogTitle>
             <DialogDescription>
@@ -556,7 +556,7 @@ export default function DepartmentManagement({
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="bg-background">
+        <DialogContent className="fixed z-50 left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full sm:max-w-md max-h-[90vh] overflow-y-auto bg-background/95 dark:bg-slate-900/95 backdrop-blur-xl border">
           <DialogHeader>
             <DialogTitle>Delete Department</DialogTitle>
             <DialogDescription>
@@ -576,7 +576,7 @@ export default function DepartmentManagement({
 
       {/* Assign Members Dialog */}
       <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
-        <DialogContent className="bg-background max-w-md">
+        <DialogContent className="fixed z-50 left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full sm:max-w-md max-h-[90vh] overflow-y-auto bg-background/95 dark:bg-slate-900/95 backdrop-blur-xl border">
           <DialogHeader>
             <DialogTitle>Assign Members to {selectedDepartment?.name}</DialogTitle>
             <DialogDescription>
@@ -584,31 +584,29 @@ export default function DepartmentManagement({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-2">
-              {projectMembers.length === 0 ? (
-                <div className="text-sm text-muted-foreground text-center py-4">
-                  No project members available
-                </div>
-              ) : (
-                projectMembers.map((member) => (
-                  <label
-                    key={member.userId}
-                    className="flex items-center gap-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-lg transition-colors"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedMemberIds.includes(member.userId)}
-                      onChange={() => toggleMember(member.userId)}
-                      className="h-4 w-4"
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium text-sm">{member.user.name}</div>
-                      <div className="text-xs text-muted-foreground">{member.user.email}</div>
-                    </div>
-                  </label>
-                ))
-              )}
-            </div>
+            {projectMembers.length === 0 ? (
+              <div className="text-sm text-muted-foreground text-center py-4">
+                No project members available
+              </div>
+            ) : (
+              projectMembers.map((member) => (
+                <label
+                  key={member.userId}
+                  className="flex items-center gap-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-lg transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedMemberIds.includes(member.userId)}
+                    onChange={() => toggleMember(member.userId)}
+                    className="h-4 w-4"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">{member.user.name}</div>
+                    <div className="text-xs text-muted-foreground">{member.user.email}</div>
+                  </div>
+                </label>
+              ))
+            )}
             <div className="text-sm text-muted-foreground">
               {selectedMemberIds.length} member(s) selected
             </div>

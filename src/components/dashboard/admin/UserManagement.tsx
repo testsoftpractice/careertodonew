@@ -55,7 +55,7 @@ export function UserManagement({
       </CardHeader>
       <CardContent className="pt-0 space-y-4">
         {/* User Stats */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="p-3 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 text-center">
             <div className="text-2xl sm:text-3xl font-bold text-primary">
               {userBreakdown.total.toLocaleString()}
@@ -102,7 +102,7 @@ export function UserManagement({
             <Users className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm font-medium">User Breakdown</span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="p-2 rounded-lg bg-muted/30 text-center">
               <div className="text-lg font-bold text-primary">{userBreakdown.students}</div>
               <div className="text-[10px] text-muted-foreground">Students</div>

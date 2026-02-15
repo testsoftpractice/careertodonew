@@ -507,7 +507,7 @@ export default function EnterpriseWorkshopDemo() {
 
       {selectedTask && (
         <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="w-full sm:max-w-2xl max-w-[95vw]">
             <DialogHeader>
               <DialogTitle className="text-2xl">{selectedTask.title}</DialogTitle>
               <div className="flex gap-2 mt-2">
@@ -522,7 +522,7 @@ export default function EnterpriseWorkshopDemo() {
                 <p className="text-sm text-muted-foreground">{selectedTask.description}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 bg-muted/30 rounded-lg">
                   <h3 className="text-sm font-semibold mb-2">Assigned To</h3>
                   <div className="flex items-center gap-2">
@@ -546,7 +546,7 @@ export default function EnterpriseWorkshopDemo() {
 
               <div className="p-4 bg-muted/30 rounded-lg">
                 <h3 className="text-sm font-semibold mb-2">Time Tracking</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Estimated:</span>
                     <span className="ml-2 font-semibold">{selectedTask.estimatedHours}h</span>

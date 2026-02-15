@@ -59,7 +59,7 @@ export function DepartmentPerformance({ departments, className = '' }: Departmen
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
               <div className="text-center">
                 <div className="text-lg font-bold text-primary">{dept.studentsCount}</div>
                 <div className="text-[10px] text-muted-foreground">Students</div>

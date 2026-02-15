@@ -199,7 +199,7 @@ export default function TaskEditModal({ task, users, onClose, onSave }: TaskEdit
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto"
+        className="w-full sm:max-w-3xl max-w-[95vw] max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <Card>

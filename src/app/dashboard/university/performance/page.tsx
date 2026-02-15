@@ -213,7 +213,7 @@ export default function UniversityPerformanceDashboard() {
                           </div>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                               <div className="text-xs text-muted-foreground mb-1">Students</div>
                               <div className="text-lg font-semibold">{university.totalStudents}</div>
@@ -223,7 +223,7 @@ export default function UniversityPerformanceDashboard() {
                               <div className="text-lg font-semibold">{university.avgReputation.toFixed(1)}</div>
                             </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                               <div className="text-xs text-muted-foreground mb-1">Avg Points</div>
                               <div className="text-lg font-semibold">{university.avgPoints.toLocaleString()}</div>
@@ -233,7 +233,7 @@ export default function UniversityPerformanceDashboard() {
                               <div className="text-lg font-semibold">{university.totalProjects}</div>
                             </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                               <div className="text-xs text-muted-foreground mb-1">Active</div>
                               <div className="text-lg font-semibold">{university.activeProjects}</div>

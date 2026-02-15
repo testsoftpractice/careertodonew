@@ -1688,7 +1688,7 @@ function DashboardContent({ user }: { user: any }) {
 
       {/* Create Leave Request Dialog */}
       <Dialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
-        <DialogContent className="sm:max-w-[500px] bg-white dark:bg-slate-950 shadow-2xl">
+        <DialogContent className="sm:max-w-[500px] w-full max-w-[95vw] bg-white dark:bg-slate-950 shadow-2xl">
           <DialogHeader>
             <DialogTitle>Submit Leave Request</DialogTitle>
           </DialogHeader>
@@ -1731,7 +1731,7 @@ function DashboardContent({ user }: { user: any }) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="start-date">Start Date</Label>
                 <Input

@@ -33,7 +33,7 @@ export function UniversityStudentStats({ stats, className = '' }: UniversityStud
       </CardHeader>
       <CardContent className="pt-0 space-y-4">
         {/* Main Stats */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="p-3 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 text-center">
             <div className="text-2xl sm:text-3xl font-bold text-primary">
               {stats.totalStudents.toLocaleString()}

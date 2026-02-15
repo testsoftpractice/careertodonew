@@ -272,7 +272,7 @@ export default function KanbanTaskBoard({ tasks, onTaskMove, onTaskUpdate, onTas
       </div>
 
       {/* Kanban Board */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
         {columns.map((column) => (
           <Card
             key={column.id}
@@ -320,7 +320,7 @@ export default function KanbanTaskBoard({ tasks, onTaskMove, onTaskUpdate, onTas
           onClick={() => setSelectedTask(null)}
         >
           <div
-            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            className="w-full sm:max-w-2xl max-w-[95vw] max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6 sm:p-8">

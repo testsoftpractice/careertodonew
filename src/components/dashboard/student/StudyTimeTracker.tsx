@@ -45,7 +45,7 @@ export function StudyTimeTracker({
       </CardHeader>
       <CardContent className="pt-0 space-y-4">
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="p-3 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 text-center">
             <div className="text-2xl sm:text-3xl font-bold text-primary">
               {totalHours.toFixed(0)}

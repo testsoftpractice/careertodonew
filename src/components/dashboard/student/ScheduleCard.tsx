@@ -72,7 +72,7 @@ export function ScheduleCard({ schedule, showToday = false, className = '' }: Sc
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5" />
                   <span>{item.startTime} - {item.endTime}</span>

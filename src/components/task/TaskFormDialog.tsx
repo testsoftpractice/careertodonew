@@ -152,35 +152,53 @@ export default function TaskFormDialog({
     if (open && !isInitialized) {
       // First initialization
       if (task && mode === 'edit') {
-        // Fetch existing subtasks and assignees for edit mode
+        // Fetch existing subtasks and assignees for edit mode - use single API call
         const fetchTaskData = async () => {
           try {
-            // Fetch subtasks
-            const subtasksResponse = await authFetch(`/api/tasks/${task.id}/subtasks`)
-            const subtasksData = await subtasksResponse.json()
-            const loadedSubtasks = (subtasksData.data || []).map((s: any) => ({
-              id: s.id,
-              title: s.title,
-              completed: s.completed,
-            }))
-            setSubtasks(loadedSubtasks)
+            // Use the single task GET endpoint which includes subtasks and assignees
+            const taskResponse = await authFetch(`/api/tasks/${task.id}`)
+            const taskData = await taskResponse.json()
 
-            // Fetch multiple assignees
-            const assigneesResponse = await authFetch(`/api/tasks/${task.id}/assignees`)
-            const assigneesData = await assigneesResponse.json()
-            const loadedAssigneeIds = (assigneesData.data || assigneesData.assignees || []).map((a: any) => a.userId)
-            
-            const newFormData = {
-              title: task.title || '',
-              description: task.description || '',
-              priority: task.priority || 'MEDIUM',
-              status: task.status || 'TODO',
-              dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
-              projectId: task.projectId || '',
-              assigneeIds: loadedAssigneeIds,
-              subtasks: [],
+            if (taskData.success && taskData.data) {
+              const fullTask = taskData.data
+
+              // Load subtasks from the response
+              const loadedSubtasks = (fullTask.subTasks || []).map((s: any) => ({
+                id: s.id,
+                title: s.title,
+                completed: s.completed,
+              }))
+              setSubtasks(loadedSubtasks)
+
+              // Load assignees from the response
+              const loadedAssigneeIds = (fullTask.taskAssignees || []).map((a: any) => a.userId)
+
+              const newFormData = {
+                title: fullTask.title || '',
+                description: fullTask.description || '',
+                priority: fullTask.priority || 'MEDIUM',
+                status: fullTask.status || 'TODO',
+                dueDate: fullTask.dueDate ? new Date(fullTask.dueDate).toISOString().split('T')[0] : '',
+                projectId: fullTask.projectId || '',
+                assigneeIds: loadedAssigneeIds,
+                subtasks: [],
+              }
+              setFormData(newFormData)
+            } else {
+              // Fallback if API fails
+              const newFormData = {
+                title: task.title || '',
+                description: task.description || '',
+                priority: task.priority || 'MEDIUM',
+                status: task.status || 'TODO',
+                dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+                projectId: task.projectId || '',
+                assigneeIds: [],
+                subtasks: [],
+              }
+              setFormData(newFormData)
+              setSubtasks([])
             }
-            setFormData(newFormData)
           } catch (error) {
             console.error('Failed to fetch task data:', error)
             // Fallback to basic task data
@@ -200,7 +218,7 @@ export default function TaskFormDialog({
         }
         fetchTaskData()
       } else if (!task && mode === 'create') {
-        const newFormData = {
+        const newFormData: FormData = {
           title: '',
           description: '',
           priority: 'MEDIUM',
@@ -460,7 +478,11 @@ export default function TaskFormDialog({
                   value={formData.priority}
                   onValueChange={(value: any) => {
                     handleChange('priority', value)
-                    setErrors(prev => ({ ...prev, priority: undefined }))
+                    setErrors(prev => {
+                      const newErrors = { ...prev }
+                      delete newErrors.priority
+                      return newErrors
+                    })
                   }}
                   onOpenChange={(open: boolean) => {
                     if (open) {
@@ -708,7 +730,7 @@ export default function TaskFormDialog({
               <>
                 <Separator />
                 <div className="space-y-4">
-                  <TaskComments taskId={task.id} projectId={task.projectId} />
+                  <TaskComments taskId={task.id} projectId={task.projectId ?? undefined} />
                 </div>
               </>
             )}

@@ -36,11 +36,11 @@ interface Task {
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
   dueDate: string | null
   assignees: any[]
-  comments: any[]
+  comments?: any[]
   subtasks: any[]
   attachments: any[]
-  createdAt: string
-  updatedAt: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 interface Column {
@@ -369,7 +369,7 @@ export default function KanbanTaskBoard({ tasks, onTaskMove, onTaskUpdate, onTas
                     <label className="text-sm font-medium text-muted-foreground">Created</label>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>{new Date(selectedTask.createdAt).toLocaleString()}</span>
+                      <span>{new Date(selectedTask.createdAt || Date.now()).toLocaleString()}</span>
                     </div>
                   </div>
                 </div>

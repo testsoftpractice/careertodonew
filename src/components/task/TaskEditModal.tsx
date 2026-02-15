@@ -31,6 +31,9 @@ interface Task {
   assignees: any[]
   subtasks: any[]
   attachments: any[]
+  comments?: any[]
+  createdAt?: string
+  updatedAt?: string
 }
 
 interface User {

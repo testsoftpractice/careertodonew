@@ -3395,7 +3395,8 @@ async function main() {
         startDate: new Date('2024-09-01'),
         endDate: new Date('2025-05-15'),
         budget: 250000,
-        category: 'Supply Chain Services'
+        category: 'Supply Chain Services',
+        approvalStatus: 'PENDING',
       }
     })
 
@@ -3410,7 +3411,8 @@ async function main() {
         startDate: new Date('2024-09-01'),
         endDate: new Date('2025-05-15'),
         budget: 300000,
-        category: 'International Trade Services'
+        category: 'International Trade Services',
+        approvalStatus: 'PENDING',
       }
     })
 
@@ -3425,7 +3427,8 @@ async function main() {
         startDate: new Date('2024-09-01'),
         endDate: new Date('2025-05-15'),
         budget: 180000,
-        category: 'HR & Staffing Services'
+        category: 'HR & Staffing Services',
+        approvalStatus: 'PENDING',
       }
     })
 
@@ -3440,7 +3443,8 @@ async function main() {
         startDate: new Date('2024-09-01'),
         endDate: new Date('2025-05-15'),
         budget: 150000,
-        category: 'Administrative Services'
+        category: 'Administrative Services',
+        approvalStatus: 'PENDING',
       }
     })
 
@@ -3455,7 +3459,8 @@ async function main() {
         startDate: new Date('2024-09-01'),
         endDate: new Date('2025-05-15'),
         budget: 200000,
-        category: 'Educational Consulting'
+        category: 'Educational Consulting',
+        approvalStatus: 'PENDING',
       }
     })
 

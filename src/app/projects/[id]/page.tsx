@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import ProfessionalKanbanBoard from '@/components/task/ProfessionalKanbanBoard'
+import ProfessionalKanbanBoard, { Task } from '@/components/task/ProfessionalKanbanBoard'
 import TaskFormDialog from '@/components/task/TaskFormDialog'
 import ProjectMemberManagement from '@/components/project/ProjectMemberManagement'
 import DepartmentManagement from '@/components/project/DepartmentManagement'
@@ -82,30 +82,7 @@ interface Vacancy {
   updatedAt: string
 }
 
-interface Task {
-  id: string
-  title: string
-  description: string | null
-  status: string
-  priority: string
-  dueDate: string | null
-  completedAt: string | null
-  createdAt: string
-  updatedAt: string
-  projectId?: string | null
-  taskAssignees?: Array<{
-    id: string
-    taskId: string
-    userId: string
-    user: {
-      id: string
-      name: string
-      avatar?: string
-      email?: string
-    }
-    assignedAt: string
-    sortOrder: number
-  }>
+interface ExtendedTask extends Task {
   subTasks?: Array<{
     id: string
     taskId: string
@@ -135,7 +112,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
   const [userProjectRole, setUserProjectRole] = useState<string | null>(null)
   const [vacancies, setVacancies] = useState<Vacancy[]>([])
   const [milestones, setMilestones] = useState<Milestone[]>([])
-  const [tasks, setTasks] = useState<Task[]>([])
+  const [tasks, setTasks] = useState<ExtendedTask[]>([])
   const [availableUsers, setAvailableUsers] = useState<any[]>([])
   const [loading, setLoading] = useState({
     project: true,

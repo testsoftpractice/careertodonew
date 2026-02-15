@@ -517,8 +517,7 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
                   fetchProjectTasks(value)
                 }
               }}
-              disabled={sessionState !== 'idle' }
-              disabled={sessionState !== 'idle' }
+              disabled={sessionState !== 'idle'}
             >
               <SelectTrigger className="cursor-pointer">
                 <SelectValue placeholder={selectedProject === 'none' ? "Select a project..." : "Selected project"} />
@@ -550,8 +549,7 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
             <Select
               value={selectedTask || 'none'}
               onValueChange={(value: any) => setSelectedTask(value)}
-              disabled={sessionState !== 'idle' }
-              disabled={sessionState !== 'idle' }
+              disabled={sessionState !== 'idle'}
             >
               <SelectTrigger className="cursor-pointer">
                 <SelectValue placeholder="Select a task (optional)" />
@@ -590,8 +588,7 @@ export default function WorkSessionTimer({ onSessionComplete }: WorkSessionTimer
           <Select
             value={sessionType}
             onValueChange={(value: any) => setSessionType(value)}
-            disabled={!!activeSessionId}
-            disabled={sessionState !== 'idle' }
+            disabled={!!activeSessionId || sessionState !== 'idle'}
           >
             <SelectTrigger className="w-full cursor-pointer">
               <SelectValue placeholder="Select session type" />

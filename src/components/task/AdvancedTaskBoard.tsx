@@ -27,7 +27,7 @@ interface Task {
 export default function TaskBoard({ projectId }: TaskBoardProps) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
-  const [filter, setFilter] = useState<'ALL' | 'TODO' | 'IN_PROGRESS' | 'DONE'>('ALL')
+  const [filter, setFilter] = useState<'ALL' | TaskStatus>('ALL')
 
   // Mock tasks
   const mockTasks: Task[] = [

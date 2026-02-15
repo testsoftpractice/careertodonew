@@ -834,10 +834,25 @@ function DashboardContent({ user }: { user: any }) {
         if (taskData.dueDate) {
           payload.dueDate = new Date(taskData.dueDate).toISOString()
         }
+        // Include assigneeIds for project tasks
+        if (taskData.assigneeIds && Array.isArray(taskData.assigneeIds)) {
+          payload.assigneeIds = taskData.assigneeIds
+        }
+        // Include subtasks for project tasks
+        if (taskData.subtasks && Array.isArray(taskData.subtasks) && taskData.subtasks.length > 0) {
+          payload.subtasks = taskData.subtasks.map((st: any) => ({
+            title: st.title,
+            completed: st.completed || false,
+          }))
+        }
       } else {
         payload.userId = user.id
         if (taskData.dueDate) {
           payload.dueDate = new Date(taskData.dueDate).toISOString()
+        }
+        // Note: Personal tasks don't support subtasks in the current model
+        if (taskData.subtasks && taskData.subtasks.length > 0) {
+          toast({ title: 'Info', description: 'Subtasks are only supported for project tasks', variant: 'default' })
         }
       }
 
@@ -919,16 +934,30 @@ function DashboardContent({ user }: { user: any }) {
         payload.dueDate = new Date(taskData.dueDate).toISOString()
       }
 
-      const url = editingTask.projectId ? `/api/tasks?id=${editingTask.id}` : `/api/tasks/personal?id=${editingTask.id}&userId=${user.id}`
-      const body = { ...payload }
+      // For project tasks, include subtasks and assigneeIds
       if (editingTask.projectId) {
-        body.projectId = editingTask.projectId
+        // Include subtasks if provided
+        if (taskData.subtasks && Array.isArray(taskData.subtasks)) {
+          payload.subtasks = taskData.subtasks.map((st: any, index: number) => ({
+            id: st.id,
+            title: st.title,
+            completed: st.completed || false,
+            sortOrder: index,
+          }))
+        }
+        // Include assigneeIds if provided
+        if (taskData.assigneeIds && Array.isArray(taskData.assigneeIds)) {
+          payload.assigneeIds = taskData.assigneeIds
+        }
       }
+
+      // Use proper REST endpoint: /api/tasks/[id] for project tasks
+      const url = editingTask.projectId ? `/api/tasks/${editingTask.id}` : `/api/tasks/personal?id=${editingTask.id}&userId=${user.id}`
 
       const response = await authFetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify(payload),
       })
 
       if (!response.ok) {
@@ -1113,7 +1142,7 @@ function DashboardContent({ user }: { user: any }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex flex-col">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex-1">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex-1">
         {/* Welcome Header with Blur Glass Effect */}
         <Card className="mb-6 sm:mb-8 border-2 shadow-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl">
           <CardContent className="p-4 sm:p-6">

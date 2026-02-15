@@ -3,16 +3,19 @@ import { z } from 'zod'
 import { requireAuth } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
 import { successResponse, errorResponse, notFound, forbidden } from '@/lib/api-response'
-import { ProjectRole } from '@prisma/client'
+
+// Project roles - defined here since they're String in schema, not enum
+type ProjectRoleType = 'TEAM_MEMBER' | 'PROJECT_MANAGER' | 'TEAM_LEAD' | 'OWNER' | 'VIEWER'
+const PROJECT_ROLES = ['TEAM_MEMBER', 'PROJECT_MANAGER', 'TEAM_LEAD', 'OWNER', 'VIEWER'] as const
 
 const inviteByUserIdSchema = z.object({
   userId: z.string().cuid('Invalid user ID'),
-  role: z.nativeEnum(ProjectRole).default('TEAM_MEMBER'),
+  role: z.enum(PROJECT_ROLES).default('TEAM_MEMBER'),
 })
 
 const inviteByEmailSchema = z.object({
   email: z.string().email('Invalid email address'),
-  role: z.nativeEnum(ProjectRole).default('TEAM_MEMBER'),
+  role: z.enum(PROJECT_ROLES).default('TEAM_MEMBER'),
 })
 
 // POST /api/projects/[id]/members/invite - Invite member by user ID or email

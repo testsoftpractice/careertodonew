@@ -167,3 +167,124 @@ Stage Summary:
 - Practice Lab page is now protected and requires authentication
 - Redirects unauthenticated users to login page
 - All authenticated users (students, admins, employers, investors, etc.) can access the tools
+
+---
+Task ID: 9
+Agent: Main Agent
+Task: Fix job posting flow and functionalities
+
+Work Log:
+Issues Identified:
+1. Job Creation Page Issues:
+   - `fetchUniversities` function was defined but never called (useEffect didn't invoke it)
+   - University targeting used wrong field (`remoteLocations` instead of `universityIds`)
+   - Add buttons for requirements/responsibilities/benefits had inverted disabled logic
+
+2. Seed Data Issues:
+   - All jobs had `approvalStatus: 'PENDING'` but also `published: true` (inconsistent state)
+   - No APPROVED jobs existed, so jobs page showed nothing for regular users
+   - Missing metadata (companyName, requirements, responsibilities, benefits)
+
+3. Jobs API Issues:
+   - Individual job API (`/api/jobs/[id]/route.ts`) used mock data instead of database
+   - Jobs list API didn't parse metadata to extract companyName and other fields
+   - Admin approvals API didn't handle jobs without business relation
+
+Fixes Applied:
+1. Job Creation Page (`/src/app/jobs/create/page.tsx`):
+   - Fixed useEffect to call `fetchUniversities()` on component mount
+   - Changed university checkbox to use `formData.universityIds` instead of `remoteLocations`
+   - Fixed Add button disabled logic: `disabled={!currentRequirement.trim()}` instead of `disabled={!!currentRequirement}`
+
+2. Seed Data (`/prisma/seed.ts`):
+   - Changed 3 jobs to have `approvalStatus: 'APPROVED'` and `published: true`
+   - Kept 3 jobs with `approvalStatus: 'PENDING'` and `published: false`
+   - Added metadata JSON with companyName, requirements, responsibilities, benefits
+
+3. Jobs API (`/src/app/api/jobs/route.ts`):
+   - Added metadata parsing to extract companyName, category, positions, requirements, etc.
+   - Added salaryRange computed field from salaryMin/salaryMax
+
+4. Individual Job API (`/src/app/api/jobs/[id]/route.ts`):
+   - Replaced mock data with actual database query
+   - Added visibility control (APPROVED jobs visible to all, pending jobs visible to owner/admin)
+   - Added metadata parsing and computed fields
+
+5. Admin Approvals API (`/src/app/api/admin/approvals/jobs/route.ts`):
+   - Added metadata parsing for admin job list
+   - Added fallback for jobs without business relation
+
+Stage Summary:
+- Job creation now properly fetches and displays universities
+- Requirements/responsibilities/benefits can be added correctly
+- Jobs page now shows APPROVED jobs to all users
+- Admin approval page shows PENDING jobs for review
+- Job details page works with actual database data
+- Proper approval flow: Jobs created as PENDING → Admin reviews → Admin approves → Jobs become APPROVED and visible
+
+---
+Task ID: 10
+Agent: Main Agent
+Task: Fix investor functionality and investment flow
+
+Work Log:
+Issues Identified:
+1. Investment Status Inconsistencies:
+   - Seed data used 'ACTIVE' status which doesn't exist in schema
+   - Proper statuses are: INTERESTED, PENDING, UNDER_REVIEW, AGREED, FUNDED
+   - Stats API filtered for 'ACTIVE' and 'COMPLETED' which returned no results
+
+2. Project Investment Settings:
+   - Projects had no `seekingInvestment` flag set
+   - All projects had `approvalStatus: 'PENDING'` - none were APPROVED for investment
+   - No projects were published so investors couldn't see them
+
+3. Portfolio API Issues:
+   - Used `investedAt` for sorting but this field is null for non-FUNDED investments
+   - Random ROI calculation instead of using actual `projectedReturn` data
+   - Only returned 'ACTIVE' investments instead of 'FUNDED' ones
+
+4. Proposals Page Issues:
+   - Fetched projects without filtering for investment-seeking or approved projects
+
+5. Investor Stats Issues:
+   - Calculated stats using wrong status values
+   - Opportunities query didn't filter by approvalStatus
+
+Fixes Applied:
+1. Seed Data (`/prisma/seed.ts`):
+   - Updated projects: 3 APPROVED with seekingInvestment=true, 2 PENDING/UNDER_REVIEW
+   - Created 5 investments with proper status progression:
+     * 1 FUNDED (completed deal with investedAt and fundedAt)
+     * 1 AGREED (deal agreed, awaiting funding)
+     * 1 UNDER_REVIEW (proposal being reviewed)
+     * 1 PENDING (new proposal)
+     * 1 INTERESTED (initial interest)
+   - Added equity percentages, terms (JSON), projectedReturn, expiresAt
+
+2. Stats API (`/src/app/api/dashboard/investor/stats/route.ts`):
+   - Fixed to use proper statuses (FUNDED for completed, AGREED/UNDER_REVIEW/PENDING/INTERESTED for active)
+   - Added approvalStatus filter for opportunities
+   - Proper calculation of totalInvested, totalEquity, avgReturn
+
+3. Portfolio API (`/src/app/api/dashboard/investor/portfolio/route.ts`):
+   - Only return FUNDED investments in portfolio
+   - Use projectedReturn for current value calculation
+   - Parse terms JSON and include in response
+   - Added more stats: totalEquity, totalProjectedReturn, avgROI
+
+4. Projects API (`/src/app/api/projects/route.ts`):
+   - Added seekingInvestment filter parameter
+   - Added approvalStatus filter parameter
+
+5. Investor Dashboard (`/src/app/dashboard/investor/page.tsx`):
+   - Updated fetchOpportunities to filter by seekingInvestment=true and approvalStatus=APPROVED
+   - Fixed stats state structure
+
+Stage Summary:
+- Investment flow now properly progresses: INTERESTED → PENDING → UNDER_REVIEW → AGREED → FUNDED
+- Investors see only APPROVED projects seeking investment
+- Portfolio shows only FUNDED investments
+- Deals page shows active deals (AGREED/UNDER_REVIEW)
+- Proposals page shows pending proposals
+- Stats correctly reflect investor's portfolio and deal pipeline

@@ -91,11 +91,34 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    // Parse metadata and add computed fields
+    const parsedJobs = jobs.map(job => {
+      let metadata = {}
+      try {
+        metadata = job.metadata ? JSON.parse(job.metadata) : {}
+      } catch (e) {
+        console.error('Failed to parse job metadata:', e)
+      }
+
+      return {
+        ...job,
+        companyName: (metadata as any).companyName || job.business?.name || 'Unknown Company',
+        category: (metadata as any).category || null,
+        positions: (metadata as any).positions || '1',
+        requirements: (metadata as any).requirements || [],
+        responsibilities: (metadata as any).responsibilities || [],
+        benefits: (metadata as any).benefits || [],
+        salaryRange: job.salaryMin && job.salaryMax 
+          ? `$${job.salaryMin.toLocaleString()} - $${job.salaryMax.toLocaleString()}`
+          : job.salary || 'Not specified',
+      }
+    })
+
     return NextResponse.json({
       success: true,
       data: {
-        jobs,
-        count: jobs.length,
+        jobs: parsedJobs,
+        count: parsedJobs.length,
       },
     })
   } catch (error) {

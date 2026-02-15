@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,370 +8,131 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ============================================
-// ENUMS
-// ============================================
+model Agreement {
+  id        String    @id
+  userId    String
+  projectId String?
+  title     String
+  content   String
+  signed    Boolean   @default(false)
+  signedAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime
+  Project   Project?  @relation(fields: [projectId], references: [id])
+  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-enum UserRole {
-  STUDENT
-  EMPLOYER
-  INVESTOR
-  UNIVERSITY_ADMIN
-  PLATFORM_ADMIN
-}
-
-enum VerificationStatus {
-  PENDING
-  UNDER_REVIEW
-  VERIFIED
-  REJECTED
-  BANNED
-}
-
-enum SkillLevel {
-  BEGINNER
-  INTERMEDIATE
-  ADVANCED
-  EXPERT
-}
-
-enum LeaveType {
-  SICK_LEAVE
-  PERSONAL_LEAVE
-  VACATION
-  EMERGENCY
-  BEREAVEMENT
-  MATERNITY
-  PATERNITY
-}
-
-enum LeaveRequestStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  CANCELLED
-}
-
-enum EmploymentType {
-  FULL_TIME
-  PART_TIME
-  INTERNSHIP
-  CONTRACT
-}
-
-enum ProjectStage {
-  IDEA
-  PROPOSAL
-  FUNDING
-  DEVELOPMENT
-  TESTING
-  DEPLOYMENT
-  COMPLETED
-  ON_HOLD
-}
-
-enum ProjectStatus {
-  IDEA
-  UNDER_REVIEW
-  FUNDING
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-  ON_HOLD
-  ACTIVE
-}
-
-enum TaskPriority {
-  CRITICAL
-  HIGH
-  MEDIUM
-  LOW
-}
-
-enum TaskStatus {
-  BACKLOG
-  TODO
-  IN_PROGRESS
-  REVIEW
-  DONE
-  BLOCKED
-  CANCELLED
-}
-
-enum MilestoneStatus {
-  NOT_STARTED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-}
-
-enum RatingType {
-  EXECUTION
-  COLLABORATION
-  LEADERSHIP
-  ETHICS
-  RELIABILITY
-}
-
-enum NotificationType {
-  INFO
-  SUCCESS
-  WARNING
-  ERROR
-  TASK_ASSIGNED
-  PROJECT_UPDATE
-  VERIFICATION
-  VERIFICATION_STATUS
-  INVESTMENT
-  DEAL_UPDATE
-  COLLABORATION_REQUEST
-  COLLABORATION_RESPONSE
-  BUSINESS_APPROVAL
-  BUSINESS_REJECTION
-  PROJECT_APPROVAL
-  JOB_APPROVAL
-  MESSAGE
-}
-
-enum NotificationPriority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
-}
-
-enum AuditAction {
-  CREATE
-  UPDATE
-  DELETE
-  VIEW
-  LOGIN
-  LOGOUT
-}
-
-enum UniversityVerificationStatus {
-  PENDING
-  UNDER_REVIEW
-  VERIFIED
-  SUSPENDED
-  REJECTED
-}
-
-enum ProgressionLevel {
-  CONTRIBUTOR
-  SENIOR_CONTRIBUTOR
-  TEAM_LEAD
-  PROJECT_LEAD
-}
-
-enum BusinessRole {
-  OWNER
-  ADMIN
-  HR_MANAGER
-  PROJECT_MANAGER
-  TEAM_LEAD
-  RECRUITER
-  TEAM_MEMBER
-  VIEWER
-}
-
-enum ProjectRole {
-  OWNER
-  PROJECT_MANAGER
-  TEAM_LEAD
-  TEAM_MEMBER
-  VIEWER
-}
-
-enum TaskAccessLevel {
-  OWNER
-  PROJECT_MANAGER
-  VIEW
-  COMMENT
-}
-
-enum WorkSessionType {
-  ONSITE
-  REMOTE
-  HYBRID
-  BREAK
-  MEETING
-  TRAINING
-  RESEARCH
-}
-
-enum CollaborationType {
-  MENTORSHIP
-  PROJECT
-  PARTNERSHIP
-}
-
-enum CollaborationStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-}
-
-enum ProjectApprovalStatus {
-  PENDING
-  UNDER_REVIEW
-  APPROVED
-  REJECTED
-  REQUIRE_CHANGES
-}
-
-enum JobApprovalStatus {
-  DRAFT
-  PENDING
-  UNDER_REVIEW
-  APPROVED
-  REJECTED
-  EXPIRED
-}
-
-// ============================================
-// MODELS
-// ============================================
-
-model University {
-  id                String                        @id @default(cuid())
-  name              String
-  code              String                        @unique
-  description       String?
-  location          String?
-  website           String?
-  rankingScore      Float?
-  rankingPosition   Int?
-  totalStudents     Int?
-  verificationStatus UniversityVerificationStatus @default(PENDING)
-  totalProjects     Int                           @default(0)
-
-  // Relations
-  users             User[]
-  projects          Project[]
-
-  // Timestamps
-  createdAt         DateTime                      @default(now())
-  updatedAt         DateTime                      @updatedAt
-
-  @@index([code])
-  @@index([verificationStatus])
-}
-
-model User {
-  id                    String             @id @default(cuid())
-  email                 String             @unique
-  password              String
-  name                  String
-  avatar                String?
-  role                  UserRole
-  verificationStatus    VerificationStatus @default(PENDING)
-
-  // Student specific fields
-  universityId          String?
-  major                 String?
-  graduationYear        Int?
-  bio                   String?
-  location              String?
-  linkedinUrl           String?
-  portfolioUrl          String?
-  emailVerified         Boolean            @default(false)
-  emailVerifiedAt       DateTime?
-  mobileNumber          String?
-
-  // University specific fields
-  university            University?        @relation(fields: [universityId], references: [id], onDelete: SetNull)
-
-  // Business specific fields
-  businessesOwned     Business[]           @relation("BusinessOwned")
-  businessMemberships  BusinessMember[]
-
-  // Scoring
-  executionScore        Float?
-  collaborationScore    Float?
-  leadershipScore       Float?
-  ethicsScore           Float?
-  reliabilityScore      Float?
-  progressionLevel      ProgressionLevel?
-  totalPoints          Int            @default(0)
-
-  // Account security
-  loginAttempts        Int                @default(0)
-  lockedAt             DateTime?
-  lastPasswordChange   DateTime?
-  lastLoginAt          DateTime?
-
-  // Additional fields
-  department           String?
-  projectLeads         Int                @default(0)
-
-  // Relations
-  skills                Skill[]
-  experiences           Experience[]
-  education             Education[]
-  leaveRequests         LeaveRequest[]
-  projectsOwned         Project[]          @relation("ProjectOwner")
-  projectsMembered      ProjectMember[]
-  tasksCreated          Task[]             @relation("CreatedTasks")
-  assignedTasks         Task[]             @relation("TaskAssignee")
-  taskAssignees        TaskAssignee[]     @relation("TaskAssignees")
-  timeEntries           TimeEntry[]
-  workSessions          WorkSession[]
-  professionalRecords   ProfessionalRecord[]
-  ratingsGiven          Rating[]           @relation("RatingsGiven")
-  ratingsReceived       Rating[]           @relation("RatingsReceived")
-  notifications         Notification[]
-  auditLogs             AuditLog[]
-  verificationRequests  VerificationRequest[]
-  agreements            Agreement[]
-  investments           Investment[]
-  projectsApproved      ProjectApproval[]
-  jobsPosted            Job[]
-  jobsApproved           JobApproval[]
-  jobApplications       JobApplication[]
-  messagesSent          Message[]          @relation("MessagesSent")
-  messagesReceived      Message[]          @relation("MessagesReceived")
-  leaderboardEntries    Leaderboard[]
-  pointTransactions   PointTransaction[]
-  departmentsHeaded     Department[]
-  personalTasks         PersonalTask[]
-  taskStepsCreated     TaskStep[]         @relation("TaskStepsCreatedBy")
-  taskComments          TaskComment[]      @relation("TaskComments")
-  sentCollaborationRequests CollaborationRequest[] @relation("CollaborationFrom")
-  receivedCollaborationRequests CollaborationRequest[] @relation("CollaborationTo")
-  passwordResetTokens   PasswordResetToken[]
-
-  // Timestamps
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
-
-  @@index([email])
-  @@index([role])
-  @@index([universityId])
-  @@index([verificationStatus])
-}
-
-model Skill {
-  id           String     @id @default(cuid())
-  userId       String
-  name         String
-  level        SkillLevel @default(INTERMEDIATE)
-  endorsements Int        @default(0)
-
-  // Relations
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Timestamps
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  @@unique([userId, name])
+  @@index([signed])
   @@index([userId])
-  @@index([level])
+}
+
+model AuditLog {
+  id        String   @id
+  userId    String
+  action    String
+  entity    String
+  entityId  String
+  details   String?
+  createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([entity])
+  @@index([action])
+  @@index([userId])
+}
+
+model Business {
+  id             String           @id
+  name           String
+  description    String?
+  industry       String?
+  location       String?
+  website        String?
+  logo           String?
+  size           String?
+  status         String           @default("PENDING")
+  verifiedAt     DateTime?
+  public         Boolean          @default(false)
+  ownerId        String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  User           User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  BusinessMember BusinessMember[]
+  Job            Job[]
+  Project        Project[]
+
+  @@index([status])
+  @@index([ownerId])
+}
+
+model BusinessMember {
+  id          String   @id
+  businessId  String
+  userId      String
+  role        String   @default("TEAM_MEMBER")
+  permissions String?
+  joinedAt    DateTime @default(now())
+  User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, userId])
+  @@index([role])
+  @@index([userId])
+  @@index([businessId])
+}
+
+model CollaborationRequest {
+  id                                     String   @id
+  fromId                                 String
+  toId                                   String
+  type                                   String   @default("PROJECT")
+  status                                 String   @default("PENDING")
+  message                                String?
+  projectId                              String?
+  createdAt                              DateTime @default(now())
+  updatedAt                              DateTime
+  User_CollaborationRequest_toIdToUser   User     @relation("CollaborationRequest_toIdToUser", fields: [toId], references: [id], onDelete: Cascade)
+  User_CollaborationRequest_fromIdToUser User     @relation("CollaborationRequest_fromIdToUser", fields: [fromId], references: [id], onDelete: Cascade)
+
+  @@index([type])
+  @@index([status])
+  @@index([toId])
+  @@index([fromId])
+}
+
+model Department {
+  id            String          @id
+  projectId     String
+  name          String
+  headId        String?
+  User          User?           @relation(fields: [headId], references: [id])
+  Project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  ProjectMember ProjectMember[]
+
+  @@index([headId])
+  @@index([projectId])
+}
+
+model Education {
+  id          String   @id
+  userId      String
+  school      String
+  degree      String
+  field       String?
+  gpa         Float?
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([startDate])
+  @@index([userId])
 }
 
 model Experience {
-  id          String    @id @default(cuid())
+  id          String    @id
   userId      String
   title       String
   company     String?
@@ -384,377 +142,258 @@ model Experience {
   endDate     DateTime?
   current     Boolean   @default(false)
   skills      String?
-
-  // Relations
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Timestamps
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  updatedAt   DateTime
+  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
-  @@index([startDate])
   @@index([current])
+  @@index([startDate])
+  @@index([userId])
 }
 
-model Education {
-  id          String   @id @default(cuid())
-  userId      String
-  school      String
-  degree      String
-  field       String?
-  gpa         Float?
-  description String?
-  startDate   DateTime
-  endDate     DateTime
+model Investment {
+  id              String    @id
+  userId          String
+  projectId       String
+  amount          Float
+  type            String
+  status          String    @default("PENDING")
+  equity          Float?
+  projectedReturn Float?
+  investedAt      DateTime?
+  terms           String?
+  expiresAt       DateTime?
+  agreementId     String?
+  fundedAt        DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime
+  Project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  User            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relations
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  @@index([projectId])
+  @@index([status])
   @@index([userId])
-  @@index([startDate])
+}
+
+model Job {
+  id              String           @id
+  userId          String
+  businessId      String?
+  title           String
+  description     String?
+  type            String           @default("FULL_TIME")
+  employmentType  String           @default("FULL_TIME")
+  location        String?
+  salary          String?
+  salaryMin       Float?
+  salaryMax       Float?
+  department      String?
+  status          String?
+  views           Int              @default(0)
+  deadline        DateTime?
+  published       Boolean          @default(false)
+  publishedAt     DateTime?
+  metadata        String?          @default("{}")
+  approvalStatus  String           @default("DRAFT")
+  approvedAt      DateTime?
+  approvedBy      String?
+  rejectionReason String?
+  reviewComments  String?
+  submissionDate  DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime
+  Business        Business?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  User            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  JobApplication  JobApplication[]
+  JobApproval     JobApproval[]
+  Notification    Notification[]
+
+  @@index([published])
+  @@index([businessId])
+  @@index([userId])
+}
+
+model JobApplication {
+  id        String   @id
+  jobId     String
+  userId    String
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([userId])
+  @@index([jobId])
+}
+
+model JobApproval {
+  id         String   @id
+  jobId      String
+  adminId    String
+  status     String
+  comments   String?
+  reviewedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  User       User     @relation(fields: [adminId], references: [id])
+  Job        Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([adminId])
+  @@index([jobId])
+}
+
+model Leaderboard {
+  id        String   @id
+  userId    String
+  category  String
+  score     Float
+  rank      Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])
+  @@index([rank])
+  @@index([category])
 }
 
 model LeaveRequest {
-  id              String              @id @default(cuid())
+  id              String    @id
   userId          String
   projectId       String?
-
-  leaveType       LeaveType
+  leaveType       String
   startDate       DateTime
   endDate         DateTime
   reason          String
-  status          LeaveRequestStatus  @default(PENDING)
+  status          String    @default("PENDING")
   rejectionReason String?
-
-  // Approval Info
   reviewedBy      String?
   reviewedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime
+  Project         Project?  @relation(fields: [projectId], references: [id])
+  User            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relations
-  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project         Project?            @relation(fields: [projectId], references: [id], onDelete: SetNull)
-
-  // Timestamps
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-
-  @@index([userId])
-  @@index([projectId])
-  @@index([status])
-  @@index([startDate])
   @@index([endDate])
-}
-
-model Project {
-  id                String        @id @default(cuid())
-  name              String
-  description       String?
-  status            ProjectStatus @default(IDEA)
-  stage             ProjectStage  @default(IDEA)
-
-  // Owner
-  ownerId           String
-  businessId        String?
-  universityId      String?
-
-  // Additional fields
-  startDate         DateTime?
-  endDate           DateTime?
-  budget            Float?
-  category          String?
-  tags              String?       // Comma-separated tags
-  imageUrl          String?       // Project cover image
-  progress          Float         @default(0) // 0-100 percentage
-  seekingInvestment Boolean       @default(false)
-  published         Boolean       @default(false)
-  publishedAt       DateTime?
-
-  // Approval fields
-  approvalStatus    ProjectApprovalStatus @default(PENDING)
-  approvalDate      DateTime?
-  approvedAt        DateTime?
-  approvedBy        String?
-  terminationReason String?
-  terminationDate   DateTime?
-  reviewComments    String?
-  submissionDate    DateTime?
-
-  // Relations
-  owner             User          @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  business          Business?     @relation("ProjectBusiness", fields: [businessId], references: [id], onDelete: SetNull)
-  university        University?    @relation(fields: [universityId], references: [id], onDelete: SetNull)
-  members           ProjectMember[]
-  tasks             Task[]
-  milestones         Milestone[]
-  departments       Department[]
-  vacancies         Vacancy[]
-  ratings           Rating[]
-  agreements        Agreement[]
-  workSessions      WorkSession[]
-  timeEntries       TimeEntry[]
-  investments       Investment[]  @relation("InvestmentProject")
-  approvals         ProjectApproval[]
-  notifications     Notification[]
-  leaveRequests     LeaveRequest[]
-
-  // Timestamps
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-
-  @@index([ownerId])
-  @@index([businessId])
+  @@index([startDate])
   @@index([status])
-  @@index([stage])
-  @@index([category])
-  @@index([progress])
-  @@index([published])
-}
-
-model ProjectMember {
-  id           String         @id @default(cuid())
-  projectId    String
-  userId       String
-  role         ProjectRole    @default(TEAM_MEMBER)
-  accessLevel  TaskAccessLevel @default(VIEW)
-  departmentId String?
-  joinedAt     DateTime       @default(now())
-
-  // Relations
-  project      Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  department   Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-
-  @@unique([projectId, userId])
   @@index([projectId])
   @@index([userId])
-  @@index([accessLevel])
-  @@index([departmentId])
 }
 
-model Task {
-  id            String      @id @default(cuid())
-  projectId     String?
-  title         String
-  description   String?
+model Message {
+  id                            String   @id
+  fromUserId                    String
+  toUserId                      String
+  content                       String
+  read                          Boolean  @default(false)
+  createdAt                     DateTime @default(now())
+  User_Message_toUserIdToUser   User     @relation("Message_toUserIdToUser", fields: [toUserId], references: [id], onDelete: Cascade)
+  User_Message_fromUserIdToUser User     @relation("Message_fromUserIdToUser", fields: [fromUserId], references: [id], onDelete: Cascade)
 
-  // Task management
-  status        TaskStatus  @default(TODO)
-  priority      TaskPriority @default(MEDIUM)
-  currentStepId String?     @default("1")
-
-  // Assignments
-  assignedBy    String
-  assignedTo    String?     // Primary assignee
-
-  // Dates
-  dueDate       DateTime?
-  completedAt   DateTime?
-  estimatedHours Float?
-  actualHours   Float?
-
-  // Relations
-  project       Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  creator       User        @relation("CreatedTasks", fields: [assignedBy], references: [id], onDelete: Cascade)
-  assignee      User?       @relation("TaskAssignee", fields: [assignedTo], references: [id], onDelete: SetNull)
-  subTasks      SubTask[]
-  taskAssignees TaskAssignee[]
-  timeEntries   TimeEntry[]
-  workSessions  WorkSession[]
-  dependencies  TaskDependency[] @relation("DependentTasks")
-  blockers      TaskDependency[] @relation("BlockingTasks")
-  steps         TaskStep[]
-  comments      TaskComment[]
-  notifications Notification[]
-
-  // Timestamps
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-
-  // Indexes
-  @@index([projectId, status])  // For project task lists
-  @@index([projectId, priority, status]) // For prioritized task lists
-  @@index([projectId])
-  @@index([status])
-  @@index([priority])
-  @@index([currentStepId])
-  @@index([createdAt])
-  @@index([dueDate])
-  @@index([assignedTo])
-}
-
-model TaskAssignee {
-  id         String   @id @default(cuid())
-  taskId     String
-  userId     String
-  assignedAt DateTime @default(now())
-  sortOrder  Int      @default(0) // To track order of assignees
-
-  // Relations
-  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user       User     @relation("TaskAssignees", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([taskId, userId])
-  @@index([taskId])
-  @@index([userId])
-}
-
-model SubTask {
-  id        String   @id @default(cuid())
-  taskId    String
-  title     String
-  completed Boolean  @default(false)
-  sortOrder Int      @default(0)
-
-  // Relations
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([taskId])
-}
-
-model TaskDependency {
-  id           String @id @default(cuid())
-  taskId       String
-  dependsOnId  String
-
-  // Relations
-  task         Task   @relation("DependentTasks", fields: [taskId], references: [id], onDelete: Cascade)
-  dependsOn    Task   @relation("BlockingTasks", fields: [dependsOnId], references: [id], onDelete: Cascade)
-
-  @@unique([taskId, dependsOnId])
-  @@index([taskId])
-  @@index([dependsOnId])
+  @@index([read])
+  @@index([toUserId])
+  @@index([fromUserId])
 }
 
 model Milestone {
-  id          String          @id @default(cuid())
+  id          String    @id
   projectId   String
   title       String
   description String?
-  status      MilestoneStatus @default(NOT_STARTED)
+  status      String    @default("NOT_STARTED")
   dueDate     DateTime
   completedAt DateTime?
   metrics     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  Project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  // Relations
-  project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  // Timestamps
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-
-  @@index([projectId])
-  @@index([status])
   @@index([dueDate])
-}
-
-model Department {
-  id        String   @id @default(cuid())
-  projectId String
-  name      String
-  headId    String?
-
-  // Relations
-  project   Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  head      User?          @relation(fields: [headId], references: [id], onDelete: SetNull)
-  members   ProjectMember[]
-
-  @@index([projectId])
-  @@index([headId])
-}
-
-model Vacancy {
-  id          String         @id @default(cuid())
-  projectId   String
-  title       String
-  description String?
-  type        EmploymentType @default(FULL_TIME)
-  skills      String?
-  slots       Int            @default(1)
-  filled      Int            @default(0)
-
-  // Additional fields for comprehensive job posting
-  responsibilities String?       // Detailed job responsibilities
-  requirements    String?       // Job requirements (education, experience, etc.)
-  expertise       String?       // Required expertise areas
-  salaryMin      Float?        // Minimum salary
-  salaryMax      Float?        // Maximum salary
-  location       String?       // Job location (remote, onsite, etc.)
-  experience     String?       // Required experience level
-  status         String         @default("OPEN") // OPEN, CLOSED, FILLED
-
-  // Relations
-  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  // Timestamps
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-
-  @@index([projectId])
-  @@index([type])
   @@index([status])
-}
-
-model TimeEntry {
-  id            String   @id @default(cuid())
-  taskId        String?
-  projectId     String?
-  userId        String
-  date          DateTime
-  hours         Float
-  description   String?
-  billable      Boolean  @default(false)
-  hourlyRate    Float?
-  workSessionId String?
-
-  // Relations
-  task          Task?        @relation(fields: [taskId], references: [id], onDelete: SetNull)
-  project       Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workSession   WorkSession? @relation(fields: [workSessionId], references: [id], onDelete: SetNull)
-
-  @@index([userId])
-  @@index([taskId])
   @@index([projectId])
-  @@index([workSessionId])
-  @@index([date])
 }
 
-model WorkSession {
-  id        String          @id @default(cuid())
+model Notification {
+  id        String   @id
   userId    String
+  type      String
+  title     String
+  message   String
+  link      String?
+  priority  String   @default("MEDIUM")
+  read      Boolean  @default(false)
   projectId String?
   taskId    String?
-  type      WorkSessionType @default(ONSITE)
-  notes     String?
-  checkInLocation  String?
-  checkOutLocation String?
-  startTime DateTime
-  endTime   DateTime?
-  duration  Int?           // in seconds
+  jobId     String?
+  createdAt DateTime @default(now())
+  Job       Job?     @relation(fields: [jobId], references: [id])
+  Task      Task?    @relation(fields: [taskId], references: [id])
+  Project   Project? @relation(fields: [projectId], references: [id])
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relations
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project   Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  task      Task?           @relation(fields: [taskId], references: [id], onDelete: SetNull)
-  timeEntries TimeEntry[]
-
-  @@index([userId])
-  @@index([projectId])
+  @@index([jobId])
   @@index([taskId])
-  @@index([startTime])
+  @@index([projectId])
+  @@index([type])
+  @@index([read])
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  used      Boolean   @default(false)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@index([token])
+  @@index([userId])
+}
+
+model PersonalTask {
+  id          String    @id
+  userId      String
+  title       String
+  description String?
+  status      String    @default("TODO")
+  priority    String    @default("MEDIUM")
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([priority])
+  @@index([status])
+  @@index([userId])
+}
+
+model PointTransaction {
+  id          String   @id
+  userId      String
+  points      Int
+  source      String
+  description String?
+  metadata    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([source])
+  @@index([userId])
 }
 
 model ProfessionalRecord {
-  id          String   @id @default(cuid())
+  id          String    @id
   userId      String
   recordType  String?
   title       String
@@ -762,481 +401,436 @@ model ProfessionalRecord {
   startDate   DateTime
   endDate     DateTime?
   metadata    String?
-  verified    Boolean  @default(false)
+  verified    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relations
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([userId])
   @@index([verified])
+  @@index([userId])
+}
+
+model Project {
+  id                String            @id
+  name              String
+  description       String?
+  status            String            @default("IDEA")
+  stage             String            @default("IDEA")
+  ownerId           String
+  businessId        String?
+  universityId      String?
+  startDate         DateTime?
+  endDate           DateTime?
+  budget            Float?
+  category          String?
+  tags              String?
+  imageUrl          String?
+  progress          Float             @default(0)
+  seekingInvestment Boolean           @default(false)
+  published         Boolean           @default(false)
+  publishedAt       DateTime?
+  approvalStatus    String            @default("PENDING")
+  approvalDate      DateTime?
+  approvedAt        DateTime?
+  approvedBy        String?
+  terminationReason String?
+  terminationDate   DateTime?
+  reviewComments    String?
+  submissionDate    DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime
+  Agreement         Agreement[]
+  Department        Department[]
+  Investment        Investment[]
+  LeaveRequest      LeaveRequest[]
+  Milestone         Milestone[]
+  Notification      Notification[]
+  University        University?       @relation(fields: [universityId], references: [id])
+  Business          Business?         @relation(fields: [businessId], references: [id])
+  User              User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ProjectApproval   ProjectApproval[]
+  ProjectMember     ProjectMember[]
+  Rating            Rating[]
+  Task              Task[]
+  TimeEntry         TimeEntry[]
+  Vacancy           Vacancy[]
+  WorkSession       WorkSession[]
+
+  @@index([published])
+  @@index([progress])
+  @@index([category])
+  @@index([stage])
+  @@index([status])
+  @@index([businessId])
+  @@index([ownerId])
+}
+
+model ProjectApproval {
+  id         String   @id
+  projectId  String
+  adminId    String
+  status     String
+  comments   String?
+  reviewedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  User       User     @relation(fields: [adminId], references: [id])
+  Project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([adminId])
+  @@index([projectId])
+}
+
+model ProjectMember {
+  id           String      @id
+  projectId    String
+  userId       String
+  role         String      @default("TEAM_MEMBER")
+  accessLevel  String      @default("VIEW")
+  departmentId String?
+  joinedAt     DateTime    @default(now())
+  Department   Department? @relation(fields: [departmentId], references: [id])
+  User         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Project      Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([departmentId])
+  @@index([accessLevel])
+  @@index([userId])
+  @@index([projectId])
 }
 
 model Rating {
-  id        String    @id @default(cuid())
-  fromUserId String
-  toUserId    String
-  type       RatingType
-  score      Int
-  comment    String?
+  id                           String   @id
+  fromUserId                   String
+  toUserId                     String
+  type                         String
+  score                        Int
+  comment                      String?
+  projectId                    String?
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime
+  Project                      Project? @relation(fields: [projectId], references: [id])
+  User_Rating_toUserIdToUser   User     @relation("Rating_toUserIdToUser", fields: [toUserId], references: [id], onDelete: Cascade)
+  User_Rating_fromUserIdToUser User     @relation("Rating_fromUserIdToUser", fields: [fromUserId], references: [id], onDelete: Cascade)
 
-  // Relations
-  fromUser   User      @relation("RatingsGiven", fields: [fromUserId], references: [id], onDelete: Cascade)
-  toUser     User      @relation("RatingsReceived", fields: [toUserId], references: [id], onDelete: Cascade)
-  project    Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  projectId  String?
-
-  // Timestamps
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
-  @@index([fromUserId])
-  @@index([toUserId])
   @@index([type])
+  @@index([toUserId])
+  @@index([fromUserId])
 }
 
-model Notification {
-  id        String              @id @default(cuid())
-  userId    String
-  type      NotificationType
-  title     String
-  message   String
-  link      String?
-  priority  NotificationPriority @default(MEDIUM)
-  read      Boolean             @default(false)
-  projectId String?
-  taskId    String?
-  jobId     String?
+model Skill {
+  id           String   @id
+  userId       String
+  name         String
+  level        String   @default("INTERMEDIATE")
+  endorsements Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relations
-  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project   Project?            @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  task      Task?               @relation(fields: [taskId], references: [id], onDelete: SetNull)
-  job       Job?                @relation(fields: [jobId], references: [id], onDelete: SetNull)
-
-  // Timestamps
-  createdAt DateTime            @default(now())
-
+  @@unique([userId, name])
+  @@index([level])
   @@index([userId])
-  @@index([read])
-  @@index([type])
-  @@index([projectId])
+}
+
+model SubTask {
+  id        String   @id
+  taskId    String
+  title     String
+  completed Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
   @@index([taskId])
-  @@index([jobId])
 }
 
-model AuditLog {
-  id        String     @id @default(cuid())
-  userId    String
-  action    AuditAction
-  entity    String
-  entityId  String
-  details   String?
+model Task {
+  id                                              String           @id
+  projectId                                       String?
+  title                                           String
+  description                                     String?
+  status                                          String           @default("TODO")
+  priority                                        String           @default("MEDIUM")
+  currentStepId                                   String?          @default("1")
+  assignedBy                                      String
+  assignedTo                                      String?
+  dueDate                                         DateTime?
+  completedAt                                     DateTime?
+  estimatedHours                                  Float?
+  actualHours                                     Float?
+  createdAt                                       DateTime         @default(now())
+  updatedAt                                       DateTime
+  Notification                                    Notification[]
+  SubTask                                         SubTask[]
+  User_Task_assignedToToUser                      User?            @relation("Task_assignedToToUser", fields: [assignedTo], references: [id])
+  User_Task_assignedByToUser                      User             @relation("Task_assignedByToUser", fields: [assignedBy], references: [id], onDelete: Cascade)
+  Project                                         Project?         @relation(fields: [projectId], references: [id])
+  TaskAssignee                                    TaskAssignee[]
+  TaskComment                                     TaskComment[]
+  TaskDependency_TaskDependency_dependsOnIdToTask TaskDependency[] @relation("TaskDependency_dependsOnIdToTask")
+  TaskDependency_TaskDependency_taskIdToTask      TaskDependency[] @relation("TaskDependency_taskIdToTask")
+  TaskStep                                        TaskStep[]
+  TimeEntry                                       TimeEntry[]
+  WorkSession                                     WorkSession[]
 
-  // Relations
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Timestamps
-  createdAt DateTime   @default(now())
-
-  @@index([userId])
-  @@index([action])
-  @@index([entity])
+  @@index([assignedTo])
+  @@index([dueDate])
   @@index([createdAt])
-}
-
-model VerificationRequest {
-  id          String             @id @default(cuid())
-  userId      String
-  type        String
-  status      VerificationStatus @default(PENDING)
-  submittedAt DateTime           @default(now())
-  createdAt   DateTime           @default(now())
-  reviewedAt  DateTime?
-  notes       String?
-  reviewNote  String?
-  requesterId String?
-  priority    NotificationPriority?
-
-  title       String?
-  description String?
-  projectId   String?
-
-  // Relations
-  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([status])
-  @@index([requesterId])
-}
-
-model Agreement {
-  id        String   @id @default(cuid())
-  userId    String
-  projectId String?
-  title     String
-  content   String
-  signed    Boolean  @default(false)
-  signedAt  DateTime?
-
-  // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([signed])
-}
-
-model Investment {
-  id          String   @id @default(cuid())
-  userId      String
-  projectId   String
-  amount      Float
-  type        String
-  status      String  @default("PENDING")
-  equity      Float?
-  projectedReturn Float?
-  investedAt  DateTime?
-
-  // Additional fields for proposals and deals
-  terms       String?
-  expiresAt   DateTime?
-  agreementId String?
-  fundedAt    DateTime?
-
-  // Relations
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project     Project  @relation("InvestmentProject", fields: [projectId], references: [id], onDelete: Cascade)
-
-  // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([userId])
+  @@index([currentStepId])
+  @@index([priority])
   @@index([status])
   @@index([projectId])
+  @@index([projectId, priority, status])
+  @@index([projectId, status])
 }
 
-model Business {
-  id                String             @id @default(cuid())
-  name              String
-  description       String?
-  industry          String?
-  location          String?
-  website           String?
-  logo              String?
-  size              String?
-  status            VerificationStatus @default(PENDING)
-  verifiedAt        DateTime?
-  public            Boolean           @default(false)
+model TaskAssignee {
+  id         String   @id
+  taskId     String
+  userId     String
+  assignedAt DateTime @default(now())
+  sortOrder  Int      @default(0)
+  User       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
-  // Owner
-  ownerId           String
-  owner             User               @relation("BusinessOwned", fields: [ownerId], references: [id], onDelete: Cascade)
-
-  // Relations
-  members           BusinessMember[]
-  projects          Project[]          @relation("ProjectBusiness")
-  jobs              Job[]              @relation("BusinessJobs")
-
-  // Timestamps
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-
-  @@index([ownerId])
-  @@index([status])
-}
-
-model BusinessMember {
-  id          String     @id @default(cuid())
-  businessId  String
-  userId      String
-  role        BusinessRole @default(TEAM_MEMBER)
-  permissions String?    // JSON string for custom permissions
-  joinedAt    DateTime   @default(now())
-
-  // Relations
-  business    Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([businessId, userId])
-  @@index([businessId])
+  @@unique([taskId, userId])
   @@index([userId])
-  @@index([role])
+  @@index([taskId])
 }
 
-model Job {
-  id          String         @id @default(cuid())
-  userId      String
-  businessId  String?
-  title       String
-  description String?
-  type        EmploymentType @default(FULL_TIME)
-  employmentType EmploymentType @default(FULL_TIME)
-  location    String?
-  salary      String?
-  salaryMin   Float?
-  salaryMax   Float?
-  department  String?
-  status      String?
-  views       Int             @default(0)
-  deadline    DateTime?
-  published   Boolean        @default(false)
-  publishedAt DateTime?
-  metadata    String?         @default("{}") // JSON field for requirements, responsibilities, benefits, positions, companyName, category, etc.
-
-  // Approval fields
-  approvalStatus    JobApprovalStatus @default(DRAFT)
-  approvedAt        DateTime?
-  approvedBy        String?
-  rejectionReason   String?
-  reviewComments    String?
-  submissionDate    DateTime?
-
-  // Relations
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  business    Business?       @relation("BusinessJobs", fields: [businessId], references: [id], onDelete: Cascade)
-  applications JobApplication[]
-  approvals   JobApproval[]
-  notifications Notification[]
-
-  // Timestamps
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-
-  @@index([userId])
-  @@index([businessId])
-  @@index([published])
-}
-
-model JobApplication {
-  id        String   @id @default(cuid())
-  jobId     String
+model TaskComment {
+  id        String   @id
+  taskId    String
   userId    String
-  status    String  @default("PENDING")
-
-  // Relations
-  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([jobId])
-  @@index([userId])
-  @@index([status])
-}
-
-model Message {
-  id        String   @id @default(cuid())
-  fromUserId String
-  toUserId   String
   content   String
-  read      Boolean  @default(false)
-
-  // Relations
-  fromUser  User     @relation("MessagesSent", fields: [fromUserId], references: [id], onDelete: Cascade)
-  toUser    User     @relation("MessagesReceived", fields: [toUserId], references: [id], onDelete: Cascade)
-
-  // Timestamps
   createdAt DateTime @default(now())
-
-  @@index([fromUserId])
-  @@index([toUserId])
-  @@index([read])
-}
-
-model Leaderboard {
-  id          String   @id @default(cuid())
-  userId      String
-  category    String
-  score       Float
-  rank        Int
-
-  // Relations
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([userId, category])
-  @@index([category])
-  @@index([rank])
-}
-
-model PointTransaction {
-  id          String     @id @default(cuid())
-  userId      String
-  points      Int
-  source      String      // TASK_COMPLETION, COURSE_FINISHED, ACHIEVEMENT, etc.
-  description String?
-  metadata    String?     // JSON string for additional data
-
-  // Relations
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Timestamps
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  updatedAt DateTime
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([source])
-  @@index([createdAt])
+  @@index([taskId])
 }
 
-// Personal Task model for tasks without project association
-model PersonalTask {
-  id          String       @id @default(cuid())
-  userId      String
-  title       String
-  description String?
-  status      TaskStatus   @default(TODO)
-  priority    TaskPriority @default(MEDIUM)
-  dueDate     DateTime?
-  completedAt DateTime?
+model TaskDependency {
+  id                                    String @id
+  taskId                                String
+  dependsOnId                           String
+  Task_TaskDependency_dependsOnIdToTask Task   @relation("TaskDependency_dependsOnIdToTask", fields: [dependsOnId], references: [id], onDelete: Cascade)
+  Task_TaskDependency_taskIdToTask      Task   @relation("TaskDependency_taskIdToTask", fields: [taskId], references: [id], onDelete: Cascade)
 
-  // Relations
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Timestamps
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  @@index([userId])
-  @@index([status])
-  @@index([priority])
+  @@unique([taskId, dependsOnId])
+  @@index([dependsOnId])
+  @@index([taskId])
 }
 
-// Task Step model for workflow tracking
 model TaskStep {
-  id          String   @id @default(cuid())
+  id          String   @id
   taskId      String
   stepNumber  String
   name        String
   description String?
   movedBy     String
   movedAt     DateTime @default(now())
+  User        User     @relation(fields: [movedBy], references: [id], onDelete: Cascade)
+  Task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
-  // Relations
-  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  mover       User     @relation("TaskStepsCreatedBy", fields: [movedBy], references: [id], onDelete: Cascade)
-
-  @@index([taskId])
   @@index([stepNumber])
+  @@index([taskId])
 }
 
-// Task Comment model for discussions
-model TaskComment {
-  id        String   @id @default(cuid())
-  taskId    String
-  userId    String
-  content   String
+model TimeEntry {
+  id            String       @id
+  taskId        String?
+  projectId     String?
+  userId        String
+  date          DateTime
+  hours         Float
+  description   String?
+  billable      Boolean      @default(false)
+  hourlyRate    Float?
+  workSessionId String?
+  WorkSession   WorkSession? @relation(fields: [workSessionId], references: [id])
+  User          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Project       Project?     @relation(fields: [projectId], references: [id])
+  Task          Task?        @relation(fields: [taskId], references: [id])
 
-  // Relations
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  author    User     @relation("TaskComments", fields: [userId], references: [id], onDelete: Cascade)
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  @@index([date])
+  @@index([workSessionId])
+  @@index([projectId])
   @@index([taskId])
   @@index([userId])
 }
 
-// Collaboration Request model for mentorship, project, and partnership requests
-model CollaborationRequest {
-  id          String            @id @default(cuid())
-  fromId      String
-  toId        String
-  type        CollaborationType @default(PROJECT)
-  status      CollaborationStatus @default(PENDING)
-  message     String?
-  projectId   String?
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+model University {
+  id                 String    @id
+  name               String
+  code               String    @unique
+  description        String?
+  location           String?
+  website            String?
+  rankingScore       Float?
+  rankingPosition    Int?
+  totalStudents      Int?
+  verificationStatus String    @default("PENDING")
+  totalProjects      Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime
+  Project            Project[]
+  User               User[]
 
-  // Relations
-  from        User     @relation("CollaborationFrom", fields: [fromId], references: [id], onDelete: Cascade)
-  to          User     @relation("CollaborationTo", fields: [toId], references: [id], onDelete: Cascade)
+  @@index([verificationStatus])
+  @@index([code])
+}
 
-  @@index([fromId])
-  @@index([toId])
+model User {
+  id                                                     String                 @id
+  email                                                  String                 @unique
+  password                                               String
+  name                                                   String
+  avatar                                                 String?
+  role                                                   String
+  verificationStatus                                     String                 @default("PENDING")
+  universityId                                           String?
+  major                                                  String?
+  graduationYear                                         Int?
+  bio                                                    String?
+  location                                               String?
+  linkedinUrl                                            String?
+  portfolioUrl                                           String?
+  emailVerified                                          Boolean                @default(false)
+  emailVerifiedAt                                        DateTime?
+  mobileNumber                                           String?
+  executionScore                                         Float?
+  collaborationScore                                     Float?
+  leadershipScore                                        Float?
+  ethicsScore                                            Float?
+  reliabilityScore                                       Float?
+  progressionLevel                                       String?
+  totalPoints                                            Int                    @default(0)
+  loginAttempts                                          Int                    @default(0)
+  lockedAt                                               DateTime?
+  lastPasswordChange                                     DateTime?
+  lastLoginAt                                            DateTime?
+  department                                             String?
+  projectLeads                                           Int                    @default(0)
+  createdAt                                              DateTime               @default(now())
+  updatedAt                                              DateTime
+  Agreement                                              Agreement[]
+  AuditLog                                               AuditLog[]
+  Business                                               Business[]
+  BusinessMember                                         BusinessMember[]
+  CollaborationRequest_CollaborationRequest_toIdToUser   CollaborationRequest[] @relation("CollaborationRequest_toIdToUser")
+  CollaborationRequest_CollaborationRequest_fromIdToUser CollaborationRequest[] @relation("CollaborationRequest_fromIdToUser")
+  Department                                             Department[]
+  Education                                              Education[]
+  Experience                                             Experience[]
+  Investment                                             Investment[]
+  Job                                                    Job[]
+  JobApplication                                         JobApplication[]
+  JobApproval                                            JobApproval[]
+  Leaderboard                                            Leaderboard[]
+  LeaveRequest                                           LeaveRequest[]
+  Message_Message_toUserIdToUser                         Message[]              @relation("Message_toUserIdToUser")
+  Message_Message_fromUserIdToUser                       Message[]              @relation("Message_fromUserIdToUser")
+  Notification                                           Notification[]
+  PasswordResetToken                                     PasswordResetToken[]
+  PersonalTask                                           PersonalTask[]
+  PointTransaction                                       PointTransaction[]
+  ProfessionalRecord                                     ProfessionalRecord[]
+  Project                                                Project[]
+  ProjectApproval                                        ProjectApproval[]
+  ProjectMember                                          ProjectMember[]
+  Rating_Rating_toUserIdToUser                           Rating[]               @relation("Rating_toUserIdToUser")
+  Rating_Rating_fromUserIdToUser                         Rating[]               @relation("Rating_fromUserIdToUser")
+  Skill                                                  Skill[]
+  Task_Task_assignedToToUser                             Task[]                 @relation("Task_assignedToToUser")
+  Task_Task_assignedByToUser                             Task[]                 @relation("Task_assignedByToUser")
+  TaskAssignee                                           TaskAssignee[]
+  TaskComment                                            TaskComment[]
+  TaskStep                                               TaskStep[]
+  TimeEntry                                              TimeEntry[]
+  University                                             University?            @relation(fields: [universityId], references: [id])
+  VerificationRequest                                    VerificationRequest[]
+  WorkSession                                            WorkSession[]
+
+  @@index([verificationStatus])
+  @@index([universityId])
+  @@index([role])
+  @@index([email])
+}
+
+model Vacancy {
+  id               String   @id
+  projectId        String
+  title            String
+  description      String?
+  type             String   @default("FULL_TIME")
+  skills           String?
+  slots            Int      @default(1)
+  filled           Int      @default(0)
+  responsibilities String?
+  requirements     String?
+  expertise        String?
+  salaryMin        Float?
+  salaryMax        Float?
+  location         String?
+  experience       String?
+  status           String   @default("OPEN")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime
+  Project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
   @@index([status])
   @@index([type])
-}
-
-// Password Reset Token model for secure password reset
-model PasswordResetToken {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  usedAt    DateTime?
-
-  // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Timestamps
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([token])
-  @@index([expiresAt])
-}
-
-// ============================================
-// APPROVAL MODELS
-// ============================================
-
-model ProjectApproval {
-  id          String                @id @default(cuid())
-  projectId   String
-  adminId     String
-  status      ProjectApprovalStatus
-  comments    String?
-  reviewedAt  DateTime              @default(now())
-
-  // Relations
-  project     Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  admin       User                  @relation(fields: [adminId], references: [id])
-
-  // Timestamps
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
-
   @@index([projectId])
-  @@index([adminId])
-  @@index([status])
 }
 
-model JobApproval {
-  id          String              @id @default(cuid())
-  jobId       String
-  adminId     String
-  status      JobApprovalStatus
-  comments    String?
-  reviewedAt  DateTime            @default(now())
+model VerificationRequest {
+  id          String    @id
+  userId      String
+  type        String
+  status      String    @default("PENDING")
+  submittedAt DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  reviewedAt  DateTime?
+  notes       String?
+  reviewNote  String?
+  requesterId String?
+  priority    String?
+  title       String?
+  description String?
+  projectId   String?
+  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relations
-  job         Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  admin       User                @relation(fields: [adminId], references: [id])
-
-  // Timestamps
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-
-  @@index([jobId])
-  @@index([adminId])
+  @@index([requesterId])
   @@index([status])
+  @@index([userId])
+}
+
+model WorkSession {
+  id               String      @id
+  userId           String
+  projectId        String?
+  taskId           String?
+  type             String      @default("ONSITE")
+  notes            String?
+  checkInLocation  String?
+  checkOutLocation String?
+  startTime        DateTime
+  endTime          DateTime?
+  duration         Int?
+  TimeEntry        TimeEntry[]
+  Task             Task?       @relation(fields: [taskId], references: [id])
+  Project          Project?    @relation(fields: [projectId], references: [id])
+  User             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([startTime])
+  @@index([taskId])
+  @@index([projectId])
+  @@index([userId])
 }

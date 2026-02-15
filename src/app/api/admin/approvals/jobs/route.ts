@@ -98,6 +98,30 @@ export async function GET(request: NextRequest) {
       take: limit,
     })
 
+    // Parse metadata and add computed fields
+    const parsedJobs = jobs.map(job => {
+      let metadata = {}
+      try {
+        metadata = job.metadata ? JSON.parse(job.metadata) : {}
+      } catch (e) {
+        console.error('Failed to parse job metadata:', e)
+      }
+
+      return {
+        ...job,
+        companyName: (metadata as any).companyName || job.business?.name || 'Unknown Company',
+        category: (metadata as any).category || null,
+        positions: (metadata as any).positions || '1',
+        requirements: (metadata as any).requirements || [],
+        responsibilities: (metadata as any).responsibilities || [],
+        benefits: (metadata as any).benefits || [],
+        salaryRange: job.salaryMin && job.salaryMax 
+          ? `$${job.salaryMin.toLocaleString()} - $${job.salaryMax.toLocaleString()}`
+          : job.salary || 'Not specified',
+        business: job.business || { id: '', name: 'Unknown Company', industry: 'N/A', location: 'N/A', description: '', website: '' },
+      }
+    })
+
     // Get counts
     const totalCount = await db.job.count({ where })
     const pendingCount = await db.job.count({
@@ -114,7 +138,7 @@ export async function GET(request: NextRequest) {
     })
 
     return successResponse({
-      jobs,
+      jobs: parsedJobs,
       pagination: {
         total: totalCount,
         page,

@@ -3384,7 +3384,7 @@ async function main() {
     console.log('✅ Created', education.length, 'education records')
 
     console.log('📋 Creating business-focused projects...')
-    // PROJECT 1: Global Supplier Verification & Risk Assessment Firm
+    // PROJECT 1: Global Supplier Verification & Risk Assessment Firm - APPROVED, seeking investment
     const project1 = await prisma.project.create({
       data: {
         name: 'Global Supplier Verification & Risk Assessment Firm',
@@ -3396,11 +3396,14 @@ async function main() {
         endDate: new Date('2025-05-15'),
         budget: 250000,
         category: 'Supply Chain Services',
-        approvalStatus: 'PENDING',
+        approvalStatus: 'APPROVED',
+        seekingInvestment: true,
+        published: true,
+        publishedAt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
       }
     })
 
-    // PROJECT 2: Cross-Border Trade Facilitation Company
+    // PROJECT 2: Cross-Border Trade Facilitation Company - APPROVED, seeking investment
     const project2 = await prisma.project.create({
       data: {
         name: 'Cross-Border Trade Facilitation Company',
@@ -3412,11 +3415,14 @@ async function main() {
         endDate: new Date('2025-05-15'),
         budget: 300000,
         category: 'International Trade Services',
-        approvalStatus: 'PENDING',
+        approvalStatus: 'APPROVED',
+        seekingInvestment: true,
+        published: true,
+        publishedAt: new Date(now.getTime() - 25 * 24 * 60 * 60 * 1000),
       }
     })
 
-    // PROJECT 3: Recruitment Agency
+    // PROJECT 3: Recruitment Agency - APPROVED, seeking investment
     const project3 = await prisma.project.create({
       data: {
         name: 'Professional Recruitment Agency',
@@ -3428,11 +3434,14 @@ async function main() {
         endDate: new Date('2025-05-15'),
         budget: 180000,
         category: 'HR & Staffing Services',
-        approvalStatus: 'PENDING',
+        approvalStatus: 'APPROVED',
+        seekingInvestment: true,
+        published: true,
+        publishedAt: new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000),
       }
     })
 
-    // PROJECT 4: Admin Support Company
+    // PROJECT 4: Admin Support Company - PENDING approval
     const project4 = await prisma.project.create({
       data: {
         name: 'Virtual Administrative Support Company',
@@ -3445,10 +3454,11 @@ async function main() {
         budget: 150000,
         category: 'Administrative Services',
         approvalStatus: 'PENDING',
+        seekingInvestment: false,
       }
     })
 
-    // PROJECT 5: Study-Abroad Counseling Agency
+    // PROJECT 5: Study-Abroad Counseling Agency - PENDING approval
     const project5 = await prisma.project.create({
       data: {
         name: 'International Study-Abroad Counseling Agency',
@@ -3460,7 +3470,8 @@ async function main() {
         endDate: new Date('2025-05-15'),
         budget: 200000,
         category: 'Educational Consulting',
-        approvalStatus: 'PENDING',
+        approvalStatus: 'UNDER_REVIEW',
+        seekingInvestment: true,
       }
     })
 
@@ -6096,41 +6107,106 @@ async function main() {
     console.log('✅ Created', timeEntries.length, 'time entries')
 
     console.log('💰 Creating investments...')
+    // Investment statuses: INTERESTED, PENDING, UNDER_REVIEW, AGREED, FUNDED
     const investments = await Promise.all([
+      // FUNDED investment - completed deal
       prisma.investment.create({
         data: {
           userId: investors[0].id,
           projectId: project1.id,
           amount: 75000,
           type: 'EQUITY',
-          status: 'ACTIVE'
+          equity: 8.5,
+          status: 'FUNDED',
+          investedAt: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000),
+          fundedAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+          projectedReturn: 112500,
+          terms: JSON.stringify({
+            valuation: 882353,
+            equityPercentage: 8.5,
+            vestingPeriod: '4 years with 1 year cliff',
+            boardSeat: false,
+            votingRights: true,
+            antiDilution: 'full ratchet'
+          })
         }
       }),
+      // AGREED investment - deal agreed, awaiting funding
       prisma.investment.create({
         data: {
           userId: investors[0].id,
           projectId: project2.id,
           amount: 100000,
           type: 'EQUITY',
-          status: 'ACTIVE'
+          equity: 12,
+          status: 'AGREED',
+          investedAt: null,
+          fundedAt: null,
+          projectedReturn: 150000,
+          terms: JSON.stringify({
+            valuation: 833333,
+            equityPercentage: 12,
+            vestingPeriod: '4 years with 1 year cliff',
+            boardSeat: true,
+            votingRights: true,
+            antiDilution: 'weighted average'
+          })
         }
       }),
+      // UNDER_REVIEW investment - proposal being reviewed
       prisma.investment.create({
         data: {
           userId: investors[1].id,
           projectId: project3.id,
           amount: 50000,
-          type: 'SEED',
-          status: 'ACTIVE'
+          type: 'EQUITY',
+          equity: 5,
+          status: 'UNDER_REVIEW',
+          investedAt: null,
+          fundedAt: null,
+          projectedReturn: 75000,
+          terms: JSON.stringify({
+            valuation: 1000000,
+            equityPercentage: 5,
+            vestingPeriod: '3 years with 1 year cliff',
+            boardSeat: false,
+            votingRights: true
+          })
         }
       }),
+      // PENDING investment - new proposal
       prisma.investment.create({
         data: {
           userId: investors[1].id,
-          projectId: project4.id,
-          amount: 40000,
-          type: 'SEED',
-          status: 'ACTIVE'
+          projectId: project1.id,
+          amount: 25000,
+          type: 'EQUITY',
+          equity: 3,
+          status: 'PENDING',
+          investedAt: null,
+          fundedAt: null,
+          projectedReturn: 37500,
+          terms: JSON.stringify({
+            valuation: 833333,
+            equityPercentage: 3,
+            vestingPeriod: '4 years with 1 year cliff'
+          }),
+          expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+        }
+      }),
+      // INTERESTED investment - initial interest expressed
+      prisma.investment.create({
+        data: {
+          userId: investors[0].id,
+          projectId: project3.id,
+          amount: 30000,
+          type: 'EQUITY',
+          equity: 3,
+          status: 'INTERESTED',
+          investedAt: null,
+          fundedAt: null,
+          projectedReturn: 45000,
+          expiresAt: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
         }
       })
     ])
@@ -6546,6 +6622,7 @@ async function main() {
 
     console.log('💼 Creating job postings...')
     const jobs = await Promise.all([
+      // APPROVED jobs - visible on jobs page
       prisma.job.create({
         data: {
           userId: employers[0].id,
@@ -6560,11 +6637,19 @@ async function main() {
           salaryMax: 80000,
           department: 'Due Diligence',
           status: 'ACTIVE',
-          approvalStatus: 'PENDING',
+          approvalStatus: 'APPROVED',
           views: 125,
           deadline: nextMonth,
           published: true,
-          publishedAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          publishedAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+          metadata: JSON.stringify({
+            companyName: 'Consulting Excellence LLC',
+            category: 'BUSINESS',
+            positions: '2',
+            requirements: ['Bachelor degree in Business or related field', '2+ years experience in due diligence', 'Strong analytical skills', 'Attention to detail'],
+            responsibilities: ['Conduct supplier verification', 'Assess risk factors', 'Prepare due diligence reports'],
+            benefits: ['Remote work', 'Health insurance', 'Professional development']
+          })
         }
       }),
       prisma.job.create({
@@ -6581,11 +6666,19 @@ async function main() {
           salaryMax: 90000,
           department: 'Risk Assessment',
           status: 'ACTIVE',
-          approvalStatus: 'PENDING',
+          approvalStatus: 'APPROVED',
           views: 98,
           deadline: nextMonth,
           published: true,
-          publishedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)
+          publishedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
+          metadata: JSON.stringify({
+            companyName: 'Consulting Excellence LLC',
+            category: 'BUSINESS',
+            positions: '1',
+            requirements: ['5+ years in risk assessment', 'Strong analytical background', 'Experience with supplier evaluation'],
+            responsibilities: ['Evaluate supplier risks', 'Develop mitigation strategies', 'Report to management'],
+            benefits: ['Competitive salary', 'Flexible hours', 'Career growth']
+          })
         }
       }),
       prisma.job.create({
@@ -6602,13 +6695,22 @@ async function main() {
           salaryMax: 85000,
           department: 'Compliance',
           status: 'ACTIVE',
-          approvalStatus: 'PENDING',
+          approvalStatus: 'APPROVED',
           views: 87,
           deadline: nextWeek,
           published: true,
-          publishedAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000)
+          publishedAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+          metadata: JSON.stringify({
+            companyName: 'TalentForce HR Solutions',
+            category: 'BUSINESS',
+            positions: '1',
+            requirements: ['Knowledge of customs regulations', 'Experience in international trade', 'Strong communication skills'],
+            responsibilities: ['Ensure customs compliance', 'Manage documentation', 'Coordinate with authorities'],
+            benefits: ['Health benefits', '401k', 'Paid time off']
+          })
         }
       }),
+      // PENDING jobs - for admin approval testing
       prisma.job.create({
         data: {
           userId: employers[1].id,
@@ -6624,10 +6726,18 @@ async function main() {
           department: 'Logistics',
           status: 'ACTIVE',
           approvalStatus: 'PENDING',
+          submissionDate: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
           views: 76,
           deadline: nextMonth,
-          published: true,
-          publishedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
+          published: false,
+          metadata: JSON.stringify({
+            companyName: 'TalentForce HR Solutions',
+            category: 'BUSINESS',
+            positions: '2',
+            requirements: ['Experience in logistics', 'Knowledge of shipping software', 'Organizational skills'],
+            responsibilities: ['Coordinate shipments', 'Track deliveries', 'Manage carriers'],
+            benefits: ['Remote work', 'Insurance']
+          })
         }
       }),
       prisma.job.create({
@@ -6645,10 +6755,18 @@ async function main() {
           department: 'Sourcing',
           status: 'ACTIVE',
           approvalStatus: 'PENDING',
+          submissionDate: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000),
           views: 134,
           deadline: nextWeek,
-          published: true,
-          publishedAt: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000)
+          published: false,
+          metadata: JSON.stringify({
+            companyName: 'OptiOps Management',
+            category: 'BUSINESS',
+            positions: '1',
+            requirements: ['Recruiting experience', 'Technical knowledge', 'Communication skills'],
+            responsibilities: ['Source candidates', 'Screen resumes', 'Coordinate interviews'],
+            benefits: ['Competitive pay', 'Flexible schedule']
+          })
         }
       }),
       prisma.job.create({
@@ -6665,10 +6783,18 @@ async function main() {
           department: 'Investment Analysis',
           status: 'ACTIVE',
           approvalStatus: 'PENDING',
+          submissionDate: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000),
           views: 203,
           deadline: nextWeek,
-          published: true,
-          publishedAt: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000)
+          published: false,
+          metadata: JSON.stringify({
+            companyName: 'Venture Fund Limited',
+            category: 'BUSINESS',
+            positions: '1',
+            requirements: ['Finance background', 'Analytical skills', 'Interest in investments'],
+            responsibilities: ['Analyze investment opportunities', 'Prepare reports', 'Support senior analysts'],
+            benefits: ['Learning opportunity', 'Networking', 'Potential full-time offer']
+          })
         }
       })
     ])

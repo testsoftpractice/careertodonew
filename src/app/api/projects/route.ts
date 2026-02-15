@@ -18,13 +18,15 @@ export async function GET(request: NextRequest) {
     const ownerId = searchParams.get('ownerId') as string | undefined
     const includeMembers = searchParams.get('includeMembers') === 'true'
     const includeTasks = searchParams.get('includeTasks') === 'true'
+    const seekingInvestment = searchParams.get('seekingInvestment')
+    const approvalStatus = searchParams.get('approvalStatus')
 
     // Get user info for visibility control
     const userId = authResult.dbUser?.id || null
     const userRole = authResult.dbUser?.role || null
     const userUniversityId = authResult.dbUser?.universityId || null
 
-    const where: Record<string, string | undefined> = {}
+    const where: Record<string, any> = {}
 
     // If filtering by ownerId, only allow viewing own projects or admin
     if (ownerId) {
@@ -36,6 +38,16 @@ export async function GET(request: NextRequest) {
 
     if (status) {
       where.status = status as any
+    }
+
+    // Add seekingInvestment filter
+    if (seekingInvestment === 'true') {
+      where.seekingInvestment = true
+    }
+
+    // Add approvalStatus filter
+    if (approvalStatus) {
+      where.approvalStatus = approvalStatus as any
     }
 
     // Apply visibility control with university ID

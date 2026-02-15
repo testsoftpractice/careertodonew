@@ -42,12 +42,13 @@ export default function InvestorDashboard() {
 
   const [activeTab, setActiveTab] = useState<'overview' | 'portfolio' | 'opportunities' | 'deals' | 'financial' | 'startups'>('overview')
   const [stats, setStats] = useState({
+    totalInvestments: 0,
+    activeDeals: 0,
     totalInvested: 0,
     totalEquity: 0,
     avgReturn: 0,
     portfolioValue: 0,
     totalOpportunities: 0,
-    activeDeals: 0,
   })
   const [portfolio, setPortfolio] = useState<any[]>([])
   const [opportunities, setOpportunities] = useState<any[]>([])
@@ -77,12 +78,13 @@ export default function InvestorDashboard() {
 
       if (data.success) {
         setStats({
+          totalInvestments: data.data.totalInvestments || 0,
+          activeDeals: data.data.activeDeals || 0,
           totalInvested: data.data.totalInvested || 0,
           totalEquity: data.data.totalEquity || 0,
           avgReturn: data.data.avgReturn || 0,
           portfolioValue: data.data.totalInvested || 0,
           totalOpportunities: data.data.totalOpportunities || 0,
-          activeDeals: data.data.activeDeals || 0,
         })
       } else {
         toast({
@@ -137,11 +139,12 @@ export default function InvestorDashboard() {
 
     try {
       setLoading(prev => ({ ...prev, opportunities: true }))
-      const response = await authFetch('/api/projects?status=IN_PROGRESS')
+      // Fetch projects that are seeking investment and approved
+      const response = await authFetch('/api/projects?seekingInvestment=true&approvalStatus=APPROVED')
       const data = await response.json()
 
       if (data.success) {
-        setOpportunities(data.data || [])
+        setOpportunities(data.data?.projects || data.data || [])
       } else {
         toast({
           title: 'Error',

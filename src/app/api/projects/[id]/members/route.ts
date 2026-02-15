@@ -4,12 +4,14 @@ import { requireAuth, AuthError } from '@/lib/auth/verify'
 import { db } from '@/lib/db'
 import { isFeatureEnabled, PROJECT_ROLES } from '@/lib/features/flags'
 import { errorResponse, forbidden, notFound, validationError } from '@/lib/api-response'
-import { ProjectRole } from '@prisma/client'
 
-// Validation schemas - using correct ProjectRole enum values from schema
+// Project roles - defined here since they're String in schema, not enum
+const PROJECT_ROLES_ENUM = ['OWNER', 'PROJECT_MANAGER', 'TEAM_LEAD', 'TEAM_MEMBER', 'VIEWER'] as const
+
+// Validation schemas
 const addMemberSchema = z.object({
   userId: z.string().cuid('Invalid user ID'),
-  role: z.nativeEnum(ProjectRole),
+  role: z.enum(PROJECT_ROLES_ENUM),
 })
 
 const inviteMemberSchema = z.object({

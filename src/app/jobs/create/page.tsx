@@ -130,17 +130,8 @@ export default function PostJobPage() {
   // Fetch universities list
   useEffect(() => {
     const fetchUniversities = async () => {
-      if (!user) return
-
       try {
         setLoadingUniversities(true)
-
-        // Get user's university
-        let universityId = user?.university?.id
-        if (!universityId) {
-          setUniversities([])
-          return
-        }
 
         const response = await fetch('/api/universities')
 
@@ -166,7 +157,9 @@ export default function PostJobPage() {
         setLoadingUniversities(false)
       }
     }
-  }, [user])
+
+    fetchUniversities()
+  }, [])
 
   // Handle form input changes
   const handleInputChange = (field: string, value: string) => {
@@ -692,7 +685,9 @@ export default function PostJobPage() {
                     Select universities
                   </Label>
                   <div className="border rounded-md p-4 space-y-2 max-h-60 overflow-y-auto">
-                    {universities.length === 0 ? (
+                    {loadingUniversities ? (
+                      <p className="text-sm text-muted-foreground">Loading universities...</p>
+                    ) : universities.length === 0 ? (
                       <p className="text-sm text-muted-foreground">No universities available</p>
                     ) : (
                       universities.map((uni) => (
@@ -700,17 +695,17 @@ export default function PostJobPage() {
                           <input
                             type="checkbox"
                             id={uni.id}
-                            checked={formData.remoteLocations.includes(uni.id)}
+                            checked={formData.universityIds.includes(uni.id)}
                             onChange={(e) => {
                               if (e.target.checked) {
                                 setFormData((prev) => ({
                                   ...prev,
-                                  remoteLocations: [...prev.remoteLocations, uni.id]
+                                  universityIds: [...prev.universityIds, uni.id]
                                 }))
                               } else {
                                 setFormData((prev) => ({
                                   ...prev,
-                                  remoteLocations: prev.remoteLocations.filter((id) => id !== uni.id)
+                                  universityIds: prev.universityIds.filter((id) => id !== uni.id)
                                 }))
                               }
                             }}
@@ -727,7 +722,7 @@ export default function PostJobPage() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setFormData((prev) => ({ ...prev, remoteLocations: [] }))
+                    setFormData((prev) => ({ ...prev, universityIds: [] }))
                   }}
                 >
                   Clear Selection
@@ -759,7 +754,7 @@ export default function PostJobPage() {
                 <Button
                   type="button"
                   onClick={handleAddRequirement}
-                  disabled={!!currentRequirement}
+                  disabled={!currentRequirement.trim()}
                 >
                   <Plus className="h-4 w-4" />
                   Add
@@ -807,7 +802,7 @@ export default function PostJobPage() {
                 <Button
                   type="button"
                   onClick={handleAddResponsibility}
-                  disabled={!!currentResponsibility}
+                  disabled={!currentResponsibility.trim()}
                 >
                   <Plus className="h-4 w-4" />
                   Add
@@ -855,7 +850,7 @@ export default function PostJobPage() {
                 <Button
                   type="button"
                   onClick={handleAddBenefit}
-                  disabled={!!currentBenefit}
+                  disabled={!currentBenefit.trim()}
                 >
                   <Plus className="h-4 w-4" />
                   Add

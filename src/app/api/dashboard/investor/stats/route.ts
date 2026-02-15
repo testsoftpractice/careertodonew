@@ -25,23 +25,31 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
-    // Calculate statistics
-    const totalInvestments = investments.length
-    const activeInvestments = (investments || []).filter(i => i.status === 'ACTIVE').length
-    const completedInvestments = (investments || []).filter(i => i.status === 'COMPLETED').length
-    const totalInvested = (investments || []).reduce((sum, i) => sum + (i.amount || 0), 0)
+    // Calculate statistics based on proper statuses
+    // FUNDED = completed investments
+    // AGREED/UNDER_REVIEW/PENDING/INTERESTED = active deals
+    const fundedInvestments = (investments || []).filter(i => i.status === 'FUNDED')
+    const activeDeals = (investments || []).filter(i => 
+      ['AGREED', 'UNDER_REVIEW', 'PENDING', 'INTERESTED'].includes(i.status)
+    )
+    
+    const totalInvested = (fundedInvestments || []).reduce((sum, i) => sum + (i.amount || 0), 0)
+    const totalEquity = (fundedInvestments || []).reduce((sum, i) => sum + (i.equity || 0), 0)
+    
+    // Calculate average return from projected returns
+    const investmentsWithReturns = (fundedInvestments || []).filter(i => (i.projectedReturn || 0) > 0)
+    const totalProjectedReturn = (investmentsWithReturns || []).reduce((sum, i) => sum + (i.projectedReturn || 0), 0)
+    const avgReturn = fundedInvestments.length > 0 
+      ? ((totalProjectedReturn - totalInvested) / totalInvested) * 100 
+      : 0
 
-    // Calculate average return
-    const completedInvestmentsWithValue = (investments || []).filter(i => i.status === 'COMPLETED' && (i.projectedReturn || 0) > 0)
-    const totalProjectedReturn = (completedInvestmentsWithValue || []).reduce((sum, i) => sum + (i.projectedReturn || 0), 0)
-    const avgReturn = completedInvestmentsWithValue.length > 0 ? totalProjectedReturn / completedInvestmentsWithValue.length : 0
-
-    // Calculate equity (equity percentage)
-    const totalEquity = (investments || []).reduce((sum, i) => sum + (i.equity || 0), 0)
-
-    // Get opportunity pipeline (projects seeking investment)
+    // Get opportunity pipeline (projects seeking investment that are APPROVED)
     const opportunities = await db.project.findMany({
-      where: { seekingInvestment: true, status: { in: ['IDEA', 'FUNDING', 'IN_PROGRESS'] } },
+      where: { 
+        seekingInvestment: true, 
+        approvalStatus: 'APPROVED',
+        status: { in: ['IDEA', 'FUNDING', 'IN_PROGRESS'] }
+      },
       orderBy: { createdAt: 'desc' },
       take: 10
     })
@@ -49,9 +57,8 @@ export async function GET(request: NextRequest) {
     const totalOpportunities = opportunities.length
 
     const stats = {
-      totalInvestments,
-      activeInvestments,
-      completedInvestments,
+      totalInvestments: fundedInvestments.length,
+      activeDeals: activeDeals.length,
       totalInvested,
       avgReturn: parseFloat(avgReturn.toFixed(2)),
       totalEquity: parseFloat(totalEquity.toFixed(2)),

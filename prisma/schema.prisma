@@ -9,7 +9,7 @@ datasource db {
 }
 
 model Agreement {
-  id        String    @id
+  id        String    @id @default(uuid())
   userId    String
   projectId String?
   title     String
@@ -17,7 +17,7 @@ model Agreement {
   signed    Boolean   @default(false)
   signedAt  DateTime?
   createdAt DateTime  @default(now())
-  updatedAt DateTime
+  updatedAt DateTime  @updatedAt
   Project   Project?  @relation(fields: [projectId], references: [id])
   User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -26,7 +26,7 @@ model Agreement {
 }
 
 model AuditLog {
-  id        String   @id
+  id        String   @id @default(uuid())
   userId    String
   action    String
   entity    String
@@ -42,7 +42,7 @@ model AuditLog {
 }
 
 model Business {
-  id             String           @id
+  id             String           @id @default(uuid())
   name           String
   description    String?
   industry       String?
@@ -55,7 +55,7 @@ model Business {
   public         Boolean          @default(false)
   ownerId        String
   createdAt      DateTime         @default(now())
-  updatedAt      DateTime
+  updatedAt      DateTime         @updatedAt
   User           User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   BusinessMember BusinessMember[]
   Job            Job[]
@@ -66,7 +66,7 @@ model Business {
 }
 
 model BusinessMember {
-  id          String   @id
+  id          String   @id @default(uuid())
   businessId  String
   userId      String
   role        String   @default("TEAM_MEMBER")
@@ -82,7 +82,7 @@ model BusinessMember {
 }
 
 model CollaborationRequest {
-  id                                     String   @id
+  id                                     String   @id @default(uuid())
   fromId                                 String
   toId                                   String
   type                                   String   @default("PROJECT")
@@ -90,7 +90,7 @@ model CollaborationRequest {
   message                                String?
   projectId                              String?
   createdAt                              DateTime @default(now())
-  updatedAt                              DateTime
+  updatedAt                              DateTime @updatedAt
   User_CollaborationRequest_toIdToUser   User     @relation("CollaborationRequest_toIdToUser", fields: [toId], references: [id], onDelete: Cascade)
   User_CollaborationRequest_fromIdToUser User     @relation("CollaborationRequest_fromIdToUser", fields: [fromId], references: [id], onDelete: Cascade)
 
@@ -101,7 +101,7 @@ model CollaborationRequest {
 }
 
 model Department {
-  id            String          @id
+  id            String          @id @default(uuid())
   projectId     String
   name          String
   headId        String?
@@ -114,7 +114,7 @@ model Department {
 }
 
 model Education {
-  id          String   @id
+  id          String   @id @default(uuid())
   userId      String
   school      String
   degree      String
@@ -124,7 +124,7 @@ model Education {
   startDate   DateTime
   endDate     DateTime
   createdAt   DateTime @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime @updatedAt
   User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([startDate])
@@ -132,7 +132,7 @@ model Education {
 }
 
 model Experience {
-  id          String    @id
+  id          String    @id @default(uuid())
   userId      String
   title       String
   company     String?
@@ -143,7 +143,7 @@ model Experience {
   current     Boolean   @default(false)
   skills      String?
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime  @updatedAt
   User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([current])
@@ -152,7 +152,7 @@ model Experience {
 }
 
 model Investment {
-  id              String    @id
+  id              String    @id @default(uuid())
   userId          String
   projectId       String
   amount          Float
@@ -166,7 +166,7 @@ model Investment {
   agreementId     String?
   fundedAt        DateTime?
   createdAt       DateTime  @default(now())
-  updatedAt       DateTime
+  updatedAt       DateTime  @updatedAt
   Project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   User            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -176,7 +176,7 @@ model Investment {
 }
 
 model Job {
-  id              String           @id
+  id              String           @id @default(uuid())
   userId          String
   businessId      String?
   title           String
@@ -201,7 +201,7 @@ model Job {
   reviewComments  String?
   submissionDate  DateTime?
   createdAt       DateTime         @default(now())
-  updatedAt       DateTime
+  updatedAt       DateTime         @updatedAt
   Business        Business?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
   User            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   JobApplication  JobApplication[]
@@ -214,12 +214,12 @@ model Job {
 }
 
 model JobApplication {
-  id        String   @id
+  id        String   @id @default(uuid())
   jobId     String
   userId    String
   status    String   @default("PENDING")
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   Job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
@@ -229,14 +229,14 @@ model JobApplication {
 }
 
 model JobApproval {
-  id         String   @id
+  id         String   @id @default(uuid())
   jobId      String
   adminId    String
   status     String
   comments   String?
   reviewedAt DateTime @default(now())
   createdAt  DateTime @default(now())
-  updatedAt  DateTime
+  updatedAt  DateTime @updatedAt
   User       User     @relation(fields: [adminId], references: [id])
   Job        Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
@@ -246,13 +246,13 @@ model JobApproval {
 }
 
 model Leaderboard {
-  id        String   @id
+  id        String   @id @default(uuid())
   userId    String
   category  String
   score     Float
   rank      Int
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, category])
@@ -261,7 +261,7 @@ model Leaderboard {
 }
 
 model LeaveRequest {
-  id              String    @id
+  id              String    @id @default(uuid())
   userId          String
   projectId       String?
   leaveType       String
@@ -273,7 +273,7 @@ model LeaveRequest {
   reviewedBy      String?
   reviewedAt      DateTime?
   createdAt       DateTime  @default(now())
-  updatedAt       DateTime
+  updatedAt       DateTime  @updatedAt
   Project         Project?  @relation(fields: [projectId], references: [id])
   User            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -285,7 +285,7 @@ model LeaveRequest {
 }
 
 model Message {
-  id                            String   @id
+  id                            String   @id @default(uuid())
   fromUserId                    String
   toUserId                      String
   content                       String
@@ -300,7 +300,7 @@ model Message {
 }
 
 model Milestone {
-  id          String    @id
+  id          String    @id @default(uuid())
   projectId   String
   title       String
   description String?
@@ -309,7 +309,7 @@ model Milestone {
   completedAt DateTime?
   metrics     String?
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime  @updatedAt
   Project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([dueDate])
@@ -318,7 +318,7 @@ model Milestone {
 }
 
 model Notification {
-  id        String   @id
+  id        String   @id @default(uuid())
   userId    String
   type      String
   title     String
@@ -344,7 +344,7 @@ model Notification {
 }
 
 model PasswordResetToken {
-  id        String    @id
+  id        String    @id @default(uuid())
   userId    String
   token     String    @unique
   expiresAt DateTime
@@ -359,7 +359,7 @@ model PasswordResetToken {
 }
 
 model PersonalTask {
-  id          String    @id
+  id          String    @id @default(uuid())
   userId      String
   title       String
   description String?
@@ -368,7 +368,7 @@ model PersonalTask {
   dueDate     DateTime?
   completedAt DateTime?
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime  @updatedAt
   User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([priority])
@@ -377,14 +377,14 @@ model PersonalTask {
 }
 
 model PointTransaction {
-  id          String   @id
+  id          String   @id @default(uuid())
   userId      String
   points      Int
   source      String
   description String?
   metadata    String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime @updatedAt
   User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([createdAt])
@@ -393,7 +393,7 @@ model PointTransaction {
 }
 
 model ProfessionalRecord {
-  id          String    @id
+  id          String    @id @default(uuid())
   userId      String
   recordType  String?
   title       String
@@ -403,7 +403,7 @@ model ProfessionalRecord {
   metadata    String?
   verified    Boolean   @default(false)
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime  @updatedAt
   User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([verified])
@@ -411,7 +411,7 @@ model ProfessionalRecord {
 }
 
 model Project {
-  id                String            @id
+  id                String            @id @default(uuid())
   name              String
   description       String?
   status            String            @default("IDEA")
@@ -438,7 +438,7 @@ model Project {
   reviewComments    String?
   submissionDate    DateTime?
   createdAt         DateTime          @default(now())
-  updatedAt         DateTime
+  updatedAt         DateTime          @updatedAt
   Agreement         Agreement[]
   Department        Department[]
   Investment        Investment[]
@@ -466,14 +466,14 @@ model Project {
 }
 
 model ProjectApproval {
-  id         String   @id
+  id         String   @id @default(uuid())
   projectId  String
   adminId    String
   status     String
   comments   String?
   reviewedAt DateTime @default(now())
   createdAt  DateTime @default(now())
-  updatedAt  DateTime
+  updatedAt  DateTime @updatedAt
   User       User     @relation(fields: [adminId], references: [id])
   Project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -483,7 +483,7 @@ model ProjectApproval {
 }
 
 model ProjectMember {
-  id           String      @id
+  id           String      @id @default(uuid())
   projectId    String
   userId       String
   role         String      @default("TEAM_MEMBER")
@@ -502,7 +502,7 @@ model ProjectMember {
 }
 
 model Rating {
-  id                           String   @id
+  id                           String   @id @default(uuid())
   fromUserId                   String
   toUserId                     String
   type                         String
@@ -510,7 +510,7 @@ model Rating {
   comment                      String?
   projectId                    String?
   createdAt                    DateTime @default(now())
-  updatedAt                    DateTime
+  updatedAt                    DateTime @updatedAt
   Project                      Project? @relation(fields: [projectId], references: [id])
   User_Rating_toUserIdToUser   User     @relation("Rating_toUserIdToUser", fields: [toUserId], references: [id], onDelete: Cascade)
   User_Rating_fromUserIdToUser User     @relation("Rating_fromUserIdToUser", fields: [fromUserId], references: [id], onDelete: Cascade)
@@ -521,13 +521,13 @@ model Rating {
 }
 
 model Skill {
-  id           String   @id
+  id           String   @id @default(uuid())
   userId       String
   name         String
   level        String   @default("INTERMEDIATE")
   endorsements Int      @default(0)
   createdAt    DateTime @default(now())
-  updatedAt    DateTime
+  updatedAt    DateTime @updatedAt
   User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, name])
@@ -536,20 +536,20 @@ model Skill {
 }
 
 model SubTask {
-  id        String   @id
+  id        String   @id @default(uuid())
   taskId    String
   title     String
   completed Boolean  @default(false)
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   Task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
 }
 
 model Task {
-  id                                              String           @id
+  id                                              String           @id @default(uuid())
   projectId                                       String?
   title                                           String
   description                                     String?
@@ -563,7 +563,7 @@ model Task {
   estimatedHours                                  Float?
   actualHours                                     Float?
   createdAt                                       DateTime         @default(now())
-  updatedAt                                       DateTime
+  updatedAt                                       DateTime         @updatedAt
   Notification                                    Notification[]
   SubTask                                         SubTask[]
   User_Task_assignedToToUser                      User?            @relation("Task_assignedToToUser", fields: [assignedTo], references: [id])
@@ -589,7 +589,7 @@ model Task {
 }
 
 model TaskAssignee {
-  id         String   @id
+  id         String   @id @default(uuid())
   taskId     String
   userId     String
   assignedAt DateTime @default(now())
@@ -603,12 +603,12 @@ model TaskAssignee {
 }
 
 model TaskComment {
-  id        String   @id
+  id        String   @id @default(uuid())
   taskId    String
   userId    String
   content   String
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   Task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
@@ -617,7 +617,7 @@ model TaskComment {
 }
 
 model TaskDependency {
-  id                                    String @id
+  id                                    String @id @default(uuid())
   taskId                                String
   dependsOnId                           String
   Task_TaskDependency_dependsOnIdToTask Task   @relation("TaskDependency_dependsOnIdToTask", fields: [dependsOnId], references: [id], onDelete: Cascade)
@@ -629,7 +629,7 @@ model TaskDependency {
 }
 
 model TaskStep {
-  id          String   @id
+  id          String   @id @default(uuid())
   taskId      String
   stepNumber  String
   name        String
@@ -644,7 +644,7 @@ model TaskStep {
 }
 
 model TimeEntry {
-  id            String       @id
+  id            String       @id @default(uuid())
   taskId        String?
   projectId     String?
   userId        String
@@ -688,7 +688,7 @@ model University {
 }
 
 model User {
-  id                                                     String                 @id
+  id                                                     String                 @id @default(uuid())
   email                                                  String                 @unique
   password                                               String
   name                                                   String
@@ -719,7 +719,7 @@ model User {
   department                                             String?
   projectLeads                                           Int                    @default(0)
   createdAt                                              DateTime               @default(now())
-  updatedAt                                              DateTime
+  updatedAt                                              DateTime               @updatedAt
   Agreement                                              Agreement[]
   AuditLog                                               AuditLog[]
   Business                                               Business[]
@@ -765,7 +765,7 @@ model User {
 }
 
 model Vacancy {
-  id               String   @id
+  id               String   @id @default(uuid())
   projectId        String
   title            String
   description      String?
@@ -782,7 +782,7 @@ model Vacancy {
   experience       String?
   status           String   @default("OPEN")
   createdAt        DateTime @default(now())
-  updatedAt        DateTime
+  updatedAt        DateTime @updatedAt
   Project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([status])
@@ -791,7 +791,7 @@ model Vacancy {
 }
 
 model VerificationRequest {
-  id          String    @id
+  id          String    @id @default(uuid())
   userId      String
   type        String
   status      String    @default("PENDING")
@@ -813,7 +813,7 @@ model VerificationRequest {
 }
 
 model WorkSession {
-  id               String      @id
+  id               String      @id @default(uuid())
   userId           String
   projectId        String?
   taskId           String?

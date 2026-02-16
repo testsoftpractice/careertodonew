@@ -5,11 +5,16 @@ import { UniversityVerificationStatus } from '@prisma/client'
 // GET /api/universities - List universities with filters
 export async function GET(request: NextRequest) {
   try {
+    console.log('[API] Universities endpoint called')
+    console.log('[API] DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET')
+    
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const search = searchParams.get('search')
     const sortBy = searchParams.get('sortBy') || 'rankingPosition'
     const sortOrder = searchParams.get('sortOrder') || 'asc'
+
+    console.log('[API] Query params:', { status, search, sortBy, sortOrder })
 
     const where: any = {}
 
@@ -24,10 +29,11 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+    console.log('[API] About to query database...')
     const universities = await db.university.findMany({
       where,
       include: {
-        users: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -39,11 +45,6 @@ export async function GET(request: NextRequest) {
           },
           take: 5,
         },
-        _count: {
-          select: {
-            users: true,
-          },
-        },
       },
       orderBy: {
         [sortBy]: sortOrder === 'asc' ? 'asc' : 'desc',
@@ -51,9 +52,11 @@ export async function GET(request: NextRequest) {
       take: 50,
     })
 
+    console.log('[API] Found universities:', universities.length)
+
     // Calculate reputation scores for each university
     const universitiesWithStats = universities.map(univ => {
-      const students = (univ.users || []).filter(u => u.role === 'STUDENT')
+      const students = (univ.User || []).filter(u => u.role === 'STUDENT')
       const avgReputation = students.length > 0
         ? students.reduce((sum, s) => {
             const score = (s.executionScore || 0) + (s.collaborationScore || 0) + (s.leadershipScore || 0)
@@ -71,17 +74,18 @@ export async function GET(request: NextRequest) {
         verificationStatus: univ.verificationStatus,
         rankingScore: univ.rankingScore,
         rankingPosition: univ.rankingPosition,
-        totalStudents: univ._count.users,
+        totalStudents: univ.User.length,
         avgReputation: parseFloat(avgReputation.toFixed(2)),
         recentStudents: students.slice(0, 3),
       }
     })
 
+    console.log('[API] Returning universities response')
     return NextResponse.json({ universities: universitiesWithStats })
   } catch (error) {
-    console.error('Get universities error:', error)
+    console.error('[API] Get universities error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }

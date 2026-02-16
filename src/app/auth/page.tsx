@@ -168,27 +168,35 @@ export default function AuthPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <PublicHeader />
 
-      <main className="flex-1 flex items-center justify-center p-4">
+      <main className="flex-1 flex items-center justify-center p-4" role="main">
         <div className="w-full max-w-4xl">
-          <div className="w-full max-w-md grid grid-cols-2 mx-auto gap-4">
+          <div className="w-full max-w-md grid grid-cols-2 mx-auto gap-4" role="tablist">
             <button
-              className={`w-full py-2 px-4 rounded-lg border-2 transition-all ${activeTab === 'signup' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : 'border-gray-300 hover:bg-gray-50'}`}
+              className={`w-full py-2 px-4 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${activeTab === 'signup' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : 'border-gray-300 hover:bg-gray-50'}`}
               onClick={() => setActiveTab('signup')}
               disabled={loading}
+              role="tab"
+              aria-selected={activeTab === 'signup'}
+              aria-controls="signup-panel"
+              id="signup-tab"
             >
               Sign Up
             </button>
             <button
-              className={`w-full py-2 px-4 rounded-lg border-2 transition-all ${activeTab === 'login' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : 'border-gray-300 hover:bg-gray-50'}`}
+              className={`w-full py-2 px-4 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${activeTab === 'login' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : 'border-gray-300 hover:bg-gray-50'}`}
               onClick={() => setActiveTab('login')}
               disabled={loading}
+              role="tab"
+              aria-selected={activeTab === 'login'}
+              aria-controls="login-panel"
+              id="login-tab"
             >
               Login
             </button>
           </div>
 
           {activeTab === 'signup' && (
-            <div className="w-full mt-8 p-6 border rounded-lg shadow-lg">
+            <div className="w-full mt-8 p-6 border rounded-lg shadow-lg" role="tabpanel" id="signup-panel" aria-labelledby="signup-tab">
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-bold text-center">Create Your Account</h2>
@@ -196,7 +204,7 @@ export default function AuthPage() {
                 </div>
 
                 {error && (
-                  <div className={`p-4 rounded-lg border ${error.includes('success') || error.includes('created') || error.includes('Redirecting') ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
+                  <div className={`p-4 rounded-lg border ${error.includes('success') || error.includes('created') || error.includes('Redirecting') ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20'}`} role="alert" aria-live="polite">
                     <div className="text-center font-medium">{error}</div>
                   </div>
                 )}
@@ -610,7 +618,7 @@ export default function AuthPage() {
           )}
 
           {activeTab === 'login' && (
-            <div className="w-full mt-8 p-6 border rounded-lg shadow-lg">
+            <div className="w-full mt-8 p-6 border rounded-lg shadow-lg" role="tabpanel" id="login-panel" aria-labelledby="login-tab">
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-bold text-center">Welcome Back</h2>
@@ -618,7 +626,7 @@ export default function AuthPage() {
                 </div>
 
                 {error && (
-                  <div className={`p-4 rounded-lg border mb-4 ${error.includes('success') || error.includes('Login') || error.includes('Redirecting') ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
+                  <div className={`p-4 rounded-lg border mb-4 ${error.includes('success') || error.includes('Login') || error.includes('Redirecting') ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20'}`} role="alert" aria-live="polite">
                     <div className="text-center font-medium">{error}</div>
                   </div>
                 )}

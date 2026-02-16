@@ -5,30 +5,28 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 // Initialize Prisma client (singleton pattern for serverless)
-// Optimized for PostgreSQL/Supabase with connection pooling
 if (!globalForPrisma.prisma) {
   console.log('[DB] Initializing Prisma Client...')
   console.log('[DB] DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET')
 
-  // For Supabase, we use the connection pooler for better performance
-  // The pooler URL is in DATABASE_URL with pgbouncer=true
+  // For SQLite, use simple configuration
   const connectionString = process.env.DATABASE_URL || ''
 
-  const prismaConfig: any = {
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    datasources: {
+  let prismaConfig: any = {
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']
+  }
+
+  // Only add datasource config for PostgreSQL/Supabase
+  if (connectionString.includes('postgresql') || connectionString.includes('supabase')) {
+    prismaConfig.datasources = {
       db: {
-        url: process.env.DATABASE_URL
+        url: connectionString
       }
     }
   }
+  // For SQLite, let Prisma handle the DATABASE_URL automatically
 
-  // Connection pool settings for Supabase
-  // These settings help prevent connection pool exhaustion errors
-  if (connectionString && connectionString.includes('pooler.supabase.com')) {
-    prismaConfig.datasources.db.url = connectionString
-  }
-
+  console.log('[DB] Using config:', JSON.stringify(prismaConfig, null, 2))
   globalForPrisma.prisma = new PrismaClient(prismaConfig)
 }
 

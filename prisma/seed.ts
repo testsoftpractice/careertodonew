@@ -1,7 +1,13 @@
 const { PrismaClient } = require('@prisma/client')
 const bcrypt = require('bcryptjs')
+const { randomUUID } = require('crypto')
 
 const prisma = new PrismaClient()
+
+// Simple ID generator
+function generateId() {
+  return randomUUID()
+}
 
 async function main() {
   console.log('🌱 Starting comprehensive business-focused database seeding...')
@@ -62,6 +68,7 @@ async function main() {
       // === PUBLIC UNIVERSITIES ===
       prisma.university.create({
         data: {
+          id: generateId(),
           name: 'University of Dhaka',
           code: 'DU001',
           description: 'Public research university in Dhaka',

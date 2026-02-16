@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Agreement {
@@ -666,7 +667,7 @@ model TimeEntry {
 }
 
 model University {
-  id                 String    @id
+  id                 String    @id @default(uuid())
   name               String
   code               String    @unique
   description        String?
@@ -678,7 +679,7 @@ model University {
   verificationStatus String    @default("PENDING")
   totalProjects      Int       @default(0)
   createdAt          DateTime  @default(now())
-  updatedAt          DateTime
+  updatedAt          DateTime  @updatedAt
   Project            Project[]
   User               User[]
 

@@ -6,10 +6,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-productio
 
 if (!process.env.JWT_SECRET) {
   console.warn('JWT_SECRET environment variable is not set, using default for development')
+  console.warn('SECURITY WARNING: Using default JWT secret is not secure for production!')
 }
 
-const JWT_EXPIRES_IN = '7d' // 7 days for access token
-const REFRESH_TOKEN_EXPIRES_IN = '30d' // 30 days for refresh token
+const JWT_EXPIRES_IN = '24h' // Reduced from 7 days to 24 hours for security
+const REFRESH_TOKEN_EXPIRES_IN = '7d' // 7 days for refresh token
 
 export interface JwtPayload {
   userId: string

@@ -2,11 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyPassword, generateToken } from '@/lib/auth/jwt'
 import { checkAndIncrementLoginAttempts, handleFailedLogin, resetLoginAttempts } from '@/lib/auth/account-lockout'
+import { authRateLimit } from '@/lib/rate-limiter'
 
 // POST /api/auth/login - Simple user authentication
 export async function POST(request: NextRequest) {
   try {
     console.log('[LOGIN] =============== START ===============')
+
+    // Apply rate limiting
+    const rateLimitResult = await authRateLimit(request)
+    if (rateLimitResult) {
+      return rateLimitResult
+    }
 
     const body = await request.json()
     console.log('[LOGIN] Received body:', JSON.stringify(body, null, 2))

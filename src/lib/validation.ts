@@ -130,7 +130,7 @@ export function validateRequest<T>(schema: z.ZodSchema<T>, data: unknown): { suc
     const validated = schema.parse(data)
     return { success: true, data: validated }
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof z.ZodError && error.errors && Array.isArray(error.errors)) {
       const errorMessages = error.errors.map(err => err.message).join('; ')
       return { success: false, error: errorMessages }
     }

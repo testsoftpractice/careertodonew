@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { successResponse, errorResponse, validationError, unauthorized, badRequest, notFound } from '@/lib/api-response'
 import { validateRequest } from '@/lib/validation'
 import { verifyAuth } from '@/lib/auth/verify'
+import { TaskPriority } from '@/lib/constants'
 import { z } from 'zod'
 
 /**
@@ -18,12 +19,12 @@ export async function GET(request: NextRequest) {
     }
 
     const authResult = await verifyAuth(request)
-    if (!authResult) {
+    if (!authResult.success || !authResult.user) {
       return unauthorized()
     }
 
     // Verify user is requesting their own tasks
-    if (authResult.user!.id !== userId) {
+    if (authResult.user.id !== userId) {
       return errorResponse('Forbidden', 403)
     }
 
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
-    if (!authResult) {
+    if (!authResult.success || !authResult.user) {
       return unauthorized()
     }
 
@@ -57,14 +58,15 @@ export async function POST(request: NextRequest) {
       z.object({
         title: z.string().min(1).max(200),
         description: z.string().max(1000).optional(),
-        priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).default('MEDIUM'),
+        priority: z.enum([TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH, TaskPriority.URGENT]).default(TaskPriority.MEDIUM),
         dueDate: z.string().datetime().optional(),
       }),
       body
     )
 
-    if (!validation.valid) {
-      return validationError(validation.errors || [])
+    if (!validation.success) {
+      console.log('[PERSONAL TASKS] Validation error:', validation.error)
+      return validationError(validation.details || [{ field: 'general', message: validation.error }])
     }
 
     const data = validation.data!
@@ -101,12 +103,12 @@ export async function PATCH(request: NextRequest) {
     }
 
     const authResult = await verifyAuth(request)
-    if (!authResult) {
+    if (!authResult.success || !authResult.user) {
       return unauthorized()
     }
 
     // Verify user is updating their own task
-    if (authResult.user!.id !== userId) {
+    if (authResult.user.id !== userId) {
       return errorResponse('Forbidden', 403)
     }
 

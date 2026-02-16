@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyToken } from '@/lib/auth/jwt'
-import { VerificationStatus } from '@prisma/client'
+import { VerificationStatus } from '@/lib/constants'
 import { getCached, createDashboardStatsKey } from '@/lib/utils/cache'
 
 // GET /api/admin/verification/stats - Get verification statistics

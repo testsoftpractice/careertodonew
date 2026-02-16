@@ -7,7 +7,7 @@ import { unauthorized, forbidden, errorResponse } from '@/lib/api-response'
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
-    if (!authResult) {
+    if (!authResult.success || !authResult.user) {
       return unauthorized('Authentication required')
     }
 
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     const investments = await db.investment.findMany({
       where,
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -50,13 +50,13 @@ export async function GET(request: NextRequest) {
             avatar: true,
           },
         },
-        project: {
+        Project: {
           select: {
             id: true,
             name: true,
             description: true,
             status: true,
-            owner: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -77,9 +77,9 @@ export async function GET(request: NextRequest) {
       data: investments.map(inv => ({
         id: inv.id,
         investorId: inv.userId,
-        investor: inv.user,
+        investor: inv.User,
         projectId: inv.projectId,
-        project: inv.project,
+        project: inv.Project,
         type: inv.type,
         status: inv.status,
         amount: inv.amount,
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
     const project = await db.project.findUnique({
       where: { id: projectId },
       include: {
-        owner: {
+        User: {
           select: { id: true, name: true },
         },
       },
@@ -170,14 +170,14 @@ export async function POST(request: NextRequest) {
         amount: amount ? parseFloat(amount) : 0,
       },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
             email: true,
           },
         },
-        project: {
+        Project: {
           select: {
             id: true,
             name: true,
@@ -189,10 +189,10 @@ export async function POST(request: NextRequest) {
     // Create notification for project owner
     await db.notification.create({
       data: {
-        userId: project.owner.id,
+        userId: project.User.id,
         type: 'INVESTMENT',
         title: 'New Investment',
-        message: `${investment.user.name} has invested in your project "${project.name}"`,
+        message: `${investment.User.name} has invested in your project "${project.name}"`,
         priority: 'HIGH',
       },
     })

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyToken } from '@/lib/auth/jwt'
-import { VerificationStatus } from '@prisma/client'
+import { VerificationStatus } from '@/lib/constants'
 
 // PATCH /api/admin/verification/users/[id] - Update individual user verification status
 export async function PATCH(
@@ -58,7 +58,7 @@ export async function PATCH(
         verificationStatus: status as VerificationStatus
       },
       include: {
-        university: {
+        University: {
           select: {
             id: true,
             name: true,

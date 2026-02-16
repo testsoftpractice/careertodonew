@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
         startTime: 'desc', // Get the most recent session
       },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -27,13 +27,13 @@ export async function GET(request: NextRequest) {
             avatar: true,
           },
         },
-        project: {
+        Project: {
           select: {
             id: true,
             name: true,
           },
         },
-        task: {
+        Task: {
           select: {
             id: true,
             title: true,

@@ -27,11 +27,11 @@ export async function GET(request: NextRequest) {
     // Get user's tasks as deadlines
     const tasks = await db.task.findMany({
       where: {
-        taskAssignees: { some: { userId: decoded.userId } },
+        TaskAssignee: { some: { userId: decoded.userId } },
         status: { in: ['TODO', 'IN_PROGRESS', 'REVIEW'] }
       },
       include: {
-        project: {
+        Project: {
           select: { name: true }
         }
       },
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
         type: 'task' as const,
         dueDate: task.dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         priority: priorityMap[task.priority] || 'medium',
-        project: task.project?.name || 'Unknown Project',
+        project: task.Project?.name || 'Unknown Project',
         status: task.status === 'DONE' ? 'submitted' as const : task.status === 'IN_PROGRESS' ? 'in_progress' as const : 'pending' as const
       }
     })

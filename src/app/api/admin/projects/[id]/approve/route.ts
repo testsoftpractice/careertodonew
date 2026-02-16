@@ -12,7 +12,7 @@ export async function POST(
     const user = authResult.dbUser
 
     // Check if user is platform admin or university admin
-    if (!authResult) {
+    if (!authResult.success || !authResult.user) {
       return NextResponse.json({
         success: false,
         error: "Forbidden: Admin access required"
@@ -37,7 +37,7 @@ export async function POST(
     const project = await db.project.findUnique({
       where: { id },
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       where: { taskId },
       orderBy: { createdAt: 'desc' },
       include: {
-        author: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
         content,
       },
       include: {
-        author: {
+        User: {
           select: {
             id: true,
             name: true,

@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         avatar: true,
         role: true,
         universityId: true,
-        university: {
+        University: {
           select: {
             id: true,
             name: true,

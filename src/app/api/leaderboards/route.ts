@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (university) {
-      where.university = { name: { contains: university, mode: 'insensitive' } }
+      where.University = { name: { contains: university, mode: 'insensitive' } }
     }
 
     const [users, totalCount] = await Promise.all([
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         take: limit,
         orderBy,
         include: {
-          university: {
+          University: {
             select: {
               name: true,
             },
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       name: u.name,
       email: u.email,
       avatar: u.avatar,
-      university: u.university?.name || '',
+      university: u.University?.name || '',
       major: u.major || '',
       graduationYear: u.graduationYear || null,
       overallReputation: u.totalPoints || 0,

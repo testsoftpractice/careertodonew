@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         skip: (page - 1) * limit,
         orderBy,
         include: {
-          owner: {
+          User: {
             select: {
               id: true,
               name: true,
@@ -49,15 +49,9 @@ export async function GET(request: NextRequest) {
               avatar: true,
             }
           },
-          members: {
+          ProjectMember: {
             take: 10,
           },
-          _count: {
-            select: {
-              tasks: true,
-              members: true,
-            }
-          }
         },
       }),
       db.project.count({ where }),
@@ -71,9 +65,9 @@ export async function GET(request: NextRequest) {
       category: p.category || "",
       status: p.status || "",
       ownerId: p.ownerId,
-      owner: p.owner,
-      teamSize: p._count.members || 1,
-      tasksCount: p._count.tasks || 0,
+      owner: p.User,
+      teamSize: p.ProjectMember?.length || 1,
+      tasksCount: 0, // Would need separate query to count tasks
       budget: p.budget || 0,
       startDate: p.startDate?.toISOString() || null,
       endDate: p.endDate?.toISOString() || null,

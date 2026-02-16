@@ -1,36 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyAuth, AuthError } from '@/lib/auth/verify'
+import { errorResponse, unauthorized } from '@/lib/api-response'
 import { db } from '@/lib/db'
-import { verifyToken } from '@/lib/auth/jwt'
 
 // GET /api/dashboard/investor/deals - Get investor's deal flow
 export async function GET(request: NextRequest) {
   try {
-    const tokenCookie = request.cookies.get('token')
-    const token = tokenCookie?.value
-
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const decoded = verifyToken(token)
-
-    if (!decoded) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid token' },
-        { status: 401 }
-      )
+    const authResult = await verifyAuth(request)
+    if (!authResult.success || !authResult.user) {
+      return unauthorized('Authentication required')
     }
 
     // Get investor's deals (from investments)
     const investments = await db.investment.findMany({
       where: {
-        userId: decoded.userId
+        userId: authResult.user.id
       },
       include: {
-        project: {
+        Project: {
           select: { id: true, name: true, status: true }
         }
       },
@@ -50,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate stats
     const totalDeals = investments.length
-    const activeDeals = investments.filter(i => i.status === 'ACTIVE').length
+    const activeDeals = investments.filter(i => ['AGREED', 'UNDER_REVIEW', 'PENDING'].includes(i.status)).length
     const pipelineValue = projects.reduce((sum, p) => sum + (p.budget || 0), 0)
 
     // Transform to deal format
@@ -60,13 +47,13 @@ export async function GET(request: NextRequest) {
 
       return {
         id: inv.id,
-        startupName: inv.project?.name || `Startup ${index + 1}`,
+        startupName: inv.Project?.name || `Startup ${index + 1}`,
         industry: 'Technology',
         stage: ['seed' as const, 'series_a' as const, 'series_b' as const][index % 3],
         amount: amount,
         equity: equity,
-        status: inv.status === 'ACTIVE' ? 'negotiating' as const :
-                inv.status === 'COMPLETED' ? 'closed' as const :
+        status: ['AGREED', 'UNDER_REVIEW'].includes(inv.status) ? 'negotiating' as const :
+                inv.status === 'FUNDED' ? 'closed' as const :
                 'diligence' as const,
         valuation: amount * 2,
         expectedROI: 20 + Math.random() * 30,
@@ -83,7 +70,10 @@ export async function GET(request: NextRequest) {
         pipelineValue
       }
     })
-  } catch (error: any) {
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Get deal flow error:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch deal flow' },

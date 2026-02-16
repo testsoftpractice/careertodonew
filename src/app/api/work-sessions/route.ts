@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     const workSessions = await db.workSession.findMany({
       where,
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -52,13 +52,13 @@ export async function GET(request: NextRequest) {
             location: true,
           }
         },
-        project: {
+        Project: {
           select: {
             id: true,
             name: true,
           }
         },
-        task: {
+        Task: {
           select: {
             id: true,
             title: true,
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
     const workSession = await db.workSession.create({
       data: workSessionData,
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -161,13 +161,13 @@ export async function POST(request: NextRequest) {
             avatar: true,
           }
         },
-        project: {
+        Project: {
           select: {
             id: true,
             name: true,
           }
         },
-        task: {
+        Task: {
           select: {
             id: true,
             title: true,
@@ -299,7 +299,7 @@ export async function PATCH(request: NextRequest) {
       where: { id: sessionId },
       data: updateData,
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -307,13 +307,13 @@ export async function PATCH(request: NextRequest) {
             avatar: true,
           }
         },
-        project: {
+        Project: {
           select: {
             id: true,
             name: true,
           }
         },
-        task: {
+        Task: {
           select: {
             id: true,
             title: true,

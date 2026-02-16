@@ -86,7 +86,7 @@ export async function GET(
     const business = await db.business.findUnique({
       where: { id: businessId },
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -94,9 +94,9 @@ export async function GET(
             avatar: true,
           },
         },
-        members: {
+        BusinessMember: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -232,7 +232,7 @@ export async function PATCH(
         ...(decoded.role === 'PLATFORM_ADMIN' && body.verifiedAt && { verifiedAt: new Date(body.verifiedAt) }),
       },
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,

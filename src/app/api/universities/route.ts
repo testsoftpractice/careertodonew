@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { UniversityVerificationStatus } from '@prisma/client'
+import { UniversityVerificationStatus } from '@/lib/constants'
 
 // GET /api/universities - List universities with filters
 export async function GET(request: NextRequest) {

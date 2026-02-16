@@ -80,7 +80,7 @@ export async function PATCH(
       where: { id: departmentId, projectId },
       data: updates,
       include: {
-        head: {
+        User: {
           select: {
             id: true,
             name: true,

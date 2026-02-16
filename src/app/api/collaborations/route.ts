@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { CollaborationType, CollaborationStatus } from '@prisma/client'
+import { CollaborationType, CollaborationStatus } from '@/lib/constants'
 import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
 import { unauthorized, forbidden, errorResponse } from '@/lib/api-response'
 
@@ -54,7 +54,7 @@ function calculateMatchScore(user1: UserWithSkills, user2: UserWithSkills): numb
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
-    if (!authResult) {
+    if (!authResult.success || !authResult.user) {
       return unauthorized('Authentication required')
     }
 

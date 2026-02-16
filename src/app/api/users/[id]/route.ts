@@ -12,10 +12,26 @@ export async function GET(
     const user = await db.user.findUnique({
       where: { id },
       include: {
-        university: true,
-        projectsMembered: {
+        University: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            location: true,
+            rankingScore: true,
+            totalStudents: true,
+            totalProjects: true,
+          },
+        },
+        ProjectMember: {
           include: {
-            project: true,
+            Project: {
+              select: {
+                id: true,
+                name: true,
+                status: true,
+              },
+            },
           },
           orderBy: { joinedAt: 'desc' },
           take: 10,

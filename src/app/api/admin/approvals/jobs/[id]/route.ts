@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth, AuthError } from '@/lib/auth/verify'
-import { JobApprovalStatus } from '@prisma/client'
+import { JobApprovalStatus } from '@/lib/constants'
 import { successResponse, errorResponse, forbidden, notFound } from '@/lib/api-response'
 
 // GET /api/admin/approvals/jobs/[id] - Get job details for review
@@ -23,7 +23,7 @@ export async function GET(
     const job = await db.job.findUnique({
       where: { id },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -35,7 +35,7 @@ export async function GET(
             linkedinUrl: true,
           },
         },
-        business: {
+        Business: {
           select: {
             id: true,
             name: true,
@@ -46,16 +46,16 @@ export async function GET(
             size: true,
           },
         },
-        applications: {
+        JobApplication: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
                 email: true,
                 avatar: true,
                 role: true,
-                university: {
+                University: {
                   select: {
                     id: true,
                     name: true,
@@ -71,10 +71,10 @@ export async function GET(
           take: 20,
           orderBy: { createdAt: 'desc' },
         },
-        approvals: {
+        JobApproval: {
           orderBy: { createdAt: 'desc' },
           include: {
-            admin: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -131,7 +131,7 @@ export async function PATCH(
     const job = await db.job.findUnique({
       where: { id },
       include: {
-        business: true,
+        Business: true,
       },
     })
 

@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       },
       take: limit,
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
           id: log.id,
           action: log.action,
           entity: log.entity,
-          performedBy: log.user ? { name: log.user.name } : undefined,
+          performedBy: log.User ? { name: log.User.name } : undefined,
           details: log.details,
           createdAt: log.createdAt.toISOString(),
         })),

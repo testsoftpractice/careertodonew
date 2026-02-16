@@ -20,9 +20,9 @@ export async function GET(request: NextRequest) {
       db.project.count({ where: { ownerId: userId } }),
       db.project.count({ where: { ownerId: userId, status: 'IN_PROGRESS' } }),
       db.project.count({ where: { ownerId: userId, status: 'COMPLETED' } }),
-      db.task.count({ where: { taskAssignees: { some: { userId } }, status: 'DONE' } }),
-      db.task.count({ where: { taskAssignees: { some: { userId } }, status: 'TODO' } }),
-      db.task.count({ where: { taskAssignees: { some: { userId } }, status: 'IN_PROGRESS' } }),
+      db.task.count({ where: { TaskAssignee: { some: { userId } }, status: 'DONE' } }),
+      db.task.count({ where: { TaskAssignee: { some: { userId } }, status: 'TODO' } }),
+      db.task.count({ where: { TaskAssignee: { some: { userId } }, status: 'IN_PROGRESS' } }),
       db.user.findUnique({
         where: { id: userId },
         select: {

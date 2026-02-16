@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth, AuthError } from '@/lib/auth/verify'
-import { JobApprovalStatus } from '@prisma/client'
+import { JobApprovalStatus } from '@/lib/constants'
 import { successResponse, errorResponse, forbidden, notFound } from '@/lib/api-response'
 
 // GET /api/admin/approvals/jobs - List all jobs pending approval
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     const jobs = await db.job.findMany({
       where,
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
             location: true,
           },
         },
-        business: {
+        Business: {
           select: {
             id: true,
             name: true,
@@ -60,11 +60,11 @@ export async function GET(request: NextRequest) {
             website: true,
           },
         },
-        applications: {
+        JobApplication: {
           take: 5,
           orderBy: { createdAt: 'desc' },
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -74,11 +74,11 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        approvals: {
+        JobApproval: {
           orderBy: { createdAt: 'desc' },
           take: 1,
           include: {
-            admin: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
     const job = await db.job.findUnique({
       where: { id: jobId },
       include: {
-        business: true,
+        Business: true,
       },
     })
 

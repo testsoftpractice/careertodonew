@@ -23,7 +23,7 @@ const adjustPointsSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
-    if (!authResult) {
+    if (!authResult.success || !authResult.user) {
       return unauthorized('Authentication required')
     }
 
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
       if (error instanceof AuthError) {
         return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
       }
-      if (!authResult) {
+      if (!authResult || !authResult.success || !authResult.user) {
         return forbidden('Only admins and mentors can award points')
       }
       throw error
@@ -281,7 +281,7 @@ export async function ADJUST(request: NextRequest) {
       if (error instanceof AuthError) {
         return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
       }
-      if (!authResult) {
+      if (!authResult || !authResult.success || !authResult.user) {
         return forbidden('Only platform administrators can adjust points')
       }
       throw error

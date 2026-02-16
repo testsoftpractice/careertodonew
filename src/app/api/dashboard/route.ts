@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const user = await db.user.findUnique({
       where: { id: userId },
       include: {
-        university: true
+        University: true
       }
     })
 
@@ -40,10 +40,10 @@ export async function GET(request: NextRequest) {
       const myProjects = await db.projectMember.findMany({
         where: { userId },
         include: {
-          project: {
+          Project: {
             include: {
-              tasks: {
-                where: { taskAssignees: { some: { userId } } },
+              Task: {
+                where: { TaskAssignee: { some: { userId } } },
                 take: 5,
                 orderBy: { dueDate: 'asc' }
               }
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       const myApplications = await db.jobApplication.findMany({
         where: { userId },
         include: {
-          job: true
+          Job: true
         },
         orderBy: { createdAt: 'desc' }
       })
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
           ownerId: user.id,
         },
         include: {
-          owner: {
+          User: {
             select: {
               id: true,
               name: true,
@@ -157,12 +157,12 @@ export async function GET(request: NextRequest) {
 
       const applications = await db.jobApplication.findMany({
         where: {
-          job: {
+          Job: {
             userId: userId
           }
         },
         include: {
-          job: true
+          Job: true
         },
         orderBy: { createdAt: 'desc' }
       })
@@ -182,9 +182,9 @@ export async function GET(request: NextRequest) {
       const investments = await db.investment.findMany({
         where: { userId },
         include: {
-          project: {
+          Project: {
             include: {
-              owner: {
+              User: {
                 select: {
                   id: true,
                   name: true,
@@ -211,7 +211,7 @@ export async function GET(request: NextRequest) {
       dashboardData.stats = {
         totalInvestments: investments.length,
         totalAmount: investments.reduce((sum, inv) => sum + inv.amount, 0),
-        fundedProjects: investments.filter(inv => inv.status === 'COMPLETED').length,
+        fundedProjects: investments.filter(inv => inv.status === 'FUNDED').length,
       }
     }
 

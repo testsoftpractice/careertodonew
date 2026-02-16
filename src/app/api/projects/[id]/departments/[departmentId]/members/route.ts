@@ -111,7 +111,7 @@ export async function PUT(
     const updatedDepartment = await db.department.findUnique({
       where: { id: departmentId },
       include: {
-        head: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -119,9 +119,9 @@ export async function PUT(
             avatar: true,
           }
         },
-        members: {
+        ProjectMember: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -138,7 +138,7 @@ export async function PUT(
       success: true,
       data: {
         ...updatedDepartment,
-        memberCount: updatedDepartment?.members?.length || 0
+        memberCount: updatedDepartment?.ProjectMember?.length || 0
       },
       message: "Members assigned successfully"
     })

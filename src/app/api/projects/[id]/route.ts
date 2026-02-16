@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { ProjectStatus } from '@prisma/client'
+import { ProjectStatus } from '@/lib/constants'
 import { requireAuth } from '@/lib/auth/verify'
 
 // GET /api/projects/[id] - Get a specific project
@@ -13,7 +13,7 @@ export async function GET(
     const project = await db.project.findUnique({
       where: { id },
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -21,16 +21,16 @@ export async function GET(
             email: true,
           },
         },
-        business: {
+        Business: {
           select: {
             id: true,
             name: true,
             logo: true,
           },
         },
-        members: {
+        ProjectMember: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -42,9 +42,9 @@ export async function GET(
             },
           },
         },
-        departments: {
+        Department: {
           include: {
-            head: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -53,11 +53,11 @@ export async function GET(
             },
           },
         },
-        tasks: {
+        Task: {
           include: {
-            taskAssignees: {
+            TaskAssignee: {
               include: {
-                user: {
+                User: {
                   select: {
                     id: true,
                     name: true,
@@ -68,7 +68,7 @@ export async function GET(
               },
               orderBy: { sortOrder: 'asc' },
             },
-            subTasks: {
+            SubTask: {
               orderBy: { sortOrder: 'asc' }
             },
           },
@@ -77,12 +77,12 @@ export async function GET(
           },
           take: 20,
         },
-        milestones: {
+        Milestone: {
           orderBy: {
             dueDate: 'asc',
           },
         },
-        vacancies: true,
+        Vacancy: true,
       },
     })
     if (!project) {
@@ -101,25 +101,25 @@ export async function GET(
         description: project.description,
         category: project.category,
         status: project.status,
-        owner: project.owner,
-        business: project.business,
-        members: project.members,
-        departments: project.departments,
-        tasks: project.tasks,
-        milestones: project.milestones,
-        vacancies: project.vacancies,
+        owner: project.User,
+        business: project.Business,
+        members: project.ProjectMember,
+        departments: project.Department,
+        tasks: project.Task,
+        milestones: project.Milestone,
+        vacancies: project.Vacancy,
         startDate: project.startDate,
         endDate: project.endDate,
         budget: project.budget,
         createdAt: project.createdAt,
         updatedAt: project.updatedAt,
         // Computed fields
-        completionRate: project.tasks && project.tasks.length > 0
-          ? Math.round((project.tasks.filter((t) => t.status === 'DONE').length / project.tasks.length) * 100)
+        completionRate: project.Task && project.Task.length > 0
+          ? Math.round((project.Task.filter((t) => t.status === 'DONE').length / project.Task.length) * 100)
           : 0,
-        tasksCompleted: project.tasks ? project.tasks.filter((t) => t.status === 'DONE').length : 0,
-        totalPoints: project.members?.reduce((sum, m) => sum + (m.user?.totalPoints || 0), 0) || 0,
-        projectLead: project.members?.find((m) => m.role === 'OWNER' || m.role === 'PROJECT_MANAGER')?.user || project.owner,
+        tasksCompleted: project.Task ? project.Task.filter((t) => t.status === 'DONE').length : 0,
+        totalPoints: project.ProjectMember?.reduce((sum, m) => sum + (m.User?.totalPoints || 0), 0) || 0,
+        projectLead: project.ProjectMember?.find((m) => m.role === 'OWNER' || m.role === 'PROJECT_MANAGER')?.User || project.User,
       },
     })
   } catch (error) {
@@ -186,8 +186,8 @@ export async function PATCH(
         ...(budget !== undefined && { budget }),
       },
       include: {
-        owner: true,
-        business: true,
+        User: true,
+        Business: true,
       },
     })
 

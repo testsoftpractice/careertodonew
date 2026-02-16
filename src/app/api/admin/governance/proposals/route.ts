@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       where,
       take: limit,
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
         priority,
         status: proposal.status,
         currentStage: proposal.status === 'PENDING' ? 'SUBMITTED' : proposal.status,
-        createdBy: proposal.user,
+        createdBy: proposal.User,
         createdAt: proposal.createdAt.toISOString(),
         projectId: proposal.projectId || undefined,
       }

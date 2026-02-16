@@ -38,7 +38,7 @@ interface Department {
   members?: Array<{
     id: string
     userId: string
-    user: {
+    User?: {
       id: string
       name: string
       email: string
@@ -52,7 +52,7 @@ interface Department {
 interface DepartmentManagementProps {
   projectId: string
   canManageDepartments: boolean
-  projectMembers: Array<{ id: string; userId: string; user: { id: string; name: string; email: string } }>
+  projectMembers: Array<{ id: string; userId: string; User?: { id: string; name: string; email: string } }>
 }
 
 export default function DepartmentManagement({
@@ -351,7 +351,7 @@ export default function DepartmentManagement({
                       <SelectContent>
                         {projectMembers.map((member) => (
                           <SelectItem key={member.userId} value={member.userId}>
-                            {member.user.name}
+                            {member.User?.name || member.userId}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -490,7 +490,7 @@ export default function DepartmentManagement({
                       <div className="flex flex-wrap gap-1 mt-2">
                         {department.members.slice(0, 5).map((member) => (
                           <Badge key={member.id} variant="outline" className="text-xs">
-                            {member.user.name}
+                            {member.User?.name || member.userId}
                           </Badge>
                         ))}
                         {department.members.length > 5 && (
@@ -538,7 +538,7 @@ export default function DepartmentManagement({
                 <SelectContent>
                   {projectMembers.map((member) => (
                     <SelectItem key={member.userId} value={member.userId}>
-                      {member.user.name}
+                      {member.User?.name || member.userId}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -601,8 +601,8 @@ export default function DepartmentManagement({
                     className="h-4 w-4"
                   />
                   <div className="flex-1">
-                    <div className="font-medium text-sm">{member.user.name}</div>
-                    <div className="text-xs text-muted-foreground">{member.user.email}</div>
+                    <div className="font-medium text-sm">{member.User?.name || member.userId}</div>
+                    <div className="text-xs text-muted-foreground">{member.User?.email || ''}</div>
                   </div>
                 </label>
               ))

@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       },
       include: {
         _count: {
-          select: { applications: true }
+          select: { JobApplication: true }
         }
       },
       orderBy: { createdAt: 'desc' },

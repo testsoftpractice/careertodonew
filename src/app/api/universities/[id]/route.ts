@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, requireRole } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
-import { UniversityVerificationStatus } from '@prisma/client'
+import { UniversityVerificationStatus } from '@/lib/constants'
 
 // GET /api/universities/[id] - Get university details
 export async function GET(
@@ -13,7 +13,7 @@ export async function GET(
     const university = await db.university.findUnique({
       where: { id },
       include: {
-        users: {
+        User: {
           select: {
             id: true,
             name: true,

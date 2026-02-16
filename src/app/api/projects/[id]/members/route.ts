@@ -59,7 +59,7 @@ export async function GET(
     const members = await db.projectMember.findMany({
       where: { projectId: id },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -150,7 +150,7 @@ export async function POST(
         joinedAt: new Date(),
       },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,

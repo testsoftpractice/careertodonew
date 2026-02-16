@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyToken } from '@/lib/auth/jwt'
-import { UniversityVerificationStatus } from '@prisma/client'
+import { UniversityVerificationStatus } from '@/lib/constants'
 import { z } from 'zod'
 
 // Validation schema for creating/updating university

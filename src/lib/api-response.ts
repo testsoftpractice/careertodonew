@@ -89,6 +89,18 @@ export function validationError(errors: Array<{ field: string; message: string }
  * This should be used for all authenticated API requests
  */
 export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  // Check if we're on the server side
+  if (typeof window === 'undefined') {
+    // Server-side: can't access localStorage, return error response
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Authentication required - Cannot access localStorage on server'
+    }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    })
+  }
+
   const authHeader = localStorage.getItem('token')
 
   const headers: HeadersInit = {

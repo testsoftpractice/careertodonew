@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { UserRole, TaskPriority } from './constants'
 
 // Sanitize HTML to prevent XSS
 export function sanitizeHtml(input: string): string {
@@ -27,11 +28,11 @@ export const passwordSchema = z.string()
   .regex(/\d/, 'Password must contain at least one number')
   .regex(/[!@#$%^&*()_+\-=\[\]{}|;:'",.<>\/?]/, 'Password must contain at least one special character')
 
-// Name validation
+// Name validation - allow international characters
 export const nameSchema = z.string()
   .min(1, 'Name is required')
   .max(100, 'Name too long')
-  .regex(/^[a-zA-Z\s'-]+$/, 'Name can only contain letters, spaces, hyphens, and apostrophes')
+  .regex(/^[a-zA-Z\s\u00C0-\u024F\u1E00-\u1EFF'-]+$/, 'Name can only contain letters, spaces, hyphens, and apostrophes')
 
 // Phone number validation (basic)
 export const phoneSchema = z.string()
@@ -59,7 +60,7 @@ export const universityCodeSchema = z.string()
   .regex(/^[A-Z0-9]+$/, 'University code can only contain uppercase letters and numbers')
 
 // Role validation
-export const roleSchema = z.enum(['STUDENT', 'UNIVERSITY_ADMIN', 'EMPLOYER', 'INVESTOR', 'PLATFORM_ADMIN'])
+export const roleSchema = z.enum([UserRole.STUDENT, UserRole.UNIVERSITY_ADMIN, UserRole.EMPLOYER, UserRole.INVESTOR, UserRole.PLATFORM_ADMIN])
 
 // Common validation schemas
 export const userSignupSchema = z.object({
@@ -71,7 +72,19 @@ export const userSignupSchema = z.object({
   role: roleSchema,
   universityId: z.string().uuid('Invalid university ID').optional(),
   major: z.string().max(100, 'Major too long').optional(),
-  graduationYear: z.number().min(1950).max(2100).optional(),
+  graduationYear: z.union([z.string(), z.number()])
+    .optional()
+    .transform((val) => {
+      if (val === undefined || val === null || val === '') return undefined
+      if (typeof val === 'number') return val
+      const num = parseInt(val, 10)
+      if (isNaN(num)) return undefined
+      return num
+    })
+    .refine((val) => {
+      if (val === undefined) return true
+      return val >= 1950 && val <= 2100
+    }, 'Graduation year must be between 1950 and 2100'),
   bio: textAreaSchema.optional(),
   agreeTerms: z.boolean().refine(val => val === true, 'You must agree to the terms and conditions')
 })
@@ -99,7 +112,7 @@ export const projectSchema = z.object({
 export const taskSchema = z.object({
   title: titleSchema,
   description: textAreaSchema.optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
+  priority: z.enum([TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH, TaskPriority.URGENT]),
   dueDate: z.string().datetime().optional(),
   projectId: z.string().uuid().optional(),
   assigneeId: z.string().uuid().optional()
@@ -125,16 +138,20 @@ export const updateTaskSchema = taskSchema.partial().extend({
     sortOrder: z.number().default(0)
   })).optional()
 })
-export function validateRequest<T>(schema: z.ZodSchema<T>, data: unknown): { success: true; data: T } | { success: false; error: string } {
+export function validateRequest<T>(schema: z.ZodSchema<T>, data: unknown): { success: true; data: T } | { success: false; error: string; details?: Array<{ field: string; message: string }> } {
   try {
     const validated = schema.parse(data)
     return { success: true, data: validated }
   } catch (error) {
     if (error instanceof z.ZodError && error.errors && Array.isArray(error.errors)) {
-      const errorMessages = error.errors.map(err => err.message).join('; ')
-      return { success: false, error: errorMessages }
+      const errorDetails = error.errors.map(err => ({
+        field: err.path.join('.') || 'general',
+        message: err.message
+      }))
+      const errorMessages = errorDetails.map(err => `${err.field}: ${err.message}`).join('; ')
+      return { success: false, error: errorMessages, details: errorDetails }
     }
-    return { success: false, error: 'Validation failed' }
+    return { success: false, error: 'Validation failed', details: [] }
   }
 }
 

@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const agreements = await db.agreement.findMany({
       include: {
-        user: {
+        User: {
           select: {
             name: true,
             email: true,

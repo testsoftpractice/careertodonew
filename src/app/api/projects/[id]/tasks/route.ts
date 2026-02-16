@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { TaskStatus } from '@prisma/client'
+import { TaskStatus, TaskPriority } from '@/lib/constants'
 import { requireAuth, AuthError } from '@/lib/auth/verify'
 import { successResponse, errorResponse, forbidden, notFound, unauthorized } from '@/lib/api-response'
 import { z } from 'zod'
@@ -9,8 +9,8 @@ import { z } from 'zod'
 const projectTaskSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters'),
   description: z.string().max(1000, 'description must be less than 1000 characters').optional(),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED', 'CANCELLED', 'BACKLOG']).default('TODO'),
-  priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).default('MEDIUM'),
+  status: z.nativeEnum(TaskStatus).default(TaskStatus.TODO),
+  priority: z.nativeEnum(TaskPriority).default(TaskPriority.MEDIUM),
   dueDate: z.string().optional().refine((val) => {
     if (!val) return true
     // Try to parse the date - allow various formats
@@ -56,26 +56,26 @@ export async function GET(
     const tasks = await db.task.findMany({
       where,
       include: {
-        creator: {
+        User_Task_assignedByToUser: {
           select: {
             id: true,
             name: true,
             avatar: true,
           },
         },
-        project: {
+        Project: {
           select: {
             id: true,
             name: true,
             status: true,
           },
         },
-        subTasks: {
+        SubTask: {
           orderBy: { sortOrder: 'asc' }
         },
-        taskAssignees: {
+        TaskAssignee: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -172,26 +172,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         currentStepId: '1',
       },
       include: {
-        creator: {
+        User_Task_assignedByToUser: {
           select: {
             id: true,
             name: true,
             avatar: true,
           },
         },
-        project: {
+        Project: {
           select: {
             id: true,
             name: true,
             status: true,
           },
         },
-        subTasks: {
+        SubTask: {
           orderBy: { sortOrder: 'asc' }
         },
-        taskAssignees: {
+        TaskAssignee: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,

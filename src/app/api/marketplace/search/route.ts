@@ -19,12 +19,12 @@ export async function GET(request: NextRequest) {
       where.OR = [
         { title: { contains: search, mode: "insensitive" } },
         { description: { contains: search, mode: "insensitive" } },
-        { owner: { name: { contains: search, mode: "insensitive" } } },
+        { User: { name: { contains: search, mode: "insensitive" } } },
       ]
     }
 
     if (university) {
-      where.university = { name: { contains: university } }
+      where.University = { name: { contains: university } }
     }
 
     if (status) {
@@ -47,10 +47,10 @@ export async function GET(request: NextRequest) {
       db.project.findMany({
         where,
         include: {
-          owner: {
+          User: {
             select: { id: true, name: true, email: true }
           },
-          university: {
+          University: {
             select: { id: true, name: true }
           },
         },
@@ -66,11 +66,11 @@ export async function GET(request: NextRequest) {
       projectId: p.id,
       projectName: p.name || '',
       projectDescription: p.description || '',
-      university: p.university?.name || "",
+      university: p.University?.name || "",
       category: p.category || "",
       status: p.status || "",
       teamReputation: 4.5,
-      owner: p.owner?.name || "",
+      owner: p.User?.name || "",
       deadline: p.createdAt?.toISOString().split("T")[0] || "",
       investmentGoal: p.budget || 0,
       currentRaised: 0,

@@ -105,7 +105,7 @@ export function buildProjectVisibilityWhereClause(
       { universityId: userUniversityId },
       { ownerId: userId },
       {
-        members: {
+        ProjectMember: {
           some: {
             userId: userId,
           },
@@ -120,7 +120,7 @@ export function buildProjectVisibilityWhereClause(
     { approvalStatus: 'APPROVED' },
     { ownerId: userId },
     {
-      members: {
+      ProjectMember: {
         some: {
           userId: userId,
         },

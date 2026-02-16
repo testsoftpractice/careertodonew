@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     // Find the reset token in the database
     const resetToken = await db.passwordResetToken.findUnique({
       where: { token },
-      include: { user: true },
+      include: { User: true },
     })
 
     // Check if token exists and is valid
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('Password reset successfully for user:', resetToken.user.email)
+      console.log('Password reset successfully for user:', resetToken.User.email)
     }
 
     return NextResponse.json({

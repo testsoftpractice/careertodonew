@@ -109,7 +109,7 @@ export async function POST(
         joinedAt: new Date(),
       },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,

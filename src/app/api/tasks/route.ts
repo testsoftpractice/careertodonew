@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (assigneeId) {
-      where.taskAssignees = {
+      where.TaskAssignee = {
         some: {
           userId: assigneeId
         }
@@ -42,13 +42,13 @@ export async function GET(request: NextRequest) {
 
     // Build optimized include - only include what's requested
     const include: Record<string, any> = {
-      creator: {
+      User_Task_assignedByToUser: {
         select: {
           id: true,
           name: true,
         },
       },
-      project: {
+      Project: {
         select: {
           id: true,
           name: true,
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (includeSubtasks) {
-      include.subTasks = {
+      include.SubTask = {
         select: {
           id: true,
           taskId: true,
@@ -71,9 +71,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (includeComments) {
-      include.comments = {
+      include.TaskComment = {
         include: {
-          author: {
+          User: {
             select: {
               id: true,
               name: true,
@@ -87,9 +87,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (includeAssignees) {
-      include.taskAssignees = {
+      include.TaskAssignee = {
         include: {
-          user: {
+          User: {
             select: {
               id: true,
               name: true,
@@ -139,8 +139,9 @@ export async function POST(request: NextRequest) {
     // Validate request body (accepts both old and new format)
     const validation = validateRequest(createTaskSchema, body)
 
-    if (!validation.valid) {
-      return validationError(validation.errors || [])
+    if (!validation.success) {
+      console.log('[TASKS] Validation error:', validation.error)
+      return validationError(validation.details || [{ field: 'general', message: validation.error }])
     }
 
     const data = validation.data!

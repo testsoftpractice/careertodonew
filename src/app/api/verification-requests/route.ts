@@ -7,7 +7,7 @@ import { successResponse, errorResponse } from '@/lib/api-response'
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
-    if (!authResult) {
+    if (!authResult.success || !authResult.user) {
       return errorResponse('Authentication required', 401)
     }
 

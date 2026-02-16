@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth, AuthError } from '@/lib/auth/verify'
-import { ProjectApprovalStatus } from '@prisma/client'
+import { ProjectApprovalStatus } from '@/lib/constants'
 import { successResponse, errorResponse, forbidden, notFound } from '@/lib/api-response'
 
 // GET /api/admin/approvals/projects/[id] - Get project details for review
@@ -29,7 +29,7 @@ export async function GET(
     const project = await db.project.findFirst({
       where,
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -40,7 +40,7 @@ export async function GET(
             location: true,
             major: true,
             graduationYear: true,
-            university: {
+            University: {
               select: {
                 id: true,
                 name: true,
@@ -54,15 +54,15 @@ export async function GET(
             totalPoints: true,
           },
         },
-        university: true,
-        members: true,
-        tasks: {
+        University: true,
+        ProjectMember: true,
+        Task: {
           take: 10,
           orderBy: { createdAt: 'desc' },
           include: {
-            taskAssignees: {
+            TaskAssignee: {
               include: {
-                user: {
+                User: {
                   select: {
                     id: true,
                     name: true,
@@ -74,13 +74,13 @@ export async function GET(
             },
           },
         },
-        milestones: {
+        Milestone: {
           take: 10,
           orderBy: { dueDate: 'asc' },
         },
-        investments: {
+        Investment: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -92,10 +92,10 @@ export async function GET(
           take: 10,
           orderBy: { createdAt: 'desc' },
         },
-        approvals: {
+        ProjectApproval: {
           orderBy: { createdAt: 'desc' },
           include: {
-            admin: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -103,14 +103,6 @@ export async function GET(
                 avatar: true,
               },
             },
-          },
-        },
-        _count: {
-          select: {
-            members: true,
-            tasks: true,
-            milestones: true,
-            investments: true,
           },
         },
       },
@@ -161,7 +153,7 @@ export async function PATCH(
     const project = await db.project.findFirst({
       where,
       include: {
-        owner: true,
+        User: true,
       },
     })
 
@@ -247,7 +239,7 @@ export async function PUT(
     const project = await db.project.findFirst({
       where,
       include: {
-        owner: true,
+        User: true,
       },
     })
 

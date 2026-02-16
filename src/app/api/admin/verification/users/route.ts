@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyToken } from '@/lib/auth/jwt'
-import { VerificationStatus } from '@prisma/client'
+import { VerificationStatus } from '@/lib/constants'
 
 // GET /api/admin/verification/users - List users with filters
 export async function GET(request: NextRequest) {
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     const users = await db.user.findMany({
       where,
       include: {
-        university: {
+        University: {
           select: {
             id: true,
             name: true,

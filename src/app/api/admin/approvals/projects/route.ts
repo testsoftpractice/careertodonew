@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth, AuthError } from '@/lib/auth/verify'
-import { ProjectApprovalStatus, ProjectStatus } from '@prisma/client'
+import { ProjectApprovalStatus, ProjectStatus } from '@/lib/constants'
 import { successResponse, errorResponse, forbidden, notFound } from '@/lib/api-response'
 
 // GET /api/admin/approvals/projects - List all projects pending approval
@@ -44,14 +44,14 @@ export async function GET(request: NextRequest) {
     const projects = await db.project.findMany({
       where,
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,
             email: true,
             avatar: true,
             role: true,
-            university: {
+            University: {
               select: {
                 id: true,
                 name: true,
@@ -61,16 +61,16 @@ export async function GET(request: NextRequest) {
             major: true,
           },
         },
-        university: {
+        University: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        members: {
+        ProjectMember: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -80,24 +80,17 @@ export async function GET(request: NextRequest) {
           },
           take: 5,
         },
-        approvals: {
+        ProjectApproval: {
           orderBy: { createdAt: 'desc' },
           take: 1,
           include: {
-            admin: {
+            User: {
               select: {
                 id: true,
                 name: true,
                 email: true,
               },
             },
-          },
-        },
-        _count: {
-          select: {
-            members: true,
-            tasks: true,
-            investments: true,
           },
         },
       },
@@ -182,7 +175,7 @@ export async function POST(request: NextRequest) {
     const project = await db.project.findFirst({
       where,
       include: {
-        owner: true,
+        User: true,
       },
     })
 

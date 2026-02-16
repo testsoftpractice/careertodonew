@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { TaskStatus } from '@prisma/client'
+import { TaskStatus } from '@/lib/constants'
 import { requireAuth, AuthError } from '@/lib/auth/verify'
 import { forbidden, notFound, unauthorized, errorResponse } from '@/lib/api-response'
 
@@ -14,27 +14,27 @@ export async function GET(
     const task = await db.task.findUnique({
       where: { id },
       include: {
-        project: {
+        Project: {
           select: {
             id: true,
             name: true,
             status: true,
           },
         },
-        creator: {
+        User_Task_assignedByToUser: {
           select: {
             id: true,
             name: true,
           },
         },
-        subTasks: {
+        SubTask: {
           orderBy: {
             sortOrder: 'asc',
           },
         },
-        taskAssignees: {
+        TaskAssignee: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -97,7 +97,7 @@ export async function PATCH(
     const existingTask = await db.task.findUnique({
       where: { id },
       include: {
-        project: {
+        Project: {
           select: {
             id: true,
             name: true,
@@ -105,14 +105,14 @@ export async function PATCH(
             ownerId: true,
           },
         },
-        creator: {
+        User_Task_assignedByToUser: {
           select: {
             id: true,
             name: true,
           },
         },
-        taskAssignees: true,
-        subTasks: {
+        TaskAssignee: true,
+        SubTask: {
           orderBy: { sortOrder: 'asc' }
         },
       },
@@ -130,8 +130,8 @@ export async function PATCH(
       },
     })
 
-    const isTaskAssignee = existingTask.taskAssignees.some(ta => ta.userId === currentUser.id)
-    const isOwner = existingTask.assignedBy === currentUser.id || existingTask.project!.ownerId === currentUser.id
+    const isTaskAssignee = existingTask.TaskAssignee.some(ta => ta.userId === currentUser.id)
+    const isOwner = existingTask.assignedBy === currentUser.id || existingTask.Project!.ownerId === currentUser.id
     const isProjectMember = !!projectMember
 
     // Allow owner, project member, or task assignee to update
@@ -145,7 +145,7 @@ export async function PATCH(
     if (description !== undefined) updateData.description = description
     if (status !== undefined) {
       updateData.status = status as TaskStatus
-      if (status === 'DONE') {
+      if (status === 'COMPLETED') {
         updateData.completedAt = new Date()
       }
     }
@@ -157,10 +157,10 @@ export async function PATCH(
     // Handle assignees - use only TaskAssignee junction table
     if (assigneeIds !== undefined && Array.isArray(assigneeIds)) {
       const newAssigneeIds = assigneeIds.filter(id => id && id !== '') // Remove empty/null strings
-      
+
       // Get current assignees
-      const currentAssigneeIds = existingTask.taskAssignees.map(ta => ta.userId)
-      
+      const currentAssigneeIds = existingTask.TaskAssignee.map(ta => ta.userId)
+
       const assigneesToRemove = currentAssigneeIds.filter(id => !newAssigneeIds.includes(id))
       const assigneesToAdd = newAssigneeIds.filter(id => !currentAssigneeIds.includes(id))
 
@@ -189,8 +189,8 @@ export async function PATCH(
 
     // Handle subtasks if provided
     if (subtasks !== undefined && Array.isArray(subtasks)) {
-      const currentSubtaskIds = existingTask.subTasks.map(st => st.id)
-      const currentSubtasksMap = new Map(existingTask.subTasks.map(st => [st.id, st]))
+      const currentSubtaskIds = existingTask.SubTask.map(st => st.id)
+      const currentSubtasksMap = new Map(existingTask.SubTask.map(st => [st.id, st]))
 
       // Identify subtasks to keep (those present in the new array with valid IDs)
       const subtasksToKeep = subtasks
@@ -252,22 +252,22 @@ export async function PATCH(
       where: { id },
       data: updateData,
       include: {
-        project: {
+        Project: {
           select: {
             id: true,
             name: true,
             status: true,
           },
         },
-        creator: {
+        User_Task_assignedByToUser: {
           select: {
             id: true,
             name: true,
           },
         },
-        taskAssignees: {
+        TaskAssignee: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -277,7 +277,7 @@ export async function PATCH(
           },
           orderBy: { sortOrder: 'asc' },
         },
-        subTasks: {
+        SubTask: {
           orderBy: { sortOrder: 'asc' }
         },
       },
@@ -325,9 +325,9 @@ export async function DELETE(
     // Check if task exists and user has permission
     const existingTask = await db.task.findUnique({
       where: { id },
-      include: { 
-        project: true,
-        taskAssignees: true,
+      include: {
+        Project: true,
+        TaskAssignee: true,
       },
     })
 
@@ -337,8 +337,8 @@ export async function DELETE(
 
     // Check permission
     const isCreator = existingTask.assignedBy === currentUser.id
-    const isProjectOwner = existingTask.project!.ownerId === currentUser.id
-    const isTaskAssignee = existingTask.taskAssignees.some(ta => ta.userId === currentUser.id)
+    const isProjectOwner = existingTask.Project!.ownerId === currentUser.id
+    const isTaskAssignee = existingTask.TaskAssignee.some(ta => ta.userId === currentUser.id)
     const projectMember = await db.projectMember.findFirst({
       where: {
         projectId: existingTask.projectId!,

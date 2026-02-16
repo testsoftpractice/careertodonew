@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { UserRole, VerificationStatus } from '@prisma/client'
+import { UserRole, VerificationStatus } from '@/lib/constants'
 import { hashPassword, generateToken } from '@/lib/auth/jwt'
 import { authRateLimit } from '@/lib/rate-limiter'
 import { validateRequest, userSignupSchema } from '@/lib/validation'
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       data: {
         email,
         name: `${firstName} ${lastName}`,
-        role: role as UserRole,
+        role: role,
         verificationStatus: VerificationStatus.PENDING,
         password: hashedPassword,
         mobileNumber: mobileNumber || null,

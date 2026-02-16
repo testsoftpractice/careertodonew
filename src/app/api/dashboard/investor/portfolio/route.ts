@@ -1,23 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/api/auth-middleware'
+import { verifyAuth, AuthError } from '@/lib/auth/verify'
+import { errorResponse, unauthorized } from '@/lib/api-response'
 import { db } from '@/lib/db'
 
 // GET /api/dashboard/investor/portfolio - Get investor's portfolio overview
 export async function GET(request: NextRequest) {
-  const auth = await requireAuth(request)
-  if (auth instanceof NextResponse) return auth
-
-  const user = auth.user
-
   try {
+    const authResult = await verifyAuth(request)
+    if (!authResult.success || !authResult.user) {
+      return unauthorized('Authentication required')
+    }
+
+    const user = authResult.user
+
     // Get investor's investments - only FUNDED ones are in portfolio
     const investments = await db.investment.findMany({
-      where: { 
-        userId: user.userId,
+      where: {
+        userId: user.id,
         status: 'FUNDED'
       },
       include: {
-        project: {
+        Project: {
           select: { id: true, name: true, status: true, seekingInvestment: true, description: true }
         }
       },
@@ -27,12 +30,12 @@ export async function GET(request: NextRequest) {
 
     // Get all investments for stats
     const allInvestments = await db.investment.findMany({
-      where: { userId: user.userId }
+      where: { userId: user.id }
     })
 
     // Calculate portfolio stats
     const totalInvested = (investments || []).reduce((sum, inv) => sum + (inv.amount || 0), 0)
-    const activeInvestments = (allInvestments || []).filter(i => 
+    const activeInvestments = (allInvestments || []).filter(i =>
       ['FUNDED', 'AGREED', 'UNDER_REVIEW'].includes(i.status)
     ).length
     const totalEquity = (investments || []).reduce((sum, inv) => sum + (inv.equity || 0), 0)
@@ -54,9 +57,9 @@ export async function GET(request: NextRequest) {
 
       return {
         id: inv.id,
-        name: inv.project?.name || `Investment ${index + 1}`,
-        description: inv.project?.description || '',
-        project: inv.project || null,
+        name: inv.Project?.name || `Investment ${index + 1}`,
+        description: inv.Project?.description || '',
+        project: inv.Project || null,
         amount: invested,
         currentValue: projected,
         equity: inv.equity || 0,
@@ -89,6 +92,9 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return errorResponse(error.message || 'Authentication required', error.statusCode || 401)
+    }
     console.error('Get portfolio error:', error)
     return NextResponse.json({
       success: false,

@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     const jobs = await db.job.findMany({
       where: visibilityWhere,
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
             role: true,
           },
         },
-        business: {
+        Business: {
           select: {
             id: true,
             name: true,
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
             location: true,
           },
         },
-        applications: {
+        JobApplication: {
           select: {
             id: true,
             status: true,
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
 
       return {
         ...job,
-        companyName: (metadata as any).companyName || job.business?.name || 'Unknown Company',
+        companyName: (metadata as any).companyName || job.Business?.name || 'Unknown Company',
         category: (metadata as any).category || null,
         positions: (metadata as any).positions || '1',
         requirements: (metadata as any).requirements || [],
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
         metadata: JSON.stringify(metadata),
       },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
             avatar: true,
           },
         },
-        business: {
+        Business: {
           select: {
             id: true,
             name: true,

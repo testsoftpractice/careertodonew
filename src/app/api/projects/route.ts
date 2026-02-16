@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     // Build optimized include - only include what's requested
     const include: Record<string, any> = {
-      owner: {
+      User: {
         select: {
           id: true,
           name: true,
@@ -67,12 +67,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (includeMembers) {
-      include.members = {
+      include.ProjectMember = {
         select: {
           id: true,
           userId: true,
           role: true,
-          user: {
+          User: {
             select: {
               id: true,
               name: true,
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (includeTasks) {
-      include.tasks = {
+      include.Task = {
         select: {
           id: true,
           title: true,
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
     const transformedProjects = projects.map(project => ({
       ...project,
       title: project.name,
-      teamSize: project.members?.length || 1,
+      teamSize: project.ProjectMember?.length || 1,
       investmentGoal: project.budget || null,
       investmentRaised: null,
       completionRate: project.progress || 0,
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
         seekingInvestment: body.seekingInvestment || false,
         published: body.publishImmediately || false,
         publishedAt: body.publishImmediately ? new Date() : null,
-        members: {
+        ProjectMember: {
           create: {
             userId: currentUser.id,
             role: 'OWNER',

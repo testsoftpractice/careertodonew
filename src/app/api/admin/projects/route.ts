@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { ProjectStatus } from "@prisma/client"
+import { ProjectStatus } from "@/lib/constants"
 import { verifyToken } from "@/lib/auth/jwt"
 
 export async function GET(request: NextRequest) {
@@ -53,12 +53,12 @@ export async function GET(request: NextRequest) {
         where,
         take: limit,
         include: {
-          owner: {
+          User: {
             select: {
               id: true,
               name: true,
               email: true,
-              university: {
+              University: {
                 select: {
                   id: true,
                   name: true,
@@ -94,10 +94,10 @@ export async function GET(request: NextRequest) {
             status: mappedStatus,
             approvalStatus: p.approvalStatus,
             ownerId: p.ownerId,
-            university: p.owner.university?.name || "No University",
+            university: p.User.University?.name || "No University",
             owner: {
-              name: p.owner.name,
-              email: p.owner.email
+              name: p.User.name,
+              email: p.User.email
             },
             budget: p.budget,
             submittedAt: p.createdAt.toISOString(),

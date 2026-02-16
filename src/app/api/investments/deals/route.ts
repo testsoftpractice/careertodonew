@@ -60,16 +60,16 @@ export async function GET(request: NextRequest) {
     const deals = await db.investment.findMany({
       where,
       include: {
-        project: {
+        Project: {
           include: {
-            owner: {
+            User: {
               select: {
                 id: true,
                 name: true,
                 email: true,
               },
             },
-            university: {
+            University: {
               select: {
                 id: true,
                 name: true,
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -180,8 +180,8 @@ export async function PUT(
     const deal = await db.investment.findUnique({
       where: { id: dealId },
       include: {
-        project: true,
-        user: true,
+        Project: true,
+        User: true,
       },
     })
 
@@ -212,9 +212,9 @@ export async function PUT(
         updatedAt: new Date(),
       },
       include: {
-        project: {
+        Project: {
           include: {
-            owner: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -223,7 +223,7 @@ export async function PUT(
             },
           },
         },
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -240,7 +240,7 @@ export async function PUT(
           userId: deal.userId,
           type: 'DEAL_UPDATE',
           title: 'Deal Under Review',
-          message: `Your proposal for "${deal.project.name}" is now under review`,
+          message: `Your proposal for "${deal.Project.name}" is now under review`,
           link: `/dashboard/investor/deals/${dealId}`,
         },
       })
@@ -251,17 +251,17 @@ export async function PUT(
           userId: deal.userId,
           type: 'DEAL_UPDATE',
           title: 'Deal Agreed',
-          message: `Congratulations! The deal for "${deal.project.name}" has been agreed`,
+          message: `Congratulations! The deal for "${deal.Project.name}" has been agreed`,
           link: `/dashboard/investor/deals/${dealId}`,
         },
       })
 
       await db.notification.create({
         data: {
-          userId: deal.project.ownerId,
+          userId: deal.Project.ownerId,
           type: 'DEAL_UPDATE',
           title: 'Deal Agreed',
-          message: `The investment deal for "${deal.project.name}" has been agreed with ${deal.user.name}`,
+          message: `The investment deal for "${deal.Project.name}" has been agreed with ${deal.User.name}`,
           link: `/projects/${deal.projectId}/deals/${dealId}`,
         },
       })
@@ -271,18 +271,18 @@ export async function PUT(
           userId: deal.userId,
           type: 'INVESTMENT',
           title: 'Deal Funded',
-          message: `Your investment in "${deal.project?.name || 'Unknown Project'}" has been funded successfully`,
+          message: `Your investment in "${deal.Project?.name || 'Unknown Project'}" has been funded successfully`,
           link: `/dashboard/investor/portfolio/${dealId}`,
         },
       })
 
-      if (deal.project) {
+      if (deal.Project) {
         await db.notification.create({
           data: {
-            userId: deal.project.ownerId,
+            userId: deal.Project.ownerId,
             type: 'INVESTMENT',
             title: 'Deal Funded',
-            message: `The investment from ${deal.user.name} has been funded`,
+            message: `The investment from ${deal.User.name} has been funded`,
             link: `/projects/${deal.projectId}/investments`,
           },
         })

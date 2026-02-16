@@ -189,6 +189,12 @@ function DashboardContent({ user }: { user: any }) {
       setLoading(prev => ({ ...prev, stats: true }))
       const response = await authFetch(`/api/dashboard/student/stats?userId=${user.id}`)
 
+      // Check if authFetch returned a 401 response (server-side auth check)
+      if (response.status === 401) {
+        // User not authenticated, just return silently
+        return
+      }
+
       // Check if response is ok before parsing
       if (!response.ok) {
         console.error('Fetch stats error: Response not ok', response.status)
@@ -221,6 +227,12 @@ function DashboardContent({ user }: { user: any }) {
     try {
       setLoading(prev => ({ ...prev, projects: true }))
       const response = await authFetch(`/api/projects?ownerId=${user.id}&includeMembers=true&includeTasks=false`)
+
+      // Check if authFetch returned a 401 response (server-side auth check)
+      if (response.status === 401) {
+        // User not authenticated, just return silently
+        return
+      }
 
       // Check if response is ok before parsing
       if (!response.ok) {
@@ -283,9 +295,19 @@ function DashboardContent({ user }: { user: any }) {
         authFetch(`/api/tasks?assigneeId=${user.id}&limit=50&includeSubtasks=false&includeComments=false&includeAssignees=true`),
       ])
 
-      // Check responses before parsing
+      // Check responses before parsing - handle all non-2xx errors gracefully
+      if (personalResponse.status === 401 || projectResponse.status === 401) {
+        // User not authenticated, just return silently
+        return
+      }
+
+      if (personalResponse.status >= 500 || projectResponse.status >= 500) {
+        console.error('Fetch tasks error: Server error', personalResponse.status, projectResponse.status)
+        return
+      }
+
       if (!personalResponse.ok || !projectResponse.ok) {
-        console.error('Fetch tasks error: Response not ok')
+        console.error('Fetch tasks error: Response not ok', personalResponse.status, projectResponse.status)
         return
       }
 
@@ -321,6 +343,12 @@ function DashboardContent({ user }: { user: any }) {
       setLoading(prev => ({ ...prev, tasks: true }))
       const response = await authFetch(`/api/tasks/personal?userId=${user.id}`)
 
+      // Check if authFetch returned a 401 response (server-side auth check)
+      if (response.status === 401) {
+        // User not authenticated, just return silently
+        return
+      }
+
       // Check if response is ok before parsing
       if (!response.ok) {
         console.error('Fetch personal tasks error: Response not ok', response.status)
@@ -355,6 +383,12 @@ function DashboardContent({ user }: { user: any }) {
       setLoading(prev => ({ ...prev, tasks: true }))
       const response = await authFetch(`/api/tasks?projectId=${projectId}`)
 
+      // Check if authFetch returned a 401 response (server-side auth check)
+      if (response.status === 401) {
+        // User not authenticated, just return silently
+        return
+      }
+
       // Check if response is ok before parsing
       if (!response.ok) {
         console.error('Fetch project tasks error: Response not ok', response.status)
@@ -385,6 +419,18 @@ function DashboardContent({ user }: { user: any }) {
     try {
       const response = await authFetch('/api/projects')
 
+      // Check if authFetch returned a 401 response (server-side auth check)
+      if (response.status === 401) {
+        // User not authenticated, just return silently
+        return
+      }
+
+      // Check if response is ok before parsing - handle all non-2xx errors gracefully
+      if (response.status >= 500) {
+        console.error('Fetch available projects error: Server error', response.status)
+        return
+      }
+
       // Check if response is ok before parsing
       if (!response.ok) {
         console.error('Fetch available projects error: Response not ok', response.status)
@@ -414,6 +460,18 @@ function DashboardContent({ user }: { user: any }) {
 
     try {
       const response = await authFetch(`/api/time-entries?userId=${user.id}`)
+
+      // Check if authFetch returned a 401 response (server-side auth check)
+      if (response.status === 401) {
+        // User not authenticated, just return silently
+        return
+      }
+
+      // Check if response is ok before parsing - handle all non-2xx errors gracefully
+      if (response.status >= 500) {
+        console.error('Fetch time entries error: Server error', response.status)
+        return
+      }
 
       // Check if response is ok before parsing
       if (!response.ok) {
@@ -447,6 +505,18 @@ function DashboardContent({ user }: { user: any }) {
 
     try {
       const response = await authFetch(`/api/time-summary?userId=${user.id}`)
+
+      // Check if authFetch returned a 401 response (server-side auth check)
+      if (response.status === 401) {
+        // User not authenticated, just return silently
+        return
+      }
+
+      // Check if response is ok before parsing - handle all non-2xx errors gracefully
+      if (response.status >= 500) {
+        console.error('Fetch time summary error: Server error', response.status)
+        return
+      }
 
       // Check if response is ok before parsing
       if (!response.ok) {

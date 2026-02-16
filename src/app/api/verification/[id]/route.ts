@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { VerificationStatus } from '@prisma/client'
+import { VerificationStatus } from '@/lib/constants'
 
 // GET /api/verification/[id] - Get a specific verification request
 export async function GET(
@@ -13,7 +13,7 @@ export async function GET(
     const verificationRequest = await db.verificationRequest.findUnique({
       where: { id },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,

@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       db.professionalRecord.findMany({
         where,
         include: {
-          user: {
+          User: {
             select: {
               id: true,
               name: true,

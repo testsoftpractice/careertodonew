@@ -53,7 +53,7 @@ export async function PATCH(
         status: 'ACTIVE',
       },
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -77,7 +77,7 @@ export async function PATCH(
     // Notify all project members
     const members = await db.projectMember.findMany({
       where: { projectId: id },
-      include: { user: true },
+      include: { User: true },
     })
 
     for (const member of members) {

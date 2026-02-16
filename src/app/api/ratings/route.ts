@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { RatingType } from '@prisma/client'
+import { RatingType } from '@/lib/constants'
 
 // GET /api/ratings - List ratings with filters
 export async function GET(request: NextRequest) {

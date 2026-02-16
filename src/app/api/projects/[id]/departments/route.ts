@@ -9,7 +9,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const departments = await db.department.findMany({
       where: { projectId },
       include: {
-        head: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -17,9 +17,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             avatar: true,
           }
         },
-        members: {
+        ProjectMember: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Transform to include memberCount
     const departmentsWithCount = departments.map(dept => ({
       ...dept,
-      memberCount: dept.members?.length || 0
+      memberCount: dept.ProjectMember?.length || 0
     }))
 
     return NextResponse.json({

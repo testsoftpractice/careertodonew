@@ -9,7 +9,7 @@ import { z } from 'zod'
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
-    if (!authResult) {
+    if (!authResult.success || !authResult.user) {
       return unauthorized('Authentication required')
     }
 
@@ -39,13 +39,13 @@ export async function GET(request: NextRequest) {
     const requests = await db.leaveRequest.findMany({
       where,
       include: {
-        project: {
+        Project: {
           select: {
             id: true,
             name: true,
           }
         },
-        user: {
+        User: {
           select: {
             id: true,
             name: true,

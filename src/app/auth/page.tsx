@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import PublicHeader from '@/components/public-header'
 import { UniversitySelector } from '@/components/student/university-selector'
+import { UserRole } from '@/lib/constants'
 
 export default function AuthPage() {
   const router = useRouter()
@@ -59,10 +60,10 @@ export default function AuthPage() {
   const [loginPassword, setLoginPassword] = useState('')
 
   const roles = [
-    { id: 'STUDENT', title: 'Student', color: 'bg-blue-500/10' },
-    { id: 'UNIVERSITY', title: 'University', color: 'bg-purple-500/10' },
-    { id: 'EMPLOYER', title: 'Employer', color: 'bg-green-500/10' },
-    { id: 'INVESTOR', title: 'Investor', color: 'bg-orange-500/10' },
+    { id: UserRole.STUDENT, title: 'Student', color: 'bg-blue-500/10' },
+    { id: UserRole.UNIVERSITY_ADMIN, title: 'University', color: 'bg-purple-500/10' },
+    { id: UserRole.EMPLOYER, title: 'Employer', color: 'bg-green-500/10' },
+    { id: UserRole.INVESTOR, title: 'Investor', color: 'bg-orange-500/10' },
   ]
 
   const handleSignup = async (e: any) => {
@@ -84,13 +85,13 @@ export default function AuthPage() {
         setMessage('Account created successfully! Redirecting...')
 
         setTimeout(() => {
-          if (selectedRole === 'STUDENT') {
+          if (selectedRole === UserRole.STUDENT) {
             router.push('/dashboard/student')
-          } else if (selectedRole === 'UNIVERSITY') {
+          } else if (selectedRole === UserRole.UNIVERSITY_ADMIN) {
             router.push('/dashboard/university')
-          } else if (selectedRole === 'EMPLOYER') {
+          } else if (selectedRole === UserRole.EMPLOYER) {
             router.push('/dashboard/employer')
-          } else if (selectedRole === 'INVESTOR') {
+          } else if (selectedRole === UserRole.INVESTOR) {
             router.push('/dashboard/investor')
           }
         }, 1000)
@@ -297,7 +298,7 @@ export default function AuthPage() {
                     </div>
 
                     {/* Role-specific Fields */}
-                    {selectedRole === 'STUDENT' && (
+                    {selectedRole === UserRole.STUDENT && (
                       <>
                         <div className="space-y-4">
                           <UniversitySelector
@@ -349,7 +350,7 @@ export default function AuthPage() {
                       </>
                     )}
 
-                    {selectedRole === 'UNIVERSITY' && (
+                    {selectedRole === UserRole.UNIVERSITY_ADMIN && (
                       <>
                         <div className="space-y-4">
                           <div className="flex gap-4 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
@@ -446,7 +447,7 @@ export default function AuthPage() {
                       </>
                     )}
 
-                    {selectedRole === 'EMPLOYER' && (
+                    {selectedRole === UserRole.EMPLOYER && (
                       <>
                         <div className="space-y-2">
                           <label htmlFor="companyName" className="block text-sm font-medium mb-2">Company Name</label>
@@ -494,7 +495,7 @@ export default function AuthPage() {
                       </>
                     )}
 
-                    {selectedRole === 'INVESTOR' && (
+                    {selectedRole === UserRole.INVESTOR && (
                       <>
                         <div className="space-y-2">
                           <label htmlFor="firmName" className="block text-sm font-medium mb-2">Firm Name</label>
@@ -565,11 +566,11 @@ export default function AuthPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <label htmlFor="bio" className="block text-sm font-medium mb-2">About {selectedRole === 'STUDENT' ? 'Yourself' : selectedRole === 'UNIVERSITY' ? 'Your University' : selectedRole === 'EMPLOYER' ? 'Your Company' : 'Your Firm'} (Optional)</label>
+                      <label htmlFor="bio" className="block text-sm font-medium mb-2">About {selectedRole === UserRole.STUDENT ? 'Yourself' : selectedRole === UserRole.UNIVERSITY_ADMIN ? 'Your University' : selectedRole === UserRole.EMPLOYER ? 'Your Company' : 'Your Firm'} (Optional)</label>
                       <textarea
                         id="bio"
                         name="bio"
-                        placeholder={`Tell us about ${selectedRole === 'STUDENT' ? 'your academic goals and interests...' : selectedRole === 'UNIVERSITY' ? 'your university and programs...' : selectedRole === 'EMPLOYER' ? 'your company and hiring needs...' : 'your investment strategy...'}`}
+                        placeholder={`Tell us about ${selectedRole === UserRole.STUDENT ? 'your academic goals and interests...' : selectedRole === UserRole.UNIVERSITY_ADMIN ? 'your university and programs...' : selectedRole === UserRole.EMPLOYER ? 'your company and hiring needs...' : 'your investment strategy...'}`}
                         rows={3}
                         value={signupData.bio}
                         onChange={(e) => setSignupData({ ...signupData, bio: e.target.value })}

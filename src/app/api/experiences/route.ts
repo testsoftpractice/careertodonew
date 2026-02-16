@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     // Require authentication
     const authResult = await getServerSession(request)
-    if (!authResult) {
+    if (!authResult || !authResult.success || !authResult.user) {
       return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized' }, { status: 401 })
     }
 

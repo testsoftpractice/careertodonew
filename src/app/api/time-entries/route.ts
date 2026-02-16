@@ -8,7 +8,7 @@ import { unauthorized, forbidden, errorResponse } from '@/lib/api-response'
 export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
-    if (!authResult) {
+    if (!authResult.success || !authResult.user) {
       return unauthorized('Authentication required')
     }
 
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     if (taskId) {
       const task = await db.task.findUnique({
         where: { id: taskId },
-        include: { project: true }
+        include: { Project: true }
       })
 
       if (!task) {
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Allow viewing time entries for tasks in own projects or assigned to you
-      const isProjectMember = task.project?.ownerId === authResult.user!.id
+      const isProjectMember = task.Project?.ownerId === authResult.user!.id
       const isAssignee = await db.taskAssignee.findFirst({
         where: { taskId, userId: authResult.user!.id }
       })
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     if (projectId) {
       const project = await db.project.findUnique({
         where: { id: projectId },
-        include: { members: true }
+        include: { ProjectMember: true }
       })
 
       if (!project) {
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       }
 
       const isOwner = project.ownerId === authResult.user!.id
-      const isMember = project.members.some(m => m.userId === authResult.user!.id)
+      const isMember = project.ProjectMember.some(m => m.userId === authResult.user!.id)
       const isAdmin = authResult.user!.role === 'PLATFORM_ADMIN'
 
       if (!isOwner && !isMember && !isAdmin) {
@@ -80,11 +80,11 @@ export async function GET(request: NextRequest) {
     const timeEntries = await db.timeEntry.findMany({
       where,
       include: {
-        task: {
+        Task: {
           select: {
             id: true,
             title: true,
-            project: {
+            Project: {
               select: {
                 id: true,
                 name: true,
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
             }
           }
         },
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
     if (body.taskId) {
       const task = await db.task.findUnique({
         where: { id: body.taskId },
-        include: { project: true }
+        include: { Project: true }
       })
 
       if (!task) {
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
       const isAssignee = await db.taskAssignee.findFirst({
         where: { taskId: body.taskId, userId }
       })
-      const isProjectOwner = task.project?.ownerId === userId
+      const isProjectOwner = task.Project?.ownerId === userId
       const isAdmin = currentUser.role === 'PLATFORM_ADMIN'
 
       if (!isAssignee && !isProjectOwner && !isAdmin) {
@@ -223,7 +223,7 @@ export async function POST(request: NextRequest) {
     if (!body.taskId && body.projectId) {
       const project = await db.project.findUnique({
         where: { id: body.projectId },
-        include: { members: true }
+        include: { ProjectMember: true }
       })
 
       if (!project) {
@@ -234,7 +234,7 @@ export async function POST(request: NextRequest) {
       }
 
       const isOwner = project.ownerId === userId
-      const isMember = project.members.some(m => m.userId === userId)
+      const isMember = project.ProjectMember.some(m => m.userId === userId)
       const isAdmin = currentUser.role === 'PLATFORM_ADMIN'
 
       if (!isOwner && !isMember && !isAdmin) {
@@ -255,11 +255,11 @@ export async function POST(request: NextRequest) {
         hourlyRate: body.hourlyRate ? parseFloat(body.hourlyRate) : null,
       },
       include: {
-        task: {
+        Task: {
           select: {
             id: true,
             title: true,
-            project: {
+            Project: {
               select: {
                 id: true,
                 name: true,
@@ -267,13 +267,13 @@ export async function POST(request: NextRequest) {
             }
           }
         },
-        project: {
+        Project: {
           select: {
             id: true,
             name: true,
           }
         },
-        user: {
+        User: {
           select: {
             id: true,
             name: true,

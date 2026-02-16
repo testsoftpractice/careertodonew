@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     const businesses = await db.business.findMany({
       where,
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -49,9 +49,9 @@ export async function GET(request: NextRequest) {
             role: true,
           },
         },
-        members: {
+        BusinessMember: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
         ownerId: userId,
       },
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,

@@ -1,125 +1,67 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken, JwtPayload } from '@/lib/auth/jwt'
+// 👇 ADD THIS AT THE BOTTOM — do not remove anything above
+
+const PUBLIC_PATH_PREFIXES = [
+  '/about',
+  '/features',
+  '/solutions',
+  '/contact',
+  '/terms',
+  '/privacy',
+  '/auth',
+]
+
+function isPublicPath(pathname: string) {
+  return PUBLIC_PATH_PREFIXES.some(
+    (path) =>
+      pathname === path || pathname.startsWith(`${path}/`)
+  )
+}
 
 /**
- * Get user information from Authorization header
- * Extracts and verifies JWT token from Bearer token
+ * Gateway middleware
+ * - Public by exception
+ * - Everything else requires auth
+ * - Runs BEFORE Vercel rewrites
  */
-export function getUserFromRequest(request: NextRequest): JwtPayload | null {
-  try {
-    const authHeader = request.headers.get('authorization')
+export function gatewayAuthMiddleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null
+  // 🚫 Ignore Next.js internals & static assets
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('.') // images, favicon, etc
+  ) {
+    return NextResponse.next()
+  }
+
+  // ✅ Public routes
+  if (isPublicPath(pathname)) {
+    return NextResponse.next()
+  }
+
+  // 🔐 Protected routes
+  const user = getUserFromRequest(request)
+
+  if (!user) {
+    // Browser navigation → redirect
+    if (request.headers.get('accept')?.includes('text/html')) {
+      const loginUrl = new URL('/auth/login', request.url)
+      loginUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(loginUrl)
     }
 
-    const token = authHeader.substring(7) // Remove 'Bearer ' prefix
-    const payload = verifyToken(token)
-
-    return payload
-  } catch (error) {
-    console.error('[AUTH] Token verification failed:', error)
-    return null
-  }
-}
-
-/**
- * Get user information from request headers (deprecated - kept for compatibility)
- */
-export function getUserFromHeaders(request: NextRequest): JwtPayload | null {
-  return getUserFromRequest(request)
-}
-
-/**
- * Require authentication - returns 401 if no user
- */
-export function requireAuth(request: NextRequest): { user: JwtPayload } | NextResponse {
-  const user = getUserFromRequest(request)
-
-  if (!user) {
+    // API / fetch
     return NextResponse.json(
       { success: false, error: 'Authentication required' },
       { status: 401 }
     )
   }
 
-  return { user }
-}
+  // Optional: forward user context
+  const response = NextResponse.next()
+  response.headers.set('x-user-id', user.sub)
+  response.headers.set('x-user-role', user.role ?? '')
 
-/**
- * Require specific role - returns 403 if user doesn't have role
- */
-export function requireRole(
-  request: NextRequest,
-  allowedRoles: string[]
-): { user: JwtPayload } | NextResponse {
-  const user = getUserFromRequest(request)
-
-  if (!user) {
-    return NextResponse.json(
-      { success: false, error: 'Authentication required' },
-      { status: 401 }
-    )
-  }
-
-  if (!user.role || !allowedRoles.includes(user.role)) {
-    return NextResponse.json(
-      { success: false, error: 'Insufficient permissions' },
-      { status: 403 }
-    )
-  }
-
-  return { user }
-}
-
-/**
- * Role permissions - predefined permission groups
- */
-export const ROLE_PERMISSIONS: Record<string, string[]> = {
-  STUDENT: [
-    'projects.create',
-    'projects.view',
-    'tasks.create',
-    'tasks.view',
-    'tasks.update',
-    'records.view',
-    'records.create',
-  ],
-  UNIVERSITY_ADMIN: [
-    'projects.manage',
-    'projects.view',
-    'students.view',
-    'students.tag',
-    'students.analytics',
-    'governance.view',
-    'governance.approve',
-    'analytics.view',
-  ],
-  EMPLOYER: [
-    'records.view',
-    'records.request',
-    'jobs.create',
-    'jobs.view',
-    'candidates.view',
-    'verification.view',
-    'verification.create',
-  ],
-  INVESTOR: [
-    'marketplace.view',
-    'investments.create',
-    'investments.view',
-    'proposals.create',
-    'proposals.view',
-    'deals.view',
-    'portfolio.view',
-  ],
-  PLATFORM_ADMIN: [
-    'users.manage',
-    'projects.manage',
-    'audits.view',
-    'audits.export',
-    'analytics.view',
-    'governance.manage',
-    'all',
-  ],
+  return response
 }

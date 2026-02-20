@@ -10,6 +10,7 @@ export interface AuthUser {
 }
 
 const PUBLIC_PATH_PREFIXES = [
+  '/',
   '/about',
   '/features',
   '/solutions',
@@ -134,9 +135,7 @@ export function gatewayAuthMiddleware(request: NextRequest) {
   if (!user) {
     // Browser navigation → redirect
     if (request.headers.get('accept')?.includes('text/html')) {
-      const loginUrl = new URL('/auth/login', request.url)
-      loginUrl.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(loginUrl)
+   return NextResponse.redirect(new URL('/auth', request.url))
     }
 
     // API / fetch

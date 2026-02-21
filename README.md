@@ -4,6 +4,10 @@ A modern, production-ready web application scaffold powered by cutting-edge tech
 
 ## ✨ Technology Stack
 
+//basename="/odoo"
+//<basehref="%{VITE_BASE_PATH}/">
+//base: process.env.VITE_BASE_PATH || '/odoo/',
+
 This scaffold provides a robust foundation built with:
 
 ### 🎯 Core Framework

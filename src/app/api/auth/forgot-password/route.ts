@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { randomBytes } from 'crypto'
+import { sendEmail, getPasswordResetEmailTemplate } from '@/lib/email/service'
 
 // Generate a cryptographically secure password reset token
 const generateSecureResetToken = () => {
@@ -56,40 +57,28 @@ export async function POST(request: NextRequest) {
     })
 
     // Generate reset URL
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/auth/reset-password?token=${token}`
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                    process.env.NEXT_PUBLIC_BASE_URL || 
+                    'http://localhost:3000'
+    const resetUrl = `${baseUrl}/auth/reset-password?token=${token}`
+
+    // Get email template
+    const { html, text } = getPasswordResetEmailTemplate(resetUrl, user.name)
+
+    // Send email
+    const emailSent = await sendEmail({
+      to: email,
+      subject: 'Reset Your Password - CareerToDo',
+      html,
+      text,
+    })
 
     // In development, log the reset URL for testing
     if (process.env.NODE_ENV === 'development') {
       console.log('Password reset request for:', email)
       console.log('Reset URL (for testing):', resetUrl)
+      console.log('Email sent:', emailSent)
     }
-
-    // In production, send email via SendGrid/Mailgun/etc
-    // Uncomment this code for production email sending:
-    /*
-    const sgMail = require('@sendgrid/mail')
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY)
-
-    const msg = {
-      to: email,
-      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@careertodo.com',
-      subject: 'Reset Your Password - CareerToDo Platform',
-      html: `<!DOCTYPE html>
-        <html>
-        <body>
-          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
-            <h1>Reset Your Password</h1>
-            <p>You requested a password reset. Click the link below to reset your password:</p>
-            <p><a href="${resetUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a></p>
-            <p>This link will expire in 1 hour.</p>
-            <p>If you didn't request this, please ignore this email.</p>
-          </div>
-        </body>
-        </html>`,
-    }
-
-    await sgMail.send(msg)
-    */
 
     return NextResponse.json({
       success: true,
@@ -97,7 +86,10 @@ export async function POST(request: NextRequest) {
       // Only include reset URL in development for testing
       ...(process.env.NODE_ENV === 'development' && {
         resetUrl,
-        note: 'Development mode: In production, actual email would be sent.',
+        emailSent,
+        note: emailSent 
+          ? 'Email sent successfully via SMTP' 
+          : 'SMTP not configured. Check console for reset URL.',
       }),
     })
   } catch (error: unknown) {

@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         content: agreement.content,
         projectId: agreement.projectId,
         userId: agreement.userId,
-        user: agreement.user,
+        user: agreement.User,
         signed: agreement.signed,
         signedAt: agreement.signedAt?.toISOString() || null,
         createdAt: agreement.createdAt.toISOString(),

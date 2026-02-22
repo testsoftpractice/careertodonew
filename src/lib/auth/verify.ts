@@ -160,7 +160,7 @@ export async function checkProjectAccess(
   const project = await db.project.findUnique({
     where: { id: projectId },
     include: {
-      members: {
+      ProjectMember: {
         where: { userId: user.id },
       },
     },
@@ -176,7 +176,7 @@ export async function checkProjectAccess(
   }
 
   // Check member access
-  const member = project.members.find(m => m.userId === user.id)
+  const member = project.ProjectMember.find(m => m.userId === user.id)
   if (!member) {
     return false
   }

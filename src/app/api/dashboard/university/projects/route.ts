@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     const projects = await db.project.findMany({
       where,
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -65,9 +65,9 @@ export async function GET(request: NextRequest) {
             universityId: true,
           },
         },
-        members: {
+        ProjectMember: {
           select: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -78,9 +78,9 @@ export async function GET(request: NextRequest) {
         },
         _count: {
           select: {
-            members: true,
-            tasks: true,
-            milestones: true,
+            ProjectMember: true,
+            Task: true,
+            Milestone: true,
           },
         },
       },
@@ -109,11 +109,11 @@ export async function GET(request: NextRequest) {
 
     // Calculate additional metrics for each project
     const projectsWithMetrics = projects.map(project => {
-      const projectWithCount = project as typeof project & { _count?: { tasks?: number; milestones?: number; members?: number } }
+      const projectWithCount = project as typeof project & { _count?: { Task?: number; Milestone?: number; ProjectMember?: number } }
       
       const totalTasks = tasksByProjectMap.get(project.id) || 0
       const totalMilestones = milestonesByProjectMap.get(project.id) || 0
-      const memberCount = projectWithCount._count?.members || 0
+      const memberCount = projectWithCount._count?.ProjectMember || 0
 
       return {
         id: project.id,
@@ -125,19 +125,19 @@ export async function GET(request: NextRequest) {
         category: project.category || 'General',
         
         // Lead info
-        lead: project.owner ? {
-          id: project.owner.id,
-          name: project.owner.name,
-          avatar: project.owner.avatar,
-          major: project.owner.major,
+        lead: project.User ? {
+          id: project.User.id,
+          name: project.User.name,
+          avatar: project.User.avatar,
+          major: project.User.major,
         } : null,
 
         // Members
         memberCount,
-        members: project.members.map((m: any) => ({
-          id: m.user.id,
-          name: m.user.name,
-          avatar: m.user.avatar,
+        members: project.ProjectMember.map((m: any) => ({
+          id: m.User.id,
+          name: m.User.name,
+          avatar: m.User.avatar,
         })),
 
         // Metrics

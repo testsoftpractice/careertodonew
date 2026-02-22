@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api/auth-middleware'
-import { isFeatureEnabled, UNIVERSITY_DASHBOARD } from '@/lib/features/flags-v2'
+import { isFeatureEnabled, UNIVERSITY_DASHBOARD } from '@/lib/features/flags'
 
 // GET /api/dashboard/university/activity - Get activity feed
 export async function GET(request: NextRequest) {
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const type = (searchParams.get('type') as string) || 'ALL'
   const limit = Number(searchParams.get('limit')) || 20
-  const user = auth.user
+  const user = auth
 
   const universityId = user.universityId
 

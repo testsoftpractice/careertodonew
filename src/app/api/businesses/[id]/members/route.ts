@@ -86,7 +86,7 @@ export async function GET(
     const members = await db.businessMember.findMany({
       where: { businessId },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -94,7 +94,7 @@ export async function GET(
             avatar: true,
             role: true,
             major: true,
-            university: {
+            University: {
               select: {
                 id: true,
                 name: true,
@@ -210,7 +210,7 @@ export async function POST(
         permissions: body.permissions ? JSON.stringify(body.permissions) : null,
       },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,

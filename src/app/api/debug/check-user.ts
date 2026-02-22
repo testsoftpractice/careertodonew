@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         role: true,
         verificationStatus: true,
         universityId: true,
-        university: {
+        University: {
           select: {
             id: true,
             name: true,

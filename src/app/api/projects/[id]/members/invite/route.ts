@@ -24,10 +24,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = requireAuth(request)
+    const auth = await requireAuth(request)
     if (auth instanceof NextResponse) return auth
 
-    const user = auth.user
     const { id: projectId } = await params
     const body = await request.json()
 
@@ -42,7 +41,7 @@ export async function POST(
     }
 
     // Check if user is project owner
-    if (project.ownerId !== user.userId) {
+    if (project.ownerId !== auth.id) {
       return forbidden('Only project owner can invite members')
     }
 

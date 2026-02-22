@@ -113,6 +113,9 @@ export const RatingType = {
   LEADERSHIP: 'LEADERSHIP',
   COLLABORATION: 'COLLABORATION',
   COMMUNICATION: 'COMMUNICATION',
+  EXECUTION: 'EXECUTION',
+  ETHICS: 'ETHICS',
+  RELIABILITY: 'RELIABILITY',
 } as const
 
 export type RatingType = (typeof RatingType)[keyof typeof RatingType]

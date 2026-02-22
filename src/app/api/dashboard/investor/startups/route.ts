@@ -7,14 +7,14 @@ export async function GET(request: NextRequest) {
   const auth = await requireAuth(request)
   if (auth instanceof NextResponse) return auth
 
-  const user = auth.user
+  const user = auth
 
   try {
     // Get investments made by this investor
     const investments = await db.investment.findMany({
-      where: { userId: user.userId },
+      where: { userId: user.id },
       include: {
-        project: {
+        Project: {
           select: { id: true, name: true, status: true, businessId: true }
         }
       },
@@ -23,13 +23,13 @@ export async function GET(request: NextRequest) {
 
     // Get unique projects from investments
     const projectIds = investments
-      .filter(inv => inv.project)
-      .map(inv => inv.project!.id)
+      .filter(inv => inv.Project)
+      .map(inv => inv.Project!.id)
 
     // Get businesses for projects
     const businessIds = investments
-      .filter(inv => inv.project?.businessId)
-      .map(inv => inv.project!.businessId!)
+      .filter(inv => inv.Project?.businessId)
+      .map(inv => inv.Project!.businessId!)
       .filter((id, index, self) => self.indexOf(id) === index) // Remove duplicates
 
     const businesses = businessIds.length > 0 ? await db.business.findMany({
@@ -44,13 +44,13 @@ export async function GET(request: NextRequest) {
     // Group by project to create startup list
     const startupsByProject = new Map<string, any>()
     investments.forEach(inv => {
-      if (!inv.project) return
+      if (!inv.Project) return
 
-      const projectId = inv.project.id
+      const projectId = inv.Project.id
       if (!startupsByProject.has(projectId)) {
         startupsByProject.set(projectId, {
           id: projectId,
-          name: inv.project.name,
+          name: inv.Project.name,
           investments: [],
           totalInvested: 0
         })

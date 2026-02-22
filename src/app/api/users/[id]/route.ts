@@ -36,13 +36,13 @@ export async function GET(
           orderBy: { joinedAt: 'desc' },
           take: 10,
         },
-        professionalRecords: {
+        ProfessionalRecord: {
           orderBy: { createdAt: 'desc' },
           take: 10,
         },
-        ratingsReceived: {
+        Rating_Rating_toUserIdToUser: {
           include: {
-            fromUser: {
+            User_Rating_fromUserIdToUser: {
               select: {
                 id: true,
                 name: true,
@@ -63,7 +63,7 @@ export async function GET(
     }
 
     // Calculate average ratings
-    const ratings = user.ratingsReceived
+    const ratings = user.Rating_Rating_toUserIdToUser
     const avgExecution = ratings.filter(r => r.type === 'EXECUTION').reduce((acc, r) => acc + r.score, 0) / (ratings.filter(r => r.type === 'EXECUTION').length || 1)
     const avgCollaboration = ratings.filter(r => r.type === 'COLLABORATION').reduce((acc, r) => acc + r.score, 0) / (ratings.filter(r => r.type === 'COLLABORATION').length || 1)
     const avgLeadership = ratings.filter(r => r.type === 'LEADERSHIP').reduce((acc, r) => acc + r.score, 0) / (ratings.filter(r => r.type === 'LEADERSHIP').length || 1)
@@ -81,7 +81,7 @@ export async function GET(
         location: user.location,
         linkedinUrl: user.linkedinUrl,
         portfolioUrl: user.portfolioUrl,
-        university: user.university,
+        university: user.University,
         major: user.major,
         graduationYear: user.graduationYear,
         progressionLevel: user.progressionLevel,
@@ -93,14 +93,14 @@ export async function GET(
           ethics: avgEthics || user.ethicsScore,
           reliability: avgReliability || user.reliabilityScore,
         },
-        projects: user.projectsMembered.map(pm => ({
-          id: pm.project.id,
-          name: pm.project.name,
+        projects: user.ProjectMember.map(pm => ({
+          id: pm.Project.id,
+          name: pm.Project.name,
           role: pm.role,
-          status: pm.project.status,
+          status: pm.Project.status,
           joinedAt: pm.joinedAt,
         })),
-        records: user.professionalRecords,
+        records: user.ProfessionalRecord,
         ratings: ratings.slice(0, 5),
       },
     })

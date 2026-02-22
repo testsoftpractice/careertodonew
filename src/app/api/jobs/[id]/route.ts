@@ -31,7 +31,7 @@ export async function GET(
     const job = await db.job.findUnique({
       where: { id },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -40,7 +40,7 @@ export async function GET(
             role: true,
           },
         },
-        business: {
+        Business: {
           select: {
             id: true,
             name: true,
@@ -48,7 +48,7 @@ export async function GET(
             location: true,
           },
         },
-        applications: {
+        JobApplication: {
           select: {
             id: true,
             status: true,
@@ -87,7 +87,7 @@ export async function GET(
 
     const parsedJob = {
       ...job,
-      companyName: (metadata as any).companyName || job.business?.name || 'Unknown Company',
+      companyName: (metadata as any).companyName || job.Business?.name || 'Unknown Company',
       category: (metadata as any).category || null,
       positions: (metadata as any).positions || '1',
       requirements: (metadata as any).requirements || [],
@@ -96,11 +96,11 @@ export async function GET(
       salaryRange: job.salaryMin && job.salaryMax 
         ? `$${job.salaryMin.toLocaleString()} - $${job.salaryMax.toLocaleString()}`
         : job.salary || 'Not specified',
-      applications: job.applications?.length || 0,
-      postedBy: job.user ? {
-        id: job.user.id,
-        name: job.user.name,
-        email: job.user.email,
+      applications: job.JobApplication?.length || 0,
+      postedBy: job.User ? {
+        id: job.User.id,
+        name: job.User.name,
+        email: job.User.email,
       } : null,
     }
 

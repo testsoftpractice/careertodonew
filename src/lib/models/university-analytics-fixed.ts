@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
-import { isFeatureEnabled, UNIVERSITY_DASHBOARD } from '@/lib/features/flags-v2'
+import { isFeatureEnabled, UNIVERSITY_DASHBOARD } from '@/lib/features/flags'
 import { UniversityDashboardMetrics } from '@/lib/models/university-analytics'
 
 /**
@@ -18,17 +18,11 @@ export async function GET(request: NextRequest) {
   const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
-  const user = auth.user
-
-  if (!user) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 })
-  }
-
-  const universityId = user.universityId
-
-  if (!universityId) {
+  if (!auth.universityId) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
+
+  const universityId = auth.universityId
 
   try {
     // Get university details
@@ -36,7 +30,7 @@ export async function GET(request: NextRequest) {
       where: { id: universityId },
       include: {
         _count: {
-          select: { users: true, projects: true }
+          select: { User: true, Project: true }
         }
       },
     })
@@ -72,11 +66,11 @@ export async function GET(request: NextRequest) {
     // Get project statistics
     const projects = await db.project.findMany({
       where: {
-        ownerId: user.id
+        ownerId: auth.id
       },
       include: {
         _count: {
-          select: { members: true, tasks: true }
+          select: { ProjectMember: true, Task: true }
         }
       },
       orderBy: { createdAt: 'desc' }

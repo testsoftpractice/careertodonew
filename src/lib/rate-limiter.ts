@@ -90,8 +90,8 @@ function getClientIP(request: NextRequest): string {
     return clientIP
   }
   
-  // Fallback to request IP
-  return request.ip || 'unknown'
+  // Fallback to a default identifier
+  return 'unknown'
 }
 
 // Predefined rate limiters

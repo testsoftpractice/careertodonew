@@ -51,7 +51,7 @@ export async function PATCH(
     const verificationRequest = await db.verificationRequest.findUnique({
       where: { id: verificationId },
       include: {
-        user: true
+        User: true
       }
     })
 
@@ -65,7 +65,7 @@ export async function PATCH(
     // Update user verification status based on action
     const newStatus = action === 'approve' ? 'VERIFIED' : 'REJECTED'
     await db.user.update({
-      where: { id: verificationRequest.user.id },
+      where: { id: verificationRequest.User.id },
       data: { verificationStatus: newStatus }
     })
 

@@ -8,6 +8,12 @@ import { verifyAuth, requireAuth, AuthError } from '@/lib/auth/verify'
 
 export async function GET(request: NextRequest) {
   try {
+    // Require authentication for accessing tasks
+    const authResult = await verifyAuth(request)
+    if (!authResult.success || !authResult.user) {
+      return unauthorized()
+    }
+
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('projectId') as string | undefined
     const assigneeId = searchParams.get('assigneeId') as string | undefined

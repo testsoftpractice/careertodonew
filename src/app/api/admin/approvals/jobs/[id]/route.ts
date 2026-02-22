@@ -86,7 +86,7 @@ export async function GET(
         },
         _count: {
           select: {
-            applications: true,
+            JobApplication: true,
           },
         },
       },
@@ -161,10 +161,10 @@ export async function PATCH(
     })
 
     // Create notification for business
-    if (job.businessId && job.business) {
+    if (job.businessId && job.Business) {
       await db.notification.create({
         data: {
-          userId: job.business.ownerId,
+          userId: job.Business.ownerId,
           type: 'JOB_APPROVAL',
           title: '❌ Job Not Approved',
           message: `Your job "${job.title}" was not approved. Reason: ${rejectionReason}`,

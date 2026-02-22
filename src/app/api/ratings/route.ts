@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     const ratings = await db.rating.findMany({
       where,
       include: {
-        fromUser: {
+        User_Rating_fromUserIdToUser: {
           select: {
             id: true,
             name: true,
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
             role: true,
           },
         },
-        toUser: {
+        User_Rating_toUserIdToUser: {
           select: {
             id: true,
             name: true,
@@ -114,14 +114,14 @@ export async function POST(request: NextRequest) {
           comment: comment || existingRating.comment,
         },
         include: {
-          fromUser: {
+          User_Rating_fromUserIdToUser: {
             select: {
               id: true,
               name: true,
               avatar: true,
             },
           },
-          toUser: {
+          User_Rating_toUserIdToUser: {
             select: {
               id: true,
               name: true,
@@ -149,14 +149,14 @@ export async function POST(request: NextRequest) {
         comment: comment,
       },
       include: {
-        fromUser: {
+        User_Rating_fromUserIdToUser: {
           select: {
             id: true,
             name: true,
             avatar: true,
           },
         },
-        toUser: {
+        User_Rating_toUserIdToUser: {
           select: {
             id: true,
             name: true,

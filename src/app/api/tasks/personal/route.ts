@@ -151,7 +151,6 @@ export async function PATCH(request: NextRequest) {
 /**
  * DELETE /api/tasks/personal?id={taskId}
  * Delete a personal task
- * No authentication required for demo purposes
  */
 export async function DELETE(request: NextRequest) {
   try {
@@ -159,10 +158,18 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get('id')
     const userId = searchParams.get('userId')
     if (!id || !userId) {
-      return NextResponse.json(
-        { error: 'id and userId are required' },
-        { status: 400 }
-      )
+      return badRequest('id and userId are required')
+    }
+
+    // Verify authentication
+    const authResult = await verifyAuth(request)
+    if (!authResult.success || !authResult.user) {
+      return unauthorized()
+    }
+
+    // Verify user is deleting their own task
+    if (authResult.user.id !== userId) {
+      return errorResponse('Forbidden: You can only delete your own tasks', 403)
     }
 
     // Check if task belongs to user
@@ -170,29 +177,20 @@ export async function DELETE(request: NextRequest) {
       where: { id: id as string },
     })
     if (!task) {
-      return NextResponse.json(
-        { error: 'Task not found' },
-        { status: 404 }
-      )
+      return notFound('Task not found')
     }
 
-    if (task.userId !== (userId as string)) {
-      return NextResponse.json(
-        { error: 'Unauthorized: You can only delete your own tasks' },
-        { status: 403 }
-      )
+    if (task.userId !== userId) {
+      return errorResponse('Forbidden: You can only delete your own tasks', 403)
     }
 
     await db.personalTask.delete({
       where: { id: id as string },
     })
 
-    return NextResponse.json({ message: 'Task deleted successfully' })
+    return successResponse({ id }, 'Task deleted successfully')
   } catch (error) {
     console.error('Error deleting personal task:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete personal task' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to delete personal task')
   }
 }

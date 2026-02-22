@@ -25,7 +25,7 @@ export async function GET(
         taskId,
       },
       include: {
-        dependsOn: {
+        Task_TaskDependency_dependsOnIdToTask: {
           select: {
             id: true,
             title: true,
@@ -33,7 +33,7 @@ export async function GET(
             priority: true,
           },
         },
-        task: {
+        Task_TaskDependency_taskIdToTask: {
           select: {
             id: true,
             title: true,
@@ -67,7 +67,7 @@ export async function POST(
   if (auth instanceof NextResponse) return auth
 
   const { id: taskId } = await params
-  const user = auth.user
+  const user = auth
 
   try {
     const body = await request.json()
@@ -95,7 +95,7 @@ export async function POST(
       select: { ownerId: true },
     })
 
-    if (!project || (task.assignedBy !== user.userId && project.ownerId !== user.userId)) {
+    if (!project || (task.assignedBy !== user.id && project.ownerId !== user.id)) {
       return NextResponse.json({
         error: 'Forbidden - Only task creator or project owner can add dependencies',
       }, { status: 403 })
@@ -174,7 +174,7 @@ export async function DELETE(
   if (auth instanceof NextResponse) return auth
 
   const { id: taskId } = await params
-  const user = auth.user
+  const user = auth
 
   try {
     const body = await request.json()
@@ -207,7 +207,7 @@ export async function DELETE(
       select: { ownerId: true },
     })
 
-    if (!project || (task.assignedBy !== user.userId && project.ownerId !== user.userId)) {
+    if (!project || (task.assignedBy !== user.id && project.ownerId !== user.id)) {
       return NextResponse.json({
         error: 'Forbidden - Only task creator or project owner can remove dependencies',
       }, { status: 403 })

@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
         status: 'OPEN',
       },
       include: {
-        project: {
+        Project: {
           select: {
             id: true,
             name: true,
@@ -145,7 +145,7 @@ export async function DELETE(request: NextRequest) {
     const vacancy = await db.vacancy.findUnique({
       where: { id },
       include: {
-        project: true
+        Project: true
       }
     })
 
@@ -161,7 +161,7 @@ export async function DELETE(request: NextRequest) {
       },
     })
 
-    const isOwner = vacancy.project.ownerId === authResult.dbUser.id
+    const isOwner = vacancy.Project.ownerId === authResult.dbUser.id
 
     if (!member && !isOwner) {
       return forbidden('You are not a member of this project')

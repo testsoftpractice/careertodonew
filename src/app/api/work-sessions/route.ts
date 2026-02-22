@@ -87,9 +87,9 @@ export async function GET(request: NextRequest) {
       checkOutLocation: session.checkOutLocation,
       notes: session.notes,
       duration: session.duration ? Math.round(session.duration / 3600 * 100) / 100 : null, // Convert to hours with 2 decimals
-      project: session.project,
-      task: session.task,
-      user: session.user,
+      project: session.Project,
+      task: session.Task,
+      user: session.User,
     }))
 
     return NextResponse.json({
@@ -188,9 +188,9 @@ export async function POST(request: NextRequest) {
         checkInLocation: workSession.checkInLocation,
         checkOutLocation: workSession.checkOutLocation,
         notes: workSession.notes,
-        project: workSession.project,
-        task: workSession.task,
-        user: workSession.user,
+        project: workSession.Project,
+        task: workSession.Task,
+        user: workSession.User,
       }
     }, { status: 201 })
   } catch (error) {
@@ -364,9 +364,9 @@ export async function PATCH(request: NextRequest) {
         checkOutLocation: workSession.checkOutLocation,
         notes: workSession.notes,
         duration: workSession.duration ? Math.round(workSession.duration / 3600 * 100) / 100 : null,
-        project: workSession.project,
-        task: workSession.task,
-        user: workSession.user,
+        project: workSession.Project,
+        task: workSession.Task,
+        user: workSession.User,
       }
     })
   } catch (error) {

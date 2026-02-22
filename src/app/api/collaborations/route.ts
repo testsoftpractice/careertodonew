@@ -85,9 +85,9 @@ export async function GET(request: NextRequest) {
       const currentUser = await db.user.findUnique({
         where: { id: currentUserId },
         include: {
-          skills: true,
-          university: true,
-          sentCollaborationRequests: {
+          Skill: true,
+          University: true,
+          CollaborationRequest_CollaborationRequest_fromIdToUser: {
             where: {
               toId: currentUserId,
               status: 'PENDING',
@@ -110,8 +110,8 @@ export async function GET(request: NextRequest) {
           role: { in: ['STUDENT', 'INVESTOR'] },
         },
         include: {
-          skills: true,
-          university: true,
+          Skill: true,
+          University: true,
         },
         take: limit,
       })
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
         ...user,
         id: user.id,
         matchScore: calculateMatchScore(currentUser, user),
-        hasPendingRequest: (currentUser.sentCollaborationRequests || []).some(r => r.toId === user.id),
+        hasPendingRequest: (currentUser?.CollaborationRequest_CollaborationRequest_fromIdToUser || []).some(r => r.toId === user.id),
       }))
 
       // Sort by match score
@@ -168,7 +168,7 @@ export async function GET(request: NextRequest) {
       const requests = await db.collaborationRequest.findMany({
         where: whereClause,
         include: {
-          from: {
+          User_CollaborationRequest_fromIdToUser: {
             select: {
               id: true,
               name: true,
@@ -176,14 +176,14 @@ export async function GET(request: NextRequest) {
               email: true,
               role: true,
               bio: true,
-              university: {
+              University: {
                 select: {
                   id: true,
                   name: true,
                   code: true,
                 },
               },
-              skills: {
+              Skill: {
                 select: {
                   id: true,
                   name: true,
@@ -192,7 +192,7 @@ export async function GET(request: NextRequest) {
               },
             },
           },
-          to: {
+          User_CollaborationRequest_toIdToUser: {
             select: {
               id: true,
               name: true,
@@ -200,14 +200,14 @@ export async function GET(request: NextRequest) {
               email: true,
               role: true,
               bio: true,
-              university: {
+              University: {
                 select: {
                   id: true,
                   name: true,
                   code: true,
                 },
               },
-              skills: {
+              Skill: {
                 select: {
                   id: true,
                   name: true,
@@ -404,8 +404,8 @@ export async function PATCH(request: NextRequest) {
     const collabRequest = await db.collaborationRequest.findUnique({
       where: { id: requestId },
       include: {
-        from: true,
-        to: true,
+        User_CollaborationRequest_fromIdToUser: true,
+        User_CollaborationRequest_toIdToUser: true,
       },
     })
 

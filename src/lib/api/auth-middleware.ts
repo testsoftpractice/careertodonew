@@ -17,6 +17,7 @@ export interface AuthUser {
   email: string
   role: string
   sub: string
+  universityId?: string | null
 }
 
 /**
@@ -52,6 +53,7 @@ export function getUserFromRequest(request: NextRequest): AuthUser | null {
       email: decoded.email,
       role: decoded.role,
       sub: decoded.sub || decoded.userId,
+      universityId: decoded.universityId || null,
     }
   } catch (error) {
     return null

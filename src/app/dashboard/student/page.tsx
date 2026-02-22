@@ -61,7 +61,6 @@ import {
   ChevronRight,
   Trash2,
   Building2,
-  RefreshCw,
 } from 'lucide-react'
 import ProfessionalKanbanBoard, { Task as KanbanTask } from '@/components/task/ProfessionalKanbanBoard'
 import WorkSessionTimer from '@/components/time-tracking/work-session-timer'
@@ -629,10 +628,6 @@ function DashboardContent({ user }: { user: any }) {
     { id: 'create-task', label: 'New Task', icon: Plus, onClick: () => { setActiveTab('tasks'); setTimeout(() => setShowTaskDialog(true), 100); } },
     { id: 'find-projects', label: 'Find Projects', icon: Search, href: '/projects' },
     { id: 'browse-jobs', label: 'Browse Jobs', icon: Briefcase, href: '/jobs' },
-    { id: 'refresh', label: 'Refresh', icon: RefreshCw, onClick: () => {
-      fetchTasks();
-      toast({ title: 'Success', description: 'Tasks refreshed successfully' })
-    } },
   ]
 
   // Timer functions

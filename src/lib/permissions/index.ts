@@ -267,7 +267,7 @@ export async function getUserAccessibleBusinesses(userId: string, userPlatformRo
   if (userPlatformRole === 'PLATFORM_ADMIN') {
     return db.business.findMany({
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -276,9 +276,9 @@ export async function getUserAccessibleBusinesses(userId: string, userPlatformRo
         },
         _count: {
           select: {
-            members: true,
-            projects: true,
-            jobs: true,
+            BusinessMember: true,
+            Project: true,
+            Job: true,
           },
         },
       },
@@ -289,7 +289,7 @@ export async function getUserAccessibleBusinesses(userId: string, userPlatformRo
   const ownedBusinesses = await db.business.findMany({
     where: { ownerId: userId },
     include: {
-      owner: {
+      User: {
         select: {
           id: true,
           name: true,
@@ -298,9 +298,9 @@ export async function getUserAccessibleBusinesses(userId: string, userPlatformRo
       },
       _count: {
         select: {
-          members: true,
-          projects: true,
-          jobs: true,
+          BusinessMember: true,
+          Project: true,
+          Job: true,
         },
       },
     },
@@ -310,9 +310,9 @@ export async function getUserAccessibleBusinesses(userId: string, userPlatformRo
   const memberBusinesses = await db.businessMember.findMany({
     where: { userId },
     include: {
-      business: {
+      Business: {
         include: {
-          owner: {
+          User: {
             select: {
               id: true,
               name: true,
@@ -321,9 +321,9 @@ export async function getUserAccessibleBusinesses(userId: string, userPlatformRo
           },
           _count: {
             select: {
-              members: true,
-              projects: true,
-              jobs: true,
+              BusinessMember: true,
+              Project: true,
+              Job: true,
             },
           },
         },
@@ -334,7 +334,7 @@ export async function getUserAccessibleBusinesses(userId: string, userPlatformRo
   // Combine and deduplicate
   const allBusinesses = [
     ...ownedBusinesses.map(b => ({ ...b, myRole: 'OWNER' })),
-    ...memberBusinesses.map(m => ({ ...m.business, myRole: m.role })),
+    ...memberBusinesses.map(m => ({ ...m.Business, myRole: m.role })),
   ]
 
   return allBusinesses

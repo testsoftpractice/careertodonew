@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth, getUserFromRequest } from '@/lib/api/auth-middleware'
+import { requireAuth } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
 
 // GET /api/dashboard/university/approvals/[id] - Get a specific pending approval
@@ -7,11 +7,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = requireAuth(request)
-  if ('status' in auth) return auth
+  const auth = await requireAuth(request)
+  if (auth instanceof NextResponse) return auth
 
-  const user = getUserFromRequest(request)
-  const universityId = user?.universityId
+  const universityId = auth.universityId
 
   if (!universityId) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
@@ -22,7 +21,7 @@ export async function GET(
     const business = await db.project.findUnique({
       where: { id },
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -30,7 +29,7 @@ export async function GET(
             avatar: true,
             role: true,
             major: true,
-            university: {
+            University: {
               select: {
                 id: true,
                 name: true,
@@ -40,9 +39,9 @@ export async function GET(
             },
           },
         },
-        members: {
+        ProjectMember: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -63,7 +62,7 @@ export async function GET(
     }
 
     // Check if user has permission to view this business
-    if (business.universityId !== universityId && user?.role !== 'PLATFORM_ADMIN') {
+    if (business.universityId !== universityId && auth.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json({ error: 'Unauthorized to view this business' }, { status: 403 })
     }
 
@@ -82,11 +81,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = requireAuth(request)
-  if ('status' in auth) return auth
+  const auth = await requireAuth(request)
+  if (auth instanceof NextResponse) return auth
 
-  const user = getUserFromRequest(request)
-  const universityId = user?.universityId
+  const universityId = auth.universityId
 
   if (!universityId) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
@@ -104,7 +102,7 @@ export async function POST(
     const business = await db.project.findUnique({
       where: { id },
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -119,7 +117,7 @@ export async function POST(
     }
 
     // Check if user has permission
-    if (business.universityId !== universityId && user?.role !== 'PLATFORM_ADMIN') {
+    if (business.universityId !== universityId && auth.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json({ error: 'Unauthorized to approve this business' }, { status: 403 })
     }
 

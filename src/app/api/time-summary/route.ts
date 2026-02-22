@@ -23,9 +23,9 @@ export async function GET(request: NextRequest) {
     const timeEntries = await db.timeEntry.findMany({
       where: { userId },
       include: {
-        task: {
+        Task: {
           include: {
-            project: {
+            Project: {
               select: {
                 id: true,
                 name: true,
@@ -41,16 +41,16 @@ export async function GET(request: NextRequest) {
     const workSessions = await db.workSession.findMany({
       where: { userId },
       include: {
-        project: {
+        Project: {
           select: {
             id: true,
             name: true,
             status: true,
           }
         },
-        task: {
+        Task: {
           include: {
-            project: {
+            Project: {
               select: {
                 id: true,
                 name: true,
@@ -74,15 +74,15 @@ export async function GET(request: NextRequest) {
     // Process time entries
     timeEntries.forEach(entry => {
       // Safety check for missing task or project
-      if (!entry.task?.project) {
+      if (!entry.Task?.Project) {
         return
       }
 
-      const projectId = entry.task.project.id
+      const projectId = entry.Task.Project.id
 
       if (!projectTimeMap.has(projectId)) {
         projectTimeMap.set(projectId, {
-          project: entry.task.project,
+          project: entry.Task.Project,
           totalHours: 0,
           totalEntries: 0,
           entries: [],
@@ -100,11 +100,11 @@ export async function GET(request: NextRequest) {
     workSessions.forEach(session => {
       // Get project ID from either direct project link or through task
       let projectId = session.projectId
-      let project = session.project
+      let project = session.Project
 
-      if (!projectId && session.task?.project) {
-        projectId = session.task.project.id
-        project = session.task.project
+      if (!projectId && session.Task?.Project) {
+        projectId = session.Task.Project.id
+        project = session.Task.Project
       }
 
       // Skip if no project associated

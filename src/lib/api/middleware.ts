@@ -1,8 +1,9 @@
 import type { NextRequest } from 'next/server'
-import { gatewayAuthMiddleware } from './auth-middleware'
+import { NextResponse } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  return gatewayAuthMiddleware(request)
+  // Basic middleware - can be extended for auth, logging, etc.
+  return NextResponse.next()
 }
 
 export const config = {

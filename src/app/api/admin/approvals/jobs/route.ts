@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
         },
         _count: {
           select: {
-            applications: true,
+            JobApplication: true,
           },
         },
       },
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 
       return {
         ...job,
-        companyName: (metadata as any).companyName || job.business?.name || 'Unknown Company',
+        companyName: (metadata as any).companyName || job.Business?.name || 'Unknown Company',
         category: (metadata as any).category || null,
         positions: (metadata as any).positions || '1',
         requirements: (metadata as any).requirements || [],
@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
         salaryRange: job.salaryMin && job.salaryMax 
           ? `$${job.salaryMin.toLocaleString()} - $${job.salaryMax.toLocaleString()}`
           : job.salary || 'Not specified',
-        business: job.business || { id: '', name: 'Unknown Company', industry: 'N/A', location: 'N/A', description: '', website: '' },
+        business: job.Business || { id: '', name: 'Unknown Company', industry: 'N/A', location: 'N/A', description: '', website: '' },
       }
     })
 
@@ -215,10 +215,10 @@ export async function POST(request: NextRequest) {
     })
 
     // Create notification for business owner
-    if (job.businessId && job.business) {
+    if (job.businessId && job.Business) {
       await db.notification.create({
         data: {
-          userId: job.business.ownerId,
+          userId: job.Business.ownerId,
           type: 'JOB_APPROVAL',
           title: '🎉 Job Approved!',
           message: `Your job "${job.title}" has been approved and published.`,

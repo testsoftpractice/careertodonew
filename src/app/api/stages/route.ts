@@ -51,13 +51,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
   }
 
-  const auth = requireAuth(request)
+  const auth = await requireAuth(request)
   if (auth instanceof NextResponse) return auth
 
-  const user = auth.user
-
   // Check if user is platform admin (required for this operation)
-  if (user.role !== 'PLATFORM_ADMIN' && user.role !== 'UNIVERSITY_ADMIN') {
+  if (auth.role !== 'PLATFORM_ADMIN' && auth.role !== 'UNIVERSITY_ADMIN') {
     return NextResponse.json({ error: 'Forbidden - Only admins can create stage templates' }, { status: 403 })
   }
 
@@ -71,7 +69,7 @@ export async function POST(request: NextRequest) {
       id: `custom_${Date.now()}`,
       ...validatedData,
       createdAt: new Date(),
-      createdBy: user.userId,
+      createdBy: auth.id,
     }
 
     return NextResponse.json({
@@ -99,13 +97,11 @@ export async function PUT(
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
   }
 
-  const auth = requireAuth(request)
+  const auth = await requireAuth(request)
   if (auth instanceof NextResponse) return auth
 
-  const user = auth.user
-
   // Check if user is platform admin (required for this operation)
-  if (user.role !== 'PLATFORM_ADMIN') {
+  if (auth.role !== 'PLATFORM_ADMIN') {
     return NextResponse.json({ error: 'Forbidden - Only platform admins can update stage templates' }, { status: 403 })
   }
 
@@ -122,7 +118,7 @@ export async function PUT(
       id,
       ...body,
       updatedAt: new Date(),
-      updatedBy: user.userId,
+      updatedBy: auth.id,
     }
 
     return NextResponse.json({
@@ -150,13 +146,11 @@ export async function DELETE(
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
   }
 
-  const auth = requireAuth(request)
+  const auth = await requireAuth(request)
   if (auth instanceof NextResponse) return auth
 
-  const user = auth.user
-
   // Check if user is platform admin (required for this operation)
-  if (user.role !== 'PLATFORM_ADMIN') {
+  if (auth.role !== 'PLATFORM_ADMIN') {
     return NextResponse.json({ error: 'Forbidden - Only platform admins can delete stage templates' }, { status: 403 })
   }
 

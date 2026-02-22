@@ -15,10 +15,9 @@ export async function GET(
   const auth = await requireAuth(request)
   if (auth instanceof NextResponse) return auth
 
-  const user = auth.user
   const { id } = await params
-  const userId = user.userId
-  const userRole = user.role
+  const userId = auth.id
+  const userRole = auth.role
 
   try {
     // Get project
@@ -70,10 +69,9 @@ export async function POST(
   const auth = await requireAuth(request)
   if (auth instanceof NextResponse) return auth
 
-  const user = auth.user
   const { id } = await params
-  const userId = user.userId
-  const userRole = user.role
+  const userId = auth.id
+  const userRole = auth.role
 
   try {
     const body = await request.json()

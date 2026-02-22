@@ -12,15 +12,15 @@ export async function GET(request: NextRequest) {
     const totalStudents = await db.user.count({ where: { universityId, role: "STUDENT" } })
     const totalProjects = await db.project.count({
       where: {
-        owner: {
+        User: {
           universityId: universityId,
         },
       },
     })
     const activeDepartments = await db.department.count({
       where: {
-        project: {
-          owner: {
+        Project: {
+          User: {
             universityId: universityId,
           },
         },
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         leadershipScore: true,
         ethicsScore: true,
         reliabilityScore: true,
-        university: {
+        University: {
           select: {
             name: true,
           },
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
         return {
           id: u.id,
           name: u.name,
-          university: u.university?.name || "",
+          university: u.University?.name || "",
           major: u.major || "",
           overallReputation: Math.round(overallReputation * 10) / 10,
           breakdown: {

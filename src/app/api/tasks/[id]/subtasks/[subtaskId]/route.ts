@@ -35,9 +35,9 @@ export async function PATCH(
     const subtask = await db.subTask.findUnique({
       where: { id: subtaskId },
       include: {
-        task: {
+        Task: {
           include: {
-            project: {
+            Project: {
               select: { id: true, ownerId: true },
             },
           },
@@ -50,9 +50,9 @@ export async function PATCH(
     }
 
     // Check access permission
-    const task = subtask.task
+    const task = subtask.Task
     const isCreator = task.assignedBy === currentUser.id
-    const isProjectOwner = task.project?.ownerId === currentUser.id
+    const isProjectOwner = task.Project?.ownerId === currentUser.id
 
     let hasAccess = isCreator || isProjectOwner
 
@@ -109,9 +109,9 @@ export async function DELETE(
     const subtask = await db.subTask.findUnique({
       where: { id: subtaskId },
       include: {
-        task: {
+        Task: {
           include: {
-            project: {
+            Project: {
               select: { id: true, ownerId: true },
             },
           },
@@ -124,9 +124,9 @@ export async function DELETE(
     }
 
     // Check access permission
-    const task = subtask.task
+    const task = subtask.Task
     const isCreator = task.assignedBy === currentUser.id
-    const isProjectOwner = task.project?.ownerId === currentUser.id
+    const isProjectOwner = task.Project?.ownerId === currentUser.id
 
     let hasAccess = isCreator || isProjectOwner
 

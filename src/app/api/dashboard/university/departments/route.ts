@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     // Get departments for this university (via projects)
     const departments = await db.department.findMany({
       where: {
-        project: {
+        Project: {
           universityId: user.universityId
         }
       },

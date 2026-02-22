@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireAuth } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
-import { isFeatureEnabled, PROJECT_ROLES } from '@/lib/features/flags-v2'
+import { isFeatureEnabled, PROJECT_ROLES } from '@/lib/features/flags'
 
 // Validation schemas
 const inviteMemberSchema = z.object({
@@ -27,7 +27,7 @@ export async function GET(
   if (auth instanceof NextResponse) return auth
 
   const { id } = await params
-  const user = auth.user
+  const user = auth
 
   try {
     // Get all project members
@@ -69,7 +69,7 @@ export async function POST(
   if (auth instanceof NextResponse) return auth
 
   const { id } = await params
-  const user = auth.user
+  const user = auth
 
   try {
     const body = await request.json()
@@ -84,7 +84,7 @@ export async function POST(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
-    const canInvite = project.ownerId === user.userId ||
+    const canInvite = project.ownerId === user.id ||
                       user.role === 'PLATFORM_ADMIN'
 
     if (!canInvite) {
@@ -108,7 +108,7 @@ export async function POST(
       message: validatedData.message,
       expiresAt: validatedData.expiresAt ? new Date(validatedData.expiresAt) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default 7 days
       status: 'PENDING',
-      invitedBy: user.userId,
+      invitedBy: user.id,
       createdAt: new Date(),
     }))
 

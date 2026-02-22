@@ -108,26 +108,26 @@ export async function GET(
           },
           orderBy: { joinedAt: 'desc' },
         },
-        projects: {
+        Project: {
           select: {
             id: true,
             name: true,
             status: true,
             _count: {
-              select: { members: true, tasks: true },
+              select: { ProjectMember: true, Task: true },
             },
           },
           take: 10,
           orderBy: { createdAt: 'desc' },
         },
-        jobs: {
+        Job: {
           select: {
             id: true,
             title: true,
             type: true,
             published: true,
             _count: {
-              select: { applications: true },
+              select: { JobApplication: true },
             },
           },
           take: 10,
@@ -135,9 +135,9 @@ export async function GET(
         },
         _count: {
           select: {
-            members: true,
-            projects: true,
-            jobs: true,
+            BusinessMember: true,
+            Project: true,
+            Job: true,
           },
         },
       },

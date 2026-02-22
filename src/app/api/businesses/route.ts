@@ -65,9 +65,9 @@ export async function GET(request: NextRequest) {
         },
         _count: {
           select: {
-            members: true,
-            projects: true,
-            jobs: true,
+            BusinessMember: true,
+            Project: true,
+            Job: true,
           },
         },
       },

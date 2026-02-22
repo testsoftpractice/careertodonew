@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const universities = await db.university.findMany({
       where,
       include: {
-        users: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         },
         _count: {
           select: {
-            users: true,
+            User: true,
           },
         },
       },
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate additional stats for each university
     const universitiesWithStats = universities.map((univ, index) => {
-      const students = (univ.users || []).filter(u => u.role === 'STUDENT')
+      const students = (univ.User || []).filter(u => u.role === 'STUDENT')
       const totalReputation = students.reduce((sum, s) => {
         const executionScore = s.executionScore || 0
         const collaborationScore = s.collaborationScore || 0
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
         verificationStatus: univ.verificationStatus,
         rankingScore: univ.rankingScore,
         rankingPosition: univ.rankingPosition,
-        totalStudents: univ._count.users,
+        totalStudents: univ._count.User,
         studentCount: students.length,
         totalReputation,
         avgReputation: parseFloat(avgReputation.toFixed(2)),

@@ -95,7 +95,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         where: { id: milestoneId },
         data: updates,
         include: {
-          project: {
+          Project: {
             select: {
               id: true,
               name: true,
@@ -110,7 +110,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         try {
           await tx.pointTransaction.create({
             data: {
-              userId: milestone.project.ownerId,
+              userId: milestone.Project.ownerId,
               points: 25, // MILESTONE_ACHIEVEMENT points
               source: 'MILESTONE_ACHIEVEMENT',
               description: `Achieved milestone: ${milestone.title}`,
@@ -118,14 +118,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
                 milestoneId: milestone.id,
                 milestoneTitle: milestone.title,
                 projectId: milestone.projectId,
-                projectName: milestone.project.name,
+                projectName: milestone.Project.name,
               }),
             }
           })
 
           // Update user's total points
           await tx.user.update({
-            where: { id: milestone.project.ownerId },
+            where: { id: milestone.Project.ownerId },
             data: {
               totalPoints: {
                 increment: 25,

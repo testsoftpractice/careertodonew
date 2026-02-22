@@ -53,7 +53,7 @@ export async function PATCH(
     const existingVacancy = await db.vacancy.findUnique({
       where: { id },
       include: {
-        project: {
+        Project: {
           select: {
             id: true,
             ownerId: true,
@@ -65,8 +65,13 @@ export async function PATCH(
       return notFound('Vacancy not found')
     }
 
+    // Check if project relation exists
+    if (!existingVacancy.Project) {
+      return errorResponse('Project not found for this vacancy', 404)
+    }
+
     // Check if user has permission to update this vacancy
-    const isOwner = existingVacancy.project!.ownerId === currentUser.id
+    const isOwner = existingVacancy.Project.ownerId === currentUser.id
 
     if (!isOwner) {
       return forbidden('You do not have permission to update this vacancy')
@@ -93,7 +98,7 @@ export async function PATCH(
       where: { id },
       data: updateData,
       include: {
-        project: {
+        Project: {
           select: {
             id: true,
             name: true,
@@ -129,7 +134,7 @@ export async function DELETE(
     const existingVacancy = await db.vacancy.findUnique({
       where: { id },
       include: {
-        project: {
+        Project: {
           select: {
             ownerId: true,
           },
@@ -140,8 +145,13 @@ export async function DELETE(
       return notFound('Vacancy not found')
     }
 
+    // Check if project relation exists
+    if (!existingVacancy.Project) {
+      return errorResponse('Project not found for this vacancy', 404)
+    }
+
     // Check if user has permission to delete this vacancy
-    const isOwner = existingVacancy.project!.ownerId === currentUser.id
+    const isOwner = existingVacancy.Project.ownerId === currentUser.id
 
     if (!isOwner) {
       return forbidden('You do not have permission to delete this vacancy')

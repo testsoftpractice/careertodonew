@@ -17,7 +17,7 @@ export async function GET(
 
   const { id } = await params
   const taskId = id
-  const user = auth.user
+  const user = auth
 
   try {
     // Get task
@@ -73,7 +73,7 @@ export async function POST(
 
   const { id } = await params
   const taskId = id
-  const user = auth.user
+  const user = auth
 
   try {
     const { optimistic, realistic, pessimistic } = await request.json()

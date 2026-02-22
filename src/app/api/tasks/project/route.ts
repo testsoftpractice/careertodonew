@@ -25,9 +25,9 @@ export async function GET(request: NextRequest) {
       where: { projectId },
       orderBy: { createdAt: 'desc' },
       include: {
-        taskAssignees: {
+        TaskAssignee: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        creator: {
+        User_Task_assignedByToUser: {
           select: {
             id: true,
             name: true,

@@ -48,7 +48,7 @@ export async function GET(
     const university = await db.university.findUnique({
       where: { id },
       include: {
-        users: {
+        User: {
           take: 50,
           orderBy: { createdAt: 'desc' },
           select: {
@@ -65,7 +65,7 @@ export async function GET(
         },
         _count: {
           select: {
-            users: true,
+            User: true,
           }
         }
       }
@@ -113,7 +113,7 @@ export async function GET(
           totalStudents: studentCount,
           totalProjects: projectCount,
           pendingVerifications,
-          totalUsers: university._count.users,
+          totalUsers: university._count.User,
         }
       }
     })
@@ -256,7 +256,7 @@ export async function DELETE(
       where: { id },
       include: {
         _count: {
-          select: { users: true }
+          select: { User: true }
         }
       }
     })
@@ -269,7 +269,7 @@ export async function DELETE(
     }
 
     // Check if university has users
-    if (existingUniversity._count.users > 0) {
+    if (existingUniversity._count.User > 0) {
       return NextResponse.json(
         { success: false, error: 'Cannot delete university with registered users' },
         { status: 400 }

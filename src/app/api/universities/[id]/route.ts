@@ -26,7 +26,7 @@ export async function GET(
           orderBy: { totalPoints: 'desc' }
         },
         _count: {
-          select: { users: true }
+          select: { User: true }
         }
       }
     })
@@ -51,8 +51,6 @@ export async function PATCH(
 ) {
   const auth = await requireRole(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
   if ('status' in auth) return auth
-
-  const user = auth.user
 
   try {
     const { id } = await params

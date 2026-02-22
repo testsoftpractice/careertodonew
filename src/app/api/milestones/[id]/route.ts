@@ -22,7 +22,7 @@ export async function PATCH(
     const existingMilestone = await db.milestone.findUnique({
       where: { id },
       include: {
-        project: {
+        Project: {
           select: {
             id: true,
             ownerId: true,
@@ -36,7 +36,7 @@ export async function PATCH(
     }
 
     // Check if user has permission to update this milestone
-    const isOwner = existingMilestone.project!.ownerId === currentUser.id
+    const isOwner = existingMilestone.Project!.ownerId === currentUser.id
 
     if (!isOwner) {
       return forbidden('You do not have permission to update this milestone')
@@ -108,7 +108,7 @@ export async function DELETE(
     const existingMilestone = await db.milestone.findUnique({
       where: { id },
       include: {
-        project: {
+        Project: {
           select: {
             ownerId: true,
           },
@@ -121,7 +121,7 @@ export async function DELETE(
     }
 
     // Check if user has permission to delete this milestone
-    const isOwner = existingMilestone.project!.ownerId === currentUser.id
+    const isOwner = existingMilestone.Project!.ownerId === currentUser.id
 
     if (!isOwner) {
       return forbidden('You do not have permission to delete this milestone')

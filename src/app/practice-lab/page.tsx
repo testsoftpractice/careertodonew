@@ -24,7 +24,6 @@ import {
   Calendar,
   BarChart3,
   Database,
-  MessageSquare,
   CheckCircle2,
   Clock,
   Star,
@@ -557,48 +556,39 @@ export default function PracticeLabPage() {
                       <h2 className="text-lg font-semibold">{dept.name}</h2>
                     </div>
                   )}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {dept.tools.map((tool) => (
                       <Card
                         key={tool.id}
-                        className="hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/50 group"
+                        className="hover:shadow-md transition-all duration-200 border hover:border-primary/30 group"
                       >
-                        <CardHeader className="pb-3">
-                          <div className="flex items-start justify-between mb-2">
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center gap-3 mb-2">
                             <div className={`p-2 rounded-lg ${dept.color.replace('border-', 'bg-').replace('border-', 'text-')} bg-opacity-10`}>
                               {tool.icon}
                             </div>
                             {tool.status === 'coming-soon' && (
-                              <Badge variant="secondary">Coming Soon</Badge>
+                              <Badge variant="secondary" className="text-xs">Soon</Badge>
                             )}
                           </div>
-                          <CardTitle className="text-lg line-clamp-1">{tool.name}</CardTitle>
-                          <CardDescription className="line-clamp-2">
+                          <CardTitle className="text-base line-clamp-1">{tool.name}</CardTitle>
+                          <CardDescription className="text-sm line-clamp-2">
                             {tool.description}
                           </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                          {/* Features */}
-                          <div className="space-y-2">
-                            {tool.features.slice(0, 3).map((feature, index) => (
-                              <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                                <span className="line-clamp-1">{feature}</span>
-                              </div>
-                            ))}
-                          </div>
-
+                        <CardContent className="pt-0">
                           {/* Action Button */}
                           {tool.status === 'available' ? (
                             <Button
-                              className="w-full group-hover:bg-primary/90 transition-colors"
+                              size="sm"
+                              className="w-full"
                               onClick={() => router.push(tool.path)}
                             >
-                              Launch Tool
+                              Launch
                               <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                           ) : (
-                            <Button variant="outline" className="w-full" disabled>
+                            <Button size="sm" variant="outline" className="w-full" disabled>
                               <Lock className="mr-2 h-4 w-4" />
                               Coming Soon
                             </Button>

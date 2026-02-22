@@ -18,7 +18,7 @@ export async function GET(
     const task = await db.task.findUnique({
       where: { id: taskId },
       include: {
-        project: {
+        Project: {
           select: { id: true, ownerId: true },
         },
       },
@@ -30,7 +30,7 @@ export async function GET(
 
     // Check access permission
     const isCreator = task.assignedBy === currentUser.id
-    const isProjectOwner = task.project?.ownerId === currentUser.id
+    const isProjectOwner = task.Project?.ownerId === currentUser.id
 
     let hasAccess = isCreator || isProjectOwner
 
@@ -52,7 +52,7 @@ export async function GET(
     const assignees = await db.taskAssignee.findMany({
       where: { taskId },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,

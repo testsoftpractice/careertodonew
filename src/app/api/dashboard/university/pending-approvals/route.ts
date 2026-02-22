@@ -4,13 +4,12 @@ import { db } from '@/lib/db'
 
 // GET /api/dashboard/university/pending-approvals - Get pending project approvals
 export async function GET(request: NextRequest) {
-  const auth = requireRole(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
+  const auth = await requireRole(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
   if (auth instanceof NextResponse) return auth
-  
-  const user = auth.user
-  const universityId = user.universityId
 
-  if (!universityId && user.role !== 'PLATFORM_ADMIN') {
+  const universityId = auth.universityId
+
+  if (!universityId && auth.role !== 'PLATFORM_ADMIN') {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
   }
 
@@ -21,7 +20,7 @@ export async function GET(request: NextRequest) {
     const whereClause: Record<string, unknown> = {}
 
     // Filter by university if not platform admin
-    if (user.role !== 'PLATFORM_ADMIN' && universityId) {
+    if (auth.role !== 'PLATFORM_ADMIN' && universityId) {
       whereClause.universityId = universityId
     }
 
@@ -33,7 +32,7 @@ export async function GET(request: NextRequest) {
     const projects = await db.project.findMany({
       where: whereClause,
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -41,7 +40,7 @@ export async function GET(request: NextRequest) {
             avatar: true,
             role: true,
             major: true,
-            university: {
+            University: {
               select: {
                 id: true,
                 name: true,
@@ -51,7 +50,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        university: {
+        University: {
           select: {
             id: true,
             name: true,
@@ -59,9 +58,9 @@ export async function GET(request: NextRequest) {
             location: true,
           },
         },
-        members: {
+        ProjectMember: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -76,9 +75,9 @@ export async function GET(request: NextRequest) {
         },
         _count: {
           select: {
-            members: true,
-            tasks: true,
-            milestones: true,
+            ProjectMember: true,
+            Task: true,
+            Milestone: true,
           },
         },
       },
@@ -92,19 +91,19 @@ export async function GET(request: NextRequest) {
       title: project.name,
       description: project.description || '',
       category: project.category || 'General',
-      owner: project.owner ? {
-        id: project.owner.id,
-        name: project.owner.name,
-        email: project.owner.email,
-        avatar: project.owner.avatar,
-        university: project.owner.university,
+      owner: project.User ? {
+        id: project.User.id,
+        name: project.User.name,
+        email: project.User.email,
+        avatar: project.User.avatar,
+        university: project.User.University,
       } : null,
-      university: project.university,
+      university: project.University,
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,
-      members: project._count.members,
-      tasks: project._count.tasks,
-      milestones: project._count.milestones,
+      members: project._count.ProjectMember,
+      tasks: project._count.Task,
+      milestones: project._count.Milestone,
       status: project.status,
       stage: project.stage,
       approvalStatus: project.approvalStatus,
@@ -112,8 +111,8 @@ export async function GET(request: NextRequest) {
       seekingInvestment: project.category?.toLowerCase().includes('investment') || false,
       investmentGoal: null,
       investmentRaised: 0,
-      teamSizeMin: project._count.members || 0,
-      teamSizeMax: project._count.members || 0,
+      teamSizeMin: project._count.ProjectMember || 0,
+      teamSizeMax: project._count.ProjectMember || 0,
     }))
 
     return NextResponse.json({

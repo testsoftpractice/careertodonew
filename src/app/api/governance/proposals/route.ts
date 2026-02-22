@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api/auth-middleware'
-import { isFeatureEnabled, GOVERNANCE_APPROVAL } from '@/lib/features/flags-v2'
+import { isFeatureEnabled, GOVERNANCE_APPROVAL } from '@/lib/features/flags'
 
 // POST /api/governance/proposals - Create governance proposal
 export async function POST(request: NextRequest) {
@@ -8,8 +8,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
   }
 
-  const auth = requireAuth(request)
-  if ('status' in auth) return auth
+  const auth = await requireAuth(request)
+  if (auth instanceof NextResponse) return auth
 
   // Governance proposals feature not yet implemented
   return NextResponse.json({
@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Feature not enabled' }, { status: 503 })
   }
 
-  const auth = requireAuth(request)
-  if ('status' in auth) return auth
+  const auth = await requireAuth(request)
+  if (auth instanceof NextResponse) return auth
 
   // Governance proposals feature not yet implemented
   return NextResponse.json({

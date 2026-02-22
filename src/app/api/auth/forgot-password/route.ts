@@ -56,10 +56,17 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Generate reset URL - remove trailing slash from base URL
-    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 
+    // Generate reset URL - prefer request origin, then env variable
+    // This ensures correct URL regardless of Vercel env variable settings
+    const requestOrigin = request.headers.get('origin') || request.headers.get('host')
+      ? `${request.headers.get('x-forwarded-proto') || 'https'}://${request.headers.get('host')}`
+      : null
+    
+    const baseUrl = (requestOrigin ||
+                    process.env.NEXT_PUBLIC_APP_URL || 
                     process.env.NEXT_PUBLIC_BASE_URL || 
-                    'http://localhost:3000').replace(/\/$/, '')
+                    'https://careertodo.com').replace(/\/$/, '')
+    
     const resetUrl = `${baseUrl}/auth/reset-password?token=${token}`
 
     // Get email template

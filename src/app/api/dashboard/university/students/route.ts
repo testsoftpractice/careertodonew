@@ -4,11 +4,10 @@ import { db } from '@/lib/db'
 
 // GET /api/dashboard/university/students - Get university students with metrics
 export async function GET(request: NextRequest) {
-  const auth = requireRole(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
+  const auth = await requireRole(request, ['UNIVERSITY_ADMIN', 'PLATFORM_ADMIN'])
   if (auth instanceof NextResponse) return auth
   
-  const user = auth.user
-  const universityId = user.universityId
+  const universityId = auth.universityId
 
   if (!universityId) {
     return NextResponse.json({ error: 'User not associated with a university' }, { status: 400 })
@@ -50,10 +49,10 @@ export async function GET(request: NextRequest) {
         createdAt: true,
         _count: {
           select: {
-            tasksCreated: true,
-            taskAssignees: true,
-            timeEntries: true,
-            workSessions: true,
+            Task_Task_assignedByToUser: true,
+            TaskAssignee: true,
+            TimeEntry: true,
+            WorkSession: true,
           }
         }
       },
@@ -65,7 +64,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate additional metrics for each student
     const studentsWithMetrics = students.map(student => {
-      const studentWithCount = student as typeof student & { _count?: { tasksCreated?: number; taskAssignees?: number; timeEntries?: number; workSessions?: number } }
+      const studentWithCount = student as typeof student & { _count?: { Task_Task_assignedByToUser?: number; TaskAssignee?: number; TimeEntry?: number; WorkSession?: number } }
       const overallReputation = (
         (student.executionScore || 0) +
         (student.collaborationScore || 0) +
@@ -90,10 +89,10 @@ export async function GET(request: NextRequest) {
         reliabilityScore: student.reliabilityScore || 0,
         verificationStatus: student.verificationStatus,
         createdAt: student.createdAt,
-        projectCount: studentWithCount._count?.tasksCreated || 0,
-        assignedTasks: studentWithCount._count?.taskAssignees || 0,
-        timeEntries: studentWithCount._count?.timeEntries || 0,
-        workSessions: studentWithCount._count?.workSessions || 0,
+        projectCount: studentWithCount._count?.Task_Task_assignedByToUser || 0,
+        assignedTasks: studentWithCount._count?.TaskAssignee || 0,
+        timeEntries: studentWithCount._count?.TimeEntry || 0,
+        workSessions: studentWithCount._count?.WorkSession || 0,
       }
     })
 

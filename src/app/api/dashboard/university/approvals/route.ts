@@ -29,14 +29,14 @@ export async function GET(request: NextRequest) {
         universityId,
       },
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,
             email: true,
             avatar: true,
             role: true,
-            university: {
+            University: {
               select: {
                 id: true,
                 name: true,
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        university: {
+        University: {
           select: {
             id: true,
             name: true,
@@ -54,9 +54,9 @@ export async function GET(request: NextRequest) {
             location: true,
           },
         },
-        members: {
+        ProjectMember: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         id: true,
         role: true,
         universityId: true,
-        university: {
+        University: {
           select: {
             id: true,
             name: true,
@@ -142,14 +142,14 @@ export async function POST(request: NextRequest) {
     const business = await db.project.findUnique({
       where: { id: body.businessId },
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,
             email: true,
             avatar: true,
             role: true,
-            university: {
+            University: {
               select: {
                 id: true,
                 name: true,
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
             },
           },
         },
-        university: {
+        University: {
           select: {
             id: true,
             name: true,
@@ -167,9 +167,9 @@ export async function POST(request: NextRequest) {
             location: true,
           },
         },
-        members: {
+        ProjectMember: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,

@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
         include: {
           _count: {
             select: {
-              users: true,
+              User: true,
             }
           }
         },

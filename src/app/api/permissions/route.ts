@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api/auth-middleware'
 import { db } from '@/lib/db'
-import { isFeatureEnabled, PROJECT_ROLES } from '@/lib/features/flags-v2'
+import { isFeatureEnabled, PROJECT_ROLES } from '@/lib/features/flags'
 
 // GET /api/permissions - Get user permissions
 export async function GET(request: NextRequest) {
@@ -12,12 +12,12 @@ export async function GET(request: NextRequest) {
   const auth = await requireAuth(request)
   if (auth instanceof NextResponse) return auth
 
-  const user = auth.user
+  const user = auth
 
   try {
     // Get all project memberships
     const memberships = await db.projectMember.findMany({
-      where: { userId: user.userId },
+      where: { userId: user.id },
       select: {
         projectId: true,
         role: true,
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        userId: user.userId,
+        userId: user.id,
         permissions,
         totalProjects: memberships.length,
       },

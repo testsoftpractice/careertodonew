@@ -18,9 +18,9 @@ export async function DELETE(
     const assignee = await db.taskAssignee.findUnique({
       where: { id: assigneeId },
       include: {
-        task: {
+        Task: {
           include: {
-            project: {
+            Project: {
               select: { id: true, ownerId: true },
             },
           },
@@ -33,9 +33,9 @@ export async function DELETE(
     }
 
     // Check access permission
-    const task = assignee.task
+    const task = assignee.Task
     const isCreator = task.assignedBy === currentUser.id
-    const isProjectOwner = task.project?.ownerId === currentUser.id
+    const isProjectOwner = task.Project?.ownerId === currentUser.id
 
     let hasAccess = isCreator || isProjectOwner
 

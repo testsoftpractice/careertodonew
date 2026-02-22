@@ -70,9 +70,9 @@ export async function GET(request: NextRequest) {
           checkOutLocation: activeSession.checkOutLocation,
           notes: activeSession.notes,
           duration: currentDuration, // Current duration in seconds
-          project: activeSession.project,
-          task: activeSession.task,
-          user: activeSession.user,
+          project: activeSession.Project,
+          task: activeSession.Task,
+          user: activeSession.User,
         },
       },
     })

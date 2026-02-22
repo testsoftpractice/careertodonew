@@ -11,7 +11,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const task = await db.task.update({
       where: { id: taskId },
       data: {
-        status: TaskStatus.REVIEW,
+        status: TaskStatus.IN_REVIEW,
         description,
       }
     })

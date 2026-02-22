@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       where: { userId: user.id },
       include: {
         _count: {
-          select: { applications: true }
+          select: { JobApplication: true }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -30,17 +30,17 @@ export async function GET(request: NextRequest) {
     const applications = await db.jobApplication.findMany({
       where: { jobId: { in: jobIds } },
       include: {
-        job: {
+        Job: {
           select: { id: true, title: true }
         },
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
             email: true,
             avatar: true,
             major: true,
-            university: {
+            University: {
               select: {
                 id: true,
                 name: true,
@@ -67,15 +67,15 @@ export async function GET(request: NextRequest) {
       return {
         id: app.id,
         candidate: {
-          id: app.user.id,
-          name: app.user.name,
-          email: app.user.email,
-          avatar: app.user.avatar,
-          university: app.user.university,
-          major: app.user.major,
-          totalPoints: app.user.totalPoints || 0,
+          id: app.User.id,
+          name: app.User.name,
+          email: app.User.email,
+          avatar: app.User.avatar,
+          university: app.User.University,
+          major: app.User.major,
+          totalPoints: app.User.totalPoints || 0,
         },
-        job: app.job,
+        job: app.Job,
         status: status,
         appliedDate: app.createdAt,
         updatedAt: app.updatedAt,

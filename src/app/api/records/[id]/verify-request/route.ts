@@ -15,7 +15,7 @@ export async function POST(
     const record = await db.professionalRecord.findUnique({
       where: { id },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,

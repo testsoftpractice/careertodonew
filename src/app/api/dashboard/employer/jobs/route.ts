@@ -7,14 +7,10 @@ export async function GET(request: NextRequest) {
   const auth = await requireAuth(request)
   if ('status' in auth) return auth
 
-  const user = auth.user
+  const user = auth
   const { searchParams } = new URL(request.url)
   const status = searchParams.get('status') || 'all'
   const limit = parseInt(searchParams.get('limit') || '50')
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
 
   try {
     const jobs = await db.job.findMany({

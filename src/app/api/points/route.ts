@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
           leadershipScore: true,
           ethicsScore: true,
           reliabilityScore: true,
-          university: {
+          University: {
             select: {
               id: true,
               name: true,

@@ -115,7 +115,9 @@ export const taskSchema = z.object({
   priority: z.enum([TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH, TaskPriority.URGENT]),
   dueDate: z.string().datetime().optional(),
   projectId: z.string().uuid().optional(),
-  assigneeId: z.string().uuid().optional()
+  assigneeId: z.string().uuid().optional(),
+  status: z.string().optional(),
+  estimatedHours: z.union([z.string(), z.number()]).optional(),
 })
 
 // Task validation schemas
@@ -143,8 +145,8 @@ export function validateRequest<T>(schema: z.ZodSchema<T>, data: unknown): { suc
     const validated = schema.parse(data)
     return { success: true, data: validated }
   } catch (error) {
-    if (error instanceof z.ZodError && error.errors && Array.isArray(error.errors)) {
-      const errorDetails = error.errors.map(err => ({
+    if (error instanceof z.ZodError && error.issues && Array.isArray(error.issues)) {
+      const errorDetails = error.issues.map(err => ({
         field: err.path.join('.') || 'general',
         message: err.message
       }))

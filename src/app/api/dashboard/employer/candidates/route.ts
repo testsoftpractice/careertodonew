@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       where: {
         jobId: { in: jobIds },
         ...(search ? {
-          user: {
+          User: {
             OR: [
               { name: { contains: search } },
               { email: { contains: search } }
@@ -48,17 +48,17 @@ export async function GET(request: NextRequest) {
         } : {})
       },
       include: {
-        job: {
+        Job: {
           select: { id: true, title: true }
         },
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
             email: true,
             avatar: true,
             major: true,
-            university: {
+            University: {
               select: {
                 id: true,
                 name: true,
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate match score based on skills and experience
     const candidates = (applications || []).map(app => {
-      const applicant = app.user
+      const applicant = app.User
       const reputation = (
         (applicant.executionScore || 0) +
         (applicant.collaborationScore || 0) +
@@ -102,12 +102,12 @@ export async function GET(request: NextRequest) {
           name: applicant.name,
           email: applicant.email,
           avatar: applicant.avatar,
-          university: applicant.university,
+          university: applicant.University,
           major: applicant.major,
           totalPoints: applicant.totalPoints || 0,
           reputation: parseFloat(reputation.toFixed(2))
         },
-        job: app.job,
+        job: app.Job,
         status: app.status,
         appliedDate: app.createdAt,
         matchScore: Math.min(100, reputation * 10 + Math.random() * 20),

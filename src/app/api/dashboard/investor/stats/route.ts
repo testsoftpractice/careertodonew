@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const investments = await db.investment.findMany({
       where: { userId: user.id },
       include: {
-        project: {
+        Project: {
           select: { id: true, name: true, status: true }
         }
       },

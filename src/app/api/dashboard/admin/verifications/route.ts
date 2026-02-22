@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         verificationStatus: { in: ['PENDING', 'UNDER_REVIEW'] }
       },
       include: {
-        university: {
+        University: {
           select: {
             id: true,
             name: true,
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
         status: { in: ['PENDING', 'UNDER_REVIEW'] }
       },
       include: {
-        owner: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
         status: { in: ['PENDING', 'UNDER_REVIEW'] }
       },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,

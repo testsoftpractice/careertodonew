@@ -13,7 +13,7 @@ export async function POST(
     const record = await db.professionalRecord.findUnique({
       where: { id },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -79,7 +79,7 @@ export async function GET(
     const record = await db.professionalRecord.findUnique({
       where: { id },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -125,8 +125,8 @@ export async function GET(
         shareExpiresAt: metadata.shareExpiresAt || null,
         shareAccessCount: metadata.shareAccessCount || 0,
         user: {
-          name: record.user.name,
-          avatar: record.user.avatar,
+          name: record.User.name,
+          avatar: record.User.avatar,
         },
       },
     })

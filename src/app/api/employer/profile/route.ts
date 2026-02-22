@@ -4,14 +4,12 @@ import { db } from '@/lib/db'
 
 // GET /api/employer/profile - Get employer profile
 export async function GET(request: NextRequest) {
-  const auth = requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
+  const auth = await requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
   if (auth instanceof NextResponse) return auth
-
-  const user = auth.user
 
   try {
     const employer = await db.user.findUnique({
-      where: { id: user.userId },
+      where: { id: auth.id },
       select: {
         id: true,
         name: true,
@@ -28,11 +26,11 @@ export async function GET(request: NextRequest) {
 
     // Get employer's project
     const project = await db.project.findFirst({
-      where: { ownerId: user.userId },
+      where: { ownerId: auth.id },
       include: {
         _count: {
           select: {
-            members: true,
+            ProjectMember: true,
           }
         }
       }
@@ -53,10 +51,8 @@ export async function GET(request: NextRequest) {
 
 // PATCH /api/employer/profile - Update employer profile
 export async function PATCH(request: NextRequest) {
-  const auth = requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
+  const auth = await requireRole(request, ['EMPLOYER', 'PLATFORM_ADMIN'])
   if (auth instanceof NextResponse) return auth
-
-  const user = auth.user
 
   try {
     const body = await request.json()
@@ -80,13 +76,13 @@ export async function PATCH(request: NextRequest) {
 
     // Update user profile
     const updatedUser = await db.user.update({
-      where: { id: user.userId },
+      where: { id: auth.id },
       data: updateData
     })
 
     // Update project if exists
     const project = await db.project.findFirst({
-      where: { ownerId: user.userId }
+      where: { ownerId: auth.id }
     })
 
     if (project) {
@@ -109,11 +105,11 @@ export async function PATCH(request: NextRequest) {
         status: 'IDEA'
         universityId?: string | null
       } = {
-        ownerId: user.userId,
-        name: name || `${user.name || 'User'}'s Business`,
+        ownerId: auth.id,
+        name: name || `${auth.email || 'User'}'s Business`,
         description: companyDescription,
         status: 'IDEA',
-        universityId: user.universityId ?? null,
+        universityId: auth.universityId ?? null,
       }
       await db.project.create({ data: projectData })
     }

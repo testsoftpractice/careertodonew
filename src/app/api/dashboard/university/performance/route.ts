@@ -11,18 +11,18 @@ export async function GET(request: NextRequest) {
     // Calculate performance metrics for all universities
     const universities = await db.university.findMany({
       include: {
-        projects: {
+        Project: {
           include: {
-            owner: {
+            User: {
               select: {
                 id: true,
                 name: true,
               },
             },
-            members: true,
-            milestones: {
+            ProjectMember: true,
+            Milestone: {
               include: {
-                project: true,
+                Project: true,
               },
             },
           },
@@ -78,12 +78,12 @@ export async function GET(request: NextRequest) {
       })
 
       // University Project Metrics
-      const projects = university.projects || []
+      const projects = university.Project || []
       const totalProjects = projects.length
       const activeProjects = (projects || []).filter((p: any) => p.status === 'ACTIVE').length
       const completedProjects = (projects || []).filter((p: any) => p.status === 'COMPLETED').length
       const totalMilestonesAll = (projects || []).reduce((sum: any, p: any) => {
-        return sum + (p.milestones?.filter((m: any) => m.status === 'ACHIEVED')?.length || 0)
+        return sum + (p.Milestone?.filter((m: any) => m.status === 'ACHIEVED')?.length || 0)
       }, 0)
 
       // Calculate university score (weighted metrics)

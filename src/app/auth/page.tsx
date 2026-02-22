@@ -140,7 +140,7 @@ export default function AuthPage() {
           } else if (data.user.role === 'STUDENT') {
             console.log('[Auth] Redirecting to student dashboard')
             window.location.href = '/dashboard/student'
-          } else if (data.user.role === 'UNIVERSITY') {
+          } else if (data.user.role === 'UNIVERSITY_ADMIN' || data.user.role === 'UNIVERSITY') {
             console.log('[Auth] Redirecting to university dashboard')
             window.location.href = '/dashboard/university'
           } else if (data.user.role === 'EMPLOYER') {

@@ -9,14 +9,16 @@ export interface AuthUser {
   sub: string
 }
 
+// Public paths that don't require authentication
 const PUBLIC_PATH_PREFIXES = [
-  '/about',
-  '/features',
-  '/solutions',
-  '/contact',
-  '/terms',
-  '/privacy',
-  '/auth',
+  '/',           // Homepage
+  '/about',      // About page
+  '/features',   // Features page
+  '/solutions',  // Solutions page
+  '/contact',    // Contact page
+  '/terms',      // Terms of service
+  '/privacy',    // Privacy policy
+  '/auth',       // Auth pages (login, signup, forgot-password)
 ]
 
 function isPublicPath(pathname: string) {
@@ -132,11 +134,9 @@ export function gatewayAuthMiddleware(request: NextRequest) {
   const user = getUserFromRequest(request)
 
   if (!user) {
-    // Browser navigation → redirect
+    // Browser navigation → redirect to auth page
     if (request.headers.get('accept')?.includes('text/html')) {
-      const loginUrl = new URL('/auth/login', request.url)
-      loginUrl.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(loginUrl)
+  return NextResponse.redirect(new URL('/auth', request.url))
     }
 
     // API / fetch

@@ -254,6 +254,17 @@ export default function CreateProjectPage() {
           startDate: projectData.startDate,
           endDate: projectData.endDate || null,
           budget: projectData.budget ? parseFloat(projectData.budget) : null,
+          seekingInvestment: projectData.seekingInvestment,
+          investmentGoal: projectData.seekingInvestment && projectData.investmentGoal ? parseFloat(projectData.investmentGoal) : null,
+          teamSizeMin: projectData.teamSizeMin ? parseInt(projectData.teamSizeMin) : null,
+          teamSizeMax: projectData.teamSizeMax ? parseInt(projectData.teamSizeMax) : null,
+          roles: roles.map(role => ({
+            title: role.title,
+            positionsNeeded: role.positionsNeeded,
+            responsibilities: role.responsibilities,
+            requiredSkills: role.requiredSkills,
+            experienceLevel: role.experienceLevel,
+          })),
         }),
       })
 
@@ -261,10 +272,10 @@ export default function CreateProjectPage() {
 
       if (data.success) {
         toast({
-          title: "Success",
-          description: "Project created successfully!",
+          title: "Project Submitted",
+          description: data.message || "Your project has been submitted for review. You will be notified once it is approved.",
         })
-        router.push(`/projects/${data.data.id}`)
+        router.push(`/dashboard/student?tab=projects`)
       } else {
         toast({
           title: "Error",
@@ -290,7 +301,7 @@ export default function CreateProjectPage() {
       2: "Team & Resource Planning",
       3: "Define Roles & Responsibilities",
       4: "HR & Leadership Setup",
-      5: "Review & Publish",
+      5: "Review & Submit",
     }
     return titles[step as keyof typeof titles] || "Create Project"
   }
@@ -301,7 +312,7 @@ export default function CreateProjectPage() {
       2: "Define your team structure and resource requirements",
       3: "Specify the roles you need, their responsibilities, and required skills",
       4: "Set up leadership and HR management for your project",
-      5: "Review all details before publishing your project",
+      5: "Review all details before submitting your project for approval",
     }
     return descriptions[step as keyof typeof descriptions] || ""
   }
@@ -794,20 +805,19 @@ export default function CreateProjectPage() {
                       </div>
                     </div>
 
-                    <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
-                      <h4 className="font-semibold mb-2 flex items-center gap-2 text-green-800 dark:text-green-200">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <h4 className="font-semibold mb-2 flex items-center gap-2 text-blue-800 dark:text-blue-200">
                         <CheckCircle2 className="w-4 h-4" />
-                        Ready to Publish
+                        Ready to Submit
                       </h4>
                       <p className="text-sm text-muted-foreground">
-                        Once published, your project will be visible to students who can apply for specific roles.
-                        All applications will be reviewed before team members are accepted.
+                        Your project will be submitted for admin review. Once approved, it will be visible to students who can apply for specific roles.
                       </p>
                     </div>
                   </div>
                 )}
 
-                {/* Step 5: Review & Publish */}
+                {/* Step 5: Review & Submit */}
                 {step === 5 && (
                   <div className="space-y-6">
                     <div className="space-y-4">
@@ -908,16 +918,16 @@ export default function CreateProjectPage() {
                       </div>
                     </div>
 
-                    <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
-                      <h4 className="font-semibold mb-2 flex items-center gap-2 text-green-800 dark:text-green-200">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <h4 className="font-semibold mb-2 flex items-center gap-2 text-blue-800 dark:text-blue-200">
                         <Sparkles className="w-4 h-4" />
-                        Publishing Your Project
+                        Submitting Your Project
                       </h4>
                       <ul className="text-sm text-muted-foreground space-y-1">
-                        <li>• Your project will be published and visible to all users</li>
-                        <li>• Students can browse and show interest in specific roles</li>
-                        <li>• You'll receive notifications for all role applications</li>
-                        <li>• You can review and approve team members</li>
+                        <li>• Your project will be submitted for admin review</li>
+                        <li>• You will be notified once your project is approved</li>
+                        <li>• After approval, students can browse and apply for roles</li>
+                        <li>• You can review and approve team member applications</li>
                         <li>• Project progress and team performance will be tracked</li>
                       </ul>
                     </div>
@@ -962,12 +972,12 @@ export default function CreateProjectPage() {
                         {loading ? (
                           <>
                             <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
-                            Creating...
+                            Submitting...
                           </>
                         ) : (
                           <>
                             <Sparkles className="mr-2 h-4 w-4" />
-                            Publish Project
+                            Submit for Review
                           </>
                         )}
                       </Button>

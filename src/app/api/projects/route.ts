@@ -111,7 +111,8 @@ export async function GET(request: NextRequest) {
       ...project,
       title: project.name,
       teamSize: project.ProjectMember?.length || 1,
-      investmentGoal: project.budget || null,
+      // Use the actual investmentGoal field from the database, not budget
+      investmentGoal: project.investmentGoal || null,
       investmentRaised: null,
       completionRate: project.progress || 0,
     }))
@@ -159,6 +160,20 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Map experience levels from Role to Vacancy format
+    const mapExperienceLevel = (level: string): string => {
+      const levelMap: Record<string, string> = {
+        'JUNIOR': 'Entry Level',
+        'MID': 'Mid Level',
+        'SENIOR': 'Senior Level',
+        'EXPERT': 'Lead',
+      }
+      return levelMap[level] || 'Mid Level'
+    }
+
+    // Prepare roles data for vacancy creation
+    const rolesToCreate = body.roles || []
+
     // Create project with owner as member and PENDING approval status
     const project = await db.project.create({
       data: {
@@ -174,8 +189,11 @@ export async function POST(request: NextRequest) {
         budget: body.budget ? parseFloat(body.budget) : null,
         category: body.category,
         seekingInvestment: body.seekingInvestment || false,
-        published: body.publishImmediately || false,
-        publishedAt: body.publishImmediately ? new Date() : null,
+        investmentGoal: body.investmentGoal ? parseFloat(body.investmentGoal) : null,
+        teamSizeMin: body.teamSizeMin ? parseInt(body.teamSizeMin) : null,
+        teamSizeMax: body.teamSizeMax ? parseInt(body.teamSizeMax) : null,
+        published: false, // Projects start unpublished, need admin approval
+        publishedAt: null,
         ProjectMember: {
           create: {
             userId: currentUser.id,
@@ -199,14 +217,47 @@ export async function POST(request: NextRequest) {
         budget: true,
         category: true,
         seekingInvestment: true,
+        investmentGoal: true,
+        teamSizeMin: true,
+        teamSizeMax: true,
         published: true,
         publishedAt: true,
       }
     })
 
+    // Create vacancies from roles
+    if (rolesToCreate.length > 0) {
+      const vacancyPromises = rolesToCreate.map((role: {
+        title: string
+        positionsNeeded: number
+        responsibilities: string[]
+        requiredSkills: string[]
+        experienceLevel: string
+      }) => {
+        return db.vacancy.create({
+          data: {
+            projectId: project.id,
+            title: role.title,
+            description: `Role: ${role.title}`,
+            type: 'FULL_TIME',
+            slots: role.positionsNeeded || 1,
+            skills: role.requiredSkills ? role.requiredSkills.join(',') : null,
+            responsibilities: role.responsibilities ? JSON.stringify(role.responsibilities) : null,
+            expertise: mapExperienceLevel(role.experienceLevel),
+            status: 'OPEN',
+            filled: 0,
+          }
+        })
+      })
+
+      await Promise.all(vacancyPromises)
+      console.log(`Created ${rolesToCreate.length} vacancies for project ${project.id}`)
+    }
+
     return NextResponse.json({
       success: true,
-      data: project
+      data: project,
+      message: 'Project submitted for review. You will be notified once it is approved.'
     }, { status: 201 })
   } catch (error: any) {
     if (error instanceof AuthError) {

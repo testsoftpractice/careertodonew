@@ -88,7 +88,8 @@ export default function ProjectTasksPage() {
   const fetchProjectTasks = async () => {
     try {
       setLoading(prev => ({ ...prev, tasks: true }))
-      const response = await authFetch(`/api/tasks?projectId=${projectId}`)
+      // Use the project-specific tasks endpoint which includes subtasks and assignees
+      const response = await authFetch(`/api/projects/${projectId}/tasks`)
       const data = await response.json()
 
       if (data.success) {
@@ -116,65 +117,29 @@ export default function ProjectTasksPage() {
     try {
       setLoading(prev => ({ ...prev, users: true }))
 
-      // First, try to fetch project members
-      let members: any[] = []
+      // Only fetch project members - no fallback to all users
+      const response = await authFetch(`/api/projects/${projectId}/members`)
+      const data = await response.json()
 
-      try {
-        const response = await authFetch(`/api/projects/${projectId}/members`)
-        const data = await response.json()
-        console.log('[fetchAvailableUsers] Project members response:', data)
-
-        if (data.success && data.data && data.data.members) {
-          members = data.data.members.map((member: any) => ({
-            id: member.user?.id || member.userId,
-            name: member.user?.name || member.user?.email || 'Unknown',
-            email: member.user?.email,
-          }))
-          console.log('[fetchAvailableUsers] Project members:', members)
-        }
-      } catch (error) {
-        console.log('[fetchAvailableUsers] Project members fetch failed, will use all users instead:', error)
-      }
-
-      // Always fetch all users as fallback or to add more options
-      const allUsersResponse = await authFetch('/api/users')
-      const allUsersData = await allUsersResponse.json()
-      console.log('[fetchAvailableUsers] All users response:', allUsersData)
-
-      if (allUsersData.success && allUsersData.data) {
-        const allUsers = allUsersData.data.map((u: any) => ({
-          id: u.id,
-          name: u.name || u.email,
-          email: u.email,
+      if (data.success && data.data && data.data.members) {
+        const members = data.data.members.map((member: any) => ({
+          id: member.user?.id || member.userId,
+          name: member.user?.name || member.user?.email || 'Unknown',
+          email: member.user?.email,
         }))
-
-        console.log('[fetchAvailableUsers] All users:', allUsers)
-
-        // Combine and deduplicate users
-        const uniqueUsers = new Map()
-        members.forEach(user => uniqueUsers.set(user.id, user))
-        allUsers.forEach(user => uniqueUsers.set(user.id, user))
-
-        const finalUsers = Array.from(uniqueUsers.values())
-        setAvailableUsers(finalUsers)
-        console.log('[fetchAvailableUsers] Final users after deduplication:', finalUsers)
-      } else if (members.length > 0) {
-        // If all users fetch failed but we have project members, use them
         setAvailableUsers(members)
-        console.log('[fetchAvailableUsers] Using project members only:', members)
       } else {
         setAvailableUsers([])
-        console.log('[fetchAvailableUsers] No users available')
       }
     } catch (error) {
       console.error('[fetchAvailableUsers] Error:', error)
-      // Don't show toast for this error, just log it
       setAvailableUsers([])
     } finally {
       setLoading(prev => ({ ...prev, users: false }))
     }
   }
 
+  // Single API call for task creation - all handled server-side
   const handleCreateTask = async (taskData: any) => {
     if (!user || !projectId) return
 
@@ -190,74 +155,46 @@ export default function ProjectTasksPage() {
         dueDate: taskData.dueDate ? new Date(taskData.dueDate).toISOString() : null,
       }
 
-      // Support multiple assignees
+      // Support multiple assignees - pass directly to API
       if (taskData.assigneeIds && taskData.assigneeIds.length > 0) {
         payload.assigneeIds = taskData.assigneeIds
-        // For backward compatibility, also set primary assignee
-        payload.assigneeId = taskData.assigneeIds[0]
-      } else if (taskData.assigneeId && taskData.assigneeId !== 'none' && taskData.assigneeId !== '') {
-        // Legacy support for single assigneeId
-        payload.assigneeId = taskData.assigneeId
-        payload.assigneeIds = [taskData.assigneeId]
       }
 
-      // Support subtasks
+      // Support subtasks - pass directly to API
       if (taskData.subtasks && taskData.subtasks.length > 0) {
-        payload.subtasks = taskData.subtasks
+        payload.subtasks = taskData.subtasks.map((st: any) => ({
+          title: st.title,
+          completed: st.completed || false,
+        }))
       }
 
-      const response = await authFetch('/api/tasks', {
+      // Single API call - server handles everything
+      const response = await authFetch(`/api/projects/${projectId}/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Create task failed:', response.status, errorText)
-        const errorMsg = errorText || `Failed to create task (${response.status})`
+        const errorData = await response.json().catch(() => ({}))
+        const errorMsg = errorData.error || `Failed to create task (${response.status})`
         toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
         return
       }
 
       const data = await response.json()
 
-      if (data.success || data.task) {
-        // Handle multiple assignees after task creation
-        const createdTaskId = data.task?.id || data.data?.id
-        if (createdTaskId && payload.assigneeIds && payload.assigneeIds.length > 0) {
-          try {
-            await authFetch(`/api/tasks/${createdTaskId}/assignees`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ assigneeIds: payload.assigneeIds }),
-            })
-          } catch (error) {
-            console.error('Failed to set task assignees:', error)
-          }
-        }
-
-        // Handle subtasks after task creation
-        if (createdTaskId && payload.subtasks && payload.subtasks.length > 0) {
-          try {
-            for (const subtask of payload.subtasks) {
-              await authFetch(`/api/tasks/${createdTaskId}/subtasks`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: subtask.title }),
-              })
-            }
-          } catch (error) {
-            console.error('Failed to create subtasks:', error)
-          }
-        }
-
+      if (data.success) {
         toast({ title: 'Success', description: 'Task created successfully' })
         setShowTaskDialog(false)
+        // Add the new task to local state immediately
+        if (data.data) {
+          setTasks(prev => [...prev, data.data])
+        }
+        // Also refresh from server to ensure consistency
         fetchProjectTasks()
       } else {
-        const errorMsg = data.error || data.message || data.details || 'Failed to create task'
-        console.error('Create task error:', data)
+        const errorMsg = data.error || 'Failed to create task'
         toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       }
     } catch (err) {
@@ -270,16 +207,10 @@ export default function ProjectTasksPage() {
     }
   }
 
+  // Single API call for task update - all handled server-side
   const handleEditTaskSave = async (taskData: any) => {
-    if (!user || !editingTask) {
-      console.error('[handleEditTaskSave] No user or editing task', { user, editingTask })
-      return
-    }
+    if (!user || !editingTask) return
 
-    console.log('[handleEditTaskSave] Starting edit...', { taskData, editingTask })
-    console.log('[handleEditTaskSave] Task ID:', editingTask.id)
-
-    // Validate task ID
     if (!editingTask.id) {
       toast({
         title: 'Error',
@@ -297,7 +228,6 @@ export default function ProjectTasksPage() {
         description: taskData.description || null,
         priority: taskData.priority,
         status: taskData.status,
-        projectId: editingTask.projectId || projectId,
       }
 
       if (taskData.dueDate) {
@@ -305,134 +235,50 @@ export default function ProjectTasksPage() {
       }
 
       // Support multiple assignees
-      if (taskData.assigneeIds && taskData.assigneeIds.length > 0) {
+      if (taskData.assigneeIds !== undefined) {
         payload.assigneeIds = taskData.assigneeIds
-        payload.assigneeId = taskData.assigneeIds[0]
-      } else if (taskData.assigneeId && taskData.assigneeId !== 'none' && taskData.assigneeId !== '') {
-        payload.assigneeId = taskData.assigneeId
-        payload.assigneeIds = [taskData.assigneeId]
       }
 
-      // Support subtasks
-      if (taskData.subtasks && taskData.subtasks.length > 0) {
-        payload.subtasks = taskData.subtasks
+      // Support subtasks - pass directly to API
+      if (taskData.subtasks !== undefined) {
+        payload.subtasks = taskData.subtasks.map((st: any) => ({
+          id: st.id,
+          title: st.title,
+          completed: st.completed || false,
+        }))
       }
 
-      const taskUrl = `/api/tasks/${editingTask.id}`
-      console.log('[handleEditTaskSave] Sending PATCH request to:', taskUrl)
-      console.log('[handleEditTaskSave] Payload:', payload)
-
-      const response = await authFetch(taskUrl, {
+      // Single API call - server handles everything
+      const response = await authFetch(`/api/tasks/${editingTask.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
 
-      console.log('[handleEditTaskSave] Response status:', response.status)
-
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('[handleEditTaskSave] Update task failed:', response.status, errorText)
-        const errorMsg = errorText || `Failed to update task (${response.status})`
+        const errorData = await response.json().catch(() => ({}))
+        const errorMsg = errorData.error || `Failed to update task (${response.status})`
         toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
         return
       }
 
       const data = await response.json()
-      console.log('[handleEditTaskSave] Update response:', data)
 
       if (data.success) {
-        // Handle multiple assignees after task update
-        if (payload.assigneeIds && payload.assigneeIds.length > 0) {
-          try {
-            // Get current assignees to determine changes
-            const currentAssigneesResponse = await authFetch(`/api/tasks/${editingTask.id}/assignees`)
-            const currentAssigneesData = await currentAssigneesResponse.json()
-            const currentAssigneeIds = currentAssigneesData.assignees?.map((a: any) => a.userId) || []
-
-            // Add new assignees
-            for (const assigneeId of payload.assigneeIds) {
-              if (!currentAssigneeIds.includes(assigneeId)) {
-                await authFetch(`/api/tasks/${editingTask.id}/assignees`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ assigneeIds: [assigneeId] }),
-                })
-              }
-            }
-
-            // Remove assignees that are no longer in the list
-            for (const currentId of currentAssigneeIds) {
-              if (!payload.assigneeIds.includes(currentId)) {
-                await authFetch(`/api/tasks/${editingTask.id}/assignees/${currentId}`, {
-                  method: 'DELETE',
-                })
-              }
-            }
-          } catch (error) {
-            console.error('Failed to update task assignees:', error)
-          }
-        }
-
-        // Handle subtasks after task update
-        if (payload.subtasks) {
-          try {
-            // Get current subtasks
-            const currentSubtasksResponse = await authFetch(`/api/tasks/${editingTask.id}/subtasks`)
-            const currentSubtasksData = await currentSubtasksResponse.json()
-            const currentSubtasks = currentSubtasksData.subtasks || []
-
-            // Delete subtasks that are no longer in the list
-            const newSubtaskIds = payload.subtasks.map((s: any) => s.id).filter(Boolean)
-            for (const currentSubtask of currentSubtasks) {
-              if (!newSubtaskIds.includes(currentSubtask.id)) {
-                await authFetch(`/api/tasks/${editingTask.id}/subtasks/${currentSubtask.id}`, {
-                  method: 'DELETE',
-                })
-              }
-            }
-
-            // Create or update subtasks
-            for (const subtask of payload.subtasks) {
-              if (subtask.id && currentSubtasks.find((s: any) => s.id === subtask.id)) {
-                // Update existing subtask
-                await authFetch(`/api/tasks/${editingTask.id}/subtasks/${subtask.id}`, {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    title: subtask.title,
-                    completed: subtask.completed || false,
-                  }),
-                })
-              } else if (!subtask.id) {
-                // Create new subtask
-                await authFetch(`/api/tasks/${editingTask.id}/subtasks`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ title: subtask.title }),
-                })
-              }
-            }
-          } catch (error) {
-            console.error('Failed to update subtasks:', error)
-          }
-        }
-
         toast({ title: 'Success', description: 'Task updated successfully' })
-        // Update local state immediately for instant feedback
-        const updatedTask = { ...editingTask, ...payload }
-        setTasks(tasks.map(t => t.id === editingTask.id ? updatedTask : t))
+        // Update local state immediately
+        if (data.data) {
+          setTasks(tasks.map(t => t.id === editingTask.id ? data.data : t))
+        }
         setEditingTask(null)
         setShowTaskDialog(false)
-        fetchProjectTasks()
       } else {
-        const errorMsg = data.error || data.message || data.details || 'Failed to update task'
-        console.error('[handleEditTaskSave] Update error:', data)
+        const errorMsg = data.error || 'Failed to update task'
         toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to update task'
-      console.error('[handleEditTaskSave] Update task exception:', err)
+      console.error('Update task exception:', err)
       toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       throw err
     } finally {
@@ -455,9 +301,8 @@ export default function ProjectTasksPage() {
       })
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Update task status failed:', response.status, errorText)
-        const errorMsg = errorText || `Failed to update task status (${response.status})`
+        const errorData = await response.json().catch(() => ({}))
+        const errorMsg = errorData.error || `Failed to update task status`
         toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
         setLoading(prev => ({ ...prev, update: false }))
         return
@@ -467,11 +312,10 @@ export default function ProjectTasksPage() {
 
       if (data.success) {
         toast({ title: 'Success', description: `Task moved to ${newStatus.replace('_', ' ')}` })
-        // Update local state immediately for instant feedback
+        // Update local state immediately
         setTasks(tasks.map(t => t.id === task.id ? { ...t, status: newStatus as any } : t))
       } else {
-        const errorMsg = data.error || data.message || data.details || 'Failed to update task status'
-        console.error('Update task status error:', data)
+        const errorMsg = data.error || 'Failed to update task status'
         toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       }
     } catch (err) {
@@ -496,23 +340,21 @@ export default function ProjectTasksPage() {
       })
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Delete task failed:', response.status, errorText)
-        const errorMsg = errorText || `Failed to delete task (${response.status})`
+        const errorData = await response.json().catch(() => ({}))
+        const errorMsg = errorData.error || 'Failed to delete task'
         toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
         return
       }
 
       const data = await response.json()
 
-      // Update local state immediately regardless of response for instant feedback
+      // Update local state immediately
       setTasks(tasks.filter(t => t.id !== task.id))
 
       if (data.success) {
         toast({ title: 'Success', description: 'Task deleted successfully' })
       } else {
-        const errorMsg = data.error || data.message || data.details || 'Failed to delete task'
-        console.error('Delete task error:', data)
+        const errorMsg = data.error || 'Failed to delete task'
         toast({ title: 'Error', description: errorMsg, variant: 'destructive' })
       }
     } catch (err) {

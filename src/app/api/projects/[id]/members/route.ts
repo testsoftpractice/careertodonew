@@ -72,6 +72,12 @@ export async function GET(
       orderBy: { role: 'desc' },
     })
 
+    // Transform members to have lowercase 'user' property for frontend compatibility
+    const transformedMembers = members.map(member => ({
+      ...member,
+      user: member.User,
+    }))
+
     return NextResponse.json({
       success: true,
       data: {
@@ -80,8 +86,8 @@ export async function GET(
           ownerId: project.ownerId,
           name: project.name,
         },
-        members,
-        totalMembers: members.length,
+        members: transformedMembers,
+        totalMembers: transformedMembers.length,
       },
     })
   } catch (error) {
@@ -162,6 +168,12 @@ export async function POST(
       },
     })
 
+    // Transform member to have lowercase 'user' property for frontend compatibility
+    const transformedMember = {
+      ...member,
+      user: member.User,
+    }
+
     // Create notification for added user
     await db.notification.create({
       data: {
@@ -176,7 +188,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       data: {
-        member,
+        member: transformedMember,
         message: `Team member added successfully with role: ${validatedData.role}`,
       },
     })

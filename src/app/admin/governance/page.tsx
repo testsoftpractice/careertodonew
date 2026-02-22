@@ -6,8 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
-import { Progress } from "@/components/ui/progress"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Table,
   TableBody,
@@ -18,23 +16,15 @@ import {
 } from "@/components/ui/table"
 import {
   Shield,
-  CheckCircle2,
-  AlertTriangle,
   Clock,
   FileText,
   Users,
   Briefcase,
   TrendingUp,
   Search,
-  Filter,
   Eye,
-  MoreHorizontal,
   Settings,
   Activity,
-  Flag,
-  Scale,
-  Download,
-  Calendar,
   RefreshCw,
   Loader2,
 } from "lucide-react"
@@ -56,18 +46,6 @@ interface AdminStats {
   complianceScore: number
   systemHealth: string
   lastAudit: string
-}
-
-interface PendingProject {
-  id: string
-  title: string
-  category: string
-  university?: { name: string }
-  owner?: { name: string; email: string }
-  createdAt: string
-  status: string
-  completionRate: number
-  description: string
 }
 
 interface AuditLog {
@@ -97,14 +75,12 @@ export default function GovernancePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [loading, setLoading] = useState({
     stats: false,
-    projects: false,
     audits: false,
     proposals: false,
   })
 
   // Data from API
   const [stats, setStats] = useState<AdminStats | null>(null)
-  const [pendingProjects, setPendingProjects] = useState<PendingProject[]>([])
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
   const [proposals, setProposals] = useState<GovernanceProposal[]>([])
 
@@ -116,7 +92,7 @@ export default function GovernancePage() {
         const response = await fetch('/api/admin/stats')
         const data = await response.json()
         if (data.success) {
-          setLoading(prev => ({ ...prev, stats: false }))
+          setStats(data.data?.stats || null)
         }
       } catch (error) {
         console.error('Fetch stats error:', error)
@@ -131,26 +107,6 @@ export default function GovernancePage() {
     }
 
     fetchStats()
-  }, [])
-
-  // Fetch pending projects
-  useEffect(() => {
-    const fetchPendingProjects = async () => {
-      try {
-        setLoading(prev => ({ ...prev, projects: true }))
-        const response = await fetch('/api/admin/projects?status=PENDING')
-        const data = await response.json()
-        if (data.success) {
-          setPendingProjects(data.data?.projects || [])
-        }
-      } catch (error) {
-        console.error('Fetch projects error:', error)
-      } finally {
-        setLoading(prev => ({ ...prev, projects: false }))
-      }
-    }
-
-    fetchPendingProjects()
   }, [])
 
   // Fetch audit logs
@@ -374,43 +330,51 @@ export default function GovernancePage() {
               </div>
             )}
 
+            {/* Quick Links */}
             <Card>
               <CardHeader>
-                <CardTitle>Recent Pending Projects</CardTitle>
-                <CardDescription>Projects awaiting review</CardDescription>
+                <CardTitle>Quick Actions</CardTitle>
+                <CardDescription>Access key administrative functions</CardDescription>
               </CardHeader>
               <CardContent>
-                {loading.projects ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                  </div>
-                ) : pendingProjects.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No pending projects
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {pendingProjects.slice(0, 5).map((project) => (
-                      <div key={project.id} className="flex items-center gap-4 p-4 rounded-lg border">
-                        <div className="flex-1">
-                          <div className="font-medium">{project.title}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {project.university?.name || 'No university'} • {project.owner?.name || 'No lead assigned'}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {getStatusBadge(project.status)}
-                          <Button variant="outline" size="sm" asChild>
-                            <Link href={`/projects/${project.id}`}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              Review
-                            </Link>
-                          </Button>
-                        </div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <Button variant="outline" className="h-auto py-4 justify-start" asChild>
+                    <Link href="/admin/approvals/projects">
+                      <Briefcase className="h-5 w-5 mr-3 text-amber-500" />
+                      <div className="text-left">
+                        <div className="font-medium">Project Approvals</div>
+                        <div className="text-xs text-muted-foreground">Review pending projects</div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="h-auto py-4 justify-start" asChild>
+                    <Link href="/admin/approvals/jobs">
+                      <FileText className="h-5 w-5 mr-3 text-blue-500" />
+                      <div className="text-left">
+                        <div className="font-medium">Job Approvals</div>
+                        <div className="text-xs text-muted-foreground">Review job postings</div>
+                      </div>
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="h-auto py-4 justify-start" asChild>
+                    <Link href="/admin/users">
+                      <Users className="h-5 w-5 mr-3 text-green-500" />
+                      <div className="text-left">
+                        <div className="font-medium">User Management</div>
+                        <div className="text-xs text-muted-foreground">Manage platform users</div>
+                      </div>
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="h-auto py-4 justify-start" asChild>
+                    <Link href="/admin/projects">
+                      <TrendingUp className="h-5 w-5 mr-3 text-purple-500" />
+                      <div className="text-left">
+                        <div className="font-medium">All Projects</div>
+                        <div className="text-xs text-muted-foreground">View all projects</div>
+                      </div>
+                    </Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

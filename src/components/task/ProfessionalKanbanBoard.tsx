@@ -35,7 +35,7 @@ export interface Task {
   title: string
   description: string | null
   status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE'
-  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+  priority: 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW'
   dueDate: string | null
   completedAt: string | null
   createdAt: string
@@ -46,6 +46,7 @@ export interface Task {
     id: string
     name: string
   }
+  // Support both API naming conventions
   taskAssignees?: Array<{
     id: string
     taskId: string
@@ -57,6 +58,32 @@ export interface Task {
       email?: string
     }
     assignedAt: string
+    sortOrder: number
+  }>
+  TaskAssignee?: Array<{
+    id: string
+    taskId: string
+    userId: string
+    User: {
+      id: string
+      name: string
+      avatar?: string
+      email?: string
+    }
+    assignedAt: string
+    sortOrder: number
+  }>
+  // Subtasks support
+  subTasks?: Array<{
+    id: string
+    title: string
+    completed: boolean
+    sortOrder: number
+  }>
+  SubTask?: Array<{
+    id: string
+    title: string
+    completed: boolean
     sortOrder: number
   }>
 }
@@ -118,10 +145,10 @@ const defaultColumns: Column[] = [
 
 const getPriorityConfig = (priority: string) => {
   const configs = {
-    CRITICAL: {
+    URGENT: {
       color: 'bg-red-100 text-red-700 border-red-300 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800',
       icon: <AlertTriangle className="w-3 h-3" />,
-      label: 'Critical',
+      label: 'Urgent',
     },
     HIGH: {
       color: 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950/50 dark:text-orange-400 dark:border-orange-800',
@@ -202,7 +229,7 @@ function TaskCard({ task, onClick, onEdit, onDelete, id }: TaskCardProps) {
           hover:shadow-xl hover:-translate-y-1
           border-l-4
           ${
-            task.priority === 'CRITICAL'
+            task.priority === 'URGENT'
               ? 'border-l-red-500'
               : task.priority === 'HIGH'
               ? 'border-l-orange-500'
@@ -290,18 +317,28 @@ function TaskCard({ task, onClick, onEdit, onDelete, id }: TaskCardProps) {
                 <ListTodo className="w-3 h-3" />
                 {task.project.name}
               </div>
-            ) : task.taskAssignees && task.taskAssignees.length > 0 ? (
-              <div
-                className="flex items-center gap-1 text-xs text-muted-foreground max-w-[100px] truncate"
-                title={task.taskAssignees.map(ta => ta.user.name).join(', ')}
-              >
-                <User className="w-3 h-3" />
-                {task.taskAssignees.length === 1
-                  ? task.taskAssignees[0].user.name
-                  : `${task.taskAssignees[0].user.name} +${task.taskAssignees.length - 1}`
-                }
-              </div>
-            ) : null}
+            ) : (() => {
+              // Support both API naming conventions
+              const assignees = task.taskAssignees || task.TaskAssignee?.map(ta => ({
+                ...ta,
+                user: ta.User
+              })) || []
+              if (assignees.length > 0) {
+                return (
+                  <div
+                    className="flex items-center gap-1 text-xs text-muted-foreground max-w-[100px] truncate"
+                    title={assignees.map(ta => ta.user.name).join(', ')}
+                  >
+                    <User className="w-3 h-3" />
+                    {assignees.length === 1
+                      ? assignees[0].user.name
+                      : `${assignees[0].user.name} +${assignees.length - 1}`
+                    }
+                  </div>
+                )
+              }
+              return null
+            })()}
           </div>
         </CardContent>
       </Card>

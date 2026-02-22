@@ -17,6 +17,7 @@ interface ProjectCardProps {
   name: string
   description?: string
   status: 'IDEA' | 'UNDER_REVIEW' | 'FUNDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ON_HOLD'
+  approvalStatus?: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'REQUIRE_CHANGES'
   startDate?: Date
   endDate?: Date
   budget?: number
@@ -42,11 +43,20 @@ const statusConfig = {
   ON_HOLD: { label: 'On Hold', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700', icon: '⏸' },
 }
 
+const approvalStatusConfig = {
+  PENDING: { label: 'Pending Approval', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300', icon: '⏳' },
+  UNDER_REVIEW: { label: 'Under Review', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300', icon: '🔍' },
+  APPROVED: { label: 'Approved', color: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300', icon: '✅' },
+  REJECTED: { label: 'Rejected', color: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300', icon: '❌' },
+  REQUIRE_CHANGES: { label: 'Changes Needed', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300', icon: '⚠️' },
+}
+
 export function ProjectCard({
   id,
   name,
   description,
   status,
+  approvalStatus,
   startDate,
   endDate,
   budget,
@@ -58,6 +68,10 @@ export function ProjectCard({
   className = '',
 }: ProjectCardProps) {
   const statusInfo = statusConfig[status]
+  const approvalInfo = approvalStatus ? approvalStatusConfig[approvalStatus] : null
+
+  // If project is pending approval, show approval status instead of project status
+  const showApprovalStatus = approvalStatus && (approvalStatus === 'PENDING' || approvalStatus === 'UNDER_REVIEW' || approvalStatus === 'REJECTED' || approvalStatus === 'REQUIRE_CHANGES')
 
   return (
     <Card className={`${className} hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group`}>
@@ -65,11 +79,18 @@ export function ProjectCard({
         {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <Badge className={`text-xs font-semibold ${statusInfo.color}`}>
-                <span className="mr-1">{statusInfo.icon}</span>
-                {statusInfo.label}
-              </Badge>
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              {showApprovalStatus && approvalInfo ? (
+                <Badge className={`text-xs font-semibold ${approvalInfo.color}`}>
+                  <span className="mr-1">{approvalInfo.icon}</span>
+                  {approvalInfo.label}
+                </Badge>
+              ) : (
+                <Badge className={`text-xs font-semibold ${statusInfo.color}`}>
+                  <span className="mr-1">{statusInfo.icon}</span>
+                  {statusInfo.label}
+                </Badge>
+              )}
               {category && (
                 <span className="text-xs text-muted-foreground">
                   · {category}

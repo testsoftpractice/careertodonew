@@ -53,12 +53,13 @@ interface TaskFormDialogProps {
   projects?: Array<{ id: string; name: string }>
   availableUsers?: Array<{ id: string; name: string; email?: string }>
   loading?: boolean
+  projectId?: string // For project-specific task creation (skips project selection)
 }
 
 interface FormData {
   title: string
   description: string
-  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+  priority: 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW'
   status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE'
   dueDate: string
   projectId: string
@@ -73,7 +74,7 @@ interface SubTaskInput {
 }
 
 const priorityConfig = {
-  CRITICAL: {
+  URGENT: {
     icon: <AlertTriangle className="w-4 h-4" />,
     color: 'bg-red-100 text-red-700 border-red-300 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800',
     description: 'Urgent - requires immediate attention',
@@ -125,8 +126,9 @@ export default function TaskFormDialog({
   task,
   mode = 'create',
   projects = [],
-  availableUsers = [],
+  availableUsers: propAvailableUsers = [],
   loading = false,
+  projectId: fixedProjectId,
 }: TaskFormDialogProps) {
   const [formData, setFormData] = useState<FormData>({
     title: '',
@@ -134,7 +136,7 @@ export default function TaskFormDialog({
     priority: 'MEDIUM',
     status: 'TODO',
     dueDate: '',
-    projectId: '',
+    projectId: fixedProjectId || '',
     assigneeIds: [],
     subtasks: [],
   })
@@ -147,6 +149,48 @@ export default function TaskFormDialog({
   // Subtasks input state
   const [subtaskInput, setSubtaskInput] = useState('')
   const [subtasks, setSubtasks] = useState<SubTaskInput[]>([])
+  
+  // Dynamic available users - fetched from project members when a project is selected
+  const [dynamicAvailableUsers, setDynamicAvailableUsers] = useState<Array<{ id: string; name: string; email?: string }>>([])
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false)
+  
+  // Combine prop users with dynamically fetched users
+  const availableUsers = propAvailableUsers.length > 0 ? propAvailableUsers : dynamicAvailableUsers
+  
+  // Fetch project members when a project is selected
+  useEffect(() => {
+    const fetchProjectMembers = async () => {
+      const projectIdToUse = formData.projectId || fixedProjectId
+      if (!projectIdToUse || propAvailableUsers.length > 0) {
+        // Skip if no project selected or if users are provided via props
+        return
+      }
+      
+      setIsLoadingUsers(true)
+      try {
+        const response = await authFetch(`/api/projects/${projectIdToUse}/members`)
+        const data = await response.json()
+        
+        if (data.success && data.data && data.data.members) {
+          const members = data.data.members.map((member: any) => ({
+            id: member.user?.id || member.userId,
+            name: member.user?.name || member.user?.email || 'Unknown',
+            email: member.user?.email,
+          }))
+          setDynamicAvailableUsers(members)
+        } else {
+          setDynamicAvailableUsers([])
+        }
+      } catch (error) {
+        console.error('Failed to fetch project members:', error)
+        setDynamicAvailableUsers([])
+      } finally {
+        setIsLoadingUsers(false)
+      }
+    }
+    
+    fetchProjectMembers()
+  }, [formData.projectId, fixedProjectId, propAvailableUsers.length])
 
   useEffect(() => {
     if (open && !isInitialized) {
@@ -162,16 +206,18 @@ export default function TaskFormDialog({
             if (taskData.success && taskData.data) {
               const fullTask = taskData.data
 
-              // Load subtasks from the response
-              const loadedSubtasks = (fullTask.subTasks || []).map((s: any) => ({
+              // Load subtasks from the response - support both naming conventions
+              const rawSubtasks = fullTask.SubTask || fullTask.subTasks || []
+              const loadedSubtasks = rawSubtasks.map((s: any) => ({
                 id: s.id,
                 title: s.title,
                 completed: s.completed,
               }))
               setSubtasks(loadedSubtasks)
 
-              // Load assignees from the response
-              const loadedAssigneeIds = (fullTask.taskAssignees || []).map((a: any) => a.userId)
+              // Load assignees from the response - support both naming conventions
+              const rawAssignees = fullTask.TaskAssignee || fullTask.taskAssignees || []
+              const loadedAssigneeIds = rawAssignees.map((a: any) => a.userId)
 
               const newFormData = {
                 title: fullTask.title || '',
@@ -224,12 +270,13 @@ export default function TaskFormDialog({
           priority: 'MEDIUM',
           status: 'TODO',
           dueDate: '',
-          projectId: projects.length === 1 ? projects[0].id : '',
+          projectId: fixedProjectId || (projects.length === 1 ? projects[0].id : ''),
           assigneeIds: [],
           subtasks: [],
         }
         setFormData(newFormData)
         setSubtasks([])
+        setDynamicAvailableUsers([])
       }
       setIsInitialized(true)
       setErrors({})
@@ -240,8 +287,9 @@ export default function TaskFormDialog({
       setIsSubmitting(false)
       setSubtaskInput('')
       setSubtasks([])
+      setDynamicAvailableUsers([])
     }
-  }, [task, mode, open, isInitialized, projects.length === 1 && projects[0]?.id])
+  }, [task, mode, open, isInitialized, projects.length === 1 && projects[0]?.id, fixedProjectId])
 
   const handleChange = (field: keyof FormData, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -312,12 +360,13 @@ export default function TaskFormDialog({
           priority: 'MEDIUM',
           status: 'TODO',
           dueDate: '',
-          projectId: '',
+          projectId: fixedProjectId || '',
           assigneeIds: [],
           subtasks: [],
         })
         setSubtasks([])
         setSubtaskInput('')
+        setDynamicAvailableUsers([])
       }
     } catch (error) {
       console.error('[TaskFormDialog] Error saving task:', error)
@@ -550,11 +599,11 @@ export default function TaskFormDialog({
             </div>
 
             {/* Multiple Assignees (For Project Tasks) */}
-            {(mode === 'create' || mode === 'edit') && availableUsers.length > 0 && (
+            {(mode === 'create' || mode === 'edit') && (formData.projectId || fixedProjectId) && (
               <div className="space-y-2">
                 <Label className="text-sm font-semibold flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  Assign to <span className="text-muted- font-normal">(Optional)</span>
+                  Assign to <span className="text-muted-foreground font-normal">(Optional)</span>
                   {formData.assigneeIds.length > 0 && (
                     <Badge variant="secondary" className="ml-auto">
                       {formData.assigneeIds.length} selected
@@ -562,8 +611,16 @@ export default function TaskFormDialog({
                   )}
                 </Label>
                 
+                {/* Loading indicator */}
+                {isLoadingUsers && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading project members...
+                  </div>
+                )}
+                
                 {/* Selected Assignees */}
-                {formData.assigneeIds.length > 0 && (
+                {!isLoadingUsers && formData.assigneeIds.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {formData.assigneeIds.map((assigneeId) => {
                       const user = availableUsers.find(u => u.id === assigneeId)
@@ -585,7 +642,7 @@ export default function TaskFormDialog({
                 )}
 
                 {/* Add Assignee Dropdown */}
-                {getAvailableUsersForAssignee().length > 0 && (
+                {!isLoadingUsers && availableUsers.length > 0 && getAvailableUsersForAssignee().length > 0 && (
                   <Select onValueChange={addAssignee}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="+ Add assignee" />
@@ -605,6 +662,13 @@ export default function TaskFormDialog({
                       ))}
                     </SelectContent>
                   </Select>
+                )}
+                
+                {/* No members message */}
+                {!isLoadingUsers && availableUsers.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No project members found. Add members to this project first.
+                  </p>
                 )}
               </div>
             )}

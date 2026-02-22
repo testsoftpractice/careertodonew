@@ -47,6 +47,11 @@ interface Project {
   completionRate?: number
   members?: any[]
   owner?: any
+  seekingInvestment?: boolean
+  investmentGoal?: number
+  teamSizeMin?: number
+  teamSizeMax?: number
+  approvalStatus?: string
 }
 
 interface Milestone {
@@ -295,7 +300,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
 
   const fetchAvailableUsers = async () => {
     try {
-      // Fetch project members first
+      // Only fetch project members - no fallback to all users
       const response = await authFetch(`/api/projects/${projectId2}/members`)
       const data = await response.json()
 
@@ -307,17 +312,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
         }))
         setAvailableUsers(members)
       } else {
-        // Fallback to all users if project members fetch fails
-        const allUsersResponse = await authFetch('/api/users')
-        const allUsersData = await allUsersResponse.json()
-        if (allUsersData.success && allUsersData.data) {
-          const users = allUsersData.data.map((u: any) => ({
-            id: u.id,
-            name: u.name || u.email,
-            email: u.email,
-          }))
-          setAvailableUsers(users)
-        }
+        setAvailableUsers([])
       }
     } catch (error) {
       console.error('Fetch available users error:', error)
@@ -335,15 +330,25 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
 
     try {
       setLoading(prev => ({ ...prev, update: true }))
+
       const payload = {
         title: taskData.title,
         description: taskData.description || undefined,
         priority: taskData.priority,
+        status: taskData.status || 'TODO',
         dueDate: taskData.dueDate || undefined,
         projectId: projectId2,
         assigneeIds: taskData.assigneeIds || [],
+        // Include subtasks in the same API call - handled server-side
+        subtasks: taskData.subtasks && taskData.subtasks.length > 0
+          ? taskData.subtasks.map((st: any) => ({
+              title: st.title,
+              completed: st.completed || false,
+            }))
+          : undefined,
       }
 
+      // Single API call - server handles everything including subtasks
       const response = await authFetch(`/api/projects/${projectId2}/tasks`, {
         method: 'POST',
         headers: {
@@ -355,30 +360,14 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
       const data = await response.json()
 
       if (data.success) {
-        const createdTask = data.data
-        
-        // Create subtasks if provided
-        if (taskData.subtasks && Array.isArray(taskData.subtasks) && taskData.subtasks.length > 0) {
-          for (const subtask of taskData.subtasks) {
-            try {
-              await authFetch(`/api/tasks/${createdTask.id}/subtasks`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  title: subtask.title,
-                  sortOrder: subtask.sortOrder || 0,
-                }),
-              })
-            } catch (error) {
-              console.error('Failed to create subtask:', error)
-            }
-          }
-        }
-        
         toast({
           title: 'Success',
           description: 'Task created successfully',
         })
+        // Add the new task to local state immediately
+        if (data.data) {
+          setTasks(prev => [...prev, data.data])
+        }
         fetchProjectTasks()
         setShowTaskDialog(false)
       } else {
@@ -1141,6 +1130,17 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
                 <CardContent className="space-y-6">
                   <p className="text-muted-foreground">{project.description}</p>
                   
+                  {/* Investment Info */}
+                  {project.seekingInvestment && project.investmentGoal && (
+                    <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                      <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-300 mb-2 flex items-center gap-2">
+                        <Target className="h-4 w-4" />
+                        Seeking Investment
+                      </h3>
+                      <p className="text-2xl font-bold text-amber-600">${project.investmentGoal.toLocaleString()}</p>
+                    </div>
+                  )}
+                  
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
                     <div className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
                       <Building2 className="h-8 w-8 text-primary mb-2" />
@@ -1150,7 +1150,12 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
                     <div className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
                       <Users className="h-8 w-8 text-blue-500 mb-2" />
                       <h3 className="text-sm font-medium">Team</h3>
-                      <div className="text-2xl font-bold text-blue-600 mt-2">{teamMembers.length}</div>
+                      <div className="text-2xl font-bold text-blue-600 mt-2">
+                        {teamMembers.length}
+                        {project.teamSizeMin && project.teamSizeMax && (
+                          <span className="text-sm font-normal text-muted-foreground"> / {project.teamSizeMin}-{project.teamSizeMax}</span>
+                        )}
+                      </div>
                     </div>
                     <div className="text-center p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20">
                       <Target className="h-8 w-8 text-purple-500 mb-2" />

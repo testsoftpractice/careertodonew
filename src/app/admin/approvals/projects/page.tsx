@@ -110,10 +110,11 @@ export default function ProjectApprovalsPage() {
       const response = await authFetch(`/api/admin/approvals/projects?${params}`)
       if (!response.ok) throw new Error('Failed to fetch projects')
 
-      const data = await response.json()
+      const result = await response.json()
+      const data = result.data || result
       setProjects(data.projects || [])
       setStats(data.stats || stats)
-      setTotalPages(Math.ceil((data.stats?.pending || 0) / 20))
+      setTotalPages(Math.ceil((data.pagination?.total || 0) / 20))
     } catch (error) {
       toast({
         title: 'Error',

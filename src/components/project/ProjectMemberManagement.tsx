@@ -391,8 +391,13 @@ export default function ProjectMemberManagement({ projectId, currentUserRole, cu
   }
 
   const filteredMembers = members.filter(member => {
-    const matchesSearch = member.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         member.user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    // Safety check for missing user object
+    if (!member.user) {
+      console.warn('Member without user object:', member)
+      return false
+    }
+    const matchesSearch = member.user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         member.user.email?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesRole = filterRole === 'all' || member.role === filterRole
     return matchesSearch && matchesRole
   })
@@ -603,11 +608,11 @@ export default function ProjectMemberManagement({ projectId, currentUserRole, cu
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs">
-                              {member.user.name?.charAt(0).toUpperCase()}
+                              {member.user?.name?.charAt(0).toUpperCase() || '?'}
                             </div>
                             <div>
-                              <div className="font-medium">{member.user.name}</div>
-                              <div className="text-sm text-muted-foreground">{member.user.email}</div>
+                              <div className="font-medium">{member.user?.name || 'Unknown'}</div>
+                              <div className="text-sm text-muted-foreground">{member.user?.email || 'No email'}</div>
                             </div>
                           </div>
                         </TableCell>
@@ -771,10 +776,10 @@ export default function ProjectMemberManagement({ projectId, currentUserRole, cu
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs">
-                              {member?.user.name?.charAt(0).toUpperCase() || '?'}
+                              {member?.user?.name?.charAt(0).toUpperCase() || '?'}
                             </div>
                             <div>
-                              <div className="font-medium">{member?.user.name || 'Unknown'}</div>
+                              <div className="font-medium">{member?.user?.name || 'Unknown'}</div>
                               <div className="text-sm text-muted-foreground">
                                 {leave.leaveType.replace('_', ' ')}
                               </div>
@@ -839,7 +844,7 @@ export default function ProjectMemberManagement({ projectId, currentUserRole, cu
           <DialogHeader>
             <DialogTitle>Update Member Role</DialogTitle>
             <DialogDescription>
-              Change the role for {selectedMember?.user.name}
+              Change the role for {selectedMember?.user?.name || 'this member'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

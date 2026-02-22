@@ -1415,6 +1415,7 @@ function DashboardContent({ user }: { user: any }) {
                       name={project.name}
                       description={project.description}
                       status={project.status}
+                      approvalStatus={project.approvalStatus}
                       startDate={project.startDate ? new Date(project.startDate) : undefined}
                       endDate={project.endDate ? new Date(project.endDate) : undefined}
                       budget={project.budget}

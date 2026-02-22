@@ -25,7 +25,7 @@ import {
   Save,
   View,
 } from 'lucide-react'
-import TaskEditModal from './TaskEditModal'
+import TaskFormDialog from './TaskFormDialog'
 import { toast } from '@/hooks/use-toast'
 
 interface Task {
@@ -35,12 +35,14 @@ interface Task {
   status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE'
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
   dueDate: string | null
+  completedAt: string | null
+  createdAt: string
+  updatedAt: string
+  projectId?: string | null
   assignees: any[]
   comments?: any[]
   subtasks: any[]
   attachments: any[]
-  createdAt?: string
-  updatedAt?: string
 }
 
 interface Column {
@@ -522,11 +524,18 @@ export default function KanbanTaskBoard({ tasks, onTaskMove, onTaskUpdate, onTas
 
       {/* Task Edit Modal */}
       {editingTask && (
-        <TaskEditModal
+        <TaskFormDialog
+          open={!!editingTask}
+          onOpenChange={(open) => {
+            if (!open) setEditingTask(null)
+          }}
+          onSave={async (taskData) => {
+            // Call onTaskUpdate with the updated task data
+            handleTaskUpdate({ ...editingTask, ...taskData })
+          }}
           task={editingTask}
-          users={[]}
-          onClose={() => setEditingTask(null)}
-          onSave={handleTaskUpdate}
+          mode="edit"
+          availableUsers={editingTask.assignees || []}
         />
       )}
     </div>

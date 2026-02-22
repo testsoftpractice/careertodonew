@@ -427,6 +427,9 @@ model Project {
   imageUrl          String?
   progress          Float             @default(0)
   seekingInvestment Boolean           @default(false)
+  investmentGoal    Float?
+  teamSizeMin       Int?
+  teamSizeMax       Int?
   published         Boolean           @default(false)
   publishedAt       DateTime?
   approvalStatus    String            @default("PENDING")

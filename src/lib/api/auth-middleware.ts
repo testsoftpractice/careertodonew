@@ -1,3 +1,13 @@
+/**
+ * Authentication helpers for API Routes
+ * 
+ * This file is for API routes (Node.js runtime) only.
+ * DO NOT import this in middleware - use jwt.edge.ts instead.
+ * 
+ * These functions use the Node.js JWT implementation which
+ * supports both token generation and verification.
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth/jwt'
 
@@ -9,27 +19,9 @@ export interface AuthUser {
   sub: string
 }
 
-// Public paths that don't require authentication
-const PUBLIC_PATH_PREFIXES = [
-  '/',           // Homepage
-  '/about',      // About page
-  '/features',   // Features page
-  '/solutions',  // Solutions page
-  '/contact',    // Contact page
-  '/terms',      // Terms of service
-  '/privacy',    // Privacy policy
-  '/auth',       // Auth pages (login, signup, forgot-password)
-]
-
-function isPublicPath(pathname: string) {
-  return PUBLIC_PATH_PREFIXES.some(
-    (path) =>
-      pathname === path || pathname.startsWith(`${path}/`)
-  )
-}
-
 /**
  * Extract user from request (from JWT token in cookie or header)
+ * For use in API routes (Node.js runtime)
  */
 export function getUserFromRequest(request: NextRequest): AuthUser | null {
   try {
@@ -68,6 +60,7 @@ export function getUserFromRequest(request: NextRequest): AuthUser | null {
 
 /**
  * Require authentication - returns user or error response
+ * For use in API routes
  */
 export async function requireAuth(request: NextRequest): Promise<AuthUser | NextResponse> {
   const user = getUserFromRequest(request)
@@ -84,6 +77,7 @@ export async function requireAuth(request: NextRequest): Promise<AuthUser | Next
 
 /**
  * Require specific role - returns user or error response
+ * For use in API routes
  */
 export async function requireRole(request: NextRequest, allowedRoles: string | string[]): Promise<AuthUser | NextResponse> {
   const user = getUserFromRequest(request)
@@ -105,51 +99,4 @@ export async function requireRole(request: NextRequest, allowedRoles: string | s
   }
 
   return user
-}
-
-/**
- * Gateway middleware
- * - Public by exception
- * - Everything else requires auth
- * - Runs BEFORE Vercel rewrites
- */
-export function gatewayAuthMiddleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-
-  // 🚫 Ignore Next.js internals & static assets
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname.includes('.') // images, favicon, etc
-  ) {
-    return NextResponse.next()
-  }
-
-  // ✅ Public routes
-  if (isPublicPath(pathname)) {
-    return NextResponse.next()
-  }
-
-  // 🔐 Protected routes
-  const user = getUserFromRequest(request)
-
-  if (!user) {
-    // Browser navigation → redirect to auth page
-    if (request.headers.get('accept')?.includes('text/html')) {
-  return NextResponse.redirect(new URL('/auth', request.url))
-    }
-
-    // API / fetch
-    return NextResponse.json(
-      { success: false, error: 'Authentication required' },
-      { status: 401 }
-    )
-  }
-
-  // Optional: forward user context
-  const response = NextResponse.next()
-  response.headers.set('x-user-id', user.sub)
-  response.headers.set('x-user-role', user.role ?? '')
-
-  return response
 }

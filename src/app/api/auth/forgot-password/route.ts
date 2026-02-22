@@ -56,10 +56,10 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Generate reset URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+    // Generate reset URL - remove trailing slash from base URL
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 
                     process.env.NEXT_PUBLIC_BASE_URL || 
-                    'http://localhost:3000'
+                    'http://localhost:3000').replace(/\/$/, '')
     const resetUrl = `${baseUrl}/auth/reset-password?token=${token}`
 
     // Get email template

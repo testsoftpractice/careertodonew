@@ -1,6 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+// GET /api/auth/reset-password/validate-token - Check token status
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const token = searchParams.get('token')
+
+    if (!token) {
+      return NextResponse.json(
+        { valid: false, error: 'Token parameter is required' },
+        { status: 400 }
+      )
+    }
+
+    // Find token in database
+    const resetToken = await db.passwordResetToken.findUnique({
+      where: { token },
+    })
+
+    // Check if token exists
+    if (!resetToken) {
+      return NextResponse.json({
+        valid: false,
+        error: 'Invalid token',
+      })
+    }
+
+    // Check if token has been used
+    if (resetToken.used) {
+      return NextResponse.json({
+        valid: false,
+        error: 'This reset link has already been used',
+      })
+    }
+
+    // Check if token has expired
+    if (new Date(resetToken.expiresAt) < new Date()) {
+      return NextResponse.json({
+        valid: false,
+        error: 'This reset link has expired',
+      })
+    }
+
+    return NextResponse.json({
+      valid: true,
+      message: 'Token is valid',
+    })
+  } catch (error) {
+    console.error('Validate token error:', error)
+    return NextResponse.json({
+      valid: false,
+      error: 'An error occurred while validating token',
+    }, { status: 500 })
+  }
+}
+
 // POST /api/auth/reset-password/validate-token - Validate password reset token
 export async function POST(request: NextRequest) {
   try {
@@ -9,76 +64,49 @@ export async function POST(request: NextRequest) {
 
     if (!token) {
       return NextResponse.json(
-        { success: false, error: 'Token is required' },
+        { valid: false, error: 'Token is required' },
         { status: 400 }
       )
     }
 
-    // In production, validate token against database
-    // const resetToken = await db.passwordResetToken.findUnique({
-    //   where: { token },
-    // })
-    //
-    // if (!resetToken) {
-    //   return NextResponse.json(
-    //     { success: false, error: 'Invalid or expired token' },
-    //     { status: 400 }
-    //   )
-    // }
-    //
-    // if (new Date(resetToken.expiresAt) < new Date()) {
-    //   return NextResponse.json(
-    //     { success: false, error: 'Token has expired' },
-    //     { status: 400 }
-    //   )
-    // }
+    // Find token in database
+    const resetToken = await db.passwordResetToken.findUnique({
+      where: { token },
+    })
 
-    // For now, basic validation (token should be 32 chars base64)
-    if (!token || token.length !== 32) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid token' },
-        { status: 400 }
-      )
+    // Check if token exists
+    if (!resetToken) {
+      return NextResponse.json({
+        valid: false,
+        error: 'Invalid token',
+      })
     }
 
-    console.log('Token validated:', token)
+    // Check if token has been used
+    if (resetToken.used) {
+      return NextResponse.json({
+        valid: false,
+        error: 'This reset link has already been used',
+      })
+    }
+
+    // Check if token has expired
+    if (new Date(resetToken.expiresAt) < new Date()) {
+      return NextResponse.json({
+        valid: false,
+        error: 'This reset link has expired',
+      })
+    }
 
     return NextResponse.json({
-      success: true,
+      valid: true,
       message: 'Token is valid',
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Validate token error:', error)
-    return NextResponse.json(
-      { success: false, error: 'An error occurred' },
-      { status: 500 }
-    )
+    return NextResponse.json({
+      valid: false,
+      error: 'An error occurred',
+    }, { status: 500 })
   }
-}
-
-// GET /api/auth/reset-password/validate-token - Check token status
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const token = searchParams.get('token')
-
-  if (!token) {
-    return NextResponse.json(
-      { success: false, error: 'Token parameter is required' },
-      { status: 400 }
-    )
-  }
-
-  // Validate token format
-  if (!token || token.length !== 32) {
-    return NextResponse.json(
-      { success: false, error: 'Invalid token format' },
-      { status: 400 }
-    )
-  }
-
-  return NextResponse.json({
-    success: true,
-    valid: true,
-    message: 'Token is in valid format',
-  })
 }

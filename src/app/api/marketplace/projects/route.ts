@@ -6,25 +6,36 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const search = searchParams.get("search") || ""
     const category = searchParams.get("category") || null
-    const status = searchParams.get("status") || "IN_PROGRESS,FUNDING,COMPLETED"
+    const status = searchParams.get("status") || null
     const sort = searchParams.get("sort") || "recent"
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "20")
 
     const where: any = {}
 
-    // Only show approved/live projects in marketplace
-    const approvedStatuses = status ? status.split(',') : ['IN_PROGRESS', 'FUNDING', 'COMPLETED']
-    where.status = { in: approvedStatuses }
+    // CRITICAL: Only show APPROVED projects in marketplace
+    where.approvalStatus = 'APPROVED'
 
-    if (!approvedStatuses) {
+    // Filter by status if provided (ACTIVE, IN_PROGRESS, FUNDING, COMPLETED, etc.)
+    // Default to showing active/funding projects if no status filter
+    if (status) {
+      const statusList = status.split(',')
+      where.status = { in: statusList }
+    } else {
+      // Default: show projects that are active, in progress, funding, or completed
+      where.status = { in: ['ACTIVE', 'IN_PROGRESS', 'FUNDING', 'COMPLETED'] }
+    }
+
+    // Search filter
+    if (search) {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
         { description: { contains: search, mode: "insensitive" } },
       ]
     }
 
-    if (!approvedStatuses) {
+    // Category filter
+    if (category) {
       where.category = category
     }
 
@@ -49,6 +60,13 @@ export async function GET(request: NextRequest) {
               avatar: true,
             }
           },
+          University: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+            }
+          },
           ProjectMember: {
             take: 10,
           },
@@ -66,12 +84,16 @@ export async function GET(request: NextRequest) {
       status: p.status || "",
       ownerId: p.ownerId,
       owner: p.User,
+      university: p.University,
       teamSize: p.ProjectMember?.length || 1,
       tasksCount: 0, // Would need separate query to count tasks
       budget: p.budget || 0,
+      investmentGoal: p.investmentGoal || null,
+      seekingInvestment: p.seekingInvestment || false,
       startDate: p.startDate?.toISOString() || null,
       endDate: p.endDate?.toISOString() || null,
       createdAt: p.createdAt.toISOString(),
+      approvalStatus: p.approvalStatus,
     }))
 
     return NextResponse.json({

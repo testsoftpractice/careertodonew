@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -25,20 +24,34 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
 import {
   CheckCircle2,
   XCircle,
   FileText,
-  Clock,
   Search,
   Filter,
   Eye,
   RefreshCw,
   ArrowLeft,
   AlertTriangle,
+  FolderKanban,
+  Calendar,
+  Users,
+  CheckSquare,
+  Building2,
+  Clock,
+  Tag,
 } from 'lucide-react'
 import Link from 'next/link'
 import { authFetch } from '@/lib/api-response'
@@ -50,11 +63,22 @@ interface Project {
   status: string
   approvalStatus: string
   submissionDate: string | null
+  createdAt: string
+  updatedAt: string
+  category?: string
+  budget?: number
+  startDate?: string
+  endDate?: string
   owner: {
     id: string
     name: string
     email: string
     avatar: string | null
+  }
+  university?: {
+    id: string
+    name: string
+    code: string
   }
   _count: {
     members: number
@@ -72,7 +96,6 @@ interface Stats {
 }
 
 export default function ProjectApprovalsPage() {
-  const router = useRouter()
   const { toast } = useToast()
   const [projects, setProjects] = useState<Project[]>([])
   const [stats, setStats] = useState<Stats>({
@@ -96,6 +119,8 @@ export default function ProjectApprovalsPage() {
   const [reviewComments, setReviewComments] = useState('')
   const [processing, setProcessing] = useState(false)
   const [showActionDialog, setShowActionDialog] = useState(false)
+  const [showViewDialog, setShowViewDialog] = useState(false)
+  const [viewingProject, setViewingProject] = useState<Project | null>(null)
 
   const fetchProjects = async () => {
     try {
@@ -252,6 +277,11 @@ export default function ProjectApprovalsPage() {
     setRejectionReason('')
     setReviewComments('')
     setShowActionDialog(true)
+  }
+
+  const openViewDialog = (project: Project) => {
+    setViewingProject(project)
+    setShowViewDialog(true)
   }
 
   const resetActionState = () => {
@@ -411,11 +441,11 @@ export default function ProjectApprovalsPage() {
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs">
-                                {project.owner.name?.charAt(0).toUpperCase()}
+                                {project.owner?.name?.charAt(0).toUpperCase() || '?'}
                               </div>
                               <div>
-                                <div className="text-sm font-medium">{project.owner.name}</div>
-                                <div className="text-xs text-muted-foreground">{project.owner.email}</div>
+                                <div className="text-sm font-medium">{project.owner?.name || 'Unknown'}</div>
+                                <div className="text-xs text-muted-foreground">{project.owner?.email || 'N/A'}</div>
                               </div>
                             </div>
                           </TableCell>
@@ -423,14 +453,15 @@ export default function ProjectApprovalsPage() {
                             {project.submissionDate ? new Date(project.submissionDate).toLocaleDateString() : 'N/A'}
                           </TableCell>
                           <TableCell>{getStatusBadge(project.approvalStatus)}</TableCell>
-                          <TableCell>{project._count.members} members</TableCell>
-                          <TableCell>{project._count.tasks} tasks</TableCell>
+                          <TableCell>{project._count?.members || 0} members</TableCell>
+                          <TableCell>{project._count?.tasks || 0} tasks</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => router.push(`/projects/${project.id}`)}
+                                onClick={() => openViewDialog(project)}
+                                title="View Details"
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
@@ -454,6 +485,7 @@ export default function ProjectApprovalsPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => openActionDialog(project, 'reject')}
+                                title="Reject"
                               >
                                 <XCircle className="h-4 w-4" />
                               </Button>
@@ -493,6 +525,180 @@ export default function ProjectApprovalsPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* View Project Details Dialog */}
+        <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FolderKanban className="h-5 w-5" />
+                Project Details
+              </DialogTitle>
+              <DialogDescription>
+                Review the project submission details below
+              </DialogDescription>
+            </DialogHeader>
+            
+            {viewingProject && (
+              <div className="space-y-6">
+                {/* Project Name and Status */}
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold">{viewingProject.name}</h2>
+                    <div className="flex items-center gap-2 mt-1">
+                      {getStatusBadge(viewingProject.approvalStatus)}
+                      {viewingProject.category && (
+                        <Badge variant="outline">{viewingProject.category}</Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Owner Info */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Project Owner
+                  </h3>
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-sm font-medium">
+                        {viewingProject.owner?.name?.charAt(0).toUpperCase() || '?'}
+                      </div>
+                      <div>
+                        <p className="font-medium">{viewingProject.owner?.name || 'Unknown'}</p>
+                        <p className="text-sm text-muted-foreground">{viewingProject.owner?.email || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Project Details */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Project Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                        <Tag className="h-4 w-4" />
+                        Category
+                      </div>
+                      <p className="font-medium">{viewingProject.category || 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                        <Building2 className="h-4 w-4" />
+                        University
+                      </div>
+                      <p className="font-medium">{viewingProject.university?.name || 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                        <Users className="h-4 w-4" />
+                        Team Size
+                      </div>
+                      <p className="font-medium">{viewingProject._count?.members || 0} members</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                        <CheckSquare className="h-4 w-4" />
+                        Tasks
+                      </div>
+                      <p className="font-medium">{viewingProject._count?.tasks || 0} tasks</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Description */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold">Description</h3>
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <p className="text-sm whitespace-pre-wrap">{viewingProject.description || 'No description provided.'}</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Timeline & Budget */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Timeline & Budget
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="text-muted-foreground text-xs mb-1">Budget</div>
+                      <p className="font-medium">{viewingProject.budget ? `$${viewingProject.budget.toLocaleString()}` : 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="text-muted-foreground text-xs mb-1">Start Date</div>
+                      <p className="font-medium">{viewingProject.startDate ? new Date(viewingProject.startDate).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="text-muted-foreground text-xs mb-1">End Date</div>
+                      <p className="font-medium">{viewingProject.endDate ? new Date(viewingProject.endDate).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Metadata */}
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    Created: {new Date(viewingProject.createdAt).toLocaleDateString()}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    Updated: {new Date(viewingProject.updatedAt).toLocaleDateString()}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowViewDialog(false)
+                      openActionDialog(viewingProject, 'request-changes')
+                    }}
+                  >
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Request Changes
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowViewDialog(false)
+                      openActionDialog(viewingProject, 'reject')
+                    }}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Reject
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowViewDialog(false)
+                      openActionDialog(viewingProject, 'approve')
+                    }}
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Approve
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Action Dialog */}
         <AlertDialog open={showActionDialog} onOpenChange={setShowActionDialog}>

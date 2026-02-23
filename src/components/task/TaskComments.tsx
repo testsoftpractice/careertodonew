@@ -168,18 +168,18 @@ export default function TaskComments({ taskId, projectId }: TaskCommentsProps) {
             <div key={comment.id} className="flex gap-3 p-3 rounded-lg bg-muted/50">
               <Avatar className="h-8 w-8">
                 <AvatarFallback>
-                  {comment.author.name?.charAt(0) || '?'}
+                  {comment.author?.name?.charAt(0) || '?'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="font-medium text-sm">{comment.author.name}</p>
+                    <p className="font-medium text-sm">{comment.author?.name || 'Unknown User'}</p>
                     <p className="text-xs text-muted-foreground">
                       {new Date(comment.createdAt).toLocaleString()}
                     </p>
                   </div>
-                  {comment.author.id === user?.id && (
+                  {comment.author?.id === user?.id && (
                     <Button
                       variant="ghost"
                       size="sm"

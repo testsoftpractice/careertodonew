@@ -20,10 +20,8 @@ import {
   DollarSign,
   Clock,
   Users,
-  Plus,
   Loader2,
   ArrowRight,
-  ExternalLink,
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from '@/hooks/use-toast'
@@ -43,9 +41,11 @@ export default function JobsPage() {
     const fetchJobs = async () => {
       try {
         setLoading(true)
-        const response = await fetch(
-          `/api/jobs?category=${categoryFilter}&type=${typeFilter}`
-        )
+        const params = new URLSearchParams()
+        if (categoryFilter !== 'all') params.append('category', categoryFilter)
+        if (typeFilter !== 'all') params.append('type', typeFilter)
+        
+        const response = await fetch(`/api/jobs?${params.toString()}`)
         const data = await response.json()
         if (data.success) {
           setJobs(data.data.jobs || [])
@@ -70,9 +70,9 @@ export default function JobsPage() {
   const filteredJobs = jobs.filter((job) => {
     const matchesSearch =
       searchQuery === '' ||
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.companyName.toLowerCase().includes(searchQuery.toLowerCase())
+      job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.companyName?.toLowerCase().includes(searchQuery.toLowerCase())
     return matchesSearch
   })
 
@@ -165,15 +165,8 @@ export default function JobsPage() {
           {/* Results Count */}
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              {filteredJobs.length} jobs found
+              {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''} found
             </p>
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/jobs/create">
-                <Plus className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Post a Job</span>
-                <span className="sm:hidden">Post Job</span>
-              </Link>
-            </Button>
           </div>
 
           {/* Jobs Grid */}
@@ -191,11 +184,11 @@ export default function JobsPage() {
                       <div className="flex-1 min-w-0">
                         <CardTitle className="truncate">{job.title}</CardTitle>
                         <CardDescription className="line-clamp-1">
-                          {job.companyName}
+                          {job.companyName || job.Business?.name || 'Unknown Company'}
                         </CardDescription>
                       </div>
                       <Badge variant={getTypeVariant(job.type)}>
-                        {job.type.replace('_', ' ')}
+                        {job.type?.replace('_', ' ') || 'Full Time'}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -203,18 +196,18 @@ export default function JobsPage() {
                     <div className="space-y-3">
                       <div>
                         <div className="text-sm text-muted-foreground">Description</div>
-                        <p className="line-clamp-2 text-sm mt-1">{job.description}</p>
+                        <p className="line-clamp-2 text-sm mt-1">{job.description || 'No description available'}</p>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                          <span className="text-sm truncate">{job.location}</span>
+                          <span className="text-sm truncate">{job.location || 'Remote'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           <span className="text-sm font-semibold truncate">
-                            {job.salary}
+                            {job.salaryRange || job.salary || 'Competitive'}
                           </span>
                         </div>
                       </div>
@@ -222,7 +215,7 @@ export default function JobsPage() {
                       <div className="flex items-center justify-between pt-3 border-t">
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{job.applications?.length || 0} applicants</span>
+                          <span className="text-sm">{job.JobApplication?.length || 0} applicants</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Clock className="h-4 w-4" />
@@ -258,17 +251,11 @@ export default function JobsPage() {
               <CardContent className="p-8 sm:p-12 text-center">
                 <Briefcase className="h-16 w-16 sm:h-20 sm:w-20 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-lg sm:text-xl font-semibold mb-2">No Jobs Found</h3>
-                <p className="text-sm sm:text-base text-muted-foreground mb-6">
+                <p className="text-sm sm:text-base text-muted-foreground">
                   {searchQuery || categoryFilter !== 'all' || typeFilter !== 'all'
                     ? 'Try adjusting your filters to find more jobs.'
                     : 'There are no job postings available at this time.'}
                 </p>
-                <Button asChild>
-                  <Link href="/jobs/create">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Post a Job
-                  </Link>
-                </Button>
               </CardContent>
             </Card>
           )}

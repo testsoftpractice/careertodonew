@@ -85,7 +85,8 @@ export function buildProjectVisibilityWhereClause(
   userUniversityId: string | null = null,
   additionalWhere?: any
 ): any {
-  const where: any = additionalWhere || {}
+  // Start with additional where conditions
+  const where: any = { ...additionalWhere }
 
   // Platform admins see everything
   if (userRole === 'PLATFORM_ADMIN') {
@@ -137,7 +138,8 @@ export function buildJobVisibilityWhereClause(
   userRole: string | null,
   additionalWhere?: any
 ): any {
-  const where: any = additionalWhere || {}
+  // Start with additional where conditions
+  const where: any = { ...additionalWhere }
 
   // Platform admins see everything
   if (userRole === 'PLATFORM_ADMIN') {

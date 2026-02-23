@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
   Select,
   SelectContent,
@@ -25,8 +26,9 @@ import {
   Calendar,
   Building2,
   FileText,
-  Settings,
-  Home,
+  RefreshCw,
+  AlertTriangle,
+  Info,
 } from "lucide-react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
@@ -38,6 +40,7 @@ export default function EditProjectPage() {
   const router = useRouter()
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [resubmitting, setResubmitting] = useState(false)
 
   const [projectData, setProjectData] = useState({
     title: "",
@@ -46,6 +49,8 @@ export default function EditProjectPage() {
     status: "ACTIVE",
     seekingInvestment: false,
     investmentGoal: "",
+    approvalStatus: "",
+    reviewComments: "",
   })
 
   const [hrData, setHrData] = useState({
@@ -60,7 +65,10 @@ export default function EditProjectPage() {
     { value: "CONSULTING", label: "Consulting", icon: "💼" },
     { value: "MARKETING", label: "Marketing", icon: "📣" },
     { value: "RESEARCH", label: "Research", icon: "🔬" },
-    { value: "TAX_CONSULTING", label: "Tax Consulting", icon: "📊" },
+    { value: "TECHNOLOGY", label: "Technology", icon: "💻" },
+    { value: "EDUCATION", label: "Education", icon: "📚" },
+    { value: "HEALTHCARE", label: "Healthcare", icon: "🏥" },
+    { value: "FINANCE", label: "Finance", icon: "💰" },
     { value: "OTHER", label: "Other", icon: "📁" },
   ]
 
@@ -73,12 +81,14 @@ export default function EditProjectPage() {
         if (data.success && data.data) {
           const project = data.data
           setProjectData({
-            title: project.title || "",
+            title: project.name || project.title || "",
             description: project.description || "",
             category: project.category || "",
             status: project.status || "ACTIVE",
             seekingInvestment: project.seekingInvestment || false,
             investmentGoal: project.investmentGoal ? String(project.investmentGoal) : "",
+            approvalStatus: project.approvalStatus || "",
+            reviewComments: project.reviewComments || "",
           })
           setHrData({
             ownerId: project.ownerId || "",
@@ -106,7 +116,10 @@ export default function EditProjectPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...projectData,
+          name: projectData.title,
+          description: projectData.description,
+          category: projectData.category,
+          status: projectData.status,
           seekingInvestment: projectData.seekingInvestment,
           investmentGoal: projectData.investmentGoal ? parseInt(projectData.investmentGoal) : null,
         }),
@@ -119,7 +132,16 @@ export default function EditProjectPage() {
           title: "Success",
           description: "Project updated successfully!",
         })
-        router.push(`/projects/${params.id}`)
+        // Refresh project data
+        const refreshResponse = await fetch(`/api/projects/${params.id}`)
+        const refreshData = await refreshResponse.json()
+        if (refreshData.success && refreshData.data) {
+          setProjectData(prev => ({
+            ...prev,
+            approvalStatus: refreshData.data.approvalStatus || prev.approvalStatus,
+            reviewComments: refreshData.data.reviewComments || prev.reviewComments,
+          }))
+        }
       } else {
         toast({
           title: "Error",
@@ -138,6 +160,51 @@ export default function EditProjectPage() {
       setLoading(false)
     }
   }
+
+  const handleResubmit = async () => {
+    if (!confirm("Are you sure you want to resubmit this project for approval? Make sure you have addressed all the required changes.")) {
+      return
+    }
+
+    setResubmitting(true)
+    try {
+      const response = await fetch(`/api/projects/${params.id}/resubmit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast({
+          title: "Success",
+          description: "Project resubmitted for approval!",
+        })
+        router.push(`/projects/${params.id}`)
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to resubmit project",
+          variant: "destructive",
+        })
+      }
+    } catch (error: any) {
+      console.error("Resubmit project error:", error)
+      toast({
+        title: "Error",
+        description: "An error occurred. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setResubmitting(false)
+    }
+  }
+
+  const requiresChanges = projectData.approvalStatus === 'REQUIRE_CHANGES'
+  const isPending = projectData.approvalStatus === 'PENDING'
+  const isRejected = projectData.approvalStatus === 'REJECTED'
 
   return (
     <div className="min-h-screen bg-background">
@@ -166,8 +233,72 @@ export default function EditProjectPage() {
                 Update project information and settings
               </p>
             </div>
-            <Badge variant="outline">{params.id}</Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">{params.id}</Badge>
+              {requiresChanges && (
+                <Badge variant="destructive" className="gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  Changes Required
+                </Badge>
+              )}
+              {isPending && (
+                <Badge variant="secondary" className="gap-1">
+                  <RefreshCw className="h-3 w-3" />
+                  Pending Review
+                </Badge>
+              )}
+              {isRejected && (
+                <Badge variant="destructive" className="gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  Rejected
+                </Badge>
+              )}
+            </div>
           </div>
+
+          {/* Show feedback when changes are required */}
+          {requiresChanges && projectData.reviewComments && (
+            <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              <AlertTitle className="text-amber-800 dark:text-amber-200 font-semibold">
+                Changes Requested by Admin
+              </AlertTitle>
+              <AlertDescription className="text-amber-700 dark:text-amber-300 mt-2">
+                <p className="mb-2">Please address the following feedback and resubmit your project:</p>
+                <div className="bg-white dark:bg-slate-900 p-3 rounded-md border border-amber-200 dark:border-amber-700 mt-2">
+                  <p className="text-sm whitespace-pre-wrap">{projectData.reviewComments}</p>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Show rejection reason */}
+          {isRejected && projectData.reviewComments && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-5 w-5" />
+              <AlertTitle className="font-semibold">
+                Project Not Approved
+              </AlertTitle>
+              <AlertDescription className="mt-2">
+                <div className="bg-white dark:bg-slate-900 p-3 rounded-md border mt-2">
+                  <p className="text-sm whitespace-pre-wrap">{projectData.reviewComments}</p>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Info for pending projects */}
+          {isPending && (
+            <Alert>
+              <Info className="h-5 w-5" />
+              <AlertTitle className="font-semibold">
+                Project Under Review
+              </AlertTitle>
+              <AlertDescription>
+                Your project is currently being reviewed by administrators. You can still make changes, but it will need to be reviewed again.
+              </AlertDescription>
+            </Alert>
+          )}
 
           <Card>
             <CardHeader>
@@ -248,16 +379,18 @@ export default function EditProjectPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="IDEA">Idea</SelectItem>
                     <SelectItem value="ACTIVE">Active</SelectItem>
+                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                    <SelectItem value="FUNDING">Funding</SelectItem>
                     <SelectItem value="ON_HOLD">On Hold</SelectItem>
                     <SelectItem value="COMPLETED">Completed</SelectItem>
-                    <SelectItem value="CANCELED">Canceled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Active: Visible to team and marketplace | On Hold: Temporarily suspended | Completed: Successfully finished | Canceled: Terminated
+                Active: Visible to team and marketplace | On Hold: Temporarily suspended | Completed: Successfully finished
               </p>
             </CardContent>
           </Card>
@@ -347,14 +480,28 @@ export default function EditProjectPage() {
             </Button>
           </div>
 
-          <div className="flex gap-3 pt-4 border-t">
-            <Button variant="outline" onClick={() => router.push(`/projects/${params.id}`)}>
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+            <Button variant="outline" onClick={() => router.push(`/projects/${params.id}`)} className="sm:order-1">
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={loading || !projectData.title.trim() || !projectData.description.trim() || !projectData.category}>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={loading || !projectData.title.trim() || !projectData.description.trim() || !projectData.category}
+              className="sm:order-3 sm:flex-1"
+            >
               {loading ? "Saving..." : "Save Changes"}
               <Save className="ml-2 h-4 w-4" />
             </Button>
+            {requiresChanges && (
+              <Button 
+                onClick={handleResubmit}
+                disabled={resubmitting || loading}
+                className="sm:order-2 bg-green-600 hover:bg-green-700"
+              >
+                {resubmitting ? "Resubmitting..." : "Resubmit for Approval"}
+                <RefreshCw className="ml-2 h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </main>

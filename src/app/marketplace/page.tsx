@@ -35,7 +35,7 @@ export default function MarketplacePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('ALL')
   const [stageFilter, setStageFilter] = useState('ALL')
-  const [statusFilter, setStatusFilter] = useState('ACTIVE')
+  const [statusFilter, setStatusFilter] = useState('ALL')
 
   // Categories for filter
   const categories = ['ALL', 'TECHNOLOGY', 'CONSUMER', 'BUSINESS', 'HEALTHCARE', 'FINANCE', 'ENERGY', 'EDUCATION', 'MEDIA']
@@ -44,7 +44,7 @@ export default function MarketplacePage() {
   const stages = ['ALL', 'IDEA', 'IN_REVIEW', 'RAISED', 'FUNDING', 'NEGOTIATING', 'DEAL_AGREED']
 
   // Statuses for filter
-  const statuses = ['ALL', 'ACTIVE', 'RECRUITING', 'COMPLETED', 'ON_HOLD']
+  const statuses = ['ALL', 'ACTIVE', 'IN_PROGRESS', 'FUNDING', 'COMPLETED', 'ON_HOLD']
 
   // Fetch projects from API
   useEffect(() => {
@@ -312,7 +312,7 @@ export default function MarketplacePage() {
                     setSearchQuery('')
                     setCategoryFilter('ALL')
                     setStageFilter('ALL')
-                    setStatusFilter('ACTIVE')
+                    setStatusFilter('ALL')
                   }}>
                     Clear Filters
                   </Button>

@@ -8,6 +8,8 @@ import {
   TrendingUp,
   CheckCircle2,
   AlertTriangle,
+  Edit,
+  Eye,
 } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
@@ -16,10 +18,11 @@ interface ProjectCardProps {
   id: string
   name: string
   description?: string
-  status: 'IDEA' | 'UNDER_REVIEW' | 'FUNDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ON_HOLD'
-  approvalStatus?: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'REQUIRE_CHANGES'
-  startDate?: Date
-  endDate?: Date
+  status?: string
+  approvalStatus?: string
+  reviewComments?: string | null
+  startDate?: Date | string
+  endDate?: Date | string
   budget?: number
   membersCount?: number
   tasksCount?: number
@@ -33,7 +36,7 @@ interface ProjectCardProps {
   className?: string
 }
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; color: string; icon: string }> = {
   IDEA: { label: 'Idea', color: 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700', icon: '📝' },
   UNDER_REVIEW: { label: 'Under Review', color: 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/50 dark:text-amber-300 dark:hover:bg-amber-900', icon: '🔍' },
   FUNDING: { label: 'Funding', color: 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-900', icon: '💰' },
@@ -41,9 +44,11 @@ const statusConfig = {
   COMPLETED: { label: 'Completed', color: 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:hover:bg-green-900', icon: '✅' },
   CANCELLED: { label: 'Cancelled', color: 'bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/50 dark:text-rose-300 dark:hover:bg-rose-900', icon: '❌' },
   ON_HOLD: { label: 'On Hold', color: 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700', icon: '⏸' },
+  ACTIVE: { label: 'Active', color: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:hover:bg-emerald-900', icon: '🚀' },
+  RECRUITING: { label: 'Recruiting', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:hover:bg-purple-900', icon: '👥' },
 }
 
-const approvalStatusConfig = {
+const approvalStatusConfig: Record<string, { label: string; color: string; icon: string }> = {
   PENDING: { label: 'Pending Approval', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300', icon: '⏳' },
   UNDER_REVIEW: { label: 'Under Review', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300', icon: '🔍' },
   APPROVED: { label: 'Approved', color: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300', icon: '✅' },
@@ -57,6 +62,7 @@ export function ProjectCard({
   description,
   status,
   approvalStatus,
+  reviewComments,
   startDate,
   endDate,
   budget,
@@ -67,14 +73,19 @@ export function ProjectCard({
   owner,
   className = '',
 }: ProjectCardProps) {
-  const statusInfo = statusConfig[status]
-  const approvalInfo = approvalStatus ? approvalStatusConfig[approvalStatus] : null
+  // Get status info with fallback for unknown status
+  const statusInfo = statusConfig[status || ''] || { label: status || 'Unknown', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300', icon: '📋' }
+  const approvalInfo = approvalStatus ? (approvalStatusConfig[approvalStatus] || { label: approvalStatus, color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300', icon: '📋' }) : null
 
   // If project is pending approval, show approval status instead of project status
   const showApprovalStatus = approvalStatus && (approvalStatus === 'PENDING' || approvalStatus === 'UNDER_REVIEW' || approvalStatus === 'REJECTED' || approvalStatus === 'REQUIRE_CHANGES')
+  
+  // Special handling for REQUIRE_CHANGES status
+  const needsChanges = approvalStatus === 'REQUIRE_CHANGES'
+  const isRejected = approvalStatus === 'REJECTED'
 
   return (
-    <Card className={`${className} hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group`}>
+    <Card className={`${className} hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group ${needsChanges ? 'border-orange-300 dark:border-orange-700' : ''}`}>
       <CardContent className="p-4 sm:p-6">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-4">
@@ -117,13 +128,47 @@ export function ProjectCard({
                   />
                 ) : (
                   <span className="text-xs font-semibold text-primary">
-                    {owner.name?.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    {owner.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                   </span>
                 )}
               </div>
             </div>
           )}
         </div>
+
+        {/* Show feedback alert for projects that need changes */}
+        {needsChanges && reviewComments && (
+          <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-orange-800 dark:text-orange-200 mb-1">
+                  Admin Feedback:
+                </p>
+                <p className="text-xs text-orange-700 dark:text-orange-300 line-clamp-2">
+                  {reviewComments}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Show rejection reason */}
+        {isRejected && reviewComments && (
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-red-800 dark:text-red-200 mb-1">
+                  Rejection Reason:
+                </p>
+                <p className="text-xs text-red-700 dark:text-red-300 line-clamp-2">
+                  {reviewComments}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats Row */}
         <div className="flex items-center justify-between gap-4 mb-4 py-3 border-y bg-muted/30">
@@ -170,16 +215,35 @@ export function ProjectCard({
 
         {/* Actions */}
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="flex-1" asChild>
-            <Link href={`/projects/${id}`}>
-              View Details
-            </Link>
-          </Button>
-          <Button size="sm" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" asChild>
-            <Link href={`/projects/${id}/tasks`}>
-              Tasks
-            </Link>
-          </Button>
+          {needsChanges || isRejected ? (
+            <>
+              <Button variant="outline" size="sm" className="flex-1" asChild>
+                <Link href={`/projects/${id}`}>
+                  <Eye className="w-4 h-4 mr-1" />
+                  View
+                </Link>
+              </Button>
+              <Button size="sm" className="flex-1 bg-orange-600 hover:bg-orange-700 text-white" asChild>
+                <Link href={`/projects/${id}/edit`}>
+                  <Edit className="w-4 h-4 mr-1" />
+                  Edit & Resubmit
+                </Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" className="flex-1" asChild>
+                <Link href={`/projects/${id}`}>
+                  View Details
+                </Link>
+              </Button>
+              <Button size="sm" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" asChild>
+                <Link href={`/projects/${id}/tasks`}>
+                  Tasks
+                </Link>
+              </Button>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

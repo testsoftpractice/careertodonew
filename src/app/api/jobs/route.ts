@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyToken } from '@/lib/auth/jwt'
 import { logError, formatErrorResponse, AppError, UnauthorizedError } from '@/lib/utils/error-handler'
-import { buildJobVisibilityWhereClause } from '@/lib/visibility-controls'
 
 // GET /api/jobs - List jobs with filters
 export async function GET(request: NextRequest) {
   try {
+    console.log('[JOBS API] =============== START ===============')
+    
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     const businessId = searchParams.get('businessId')
@@ -14,30 +15,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type')
     const published = searchParams.get('published')
 
-    const where: any = {}
-
-    // Apply filters
-    if (userId) {
-      where.userId = userId
-    }
-
-    if (businessId) {
-      where.businessId = businessId
-    }
-
-    if (published === 'true') {
-      where.published = true
-    } else if (published === 'false') {
-      where.published = false
-    }
-
-    if (type) {
-      where.type = type
-    }
-
-    if (status) {
-      where.status = status
-    }
+    console.log('[JOBS API] Query params:', { userId, businessId, status, type, published })
 
     // Get user info for visibility control
     let userRole: string | null = null
@@ -51,16 +29,56 @@ export async function GET(request: NextRequest) {
         const decoded = verifyToken(token)
         authUserId = decoded.userId
         userRole = decoded.role
+        console.log('[JOBS API] Authenticated user:', { authUserId, userRole })
+      } else {
+        console.log('[JOBS API] No auth token found - showing only approved jobs')
       }
     } catch (e) {
-      // Not authenticated - that's fine, will show only approved jobs
+      console.log('[JOBS API] Auth error - treating as unauthenticated:', e)
     }
 
-    // Apply visibility control
-    const visibilityWhere = buildJobVisibilityWhereClause(authUserId, userRole, where)
+    // Build where clause
+    const where: any = {}
+
+    // Apply filters
+    if (userId) {
+      where.userId = userId
+    }
+
+    if (businessId) {
+      where.businessId = businessId
+    }
+
+    // Only apply type filter if it's a valid type (not 'all')
+    if (type && type !== 'all') {
+      where.type = type
+    }
+
+    if (status && status !== 'all') {
+      where.status = status
+    }
+
+    // Platform admins see everything
+    if (userRole === 'PLATFORM_ADMIN') {
+      console.log('[JOBS API] User is PLATFORM_ADMIN - showing all jobs')
+      // Don't add any visibility restrictions
+    } else if (!authUserId) {
+      // Not logged in - only show APPROVED jobs
+      console.log('[JOBS API] Not logged in - filtering for APPROVED jobs only')
+      where.approvalStatus = 'APPROVED'
+    } else {
+      // Logged in user - show APPROVED jobs OR own jobs
+      console.log('[JOBS API] Logged in user - showing APPROVED or own jobs')
+      where.OR = [
+        { approvalStatus: 'APPROVED' },
+        { userId: authUserId },
+      ]
+    }
+
+    console.log('[JOBS API] Final where clause:', JSON.stringify(where, null, 2))
 
     const jobs = await db.job.findMany({
-      where: visibilityWhere,
+      where,
       include: {
         User: {
           select: {
@@ -91,6 +109,9 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    console.log('[JOBS API] Found jobs count:', jobs.length)
+    console.log('[JOBS API] Jobs approval statuses:', jobs.map(j => ({ id: j.id, title: j.title, approvalStatus: j.approvalStatus, published: j.published })))
+
     // Parse metadata and add computed fields
     const parsedJobs = jobs.map(job => {
       let metadata = {}
@@ -114,6 +135,8 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    console.log('[JOBS API] =============== END ===============')
+
     return NextResponse.json({
       success: true,
       data: {
@@ -122,7 +145,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Jobs API error:', error)
+    console.error('[JOBS API] Error:', error)
     return NextResponse.json({
       success: false,
       error: 'Failed to fetch jobs',

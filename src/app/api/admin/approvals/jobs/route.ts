@@ -201,6 +201,8 @@ export async function POST(request: NextRequest) {
         reviewComments: comments || null,
         rejectionReason: null,
         status: 'ACTIVE',
+        published: true,
+        publishedAt: new Date(),
       },
     })
 

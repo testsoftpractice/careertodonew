@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -25,23 +24,33 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
 import {
   CheckCircle2,
   XCircle,
-  Briefcase,
-  Clock,
   Search,
   Filter,
   Eye,
   RefreshCw,
   ArrowLeft,
-  AlertTriangle,
   Building2,
   DollarSign,
   MapPin,
+  Calendar,
+  Users,
+  FileText,
+  Briefcase,
+  Clock,
 } from 'lucide-react'
 import Link from 'next/link'
 import { authFetch } from '@/lib/api-response'
@@ -55,10 +64,17 @@ interface Job {
   status: string
   approvalStatus: string
   createdAt: string
+  updatedAt: string
+  requirements?: string
+  benefits?: string
+  employmentType?: string
+  experienceLevel?: string
   business: {
     id: string
     name: string
     industry: string
+    website?: string
+    description?: string
   }
   _count: {
     applications: number
@@ -74,7 +90,6 @@ interface Stats {
 }
 
 export default function JobApprovalsPage() {
-  const router = useRouter()
   const { toast } = useToast()
   const [jobs, setJobs] = useState<Job[]>([])
   const [stats, setStats] = useState<Stats>({
@@ -97,6 +112,8 @@ export default function JobApprovalsPage() {
   const [reviewComments, setReviewComments] = useState('')
   const [processing, setProcessing] = useState(false)
   const [showActionDialog, setShowActionDialog] = useState(false)
+  const [showViewDialog, setShowViewDialog] = useState(false)
+  const [viewingJob, setViewingJob] = useState<Job | null>(null)
 
   const fetchJobs = async () => {
     try {
@@ -212,6 +229,11 @@ export default function JobApprovalsPage() {
     setRejectionReason('')
     setReviewComments('')
     setShowActionDialog(true)
+  }
+
+  const openViewDialog = (job: Job) => {
+    setViewingJob(job)
+    setShowViewDialog(true)
   }
 
   const resetActionState = () => {
@@ -365,34 +387,35 @@ export default function JobApprovalsPage() {
                             <div className="flex items-center gap-2">
                               <Building2 className="h-4 w-4 text-muted-foreground" />
                               <div>
-                                <div className="text-sm font-medium">{job.business.name}</div>
-                                <div className="text-xs text-muted-foreground">{job.business.industry}</div>
+                                <div className="text-sm font-medium">{job.business?.name || 'N/A'}</div>
+                                <div className="text-xs text-muted-foreground">{job.business?.industry || 'N/A'}</div>
                               </div>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1">
                               <MapPin className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-sm">{job.location}</span>
+                              <span className="text-sm">{job.location || 'N/A'}</span>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1">
                               <DollarSign className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-sm">{job.salaryRange}</span>
+                              <span className="text-sm">{job.salaryRange || 'N/A'}</span>
                             </div>
                           </TableCell>
                           <TableCell>
                             {new Date(job.createdAt).toLocaleDateString()}
                           </TableCell>
-                          <TableCell>{job._count.applications}</TableCell>
+                          <TableCell>{job._count?.applications || 0}</TableCell>
                           <TableCell>{getStatusBadge(job.approvalStatus)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => router.push(`/jobs/${job.id}`)}
+                                onClick={() => openViewDialog(job)}
+                                title="View Details"
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
@@ -408,6 +431,7 @@ export default function JobApprovalsPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => openActionDialog(job, 'reject')}
+                                title="Reject"
                               >
                                 <XCircle className="h-4 w-4" />
                               </Button>
@@ -447,6 +471,178 @@ export default function JobApprovalsPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* View Job Details Dialog */}
+        <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5" />
+                Job Details
+              </DialogTitle>
+              <DialogDescription>
+                Review the job posting details below
+              </DialogDescription>
+            </DialogHeader>
+            
+            {viewingJob && (
+              <div className="space-y-6">
+                {/* Job Title and Status */}
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold">{viewingJob.title}</h2>
+                    <div className="flex items-center gap-2 mt-1">
+                      {getStatusBadge(viewingJob.approvalStatus)}
+                      {viewingJob.employmentType && (
+                        <Badge variant="outline">{viewingJob.employmentType}</Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Company Info */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    Company Information
+                  </h3>
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Company Name:</span>
+                      <span className="font-medium">{viewingJob.business?.name || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Industry:</span>
+                      <span className="font-medium">{viewingJob.business?.industry || 'N/A'}</span>
+                    </div>
+                    {viewingJob.business?.website && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Website:</span>
+                        <a 
+                          href={viewingJob.business.website} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          {viewingJob.business.website}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Job Details */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Job Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                        <MapPin className="h-4 w-4" />
+                        Location
+                      </div>
+                      <p className="font-medium">{viewingJob.location || 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                        <DollarSign className="h-4 w-4" />
+                        Salary Range
+                      </div>
+                      <p className="font-medium">{viewingJob.salaryRange || 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                        <Clock className="h-4 w-4" />
+                        Employment Type
+                      </div>
+                      <p className="font-medium">{viewingJob.employmentType || 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                        <Users className="h-4 w-4" />
+                        Experience Level
+                      </div>
+                      <p className="font-medium">{viewingJob.experienceLevel || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Description */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold">Description</h3>
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <p className="text-sm whitespace-pre-wrap">{viewingJob.description || 'No description provided.'}</p>
+                  </div>
+                </div>
+
+                {/* Requirements */}
+                {viewingJob.requirements && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold">Requirements</h3>
+                    <div className="bg-muted/50 rounded-lg p-4">
+                      <p className="text-sm whitespace-pre-wrap">{viewingJob.requirements}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Benefits */}
+                {viewingJob.benefits && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold">Benefits</h3>
+                    <div className="bg-muted/50 rounded-lg p-4">
+                      <p className="text-sm whitespace-pre-wrap">{viewingJob.benefits}</p>
+                    </div>
+                  </div>
+                )}
+
+                <Separator />
+
+                {/* Metadata */}
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    Posted: {new Date(viewingJob.createdAt).toLocaleDateString()}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Users className="h-4 w-4" />
+                    {viewingJob._count?.applications || 0} Applications
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowViewDialog(false)
+                      openActionDialog(viewingJob, 'reject')
+                    }}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Reject
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowViewDialog(false)
+                      openActionDialog(viewingJob, 'approve')
+                    }}
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Approve
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Action Dialog */}
         <AlertDialog open={showActionDialog} onOpenChange={setShowActionDialog}>

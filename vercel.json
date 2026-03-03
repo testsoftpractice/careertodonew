@@ -116,6 +116,10 @@
     {
       "source": "/sales-workflow/:path*",
       "destination": "https://sales-workflow.vercel.app/:path*"
+    },
+    {
+      "source": "/core-banking/:path*",
+      "destination": "https://core-banking-nine.vercel.app/:path*"
     }
   ],
   "headers": [

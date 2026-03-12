@@ -104,6 +104,12 @@
     "zod": "^4.3.6",
     "zustand": "^5.0.10"
   },
+  "overrides": {
+    "@react-three/fiber": "^9.5.0",
+    "framer-motion-3d": {
+      "@react-three/fiber": "^9.5.0"
+    }
+  },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
     "@tailwindcss/postcss": "^4.1.18",

@@ -49,7 +49,7 @@ export default function InvestmentSuccessPage() {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Investment Amount</div>
-                  <div className="font-semibold text-green-600">$50,000</div>
+                  <div className="font-semibold text-green-600">৳50,000</div>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

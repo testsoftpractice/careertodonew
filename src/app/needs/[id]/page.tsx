@@ -242,7 +242,7 @@ export default function NeedDetailPage() {
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">Budget</div>
-                    <div className="font-medium">${need.budget.toLocaleString()}</div>
+                    <div className="font-medium">৳{need.budget.toLocaleString()}</div>
                   </div>
                 </div>
 

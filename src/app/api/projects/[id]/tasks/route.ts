@@ -19,8 +19,6 @@ const projectTaskSchema = z.object({
   estimatedHours: z.union([z.number().min(0).max(1000), z.string().transform(val => parseFloat(val))]).optional(),
   // Support multiple assignees
   assigneeIds: z.array(z.string()).optional(),
-  // Legacy single assignee support
-  assigneeId: z.string().optional(),
   // Subtasks
   subtasks: z.array(z.object({
     id: z.string().optional(),
@@ -212,8 +210,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     })
 
     // Handle multiple assignees
-    const assigneeIds = data.assigneeIds || (data.assigneeId ? [data.assigneeId] : [])
+    const assigneeIds = data.assigneeIds || []
     const validAssigneeIds = assigneeIds.filter(aid => aid && aid !== '' && aid !== 'none')
+
+    // Validate that all assigneeIds are project members
+    if (validAssigneeIds.length > 0) {
+      const projectMemberIds = await db.projectMember.findMany({
+        where: { projectId: id },
+        select: { userId: true }
+      })
+
+      const memberIds = projectMemberIds.map(pm => pm.userId)
+      const invalidIds = validAssigneeIds.filter(id => !memberIds.includes(id))
+
+      if (invalidIds.length > 0) {
+        return errorResponse('Some assignees are not project members', 400)
+      }
+    }
 
     if (validAssigneeIds.length > 0) {
       await db.taskAssignee.createMany({

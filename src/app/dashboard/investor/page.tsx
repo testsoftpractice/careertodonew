@@ -684,7 +684,7 @@ export default function InvestorDashboard() {
                       <div className="space-y-4">
                         <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
                           <p className="text-sm text-muted-foreground">Total Returns</p>
-                          <p className="text-2xl font-bold text-emerald-600">${financial.totalReturns?.toLocaleString() || '$0'}</p>
+                          <p className="text-2xl font-bold text-emerald-600">৳{financial.totalReturns?.toLocaleString() || '৳0'}</p>
                         </div>
                         <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                           <p className="text-sm text-muted-foreground">Average ROI</p>
@@ -796,11 +796,11 @@ export default function InvestorDashboard() {
                             <div className="space-y-2">
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">Funding Goal</span>
-                                <span className="font-semibold">${startup.fundingGoal?.toLocaleString() || 'N/A'}</span>
+                                <span className="font-semibold">৳{startup.fundingGoal?.toLocaleString() || 'N/A'}</span>
                               </div>
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">Raised</span>
-                                <span className="font-semibold text-emerald-600">${startup.raised?.toLocaleString() || '$0'}</span>
+                                <span className="font-semibold text-emerald-600">৳{startup.raised?.toLocaleString() || '৳0'}</span>
                               </div>
                               <Progress
                                 value={startup.raisedPercentage || 0}

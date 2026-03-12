@@ -115,8 +115,8 @@ export async function GET(request: NextRequest) {
         requirements: (metadata as any).requirements || [],
         responsibilities: (metadata as any).responsibilities || [],
         benefits: (metadata as any).benefits || [],
-        salaryRange: job.salaryMin && job.salaryMax 
-          ? `$${job.salaryMin.toLocaleString()} - $${job.salaryMax.toLocaleString()}`
+        salaryRange: job.salaryMin && job.salaryMax
+          ? `৳${job.salaryMin.toLocaleString()} - ৳${job.salaryMax.toLocaleString()}`
           : job.salary || 'Not specified',
         business: job.Business || { id: '', name: 'Unknown Company', industry: 'N/A', location: 'N/A', description: '', website: '' },
       }

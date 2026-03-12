@@ -458,7 +458,7 @@ export default function CreateProjectPage() {
                       </div>
                       {projectData.seekingInvestment && (
                         <div className="space-y-2">
-                          <Label htmlFor="investmentGoal">Investment Goal Amount ($) *</Label>
+                          <Label htmlFor="investmentGoal">Investment Goal Amount (৳) *</Label>
                           <Input
                             id="investmentGoal"
                             type="number"
@@ -546,7 +546,7 @@ export default function CreateProjectPage() {
                         Budget Planning (Optional)
                       </h4>
                       <div className="space-y-2">
-                        <Label htmlFor="budget">Total Budget ($)</Label>
+                        <Label htmlFor="budget">Total Budget (৳)</Label>
                         <Input
                           id="budget"
                           type="number"
@@ -863,7 +863,7 @@ export default function CreateProjectPage() {
                             <DollarSign className="w-4 h-4" />
                             Budget
                           </p>
-                          <p className="text-sm text-muted-foreground">${parseInt(projectData.budget).toLocaleString()}</p>
+                          <p className="text-sm text-muted-foreground">৳{parseInt(projectData.budget).toLocaleString()}</p>
                         </div>
                       )}
 
@@ -874,7 +874,7 @@ export default function CreateProjectPage() {
                             Investment
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            Seeking ${parseInt(projectData.investmentGoal || "0").toLocaleString()}
+                            Seeking ৳{parseInt(projectData.investmentGoal || "0").toLocaleString()}
                           </p>
                         </div>
                       )}

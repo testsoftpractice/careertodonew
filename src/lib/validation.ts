@@ -115,7 +115,7 @@ export const taskSchema = z.object({
   priority: z.enum([TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH, TaskPriority.URGENT]),
   dueDate: z.string().datetime().optional(),
   projectId: z.string().uuid().optional(),
-  assigneeId: z.string().uuid().optional(),
+  assigneeIds: z.array(z.string().uuid()).optional(),
   status: z.string().optional(),
   estimatedHours: z.union([z.string(), z.number()]).optional(),
 })
@@ -128,7 +128,11 @@ export const createTaskSchema = taskSchema.extend({
     title: z.string().min(1, 'Subtask title is required'),
     completed: z.boolean().default(false)
   })).optional()
-})
+}).transform((data) => ({
+  ...data,
+  // Convert empty strings to undefined for description
+  description: data.description && data.description.trim() ? data.description.trim() : undefined,
+}))
 
 export const updateTaskSchema = taskSchema.partial().extend({
   // Additional fields for task updates

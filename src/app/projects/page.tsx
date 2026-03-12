@@ -233,11 +233,11 @@ export default function ProjectsPage() {
                         <div className="text-xs sm:text-sm text-muted-foreground">Investment</div>
                         <div className="flex items-center gap-2 text-sm sm:text-base">
                           <span className="font-semibold">
-                            ${project.investmentGoal.toLocaleString()} goal
+                            ৳{project.investmentGoal.toLocaleString()} goal
                           </span>
                           {project.investmentRaised && (
                             <span className="text-xs sm:text-sm text-muted-foreground">
-                              (${project.investmentRaised.toLocaleString()} raised)
+                              (৳{project.investmentRaised.toLocaleString()} raised)
                             </span>
                           )}
                         </div>

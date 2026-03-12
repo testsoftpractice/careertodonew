@@ -20,7 +20,7 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
+ AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
@@ -45,12 +45,14 @@ import {
   ArrowLeft,
   Building2,
   DollarSign,
-  MapPin,
   Calendar,
   Users,
+  Clock,
   FileText,
   Briefcase,
-  Clock,
+  MapPin,
+  Calendar as CalendarIcon,
+  Clock as ClockIcon,
 } from 'lucide-react'
 import Link from 'next/link'
 import { authFetch } from '@/lib/api-response'
@@ -63,22 +65,16 @@ interface Job {
   salaryRange: string
   status: string
   approvalStatus: string
-  createdAt: string
-  updatedAt: string
-  requirements?: string
-  benefits?: string
   employmentType?: string
   experienceLevel?: string
-  business: {
-    id: string
-    name: string
-    industry: string
-    website?: string
-    description?: string
-  }
-  _count: {
-    applications: number
-  }
+  type?: string
+  department?: string
+  positions?: number
+  postedDate: string
+  applicationCount: number
+  companyName?: string
+  industry?: string
+  deadline?: string
 }
 
 interface Stats {
@@ -112,8 +108,6 @@ export default function JobApprovalsPage() {
   const [reviewComments, setReviewComments] = useState('')
   const [processing, setProcessing] = useState(false)
   const [showActionDialog, setShowActionDialog] = useState(false)
-  const [showViewDialog, setShowViewDialog] = useState(false)
-  const [viewingJob, setViewingJob] = useState<Job | null>(null)
 
   const fetchJobs = async () => {
     try {
@@ -155,16 +149,22 @@ export default function JobApprovalsPage() {
       setProcessing(true)
       const response = await authFetch('/api/admin/approvals/jobs', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           jobId: selectedJob.id,
+          comments: reviewComments.trim() || undefined,
         }),
       })
 
       if (!response.ok) throw new Error('Failed to approve job')
 
+      const result = await response.json()
+
       toast({
         title: 'Job Approved',
-        description: `Job "${selectedJob.title}" has been approved and published.`,
+        description: result.message || `Job "${selectedJob.title}" has been approved and published.`,
       })
 
       setShowActionDialog(false)
@@ -195,6 +195,9 @@ export default function JobApprovalsPage() {
       setProcessing(true)
       const response = await authFetch(`/api/admin/approvals/jobs/${selectedJob.id}`, {
         method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           rejectionReason: rejectionReason.trim(),
           reviewComments: reviewComments.trim() || undefined,
@@ -203,9 +206,11 @@ export default function JobApprovalsPage() {
 
       if (!response.ok) throw new Error('Failed to reject job')
 
+      const result = await response.json()
+
       toast({
         title: 'Job Rejected',
-        description: `Job "${selectedJob.title}" has been rejected.`,
+        description: result.message || `Job "${selectedJob.title}" has been rejected.`,
         variant: 'destructive',
       })
 
@@ -231,11 +236,6 @@ export default function JobApprovalsPage() {
     setShowActionDialog(true)
   }
 
-  const openViewDialog = (job: Job) => {
-    setViewingJob(job)
-    setShowViewDialog(true)
-  }
-
   const resetActionState = () => {
     setSelectedJob(null)
     setActionType(null)
@@ -244,14 +244,35 @@ export default function JobApprovalsPage() {
   }
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { label: string; variant: any }> = {
-      PENDING: { label: 'Pending', variant: 'secondary' },
-      UNDER_REVIEW: { label: 'Under Review', variant: 'default' },
-      APPROVED: { label: 'Approved', variant: 'default' },
-      REJECTED: { label: 'Rejected', variant: 'destructive' },
+    const statusConfig: Record<string, { label: string; variant: any; icon: any }> = {
+      PENDING: { 
+        label: 'Pending', 
+        variant: 'secondary',
+        icon: <Clock className="h-3 w-3" />
+      },
+      UNDER_REVIEW: { 
+        label: 'Under Review', 
+        variant: 'default',
+        icon: <Eye className="h-3 w-3" />
+      },
+      APPROVED: { 
+        label: 'Approved', 
+        variant: 'default',
+        icon: <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+      },
+      REJECTED: { 
+        label: 'Rejected', 
+        variant: 'destructive',
+        icon: <XCircle className="h-3 w-3 text-red-600" />
+      },
     }
     const config = statusConfig[status] || { label: status, variant: 'secondary' }
-    return <Badge variant={config.variant}>{config.label}</Badge>
+    return (
+      <Badge variant={config.variant} className="gap-1">
+        {config.icon}
+        {config.label}
+      </Badge>
+    )
   }
 
   return (
@@ -317,7 +338,7 @@ export default function JobApprovalsPage() {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search jobs..."
+                placeholder="Search jobs by title or company..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -339,10 +360,10 @@ export default function JobApprovalsPage() {
           </div>
         </div>
 
-        {/* Jobs Table */}
+        {/* Jobs Table - Minimal Data */}
         <Card>
           <CardHeader>
-            <CardTitle>Pending Jobs</CardTitle>
+            <CardTitle>Jobs Pending Approval</CardTitle>
             <CardDescription>
               {loading ? 'Loading...' : `${jobs.length} jobs found`}
             </CardDescription>
@@ -364,9 +385,7 @@ export default function JobApprovalsPage() {
                       <TableRow>
                         <TableHead>Job Title</TableHead>
                         <TableHead>Company</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Salary Range</TableHead>
-                        <TableHead>Posted Date</TableHead>
+                        <TableHead>Posted</TableHead>
                         <TableHead>Applications</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -374,67 +393,71 @@ export default function JobApprovalsPage() {
                     </TableHeader>
                     <TableBody>
                       {jobs.map((job) => (
-                        <TableRow key={job.id}>
-                          <TableCell className="font-medium">
+                        <TableRow key={job.id} className="hover:bg-muted/50 transition-colors">
+                          <TableCell className="font-medium max-w-[300px]">
                             <div>
                               <div className="font-semibold">{job.title}</div>
-                              <div className="text-sm text-muted-foreground line-clamp-1">
-                                {job.description}
+                              <div className="text-xs text-muted-foreground line-clamp-1">
+                                {job.type || 'Full-time'}
+                                {job.positions && job.positions > 1 && <span className="text-muted-foreground">· {job.positions} positions</span>}
                               </div>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Building2 className="h-4 w-4 text-muted-foreground" />
-                              <div>
-                                <div className="text-sm font-medium">{job.business?.name || 'N/A'}</div>
-                                <div className="text-xs text-muted-foreground">{job.business?.industry || 'N/A'}</div>
-                              </div>
+                              <span className="text-sm font-medium">{job.companyName || 'N/A'}</span>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-sm">{job.location || 'N/A'}</span>
+                            <div className="flex items-center gap-1 text-sm">
+                              <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span>{job.postedDate}</span>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-sm">{job.salaryRange || 'N/A'}</span>
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-3.5 text-muted-foreground" />
+                              <span className="font-semibold">{job.applicationCount || 0}</span>
                             </div>
                           </TableCell>
-                          <TableCell>
-                            {new Date(job.createdAt).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>{job._count?.applications || 0}</TableCell>
                           <TableCell>{getStatusBadge(job.approvalStatus)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => openViewDialog(job)}
-                                title="View Details"
+                                onClick={() => {
+                                  // Open job detail view
+                                  window.location.href = `/admin/approvals/jobs/${job.id}`
+                                }}
+                                title="View Full Details"
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openActionDialog(job, 'approve')}
-                              >
-                                <CheckCircle2 className="h-4 w-4 mr-1" />
-                                Approve
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openActionDialog(job, 'reject')}
-                                title="Reject"
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
+                              {job.approvalStatus === 'PENDING' && (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openActionDialog(job, 'approve')}
+                                    className="text-emerald-600 hover:text-emerald-700 border-emerald-200 hover:border-emerald-300"
+                                  >
+                                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                                    Approve
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openActionDialog(job, 'reject')}
+                                    className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+                                    title="Reject"
+                                  >
+                                    <XCircle className="h-4 w-4 mr-1" />
+                                    Reject
+                                  </Button>
+                                </>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -472,178 +495,6 @@ export default function JobApprovalsPage() {
           </CardContent>
         </Card>
 
-        {/* View Job Details Dialog */}
-        <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5" />
-                Job Details
-              </DialogTitle>
-              <DialogDescription>
-                Review the job posting details below
-              </DialogDescription>
-            </DialogHeader>
-            
-            {viewingJob && (
-              <div className="space-y-6">
-                {/* Job Title and Status */}
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold">{viewingJob.title}</h2>
-                    <div className="flex items-center gap-2 mt-1">
-                      {getStatusBadge(viewingJob.approvalStatus)}
-                      {viewingJob.employmentType && (
-                        <Badge variant="outline">{viewingJob.employmentType}</Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Company Info */}
-                <div className="space-y-3">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    Company Information
-                  </h3>
-                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Company Name:</span>
-                      <span className="font-medium">{viewingJob.business?.name || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Industry:</span>
-                      <span className="font-medium">{viewingJob.business?.industry || 'N/A'}</span>
-                    </div>
-                    {viewingJob.business?.website && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Website:</span>
-                        <a 
-                          href={viewingJob.business.website} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          {viewingJob.business.website}
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Job Details */}
-                <div className="space-y-3">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Job Information
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-muted/50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                        <MapPin className="h-4 w-4" />
-                        Location
-                      </div>
-                      <p className="font-medium">{viewingJob.location || 'N/A'}</p>
-                    </div>
-                    <div className="bg-muted/50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                        <DollarSign className="h-4 w-4" />
-                        Salary Range
-                      </div>
-                      <p className="font-medium">{viewingJob.salaryRange || 'N/A'}</p>
-                    </div>
-                    <div className="bg-muted/50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                        <Clock className="h-4 w-4" />
-                        Employment Type
-                      </div>
-                      <p className="font-medium">{viewingJob.employmentType || 'N/A'}</p>
-                    </div>
-                    <div className="bg-muted/50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                        <Users className="h-4 w-4" />
-                        Experience Level
-                      </div>
-                      <p className="font-medium">{viewingJob.experienceLevel || 'N/A'}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Description */}
-                <div className="space-y-3">
-                  <h3 className="font-semibold">Description</h3>
-                  <div className="bg-muted/50 rounded-lg p-4">
-                    <p className="text-sm whitespace-pre-wrap">{viewingJob.description || 'No description provided.'}</p>
-                  </div>
-                </div>
-
-                {/* Requirements */}
-                {viewingJob.requirements && (
-                  <div className="space-y-3">
-                    <h3 className="font-semibold">Requirements</h3>
-                    <div className="bg-muted/50 rounded-lg p-4">
-                      <p className="text-sm whitespace-pre-wrap">{viewingJob.requirements}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Benefits */}
-                {viewingJob.benefits && (
-                  <div className="space-y-3">
-                    <h3 className="font-semibold">Benefits</h3>
-                    <div className="bg-muted/50 rounded-lg p-4">
-                      <p className="text-sm whitespace-pre-wrap">{viewingJob.benefits}</p>
-                    </div>
-                  </div>
-                )}
-
-                <Separator />
-
-                {/* Metadata */}
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    Posted: {new Date(viewingJob.createdAt).toLocaleDateString()}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Users className="h-4 w-4" />
-                    {viewingJob._count?.applications || 0} Applications
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowViewDialog(false)
-                      openActionDialog(viewingJob, 'reject')
-                    }}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Reject
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setShowViewDialog(false)
-                      openActionDialog(viewingJob, 'approve')
-                    }}
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Approve
-                  </Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
         {/* Action Dialog */}
         <AlertDialog open={showActionDialog} onOpenChange={setShowActionDialog}>
           <AlertDialogContent className="max-w-md w-full sm:max-w-md">
@@ -657,6 +508,21 @@ export default function JobApprovalsPage() {
                 {actionType === 'reject' && `Are you sure you want to reject "${selectedJob?.title}"?`}
               </AlertDialogDescription>
             </AlertDialogHeader>
+
+            {actionType === 'approve' && (
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="approvalComments">Review Comments (Optional)</Label>
+                  <Textarea
+                    id="approvalComments"
+                    placeholder="Any comments for the business about this approval..."
+                    value={reviewComments}
+                    onChange={(e) => setReviewComments(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+            )}
 
             {actionType === 'reject' && (
               <div className="space-y-4 py-4">

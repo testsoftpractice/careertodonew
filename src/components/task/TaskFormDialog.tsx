@@ -126,7 +126,7 @@ export default function TaskFormDialog({
   task,
   mode = 'create',
   projects = [],
-  availableUsers: propAvailableUsers = [],
+  availableUsers = [],
   loading = false,
   projectId: fixedProjectId,
 }: TaskFormDialogProps) {
@@ -155,13 +155,13 @@ export default function TaskFormDialog({
   const [isLoadingUsers, setIsLoadingUsers] = useState(false)
   
   // Combine prop users with dynamically fetched users
-  const availableUsers = propAvailableUsers.length > 0 ? propAvailableUsers : dynamicAvailableUsers
+  const combinedAvailableUsers = availableUsers.length > 0 ? availableUsers : dynamicAvailableUsers
   
   // Fetch project members when a project is selected
   useEffect(() => {
     const fetchProjectMembers = async () => {
       const projectIdToUse = formData.projectId || fixedProjectId
-      if (!projectIdToUse || propAvailableUsers.length > 0) {
+      if (!projectIdToUse || availableUsers.length > 0) {
         // Skip if no project selected or if users are provided via props
         return
       }
@@ -190,7 +190,7 @@ export default function TaskFormDialog({
     }
     
     fetchProjectMembers()
-  }, [formData.projectId, fixedProjectId, propAvailableUsers.length])
+  }, [formData.projectId, fixedProjectId, availableUsers.length])
 
   useEffect(() => {
     if (open && !isInitialized) {
@@ -425,7 +425,7 @@ export default function TaskFormDialog({
   }
 
   const getAvailableUsersForAssignee = () => {
-    return availableUsers.filter(user => !formData.assigneeIds.includes(user.id))
+    return combinedAvailableUsers.filter(user => !formData.assigneeIds.includes(user.id))
   }
 
   return (
@@ -598,7 +598,7 @@ export default function TaskFormDialog({
               )}
             </div>
 
-            {/* Multiple Assignees (For Project Tasks) */}
+            {/* Multiple Assignees (For Project Tasks Only) */}
             {(mode === 'create' || mode === 'edit') && (formData.projectId || fixedProjectId) && (
               <div className="space-y-2">
                 <Label className="text-sm font-semibold flex items-center gap-2">
@@ -610,7 +610,7 @@ export default function TaskFormDialog({
                     </Badge>
                   )}
                 </Label>
-                
+
                 {/* Loading indicator */}
                 {isLoadingUsers && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
@@ -618,12 +618,12 @@ export default function TaskFormDialog({
                     Loading project members...
                   </div>
                 )}
-                
+
                 {/* Selected Assignees */}
                 {!isLoadingUsers && formData.assigneeIds.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {formData.assigneeIds.map((assigneeId) => {
-                      const user = availableUsers.find(u => u.id === assigneeId)
+                      const user = availableUsers.find(u => u.id === assigneeId) || dynamicAvailableUsers.find(u => u.id === assigneeId)
                       if (!user) return null
                       return (
                         <Badge key={assigneeId} variant="secondary" className="gap-1">
@@ -641,31 +641,52 @@ export default function TaskFormDialog({
                   </div>
                 )}
 
-                {/* Add Assignee Dropdown */}
-                {!isLoadingUsers && availableUsers.length > 0 && getAvailableUsersForAssignee().length > 0 && (
-                  <Select onValueChange={addAssignee}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="+ Add assignee" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[100001]">
+                {/* Add Assignee - Show as clickable list for better UX */}
+                {!isLoadingUsers && combinedAvailableUsers.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Available members:</Label>
+                    <div className="space-y-1 max-h-48 overflow-y-auto border rounded-lg p-2">
                       {getAvailableUsersForAssignee().map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{user.name}</span>
-                            {user.email && (
-                              <span className="text-xs text-muted-foreground">
-                                ({user.email})
-                              </span>
-                            )}
-                          </div>
-                        </SelectItem>
+                        <button
+                          key={user.id}
+                          type="button"
+                          onClick={() => {
+                            if (!formData.assigneeIds.includes(user.id)) {
+                              setFormData(prev => ({
+                                ...prev,
+                                assigneeIds: [...prev.assigneeIds, user.id]
+                              }))
+                            }
+                          }}
+                          disabled={formData.assigneeIds.includes(user.id)}
+                          className={`
+                            w-full text-left px-3 py-2 rounded-md text-sm transition-colors
+                            flex items-center justify-between
+                            ${formData.assigneeIds.includes(user.id)
+                              ? 'bg-primary text-primary-foreground cursor-not-allowed opacity-60'
+                              : 'bg-muted hover:bg-muted/80'
+                            }
+                          `}
+                        >
+                          <span className="font-medium">{user.name}</span>
+                          {user.email && (
+                            <span className="text-xs opacity-70">
+                              ({user.email})
+                            </span>
+                          )}
+                        </button>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </div>
+                    {getAvailableUsersForAssignee().length === 0 && (
+                      <p className="text-xs text-muted-foreground text-center py-2">
+                        All members have been assigned
+                      </p>
+                    )}
+                  </div>
                 )}
-                
+
                 {/* No members message */}
-                {!isLoadingUsers && availableUsers.length === 0 && (
+                {!isLoadingUsers && combinedAvailableUsers.length === 0 && (
                   <p className="text-sm text-muted-foreground">
                     No project members found. Add members to this project first.
                   </p>
@@ -705,89 +726,91 @@ export default function TaskFormDialog({
               </AnimatePresence>
             </div>
 
-            {/* Subtasks */}
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4" />
-                Subtasks <span className="text-muted-foreground font-normal">(Optional)</span>
-                {subtasks.length > 0 && (
-                  <Badge variant="secondary" className="ml-auto">
-                    {subtasks.length} items
-                  </Badge>
-                )}
-              </Label>
-              
-              {/* Subtasks List */}
-              {subtasks.length > 0 && (
-                <div className="space-y-2">
-                  {subtasks.map((subtask, index) => (
-                    <div 
-                      key={subtask.id}
-                      className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 group hover:bg-muted/80 transition-colors"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => toggleSubtaskComplete(subtask.id)}
-                        className="flex-shrink-0"
-                      >
-                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
-                          subtask.completed 
-                            ? 'bg-emerald-500 border-emerald-600' 
-                            : 'border-muted-foreground hover:border-emerald-500'
-                        }`}>
-                          {subtask.completed && <Check className="w-3 h-3 text-white" />}
-                        </div>
-                      </button>
-                      <Input
-                        value={subtask.title}
-                        onChange={(e) => {
-                          const updatedSubtasks = [...subtasks]
-                          updatedSubtasks[index].title = e.target.value
-                          setSubtasks(updatedSubtasks)
-                        }}
-                        className="flex-1 min-w-0 bg-transparent border-0 focus-visible:ring-0 focus-visible:bg-transparent text-sm"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 hover:bg-destructive/20 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeSubtask(subtask.id)}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
+            {/* Subtasks (For Project Tasks Only) */}
+            {(mode === 'create' || mode === 'edit') && (formData.projectId || fixedProjectId) && (
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Subtasks <span className="text-muted-foreground font-normal">(Optional)</span>
+                  {subtasks.length > 0 && (
+                    <Badge variant="secondary" className="ml-auto">
+                      {subtasks.length} items
+                    </Badge>
+                  )}
+                </Label>
 
-              {/* Add Subtask Input */}
-              <div className="flex gap-2">
-                <Input
-                  value={subtaskInput}
-                  onChange={(e) => setSubtaskInput(e.target.value)}
-                  placeholder="Add a subtask..."
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      addSubtask()
-                    }
-                  }}
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  onClick={addSubtask}
-                  variant="outline"
-                  size="sm"
-                  disabled={!subtaskInput.trim()}
-                  className="gap-1"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add
-                </Button>
+                {/* Subtasks List */}
+                {subtasks.length > 0 && (
+                  <div className="space-y-2">
+                    {subtasks.map((subtask, index) => (
+                      <div
+                        key={subtask.id}
+                        className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 group hover:bg-muted/80 transition-colors"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => toggleSubtaskComplete(subtask.id)}
+                          className="flex-shrink-0"
+                        >
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
+                            subtask.completed
+                              ? 'bg-emerald-500 border-emerald-600'
+                              : 'border-muted-foreground hover:border-emerald-500'
+                          }`}>
+                            {subtask.completed && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                        </button>
+                        <Input
+                          value={subtask.title}
+                          onChange={(e) => {
+                            const updatedSubtasks = [...subtasks]
+                            updatedSubtasks[index].title = e.target.value
+                            setSubtasks(updatedSubtasks)
+                          }}
+                          className="flex-1 min-w-0 bg-transparent border-0 focus-visible:ring-0 focus-visible:bg-transparent text-sm"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 hover:bg-destructive/20 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeSubtask(subtask.id)}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add Subtask Input */}
+                <div className="flex gap-2">
+                  <Input
+                    value={subtaskInput}
+                    onChange={(e) => setSubtaskInput(e.target.value)}
+                    placeholder="Add a subtask..."
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        addSubtask()
+                      }
+                    }}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    onClick={addSubtask}
+                    variant="outline"
+                    size="sm"
+                    disabled={!subtaskInput.trim()}
+                    className="gap-1"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Discussion/Comments (Edit Mode Only) */}
             {mode === 'edit' && task && (

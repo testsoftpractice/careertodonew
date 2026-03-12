@@ -440,7 +440,7 @@ export default function CreateBusinessPage() {
                       </div>
                       {businessData.seekingInvestment && (
                         <div className="space-y-2">
-                          <Label htmlFor="investmentGoal">Investment Goal Amount ($) *</Label>
+                          <Label htmlFor="investmentGoal">Investment Goal Amount (৳) *</Label>
                           <Input
                             id="investmentGoal"
                             type="number"

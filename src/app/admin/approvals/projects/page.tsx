@@ -414,85 +414,44 @@ export default function ProjectApprovalsPage() {
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Project Name</TableHead>
-                        <TableHead>Owner</TableHead>
-                        <TableHead>Submission Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Team Size</TableHead>
-                        <TableHead>Tasks</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {projects.map((project) => (
-                        <TableRow key={project.id}>
-                          <TableCell className="font-medium">
-                            <div>
-                              <div className="font-semibold">{project.name}</div>
-                              <div className="text-sm text-muted-foreground line-clamp-1">
-                                {project.description}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs">
-                                {project.owner?.name?.charAt(0).toUpperCase() || '?'}
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium">{project.owner?.name || 'Unknown'}</div>
-                                <div className="text-xs text-muted-foreground">{project.owner?.email || 'N/A'}</div>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Project</TableHead>
+                      <TableHead>Owner</TableHead>
+                      <TableHead>Submitted</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {projects.map((project) => (
+                      <TableRow key={project.id}>
+                        <TableCell className="font-medium">
+                          <div className="font-semibold">{project.name}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">{project.owner?.name || 'Unknown'}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
                             {project.submissionDate ? new Date(project.submissionDate).toLocaleDateString() : 'N/A'}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(project.approvalStatus)}</TableCell>
-                          <TableCell>{project._count?.members || 0} members</TableCell>
-                          <TableCell>{project._count?.tasks || 0} tasks</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openViewDialog(project)}
-                                title="View Details"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openActionDialog(project, 'approve')}
-                              >
-                                <CheckCircle2 className="h-4 w-4 mr-1" />
-                                Approve
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openActionDialog(project, 'request-changes')}
-                              >
-                                <AlertTriangle className="h-4 w-4 mr-1" />
-                                Changes
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openActionDialog(project, 'reject')}
-                                title="Reject"
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>{getStatusBadge(project.approvalStatus)}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openViewDialog(project)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                     </TableBody>
                   </Table>
                 </div>
@@ -545,8 +504,11 @@ export default function ProjectApprovalsPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <h2 className="text-xl font-bold">{viewingProject.name}</h2>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
                       {getStatusBadge(viewingProject.approvalStatus)}
+                      {viewingProject.status && (
+                        <Badge variant="outline">{viewingProject.status.replace(/_/g, ' ')}</Badge>
+                      )}
                       {viewingProject.category && (
                         <Badge variant="outline">{viewingProject.category}</Badge>
                       )}
@@ -577,13 +539,13 @@ export default function ProjectApprovalsPage() {
 
                 <Separator />
 
-                {/* Project Details */}
+                {/* Complete Project Information */}
                 <div className="space-y-3">
                   <h3 className="font-semibold flex items-center gap-2">
                     <FileText className="h-4 w-4" />
                     Project Information
                   </h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     <div className="bg-muted/50 rounded-lg p-3">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
                         <Tag className="h-4 w-4" />
@@ -612,16 +574,13 @@ export default function ProjectApprovalsPage() {
                       </div>
                       <p className="font-medium">{viewingProject._count?.tasks || 0} tasks</p>
                     </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Description */}
-                <div className="space-y-3">
-                  <h3 className="font-semibold">Description</h3>
-                  <div className="bg-muted/50 rounded-lg p-4">
-                    <p className="text-sm whitespace-pre-wrap">{viewingProject.description || 'No description provided.'}</p>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                        <Building2 className="h-4 w-4" />
+                        Status
+                      </div>
+                      <p className="font-medium">{viewingProject.status || 'N/A'}</p>
+                    </div>
                   </div>
                 </div>
 
@@ -633,7 +592,7 @@ export default function ProjectApprovalsPage() {
                     <Clock className="h-4 w-4" />
                     Timeline & Budget
                   </h3>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     <div className="bg-muted/50 rounded-lg p-3">
                       <div className="text-muted-foreground text-xs mb-1">Budget</div>
                       <p className="font-medium">{viewingProject.budget ? `$${viewingProject.budget.toLocaleString()}` : 'N/A'}</p>
@@ -651,13 +610,45 @@ export default function ProjectApprovalsPage() {
 
                 <Separator />
 
+                {/* Description */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold">Description</h3>
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <p className="text-sm whitespace-pre-wrap">{viewingProject.description || 'No description provided.'}</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Team Members */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Team Members
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {viewingProject._count && viewingProject._count.members > 0 ? (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <div className="text-muted-foreground text-xs mb-1">Total Members</div>
+                        <p className="font-medium">{viewingProject._count.members} members</p>
+                      </div>
+                    ) : null}
+                    <div className="bg-muted/50 rounded-lg p-3 sm:col-span-2">
+                      <div className="text-muted-foreground text-xs mb-1">Tasks</div>
+                      <p className="font-medium">{viewingProject._count?.tasks || 0} tasks created</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
                 {/* Metadata */}
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     Created: {new Date(viewingProject.createdAt).toLocaleDateString()}
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Clock className="h-4 w-4" />
                     Updated: {new Date(viewingProject.updatedAt).toLocaleDateString()}
                   </div>

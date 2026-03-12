@@ -444,7 +444,7 @@ export default function SupplierCreatePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="hourlyRate">Hourly Rate (USD)</Label>
+                <Label htmlFor="hourlyRate">Hourly Rate (BDT)</Label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input

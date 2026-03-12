@@ -29,8 +29,16 @@ export default function SubmitTaskPage() {
         formData.append('file', file)
       }
 
+      // Get token from localStorage and add Authorization header
+      const token = localStorage.getItem('token')
+      const headers: HeadersInit = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const response = await fetch(`/api/tasks/${params.id}/submit`, {
         method: 'POST',
+        headers,
         body: formData,
       })
 

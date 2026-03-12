@@ -25,6 +25,12 @@ interface User {
   joinedAt: string
   reputation: number
   verificationStatus?: string
+  university?: {
+    id: string
+    name: string
+    code: string
+  } | null
+  mobileNumber?: string | null
 }
 
 export default function AdminUsersPage() {
@@ -309,6 +315,18 @@ export default function AdminUsersPage() {
                       <div>
                         <div className="font-medium">{user.name}</div>
                         <div className="text-sm text-muted-foreground">{user.email}</div>
+                        <div className="flex items-center gap-2 mt-1">
+                          {user.university && (
+                            <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded">
+                              {user.university.name}
+                            </span>
+                          )}
+                          {user.mobileNumber && (
+                            <span className="text-xs text-muted-foreground">
+                              {user.mobileNumber}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -343,8 +361,10 @@ export default function AdminUsersPage() {
                             </Button>
                           </>
                         )}
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/admin/users/${user.id}`}>
+                            <Eye className="h-4 w-4" />
+                          </Link>
                         </Button>
                       </div>
                     </div>

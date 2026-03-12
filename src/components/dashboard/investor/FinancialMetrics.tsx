@@ -90,14 +90,14 @@ export function FinancialMetrics({
               <div className="text-xs text-muted-foreground mb-1">Total Revenue</div>
               <div className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4 text-primary" />
-                <span className="text-lg font-bold text-primary">${totalRevenue.toLocaleString()}</span>
+                <span className="text-lg font-bold text-primary">৳{totalRevenue.toLocaleString()}</span>
               </div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground mb-1">Total Profit</div>
               <div className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4 text-emerald-600" />
-                <span className="text-lg font-bold text-emerald-600">${totalProfit.toLocaleString()}</span>
+                <span className="text-lg font-bold text-emerald-600">৳{totalProfit.toLocaleString()}</span>
               </div>
             </div>
           </div>

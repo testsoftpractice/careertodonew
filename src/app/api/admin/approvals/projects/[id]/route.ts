@@ -29,6 +29,13 @@ export async function GET(
     const project = await db.project.findFirst({
       where,
       include: {
+        _count: {
+          select: {
+            ProjectMember: true,
+            Task: true,
+            Milestone: true,
+          },
+        },
         User: {
           select: {
             id: true,
@@ -55,7 +62,18 @@ export async function GET(
           },
         },
         University: true,
-        ProjectMember: true,
+        ProjectMember: {
+          include: {
+            User: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              },
+            },
+          },
+        },
         Task: {
           take: 10,
           orderBy: { createdAt: 'desc' },
@@ -112,7 +130,75 @@ export async function GET(
       return notFound('Project not found')
     }
 
-    return successResponse(project)
+    // Transform project data to match frontend expectations
+    const transformedProject = {
+      id: project.id,
+      name: project.name,
+      description: project.description,
+      status: project.status,
+      approvalStatus: project.approvalStatus,
+      submissionDate: project.submissionDate,
+      approvedAt: project.approvedAt,
+      rejectionReason: project.terminationReason,
+      reviewComments: project.reviewComments,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+      category: project.category,
+      budget: project.budget,
+      startDate: project.startDate,
+      endDate: project.endDate,
+      seekingInvestment: project.seekingInvestment,
+      investmentGoal: project.investmentGoal,
+      published: project.published,
+      // Transform User -> owner
+      owner: project.User ? {
+        id: project.User.id,
+        name: project.User.name,
+        email: project.User.email,
+        avatar: project.User.avatar,
+        major: project.User.major,
+        university: project.User.University ? {
+          id: project.User.University.id,
+          name: project.User.University.name,
+        } : null,
+      } : null,
+      // Transform University -> university
+      university: project.University ? {
+        id: project.University.id,
+        name: project.University.name,
+        code: project.University.code,
+      } : null,
+      // Transform ProjectMember -> members
+      members: project.ProjectMember.map((member: any) => ({
+        id: member.id,
+        user: member.User,
+        role: member.role,
+      })),
+      // Transform Task -> tasks
+      tasks: project.Task.map((task: any) => ({
+        id: task.id,
+        title: task.title,
+        status: task.status,
+        priority: task.priority,
+        dueDate: task.dueDate,
+      })),
+      // Transform Milestone -> milestones
+      milestones: project.Milestone.map((milestone: any) => ({
+        id: milestone.id,
+        title: milestone.title,
+        description: milestone.description,
+        status: milestone.status,
+        dueDate: milestone.dueDate,
+      })),
+      // Transform _count
+      _count: project._count ? {
+        members: project._count.ProjectMember,
+        tasks: project._count.Task,
+        milestones: project._count.Milestone,
+      } : { members: 0, tasks: 0, milestones: 0 },
+    }
+
+    return successResponse(transformedProject)
   } catch (error: any) {
     if (error instanceof AuthError) {
       console.error('Authentication error:', error.message)

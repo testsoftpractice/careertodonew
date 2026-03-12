@@ -188,7 +188,7 @@ export default function MarketInvestmentPage({ params }: { params: Promise<{ id:
                         <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-500 flex-shrink-0" />
                         <div>
                           <div className="text-base sm:text-lg font-semibold">
-                            {project.investmentGoal.toLocaleString()}
+                            ৳{project.investmentGoal.toLocaleString()}
                           </div>
                           <div className="text-xs sm:text-sm text-muted-foreground">
                             Investment Goal
@@ -200,7 +200,7 @@ export default function MarketInvestmentPage({ params }: { params: Promise<{ id:
                           <div className="text-xs sm:text-sm text-muted-foreground mb-1">
                             {project.investmentRaised ? (
                               <>
-                                ${project.investmentRaised.toLocaleString()} raised
+                                ৳{project.investmentRaised.toLocaleString()} raised
                               </>
                             ) : 'No investments yet'}
                           </div>
@@ -236,7 +236,7 @@ export default function MarketInvestmentPage({ params }: { params: Promise<{ id:
                     <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2">
                       <div className="space-y-2">
                         <label htmlFor="amount" className="text-sm sm:text-base font-medium block mb-1 sm:mb-2">
-                          Investment Amount ($)
+                          Investment Amount (৳)
                         </label>
                         <input
                           id="amount"

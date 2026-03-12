@@ -229,7 +229,7 @@ export default function NeedsPage() {
                         <div className="flex items-center gap-2">
                           <DollarSign className="h-4 w-4 text-muted-foreground" />
                           <span className="font-semibold">
-                            ${need.budget ? need.budget.toLocaleString() : 'N/A'}
+                            ৳{need.budget ? need.budget.toLocaleString() : 'N/A'}
                           </span>
                         </div>
                         <div className="text-sm text-muted-foreground">

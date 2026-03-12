@@ -317,28 +317,34 @@ function TaskCard({ task, onClick, onEdit, onDelete, id }: TaskCardProps) {
                 <ListTodo className="w-3 h-3" />
                 {task.project.name}
               </div>
-            ) : (() => {
-              // Support both API naming conventions
-              const assignees = task.taskAssignees || task.TaskAssignee?.map(ta => ({
-                ...ta,
-                user: ta.User
-              })) || []
-              if (assignees.length > 0) {
-                return (
-                  <div
-                    className="flex items-center gap-1 text-xs text-muted-foreground max-w-[100px] truncate"
-                    title={assignees.map(ta => ta.user.name).join(', ')}
-                  >
-                    <User className="w-3 h-3" />
-                    {assignees.length === 1
-                      ? assignees[0].user.name
-                      : `${assignees[0].user.name} +${assignees.length - 1}`
-                    }
-                  </div>
-                )
-              }
-              return null
-            })()}
+            ) : (
+              <>
+                {(() => {
+                  const taskAssignees = task.taskAssignees || task.TaskAssignee?.map(ta => ({
+                    ...ta,
+                    user: ta.User
+                  })) || []
+
+                  if (taskAssignees.length > 0) {
+                    const assigneeNames = taskAssignees.map(ta => ta.user?.name || 'Unknown').filter(Boolean)
+
+                    return (
+                      <div
+                        className="flex items-center gap-1 text-xs text-muted-foreground max-w-[120px] truncate"
+                        title={assigneeNames.join(', ')}
+                      >
+                        <User className="w-3 h-3" />
+                        {taskAssignees.length === 1
+                          ? assigneeNames[0]
+                          : `${assigneeNames[0]} +${taskAssignees.length - 1}`
+                        }
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
+              </>
+            )}
           </div>
         </CardContent>
       </Card>

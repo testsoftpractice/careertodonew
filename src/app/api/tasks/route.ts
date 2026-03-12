@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
 
-    // Validate request body (accepts both old and new format)
+    // Validate request body
     const validation = validateRequest(createTaskSchema, body)
 
     if (!validation.success) {
@@ -184,8 +184,23 @@ export async function POST(request: NextRequest) {
       return forbidden('You are not a member of this project')
     }
 
-    // Handle assignees - support both old single assigneeId and new assigneeIds array
+    // Handle assignees - only support assigneeIds array
     const assigneeIds = body.assigneeIds || []
+
+    // Validate that all assigneeIds are project members
+    if (assigneeIds.length > 0) {
+      const projectMemberIds = await db.projectMember.findMany({
+        where: { projectId: data.projectId },
+        select: { userId: true }
+      })
+
+      const memberIds = projectMemberIds.map(pm => pm.userId)
+      const invalidIds = assigneeIds.filter(id => !memberIds.includes(id))
+
+      if (invalidIds.length > 0) {
+        return badRequest('Some assignees are not project members')
+      }
+    }
 
     // Create task without primary assignee field
     const task = await db.task.create({

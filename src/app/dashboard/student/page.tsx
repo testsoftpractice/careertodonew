@@ -107,6 +107,7 @@ function DashboardContent({ user }: { user: any }) {
   const [viewType, setViewType] = useState<'personal' | 'project'>('personal')
   const [selectedProject, setSelectedProject] = useState<any | null>(null)
   const [availableProjects, setAvailableProjects] = useState<any[]>([])
+  const [availableUsers, setAvailableUsers] = useState<Array<{ id: string; name: string; email?: string }>>([])
   const [selectedProjectForTimeTracking, setSelectedProjectForTimeTracking] = useState<string>('')
 
   const [stats, setStats] = useState({
@@ -454,6 +455,32 @@ function DashboardContent({ user }: { user: any }) {
     }
   }, [user?.id])
 
+  const fetchProjectMembers = useCallback(async (projectId: string) => {
+    if (!projectId) {
+      setAvailableUsers([])
+      return
+    }
+
+    try {
+      const response = await authFetch(`/api/projects/${projectId}/members`)
+      const data = await response.json()
+
+      if (data.success && data.data && data.data.members) {
+        const members = data.data.members.map((member: any) => ({
+          id: member.user?.id || member.userId,
+          name: member.user?.name || member.user?.email || 'Unknown',
+          email: member.user?.email,
+        }))
+        setAvailableUsers(members)
+      } else {
+        setAvailableUsers([])
+      }
+    } catch (error) {
+      console.error('Fetch project members error:', error)
+      setAvailableUsers([])
+    }
+  }, [])
+
   const fetchTimeEntries = useCallback(async () => {
     if (!user) return
 
@@ -610,8 +637,16 @@ function DashboardContent({ user }: { user: any }) {
   useEffect(() => {
     if (viewType === 'project' && selectedProject && activeTab === 'tasks') {
       fetchProjectTasks(selectedProject.id)
+      fetchProjectMembers(selectedProject.id)
     }
-  }, [viewType, selectedProject, activeTab, fetchProjectTasks])
+  }, [viewType, selectedProject, activeTab, fetchProjectTasks, fetchProjectMembers])
+
+  // Fetch project members when opening task dialog for editing
+  useEffect(() => {
+    if (editingTask && editingTask.projectId) {
+      fetchProjectMembers(editingTask.projectId)
+    }
+  }, [editingTask, fetchProjectMembers])
 
   const handleLogout = async () => {
     const success = await logoutAndRedirect()
@@ -889,19 +924,18 @@ function DashboardContent({ user }: { user: any }) {
 
       const payload: any = {
         title: taskData.title.trim(),
-        description: taskData.description ? taskData.description.trim() : null,
+        description: taskData.description ? taskData.description.trim() : '',
         priority: taskData.priority || 'MEDIUM',
       }
 
       if (taskData.projectId && taskData.projectId !== 'none' && taskData.projectId !== '') {
         payload.projectId = taskData.projectId
-        payload.assigneeId = user.id
+        // Use only assigneeIds for multiple assignees
+        payload.assigneeIds = taskData.assigneeIds && Array.isArray(taskData.assigneeIds) && taskData.assigneeIds.length > 0
+          ? taskData.assigneeIds
+          : [user.id] // Default to current user if no assignees specified
         if (taskData.dueDate) {
           payload.dueDate = new Date(taskData.dueDate).toISOString()
-        }
-        // Include assigneeIds for project tasks
-        if (taskData.assigneeIds && Array.isArray(taskData.assigneeIds)) {
-          payload.assigneeIds = taskData.assigneeIds
         }
         // Include subtasks for project tasks
         if (taskData.subtasks && Array.isArray(taskData.subtasks) && taskData.subtasks.length > 0) {
@@ -990,7 +1024,7 @@ function DashboardContent({ user }: { user: any }) {
 
       const payload: any = {
         title: taskData.title.trim(),
-        description: taskData.description ? taskData.description.trim() : null,
+        description: taskData.description ? taskData.description.trim() : '',
         priority: taskData.priority || 'MEDIUM',
         status: taskData.status || 'TODO',
       }
@@ -1741,6 +1775,8 @@ function DashboardContent({ user }: { user: any }) {
           if (!open) {
             setShowTaskDialog(false)
             setEditingTask(null)
+            // Clear available users when dialog closes for a fresh start
+            setAvailableUsers([])
           } else {
             setShowTaskDialog(true)
           }
@@ -1749,6 +1785,8 @@ function DashboardContent({ user }: { user: any }) {
         task={editingTask}
         mode={editingTask ? 'edit' : 'create'}
         projects={availableProjects}
+        availableUsers={availableUsers}
+        projectId={selectedProject?.id}
         loading={loading.createTask || loading.updateTask}
       />
 

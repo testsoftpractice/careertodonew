@@ -34,6 +34,7 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "@/hooks/use-toast"
+import { authFetch } from "@/lib/api-response"
 
 export default function EditProjectPage() {
   const params = useParams()
@@ -75,7 +76,7 @@ export default function EditProjectPage() {
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const response = await fetch(`/api/projects/${params.id}`)
+        const response = await authFetch(`/api/projects/${params.id}`)
         const data = await response.json()
 
         if (data.success && data.data) {
@@ -110,16 +111,13 @@ export default function EditProjectPage() {
     setLoading(true)
 
     try {
-      const response = await fetch(`/api/projects/${params.id}`, {
+      const response = await authFetch(`/api/projects/${params.id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           name: projectData.title,
           description: projectData.description,
           category: projectData.category,
-          status: projectData.status,
+          // Don't include status - only admins can change it
           seekingInvestment: projectData.seekingInvestment,
           investmentGoal: projectData.investmentGoal ? parseInt(projectData.investmentGoal) : null,
         }),
@@ -133,7 +131,7 @@ export default function EditProjectPage() {
           description: "Project updated successfully!",
         })
         // Refresh project data
-        const refreshResponse = await fetch(`/api/projects/${params.id}`)
+        const refreshResponse = await authFetch(`/api/projects/${params.id}`)
         const refreshData = await refreshResponse.json()
         if (refreshData.success && refreshData.data) {
           setProjectData(prev => ({
@@ -168,11 +166,8 @@ export default function EditProjectPage() {
 
     setResubmitting(true)
     try {
-      const response = await fetch(`/api/projects/${params.id}/resubmit`, {
+      const response = await authFetch(`/api/projects/${params.id}/resubmit`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
       })
 
       const data = await response.json()
@@ -205,6 +200,7 @@ export default function EditProjectPage() {
   const requiresChanges = projectData.approvalStatus === 'REQUIRE_CHANGES'
   const isPending = projectData.approvalStatus === 'PENDING'
   const isRejected = projectData.approvalStatus === 'REJECTED'
+  const canResubmit = requiresChanges || isRejected
 
   return (
     <div className="min-h-screen bg-background">
@@ -424,7 +420,7 @@ export default function EditProjectPage() {
 
               {projectData.seekingInvestment && (
                 <div className="space-y-2">
-                  <Label htmlFor="investmentGoal">Investment Goal (USD) *</Label>
+                  <Label htmlFor="investmentGoal">Investment Goal (BDT) *</Label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -441,7 +437,7 @@ export default function EditProjectPage() {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Minimum $1,000. This amount will be visible to investors in marketplace.
+                    Minimum ৳1,000. This amount will be visible to investors in marketplace.
                   </p>
                 </div>
               )}
@@ -461,19 +457,19 @@ export default function EditProjectPage() {
 
           <div className="grid gap-4 md:grid-cols-3">
             <Button variant="outline" asChild>
-              <Link href={`/projects/${params.id}/departments`}>
+              <Link href={`/projects/${params.id}?tab=team`}>
                 <Building2 className="h-4 w-4 mr-2" />
                 Manage Departments
               </Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href={`/projects/${params.id}/milestones`}>
+              <Link href={`/projects/${params.id}?tab=milestones`}>
                 <Target className="h-4 w-4 mr-2" />
                 Manage Milestones
               </Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href={`/projects/${params.id}/tasks`}>
+              <Link href={`/projects/${params.id}?tab=tasks`}>
                 <Briefcase className="h-4 w-4 mr-2" />
                 Manage Tasks
               </Link>
@@ -492,7 +488,7 @@ export default function EditProjectPage() {
               {loading ? "Saving..." : "Save Changes"}
               <Save className="ml-2 h-4 w-4" />
             </Button>
-            {requiresChanges && (
+            {canResubmit && (
               <Button 
                 onClick={handleResubmit}
                 disabled={resubmitting || loading}

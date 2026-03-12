@@ -13,7 +13,14 @@ interface Comment {
   id: string
   content: string
   createdAt: string
-  author: {
+  userId: string
+  User?: {
+    id: string
+    name: string
+    email: string
+    avatar?: string | null
+  }
+  author?: {
     id: string
     name: string
     email: string
@@ -54,7 +61,12 @@ export default function TaskComments({ taskId, projectId }: TaskCommentsProps) {
       
       // Only update state if component is still mounted
       if (isMountedRef.current) {
-        setComments(data.comments || [])
+        // Transform data to match expected format (User -> author)
+        const transformedComments = (data.comments || []).map((comment: any) => ({
+          ...comment,
+          author: comment.User || comment.author,
+        }))
+        setComments(transformedComments)
       }
     } catch (error) {
       console.error('Failed to fetch comments:', error)
@@ -88,7 +100,12 @@ export default function TaskComments({ taskId, projectId }: TaskCommentsProps) {
 
       const data = await response.json()
       if (data.comment) {
-        setComments(prev => [data.comment, ...prev])
+        // Transform to match expected format (User -> author)
+        const transformedComment = {
+          ...data.comment,
+          author: data.comment.User || data.comment.author,
+        }
+        setComments(prev => [transformedComment, ...prev])
         setNewComment('')
         toast({ title: 'Success', description: 'Comment added' })
       }

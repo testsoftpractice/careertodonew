@@ -101,6 +101,11 @@ export async function GET(
         description: project.description,
         category: project.category,
         status: project.status,
+        approvalStatus: project.approvalStatus,
+        reviewComments: project.reviewComments,
+        terminationReason: project.terminationReason,
+        seekingInvestment: project.seekingInvestment,
+        investmentGoal: project.investmentGoal,
         owner: project.User,
         business: project.Business,
         members: project.ProjectMember,
@@ -175,16 +180,23 @@ export async function PATCH(
       budget,
     } = body
 
+    // Build update data - only allow admins to change status
+    const updateData: any = {
+      ...(name !== undefined && { name }),
+      ...(description !== undefined && { description }),
+      ...(startDate && { startDate: new Date(startDate) }),
+      ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
+      ...(budget !== undefined && { budget }),
+    }
+
+    // Only admins can change project status
+    if (isAdmin && status) {
+      updateData.status = status as ProjectStatus
+    }
+
     const project = await db.project.update({
       where: { id },
-      data: {
-        ...(name !== undefined && { name }),
-        ...(description !== undefined && { description }),
-        ...(status && { status: status as ProjectStatus }),
-        ...(startDate && { startDate: new Date(startDate) }),
-        ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
-        ...(budget !== undefined && { budget }),
-      },
+      data: updateData,
       include: {
         User: true,
         Business: true,

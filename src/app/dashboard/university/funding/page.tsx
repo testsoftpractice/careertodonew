@@ -157,7 +157,7 @@ export default function UniversityFundingPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-indigo-100 text-xs sm:text-sm font-medium mb-1">Total Funding</p>
-                    <p className="text-2xl sm:text-3xl font-bold">${stats.totalFunding.toLocaleString()}</p>
+                    <p className="text-2xl sm:text-3xl font-bold">৳{stats.totalFunding.toLocaleString()}</p>
                   </div>
                   <DollarSign className="h-8 w-8 sm:h-10 text-indigo-200" />
                 </div>
@@ -282,7 +282,7 @@ export default function UniversityFundingPage() {
                                   {request.type}
                                 </Badge>
                               </TableCell>
-                              <TableCell>${request.amount?.toLocaleString()}</TableCell>
+                              <TableCell>৳{request.amount?.toLocaleString()}</TableCell>
                               <TableCell>
                                 <Badge className={getStatusColor(request.status)}>
                                   {request.status}
@@ -343,7 +343,7 @@ export default function UniversityFundingPage() {
                               {grant.description}
                             </p>
                             <div className="flex items-center justify-between">
-                              <span className="text-lg font-bold">${grant.amount?.toLocaleString()}</span>
+                              <span className="text-lg font-bold">৳{grant.amount?.toLocaleString()}</span>
                               <Button size="sm" variant="outline" asChild>
                                 <Link href={`/dashboard/university/grants/${grant.id}`}>
                                   <Eye className="h-4 w-4 mr-1" />
@@ -397,7 +397,7 @@ export default function UniversityFundingPage() {
                           {donations.map((donation: any) => (
                             <TableRow key={donation.id}>
                               <TableCell className="font-medium">{donation.donorName}</TableCell>
-                              <TableCell>${donation.amount?.toLocaleString()}</TableCell>
+                              <TableCell>৳{donation.amount?.toLocaleString()}</TableCell>
                               <TableCell>{donation.purpose}</TableCell>
                               <TableCell>
                                 {new Date(donation.date).toLocaleDateString()}

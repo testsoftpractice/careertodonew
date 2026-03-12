@@ -148,7 +148,7 @@ export default function ProjectTasksPage() {
 
       const payload: any = {
         title: taskData.title,
-        description: taskData.description || null,
+        description: taskData.description || '',
         priority: taskData.priority,
         status: taskData.status || 'TODO',
         projectId: projectId,
@@ -225,7 +225,7 @@ export default function ProjectTasksPage() {
 
       const payload: any = {
         title: taskData.title,
-        description: taskData.description || null,
+        description: taskData.description || '',
         priority: taskData.priority,
         status: taskData.status,
       }
@@ -482,6 +482,7 @@ export default function ProjectTasksPage() {
         mode={editingTask ? 'edit' : 'create'}
         loading={loading.update}
         availableUsers={availableUsers}
+        projectId={projectId}
       />
     </div>
   )

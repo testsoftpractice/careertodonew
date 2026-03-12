@@ -9,6 +9,7 @@ import { ArrowLeft, CheckCircle2, Upload, Users } from 'lucide-react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { toast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/api-response'
 
 export default function AssignTaskPage() {
   const params = useParams()
@@ -24,7 +25,7 @@ export default function AssignTaskPage() {
       
       try {
         setLoadingMembers(true)
-        const response = await fetch(`/api/projects/${params.id}/members`)
+        const response = await authFetch(`/api/projects/${params.id}/members`)
         const data = await response.json()
         
         if (data.success) {
@@ -51,11 +52,8 @@ export default function AssignTaskPage() {
     setLoading(true)
 
     try {
-      const response = await fetch(`/api/tasks/${params.taskId}/assign`, {
+      const response = await authFetch(`/api/tasks/${params.taskId}/assign`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ assigneeId }),
       })
 

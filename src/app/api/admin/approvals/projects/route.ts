@@ -44,6 +44,13 @@ export async function GET(request: NextRequest) {
     const projects = await db.project.findMany({
       where,
       include: {
+        _count: {
+          select: {
+            ProjectMember: true,
+            Task: true,
+            Milestone: true,
+          },
+        },
         User: {
           select: {
             id: true,
@@ -122,8 +129,47 @@ export async function GET(request: NextRequest) {
       where: { approvalStatus: 'REQUIRE_CHANGES', ...universityFilter }
     })
 
+    // Transform projects to match frontend expectations
+    const transformedProjects = projects.map((project: any) => ({
+      ...project,
+      id: project.id,
+      name: project.name,
+      description: project.description,
+      status: project.status,
+      approvalStatus: project.approvalStatus,
+      submissionDate: project.submissionDate,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+      category: project.category,
+      budget: project.budget,
+      startDate: project.startDate,
+      endDate: project.endDate,
+      // Transform User -> owner
+      owner: project.User ? {
+        id: project.User.id,
+        name: project.User.name,
+        email: project.User.email,
+        avatar: project.User.avatar,
+      } : null,
+      // Transform University -> university
+      university: project.University ? {
+        id: project.University.id,
+        name: project.University.name,
+        code: project.University.code,
+      } : null,
+      // Transform _count
+      _count: project._count ? {
+        members: project._count.ProjectMember,
+        tasks: project._count.Task,
+        milestones: project._count.Milestone,
+      } : { members: 0, tasks: 0, milestones: 0 },
+      // Remove original fields to avoid confusion
+      User: undefined,
+      University: undefined,
+    }))
+
     return successResponse({
-      projects,
+      projects: transformedProjects,
       pagination: {
         total: totalCount,
         page,

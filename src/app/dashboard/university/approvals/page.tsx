@@ -281,7 +281,7 @@ export default function UniversityApprovals() {
                                     <div>
                                       <div className="text-sm font-medium">Seeking Investment</div>
                                       <div className="text-xs text-muted-foreground">
-                                        {business.investmentGoal ? `$${business.investmentGoal.toLocaleString()} goal` : 'Not specified'}
+                                        {business.investmentGoal ? `৳${business.investmentGoal.toLocaleString()} goal` : 'Not specified'}
                                       </div>
                                       {business.investmentRaised > 0 && business.investmentGoal && (
                                         <div className="flex items-center gap-2">

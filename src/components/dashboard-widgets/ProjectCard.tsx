@@ -196,7 +196,7 @@ export function ProjectCard({
             {budget && (
               <div className="flex items-center gap-1.5">
                 <TrendingUp className="w-4 h-4" />
-                <span>${budget.toLocaleString()}</span>
+                <span>৳{budget.toLocaleString()}</span>
               </div>
             )}
           </div>

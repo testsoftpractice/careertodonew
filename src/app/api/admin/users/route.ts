@@ -66,8 +66,16 @@ export async function GET(request: NextRequest) {
         role: true,
         verificationStatus: true,
         universityId: true,
+        mobileNumber: true,
         createdAt: true,
-        totalPoints: true
+        totalPoints: true,
+        University: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          }
+        }
       },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
@@ -81,6 +89,12 @@ export async function GET(request: NextRequest) {
       email: user.email,
       role: user.role,
       status: user.verificationStatus,
+      university: user.University ? {
+        id: user.University.id,
+        name: user.University.name,
+        code: user.University.code,
+      } : null,
+      mobileNumber: user.mobileNumber,
       joinedAt: user.createdAt,
       reputation: user.totalPoints
     }))

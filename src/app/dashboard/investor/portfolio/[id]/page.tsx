@@ -116,7 +116,7 @@ export default function InvestorPortfolioDetailPage({ params }: { params: Promis
                     <div className="space-y-3 sm:space-y-4">
                       <div className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-4">Investment Amount</div>
                       <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-green-600 break-words">
-                        ${investment.amount ? investment.amount.toLocaleString() : '$0'}
+                        ৳{investment.amount ? investment.amount.toLocaleString() : '৳0'}
                       </div>
                     </div>
                   </div>

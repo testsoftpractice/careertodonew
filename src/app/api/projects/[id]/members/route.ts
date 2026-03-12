@@ -46,12 +46,15 @@ export async function GET(
       return notFound('Project not found')
     }
 
-    // Check if user has access to project
+    // Check if user has access to project (owner, admin, or project member)
     const isOwner = project.ownerId === currentUser.id
     const isAdmin = currentUser.role === 'PLATFORM_ADMIN' || currentUser.role === 'UNIVERSITY_ADMIN'
-    const hasAccess = isOwner || isAdmin
+    const isMember = await db.projectMember.count({
+      where: { projectId: id, userId: currentUser.id }
+    }) > 0
+    const hasAccess = isOwner || isAdmin || isMember
 
-    if (!isOwner && !isAdmin) {
+    if (!hasAccess) {
       return forbidden('No access to this project')
     }
 

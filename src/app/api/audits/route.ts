@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         action: 'UPDATE',
         entityType: 'PROJECT',
         entityId: 'proj-2',
-        details: 'Updated project budget to $150,000',
+        details: 'Updated project budget to ৳150,000',
         ipAddress: '192.168.1.2',
         userAgent: 'Mozilla/5.0...',
         timestamp: new Date(Date.now() - 90 * 60 * 1000),

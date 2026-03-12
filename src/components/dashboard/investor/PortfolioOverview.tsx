@@ -51,7 +51,7 @@ export function PortfolioOverview({
           </div>
           <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 text-center">
             <div className="text-2xl sm:text-3xl font-bold text-emerald-600">
-              +${totalROI.toLocaleString()}
+              +৳{totalROI.toLocaleString()}
             </div>
             <div className="text-xs text-muted-foreground mt-1">Total Returns</div>
           </div>
@@ -117,7 +117,7 @@ export function PortfolioOverview({
               <div>
                 <div className="text-sm font-semibold">Portfolio Growth</div>
                 <div className="text-xs text-muted-foreground">
-                  ${totalInvested.toLocaleString()} invested → ${totalValue.toLocaleString()} current
+                  ৳{totalInvested.toLocaleString()} invested → ৳{totalValue.toLocaleString()} current
                 </div>
               </div>
             </div>

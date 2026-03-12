@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, use, useMemo } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
 import { authFetch } from '@/lib/api-response'
@@ -109,8 +109,12 @@ interface ExtendedTask extends Task {
 export default function ProjectDetailContent({ params }: { params: Promise<{ id: string }> }) {
   const { id: projectId } = use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user } = useAuth()
   const projectId2 = projectId
+
+  // Get initial tab from query params or default to 'overview'
+  const initialTab = searchParams.get('tab') || 'overview'
 
   const [project, setProject] = useState<Project | null>(null)
   const [teamMembers, setTeamMembers] = useState<any[]>([])
@@ -127,7 +131,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
     vacancies: false,
     update: false,
   })
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState(initialTab)
   const [showTaskDialog, setShowTaskDialog] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
 
@@ -169,6 +173,14 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
       fetchAvailableUsers()
     }
   }, [projectId2, user?.id])
+
+  // Update active tab when query parameter changes
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['overview', 'tasks', 'milestones', 'team', 'vacancies'].includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
 
   const fetchProject = async () => {
     try {
@@ -319,6 +331,18 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
       setAvailableUsers([])
     }
   }
+
+  // Memoize task statistics
+  const taskStats = useMemo(() => {
+    const total = tasks.length
+    const completed = tasks.filter(t => t.status === 'DONE').length
+    const inProgress = tasks.filter(t => t.status === 'IN_PROGRESS').length
+    const todo = tasks.filter(t => t.status === 'TODO').length
+    const review = tasks.filter(t => t.status === 'REVIEW').length
+    const overdue = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'DONE').length
+
+    return { total, completed, inProgress, todo, review, overdue }
+  }, [tasks])
 
   // Memoize projects array to prevent infinite re-renders
   const projectsForDialog = useMemo(() => {
@@ -1129,7 +1153,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <p className="text-muted-foreground">{project.description}</p>
-                  
+
                   {/* Investment Info */}
                   {project.seekingInvestment && project.investmentGoal && (
                     <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
@@ -1137,10 +1161,64 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
                         <Target className="h-4 w-4" />
                         Seeking Investment
                       </h3>
-                      <p className="text-2xl font-bold text-amber-600">${project.investmentGoal.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-amber-600">৳{project.investmentGoal.toLocaleString()}</p>
                     </div>
                   )}
-                  
+
+                  {/* Task Analytics Card */}
+                  <Card className="border-2 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950/30">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base font-semibold flex items-center gap-2">
+                        <CircleDot className="h-5 w-5 text-blue-500" />
+                        Task Analytics
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                        <div className="text-center p-3 rounded-lg bg-white dark:bg-slate-800 shadow-sm">
+                          <div className="text-2xl font-bold text-slate-700 dark:text-slate-200">{taskStats.total}</div>
+                          <div className="text-xs text-muted-foreground mt-1">Total Tasks</div>
+                        </div>
+                        <div className="text-center p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 shadow-sm">
+                          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{taskStats.completed}</div>
+                          <div className="text-xs text-muted-foreground mt-1">Completed</div>
+                        </div>
+                        <div className="text-center p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 shadow-sm">
+                          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{taskStats.inProgress}</div>
+                          <div className="text-xs text-muted-foreground mt-1">In Progress</div>
+                        </div>
+                        <div className="text-center p-3 rounded-lg bg-slate-100 dark:bg-slate-800 shadow-sm">
+                          <div className="text-2xl font-bold text-slate-600 dark:text-slate-400">{taskStats.todo}</div>
+                          <div className="text-xs text-muted-foreground mt-1">To Do</div>
+                        </div>
+                        <div className="text-center p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 shadow-sm">
+                          <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{taskStats.review}</div>
+                          <div className="text-xs text-muted-foreground mt-1">In Review</div>
+                        </div>
+                        <div className="text-center p-3 rounded-lg bg-red-50 dark:bg-red-900/20 shadow-sm">
+                          <div className="text-2xl font-bold text-red-600 dark:text-red-400">{taskStats.overdue}</div>
+                          <div className="text-xs text-muted-foreground mt-1">Overdue</div>
+                        </div>
+                      </div>
+
+                      {/* Progress Bar */}
+                      {taskStats.total > 0 && (
+                        <div className="mt-4 space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Overall Progress</span>
+                            <span className="font-semibold">{Math.round((taskStats.completed / taskStats.total) * 100)}%</span>
+                          </div>
+                          <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all duration-500"
+                              style={{ width: `${(taskStats.completed / taskStats.total) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
                     <div className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
                       <Building2 className="h-8 w-8 text-primary mb-2" />
@@ -1911,6 +1989,7 @@ export default function ProjectDetailContent({ params }: { params: Promise<{ id:
         mode={editingTask ? 'edit' : 'create'}
         projects={projectsForDialog}
         availableUsers={availableUsers}
+        projectId={projectId2}
         loading={loading.update}
       />
 

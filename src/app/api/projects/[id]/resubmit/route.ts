@@ -42,8 +42,8 @@ export async function POST(
       return notFound('Project not found')
     }
 
-    // Only owner can resubmit
-    if (project.ownerId !== currentUser.id && currentUser.role !== 'PLATFORM_ADMIN') {
+    // ONLY the project owner can resubmit - no exceptions
+    if (project.ownerId !== currentUser.id) {
       return forbidden('Only the project owner can resubmit the project')
     }
 
@@ -52,24 +52,27 @@ export async function POST(
       return errorResponse('This project does not require changes or is not rejected', 400)
     }
 
-    // Update project status back to PENDING for re-review
+    // Update project approval status back to PENDING for re-review
+    // DO NOT change the project status - owner cannot modify it
     const updatedProject = await db.project.update({
       where: { id },
       data: {
         approvalStatus: 'PENDING',
         submissionDate: new Date(),
-        status: 'IDEA', // Reset to IDEA status while pending
+        // Keep the project status as is - do not reset to IDEA
+        // project.status remains unchanged
         reviewComments: null, // Clear previous review comments
+        terminationReason: null, // Clear previous rejection reason
       },
     })
 
-    // Create approval record for resubmission
+    // Create approval record for resubmission - use SYSTEM or leave adminId null since owner is resubmitting
     await db.projectApproval.create({
       data: {
         projectId: id,
-        adminId: currentUser.id,
+        adminId: currentUser.id, // Owner is the one creating this record
         status: 'RESUBMITTED',
-        comments: 'Project resubmitted after changes',
+        comments: 'Project resubmitted after changes by owner',
       },
     })
 
@@ -90,7 +93,7 @@ export async function POST(
           userId: admin.id,
           type: 'PROJECT_APPROVAL',
           title: '🔄 Project Resubmitted',
-          message: `Project "${project.name}" has been resubmitted for approval after changes.`,
+          message: `Project "${project.name}" has been resubmitted for approval after changes by the owner.`,
           link: `/admin/approvals/projects`,
           projectId: id,
         })),

@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { toast } from '@/hooks/use-toast'
 import { Save, X, FileText, Calendar } from 'lucide-react'
+import { authFetch } from '@/lib/api-response'
 
 export default function EditTaskPage() {
   const params = useParams()
@@ -25,9 +26,8 @@ export default function EditTaskPage() {
     setLoading(true)
 
     try {
-      const response = await fetch(`/api/tasks/${params.id}`, {
+      const response = await authFetch(`/api/tasks/${params.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, description, priority, dueDate }),
       })
 

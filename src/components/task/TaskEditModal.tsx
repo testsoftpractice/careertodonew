@@ -20,6 +20,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
+import { authFetch } from '@/lib/api-response'
 
 interface Task {
   id: string
@@ -91,11 +92,8 @@ export default function TaskEditModal({ task, users, onClose, onSave }: TaskEdit
 
     setLoading(true)
     try {
-      const response = await fetch(`/api/tasks/${task?.id}`, {
+      const response = await authFetch(`/api/tasks/${task?.id}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           ...formData,
           assigneeIds: selectedUsers,

@@ -95,6 +95,17 @@ const departments = [
     color: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800',
     tools: [
       {
+        id: 'core-banking',
+        name: 'Core Banking',
+        path: '/core-banking',
+        url: '/core-banking',
+        description: 'Core banking system for managing customer accounts, transactions, and banking operations.',
+        category: 'Finance',
+        icon: <Database className="w-6 h-6" />,
+        features: ['Account Management', 'Transaction Processing', 'Loan Management', 'Interest Calculation'],
+        status: 'available',
+      },
+      {
         id: 'af-workflow',
         name: 'AF Workflow',
         path: '/af-workflow',

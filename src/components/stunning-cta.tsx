@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Link } from 'next/link'
+import Link from 'next/link'
 import { Rocket, ArrowRight, Sparkles } from 'lucide-react'
 
 interface StunningCTAProps {

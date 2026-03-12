@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Link } from 'next/link'
+import Link from 'next/link'
 import { ArrowRight, GraduationCap, Building2, Briefcase, ChartLine, Shield, BarChart3 } from 'lucide-react'
 
 const features = [

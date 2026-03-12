@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { verifyPassword, generateToken } from '@/lib/auth/jwt'
 import { checkAndIncrementLoginAttempts, handleFailedLogin, resetLoginAttempts } from '@/lib/auth/account-lockout'
 import { authRateLimit } from '@/lib/rate-limiter'
+import { extractIPAddress, getGeolocationData, recordIPTracking } from '@/lib/ip-tracking'
 
 // POST /api/auth/login - Simple user authentication
 export async function POST(request: NextRequest) {
@@ -65,6 +66,22 @@ export async function POST(request: NextRequest) {
     if (!passwordValid) {
       console.log('[LOGIN] ERROR: Invalid password')
 
+      // Extract IP address for failed login tracking
+      const ipAddress = extractIPAddress(request)
+      const userAgent = request.headers.get('user-agent') || undefined
+
+      // Record failed login attempt
+      recordIPTracking({
+        userId: user.id,
+        ipAddress,
+        userAgent,
+        action: 'LOGIN',
+        status: 'FAILED',
+        failureReason: 'Invalid password',
+      }).catch(error => {
+        console.error('[LOGIN] Error recording failed login IP tracking:', error)
+      })
+
       // Handle failed login and check account lockout
       await handleFailedLogin(user.id)
       const lockoutStatus = await checkAndIncrementLoginAttempts(user.id)
@@ -103,6 +120,36 @@ export async function POST(request: NextRequest) {
 
     // Successful login - reset attempts
     await resetLoginAttempts(user.id)
+
+    // Extract IP address and get geolocation
+    const ipAddress = extractIPAddress(request)
+    const userAgent = request.headers.get('user-agent') || undefined
+
+    // Get geolocation data (async, don't block the response)
+    getGeolocationData(ipAddress).then(geolocation => {
+      recordIPTracking({
+        userId: user.id,
+        ipAddress,
+        userAgent,
+        action: 'LOGIN',
+        status: 'SUCCESS',
+        geolocation,
+      }).catch(error => {
+        console.error('[LOGIN] Error recording IP tracking:', error)
+      })
+    }).catch(error => {
+      console.error('[LOGIN] Error fetching geolocation:', error)
+      // Still record IP tracking even if geolocation fails
+      recordIPTracking({
+        userId: user.id,
+        ipAddress,
+        userAgent,
+        action: 'LOGIN',
+        status: 'SUCCESS',
+      }).catch(err => {
+        console.error('[LOGIN] Error recording IP tracking:', err)
+      })
+    })
 
     // Generate token
     const token = generateToken({

@@ -83,15 +83,15 @@ export function NeedsPreview({ compact = false }: NeedsPreviewProps) {
 
   if (compact) {
     return (
-      <Card className="bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200 dark:border-blue-900">
+      <Card className="bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200 dark:border-blue-900 h-full">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-sm sm:text-base flex items-center gap-2">
             <ClipboardList className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             Project Needs
           </CardTitle>
-          <CardDescription>One-time project opportunities</CardDescription>
+          <CardDescription className="text-xs sm:text-sm">One-time project opportunities</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           {loading ? (
             <div className="flex items-center justify-center py-6">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -102,37 +102,40 @@ export function NeedsPreview({ compact = false }: NeedsPreviewProps) {
               <p className="text-sm">No needs available</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {needs.slice(0, 3).map((need) => (
-                <div
-                  key={need.id}
-                  className="p-3 rounded-lg bg-background/50 hover:bg-background/80 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h4 className="font-medium text-sm line-clamp-1 flex-1">{need.title}</h4>
-                    <Badge variant={getUrgencyVariant(need.urgency)} className="text-xs shrink-0">
-                      {getUrgencyIcon(need.urgency)}
-                      <span className="ml-1">{need.urgency}</span>
-                    </Badge>
+            <>
+              <div className="space-y-2">
+                {needs.slice(0, 3).map((need) => (
+                  <div
+                    key={need.id}
+                    className="p-2.5 sm:p-3 rounded-lg bg-background/50 hover:bg-background/80 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h4 className="font-medium text-xs sm:text-sm line-clamp-1 flex-1">{need.title}</h4>
+                      <Badge variant={getUrgencyVariant(need.urgency)} className="text-[10px] sm:text-xs shrink-0">
+                        {getUrgencyIcon(need.urgency)}
+                        <span className="ml-0.5 sm:ml-1">{need.urgency}</span>
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground">
+                      <span className="truncate mr-2">{need.category}</span>
+                      {need.budget && (
+                        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+                          <DollarSign className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                          <span className="font-medium">{need.budget.toLocaleString()}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{need.category}</span>
-                    {need.budget && (
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="h-3 w-3" />
-                        <span>{need.budget.toLocaleString()}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              <Button variant="outline" size="sm" className="w-full mt-3" asChild>
+                ))}
+              </div>
+              <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm mt-2" asChild>
                 <Link href="/needs">
-                  View All Needs
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <span className="hidden sm:inline">View All Needs</span>
+                  <span className="sm:hidden">View Needs</span>
+                  <ArrowRight className="ml-1 sm:ml-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Link>
               </Button>
-            </div>
+            </>
           )}
         </CardContent>
       </Card>

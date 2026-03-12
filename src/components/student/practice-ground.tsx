@@ -51,43 +51,47 @@ const practiceAreas = [
 export function PracticeGround({ compact = false }: PracticeGroundProps) {
   if (compact) {
     return (
-      <Card className="bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/20 border-emerald-200 dark:border-emerald-900">
+      <Card className="bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/20 border-emerald-200 dark:border-emerald-900 h-full">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-sm sm:text-base flex items-center gap-2">
             <Dumbbell className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             Practice Ground
           </CardTitle>
-          <CardDescription>Interactive practice environment</CardDescription>
+          <CardDescription className="text-xs sm:text-sm">Interactive practice environment</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          <div className="text-xs sm:text-sm text-muted-foreground mb-3 hidden sm:block">
+            Choose an area to practice and improve your skills
+          </div>
+          <div className="text-xs text-muted-foreground mb-3 sm:hidden">
+            Practice areas to improve skills
+          </div>
           <div className="space-y-2">
-            <div className="text-sm text-muted-foreground mb-3">
-              Choose an area to practice and improve your skills
-            </div>
             {practiceAreas.slice(0, 2).map((area) => (
               <Button
                 key={area.title}
                 variant="outline"
-                className="w-full justify-start gap-3 h-auto py-3"
+                className="w-full justify-start gap-2 sm:gap-3 h-auto py-2.5 sm:py-3 px-3"
                 disabled
               >
-                <area.icon className={`h-4 w-4 ${area.color} shrink-0`} />
+                <area.icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${area.color} shrink-0`} />
                 <div className="text-left flex-1 min-w-0">
-                  <div className="font-medium text-sm truncate">{area.title}</div>
-                  <div className="text-xs text-muted-foreground line-clamp-2">
+                  <div className="font-medium text-xs sm:text-sm truncate">{area.title}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1 sm:line-clamp-2 hidden sm:block">
                     {area.description}
                   </div>
                 </div>
-                <Zap className="h-4 w-4 text-amber-500 shrink-0 ml-2" />
+                <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500 shrink-0 ml-1 sm:ml-2" />
               </Button>
             ))}
-            <Button variant="outline" size="sm" className="w-full mt-3" asChild>
-              <Link href="/practice-lab">
-                Visit Practice Lab
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
           </div>
+          <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm mt-2" asChild>
+            <Link href="/practice-lab">
+              <span className="hidden sm:inline">Visit Practice Lab</span>
+              <span className="sm:hidden">Practice Lab</span>
+              <ArrowRight className="ml-1 sm:ml-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </Link>
+          </Button>
         </CardContent>
       </Card>
     )

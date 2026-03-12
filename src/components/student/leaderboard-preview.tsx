@@ -77,59 +77,66 @@ export function LeaderboardPreview({ compact = false }: LeaderboardPreviewProps)
 
   if (compact) {
     return (
-      <Card className="bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200 dark:border-amber-900">
+      <Card className="bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200 dark:border-amber-900 h-full">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-sm sm:text-base flex items-center gap-2">
             <Trophy className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             Leaderboards
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           {loading ? (
             <div className="flex items-center justify-center py-6">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="space-y-2">
-              {topStudents.slice(0, 3).map((student) => (
-                <div
-                  key={student.id}
-                  className="flex items-center gap-3 p-2 rounded-lg bg-background/50"
-                >
-                  <div className="flex items-center gap-1 w-12">
-                    <span className={`text-sm font-bold ${
-                      student.rank === 1 ? 'text-yellow-600' :
-                      student.rank === 2 ? 'text-gray-500' :
-                      student.rank === 3 ? 'text-amber-600' : ''
-                    }`}>
-                      #{student.rank}
-                    </span>
-                    {getRankIcon(student.rank)}
-                  </div>
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="text-xs">
-                      {student.name?.split(' ').map(n => n[0]).join('') || 'S'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{student.name}</p>
-                    <p className="text-xs text-muted-foreground">{student.university || ''}</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="flex items-center gap-1">
-                      <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                      <span className="text-sm font-semibold">{student.score.toFixed(1)}</span>
+            <>
+              <div className="space-y-2">
+                {topStudents.slice(0, 3).map((student) => (
+                  <div
+                    key={student.id}
+                    className="flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-lg bg-background/50"
+                  >
+                    <div className="flex items-center gap-1 w-10 sm:w-12 shrink-0">
+                      <span className={`text-xs sm:text-sm font-bold ${
+                        student.rank === 1 ? 'text-yellow-600' :
+                        student.rank === 2 ? 'text-gray-500' :
+                        student.rank === 3 ? 'text-amber-600' : ''
+                      }`}>
+                        #{student.rank}
+                      </span>
+                      {getRankIcon(student.rank)}
+                    </div>
+                    <Avatar className="h-7 w-7 sm:h-8 sm:w-8 shrink-0">
+                      <AvatarFallback className="text-[10px] sm:text-xs">
+                        {student.name?.split(' ').map(n => n[0]).join('') || 'S'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs sm:text-sm font-medium truncate">{student.name}</p>
+                      {student.university && (
+                        <p className="text-[10px] sm:text-xs text-muted-foreground truncate hidden sm:block">
+                          {student.university}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="flex items-center gap-0.5 sm:gap-1">
+                        <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                        <span className="text-xs sm:text-sm font-semibold">{student.score.toFixed(1)}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              <Button variant="outline" size="sm" className="w-full mt-3" asChild>
+                ))}
+              </div>
+              <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm mt-2 sm:mt-3" asChild>
                 <Link href="/leaderboards">
-                  View Full Rankings
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <span className="hidden sm:inline">View Full Rankings</span>
+                  <span className="sm:hidden">View Rankings</span>
+                  <ArrowRight className="ml-1 sm:ml-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Link>
               </Button>
-            </div>
+            </>
           )}
         </CardContent>
       </Card>

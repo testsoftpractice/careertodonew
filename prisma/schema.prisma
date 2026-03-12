@@ -760,11 +760,51 @@ model User {
   University                                             University?            @relation(fields: [universityId], references: [id])
   VerificationRequest                                    VerificationRequest[]
   WorkSession                                            WorkSession[]
+  IPTracking                                             IPTracking[]
 
   @@index([verificationStatus])
   @@index([universityId])
   @@index([role])
   @@index([email])
+}
+
+model IPTracking {
+  id              String   @id @default(uuid())
+  userId          String
+  ipAddress       String
+  port            Int?
+  userAgent       String?
+  action          String   @default("LOGIN")
+  status          String   @default("SUCCESS")
+  failureReason   String?
+  country         String?
+  region          String?
+  city            String?
+  latitude        Float?
+  longitude       Float?
+  timezone        String?
+  isp             String?
+  asn             String?
+  deviceType      String?
+  os              String?
+  browser         String?
+  loginCount      Int      @default(1)
+  isProxy         Boolean  @default(false)
+  isVpn           Boolean  @default(false)
+  isTor           Boolean  @default(false)
+  isDatacenter    Boolean  @default(false)
+  threatLevel     String   @default("LOW")
+  metadata        String?  @default("{}")
+  createdAt       DateTime @default(now())
+
+  User            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([ipAddress])
+  @@index([createdAt])
+  @@index([action])
+  @@index([status])
+  @@index([country])
 }
 
 model Vacancy {

@@ -25,9 +25,11 @@ import {
   Target,
   FolderKanban,
   GraduationCap,
+  Globe,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
+import { IPHistoryDialog } from '@/components/admin/ip-history-dialog'
 
 interface UserData {
   id: string
@@ -102,6 +104,7 @@ export default function UserDetailPage() {
   const [user, setUser] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
+  const [ipDialogOpen, setIpDialogOpen] = useState(false)
 
   const fetchUser = async () => {
     try {
@@ -245,6 +248,10 @@ export default function UserDetailPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setIpDialogOpen(true)} disabled={!user}>
+                <Globe className="h-4 w-4 mr-2" />
+                IP History
+              </Button>
               <Button variant="outline" size="sm" onClick={fetchUser} disabled={loading}>
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
@@ -899,6 +906,16 @@ export default function UserDetailPage() {
           </div>
         </div>
       </main>
+
+      {/* IP History Dialog */}
+      {user && (
+        <IPHistoryDialog
+          open={ipDialogOpen}
+          onOpenChange={setIpDialogOpen}
+          userId={user.id}
+          userName={user.name}
+        />
+      )}
     </div>
   )
 }

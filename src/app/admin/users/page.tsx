@@ -12,9 +12,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { ArrowLeft, Shield, Mail, Lock, Eye, UserPlus, RefreshCw, Loader2, Search, CheckCircle2, X } from 'lucide-react'
+import { ArrowLeft, Shield, Mail, Lock, Eye, UserPlus, RefreshCw, Loader2, Search, CheckCircle2, X, Globe } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from '@/hooks/use-toast'
+import { IPHistoryDialog } from '@/components/admin/ip-history-dialog'
 
 interface User {
   id: string
@@ -43,6 +44,10 @@ export default function AdminUsersPage() {
   const [totalCount, setTotalCount] = useState(0)
   const [page, setPage] = useState(1)
   const pageSize = 20
+
+  // IP History Dialog state
+  const [ipDialogOpen, setIpDialogOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<{ id: string; name: string } | null>(null)
 
   // Fetch users from API
   useEffect(() => {
@@ -137,7 +142,7 @@ export default function AdminUsersPage() {
       })
 
       const data = await response.json()
-      
+
       if (data.success) {
         toast({
           title: 'Success',
@@ -159,6 +164,11 @@ export default function AdminUsersPage() {
         variant: 'destructive'
       })
     }
+  }
+
+  const handleViewIPHistory = (user: User) => {
+    setSelectedUser({ id: user.id, name: user.name })
+    setIpDialogOpen(true)
   }
 
   return (
@@ -361,6 +371,14 @@ export default function AdminUsersPage() {
                             </Button>
                           </>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewIPHistory(user)}
+                          title="View IP History"
+                        >
+                          <Globe className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" size="sm" asChild>
                           <Link href={`/admin/users/${user.id}`}>
                             <Eye className="h-4 w-4" />
@@ -402,6 +420,16 @@ export default function AdminUsersPage() {
           </CardContent>
         </Card>
       </main>
+
+      {/* IP History Dialog */}
+      {selectedUser && (
+        <IPHistoryDialog
+          open={ipDialogOpen}
+          onOpenChange={setIpDialogOpen}
+          userId={selectedUser.id}
+          userName={selectedUser.name}
+        />
+      )}
     </div>
   )
 }

@@ -1,2 +1,0 @@
-# Ensure consistent lockfile version
-lockfile-version=3

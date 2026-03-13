@@ -78,7 +78,7 @@ export default function PublicHeader({ title }: PublicHeaderProps) {
           <div className="flex items-center gap-3">
             {user ? (
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white size="sm" asChild>
+                <Button className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white" size="sm" asChild>
                   <Link href={getDashboardLink(user.role)}>
                     <Sparkles className="mr-2 h-4 w-4" />
                     Dashboard
@@ -91,7 +91,7 @@ export default function PublicHeader({ title }: PublicHeaderProps) {
                   <Link href="/auth">Sign In</Link>
                 </Button>
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white size="sm" asChild>
+                  <Button className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white" size="sm" asChild>
                     <Link href="/auth">
                       Get Started <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>

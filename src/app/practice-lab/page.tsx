@@ -706,7 +706,7 @@ export default function PracticeLabPage() {
         </section>
 
         {/* Category Filter Pills - Compact */}
-        <section className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 sticky top-16 z-10">
+        <section className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50">
           <div className="container mx-auto px-4 py-2">
             <div className="flex flex-wrap gap-2 justify-center">
               {categories.slice(0, 8).map((cat) => (

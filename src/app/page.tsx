@@ -261,7 +261,7 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-sky-50 via-white to-blue-50">
+        <section className="relative min-h-[500px] sm:min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-sky-50 via-white to-blue-50">
           {/* Animated background dots */}
           <div className="absolute inset-0">
             {backgroundDots.map((dot, index) => (
@@ -278,8 +278,8 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.15),transparent_50%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(125,211,252,0.08),transparent_70%)]" />
 
-          <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 lg:py-12 mt-8 sm:mt-10 md:mt-12">
-            <div className="grid lg:grid-cols-2 gap-4 md:gap-6 lg:gap-8 items-center min-h-[600px]">
+          <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-6 md:py-8 lg:py-12 mt-2 sm:mt-10 md:mt-12">
+            <div className="grid lg:grid-cols-2 gap-4 md:gap-6 lg:gap-8 items-center min-h-[400px] lg:min-h-[600px]">
               {/* Left Content */}
               <div className="text-center lg:text-left order-2 lg:order-1">
                 <motion.div
@@ -343,10 +343,83 @@ export default function HomePage() {
                     className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white text-sm sm:text-base px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl shadow-lg shadow-sky-200/50 hover:shadow-xl hover:shadow-sky-300/50 transition-all duration-300 w-full sm:w-auto"
                     asChild
                   >
-                    <Link href="/signup">
+                    <Link href="/auth">
                       Start Simulating <ArrowRight className="ml-2 w-3 h-3 sm:w-4 sm:h-4" />
                     </Link>
                   </Button>
+                </motion.div>
+
+                {/* Mobile Job Cards Carousel - Only shows on mobile */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.5 }}
+                  className="lg:hidden mt-8"
+                >
+                  <div className="relative w-full h-[350px]">
+                    <div className="relative w-full h-full flex items-center justify-center">
+                      <div className="relative w-full h-full max-w-lg mx-auto flex gap-3 justify-center">
+                        {/* Mobile Left Column - Scrolls Up */}
+                        <div className="relative w-[140px] h-[480px] overflow-hidden">
+                          <div
+                            ref={scrollLeftRef}
+                            className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
+                            style={{
+                              transform: `translateY(-${scrollLeftY}px)`,
+                            }}
+                          >
+                            {[...jobCards, ...jobCards].map((job, index) => {
+                              const CardIcon = job.icon
+                              return (
+                                <div
+                                  key={`mobile-left-${index}`}
+                                  className="absolute px-1 py-1"
+                                  style={{ top: `${index * 189}px`, left: 0, right: 0 }}
+                                >
+                                  <div className="flex flex-col items-start gap-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-3 border border-slate-200/50 hover:shadow-lg hover:border-sky-300 transition-all duration-300 w-[120px]">
+                                    <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${job.gradient} flex items-center justify-center shadow-sm mb-1`}>
+                                      <CardIcon className="w-3 h-3 text-white" />
+                                    </div>
+                                    <h4 className="font-semibold text-slate-900 text-xs leading-tight">{job.title}</h4>
+                                    <p className="text-[10px] text-slate-600">{job.department}</p>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                        {/* Mobile Right Column - Scrolls Down */}
+                        <div className="relative w-[140px] h-[480px] overflow-hidden">
+                          <div
+                            ref={scrollRightRef}
+                            className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
+                            style={{
+                              transform: `translateY(-${scrollRightY}px)`,
+                            }}
+                          >
+                            {[...jobCards, ...jobCards].map((job, index) => {
+                              const CardIcon = job.icon
+                              return (
+                                <div
+                                  key={`mobile-right-${index}`}
+                                  className="absolute px-1 py-1"
+                                  style={{ top: `${index * 189}px`, left: 0, right: 0 }}
+                                >
+                                  <div className="flex flex-col items-start gap-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-3 border border-slate-200/50 hover:shadow-lg hover:border-sky-300 transition-all duration-300 w-[120px]">
+                                    <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${job.gradient} flex items-center justify-center shadow-sm mb-1`}>
+                                      <CardIcon className="w-3 h-3 text-white" />
+                                    </div>
+                                    <h4 className="font-semibold text-slate-900 text-xs leading-tight">{job.title}</h4>
+                                    <p className="text-[10px] text-slate-600">{job.department}</p>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </motion.div>
               </div>
 
@@ -453,77 +526,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Job Cards Carousel (Mobile) - Between CTA and Tools */}
-        <section className="lg:hidden py-8 bg-gradient-to-br from-sky-50 via-white to-blue-50">
-          <div className="container mx-auto px-4">
-            <div className="relative w-full h-[400px]">
-              <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-sky-50 via-sky-50/80 to-transparent z-10 pointer-events-none"></div>
-              <div className="relative w-full h-full flex items-center justify-center">
-                <div className="relative w-full h-full max-w-lg mx-auto flex gap-3 justify-center">
-                  {/* Mobile Left Column - Scrolls Up */}
-                  <div className="relative w-[140px] h-[480px] overflow-hidden">
-                    <div
-                      ref={scrollLeftRef}
-                      className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
-                      style={{
-                        transform: `translateY(-${scrollLeftY}px)`,
-                      }}
-                    >
-                      {[...jobCards, ...jobCards].map((job, index) => {
-                        const CardIcon = job.icon
-                        return (
-                          <div
-                            key={`mobile-left-${index}`}
-                            className="absolute px-1 py-1"
-                            style={{ top: `${index * 189}px`, left: 0, right: 0 }}
-                          >
-                            <div className="flex flex-col items-start gap-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-3 border border-slate-200/50 hover:shadow-lg hover:border-sky-300 transition-all duration-300 w-[120px]">
-                              <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${job.gradient} flex items-center justify-center shadow-sm mb-1`}>
-                                <CardIcon className="w-3 h-3 text-white" />
-                              </div>
-                              <h4 className="font-semibold text-slate-900 text-xs leading-tight">{job.title}</h4>
-                              <p className="text-[10px] text-slate-600">{job.department}</p>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                  {/* Mobile Right Column - Scrolls Down */}
-                  <div className="relative w-[140px] h-[480px] overflow-hidden">
-                    <div
-                      ref={scrollRightRef}
-                      className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
-                      style={{
-                        transform: `translateY(-${scrollRightY}px)`,
-                      }}
-                    >
-                      {[...jobCards, ...jobCards].map((job, index) => {
-                        const CardIcon = job.icon
-                        return (
-                          <div
-                            key={`mobile-right-${index}`}
-                            className="absolute px-1 py-1"
-                            style={{ top: `${index * 189}px`, left: 0, right: 0 }}
-                          >
-                            <div className="flex flex-col items-start gap-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-3 border border-slate-200/50 hover:shadow-lg hover:border-sky-300 transition-all duration-300 w-[120px]">
-                              <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${job.gradient} flex items-center justify-center shadow-sm mb-1`}>
-                                <CardIcon className="w-3 h-3 text-white" />
-                              </div>
-                              <h4 className="font-semibold text-slate-900 text-xs leading-tight">{job.title}</h4>
-                              <p className="text-[10px] text-slate-600">{job.department}</p>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Tools You'll Master Section */}
         <section className="border-t border-slate-200 pt-12 pb-12 bg-white/50 dark:bg-gray-900/50">
           <div className="container mx-auto px-4">
@@ -541,6 +543,46 @@ export default function HomePage() {
                 />
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Video Section */}
+        <section className="py-16 bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50 dark:from-slate-950 dark:via-sky-950/20 dark:to-cyan-950/20">
+          <div className="container mx-auto px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="max-w-4xl mx-auto"
+            >
+              <div className="text-center mb-8">
+                <Badge className="mb-4 bg-gradient-to-r from-sky-100 to-blue-100 dark:from-sky-900/50 dark:to-blue-900/50 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800 px-6 py-2 rounded-full">
+                  See It In Action
+                </Badge>
+                <h2 className="text-3xl md:text-4xl font-bold mb-4 text-slate-800 dark:text-white">
+                  Watch How It Works
+                </h2>
+                <p className="text-lg text-slate-600 dark:text-slate-400">
+                  Discover how students, universities, employers, and investors collaborate on our platform
+                </p>
+              </div>
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                <div className="aspect-video w-full">
+                  <iframe
+                    width="560"
+                    height="315"
+                    src="https://www.youtube.com/embed/r1mr6aB9WTk?si=0iavnj71bH8MgdHq&controls=0&rel=0"
+                    title="YouTube video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                    className="w-full h-full"
+                  />
+                </div>
+              </div>
+            </motion.div>
           </div>
         </section>
 
@@ -952,7 +994,7 @@ export default function HomePage() {
                     className="w-full bg-gradient-to-r from-sky-500 to-blue-500 hover:from-sky-500/90 hover:to-blue-500/90 text-white text-lg py-6 rounded-xl"
                     asChild
                   >
-                    <Link href="/signup">Get Started Now</Link>
+                    <Link href="/auth">Get Started Now</Link>
                   </Button>
                 </div>
               </div>

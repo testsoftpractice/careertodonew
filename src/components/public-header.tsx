@@ -87,7 +87,7 @@ export default function PublicHeader({ title }: PublicHeaderProps) {
               </motion.div>
             ) : (
               <>
-                <Button variant="ghost" size="sm" asChild>
+                <Button variant="ghost" size="sm" className="hidden md:flex" asChild>
                   <Link href="/auth">Sign In</Link>
                 </Button>
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>

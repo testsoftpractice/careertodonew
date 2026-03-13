@@ -5,51 +5,249 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
-  Zap,
   Users,
+  Calculator,
+  TrendingUp,
   Briefcase,
+  Headphones,
+  ShoppingCart,
   ArrowRight,
+  Sparkles,
+  Package,
+  Truck,
+  Factory,
+  ShieldCheck,
   CheckCircle2,
   Target,
-  TrendingUp,
+  BarChart3,
+  Award,
   Shield,
   Star,
-  BookOpen,
-  BarChart3,
-  Rocket,
-  Flame,
-  Sparkles,
   Building2,
   GraduationCap,
   ChartLine,
-  Award,
+  Flame,
+  Rocket,
+  Zap,
+  FileText,
+  ChartColumn,
+  DollarSign,
+  Building,
+  Globe,
+  Warehouse,
+  Settings,
+  Layers,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import PublicHeader from '@/components/public-header'
 import PublicFooter from '@/components/public-footer'
+import { useState, useEffect, useRef } from 'react'
 
-const fadeInUp = {
-  initial: { opacity: 0, y: 30 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6 },
+// Job cards data - Corporate focused roles
+const jobCards = [
+  {
+    icon: Package,
+    title: 'Procurement Specialist',
+    department: 'Procurement',
+    skills: ['Supplier Management', 'Cost Negotiation', 'Contract Review'],
+    gradient: 'from-blue-500 to-cyan-500',
+  },
+  {
+    icon: Truck,
+    title: 'Supply Chain Manager',
+    department: 'Supply Chain',
+    skills: ['Logistics Planning', 'Inventory Control', 'Vendor Relations'],
+    gradient: 'from-green-500 to-emerald-500',
+  },
+  {
+    icon: Factory,
+    title: 'Operations Manager',
+    department: 'Manufacturing',
+    skills: ['Production Planning', 'Quality Control', 'Process Optimization'],
+    gradient: 'from-orange-500 to-red-500',
+  },
+  {
+    icon: Users,
+    title: 'HR Manager',
+    department: 'Human Resources',
+    skills: ['Recruitment', 'Performance Management', 'Employee Relations'],
+    gradient: 'from-purple-500 to-pink-500',
+  },
+  {
+    icon: Calculator,
+    title: 'Financial Analyst',
+    department: 'Finance & Accounting',
+    skills: ['Budget Planning', 'Financial Analysis', 'Risk Assessment'],
+    gradient: 'from-teal-500 to-cyan-500',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Sales Executive',
+    department: 'Sales & Marketing',
+    skills: ['Lead Generation', 'Client Meetings', 'Sales Targets'],
+    gradient: 'from-pink-500 to-rose-500',
+  },
+  {
+    icon: Briefcase,
+    title: 'Project Manager',
+    department: 'Operations',
+    skills: ['Project Planning', 'Team Coordination', 'Deadline Management'],
+    gradient: 'from-violet-500 to-purple-500',
+  },
+  {
+    icon: Headphones,
+    title: 'Customer Support',
+    department: 'Customer Service',
+    skills: ['Customer Queries', 'Problem Solving', 'Service Quality'],
+    gradient: 'from-indigo-500 to-blue-500',
+  },
+  {
+    icon: DollarSign,
+    title: 'Business Analyst',
+    department: 'Business Development',
+    skills: ['Market Research', 'Business Modeling', 'Stakeholder Management'],
+    gradient: 'from-emerald-500 to-green-500',
+  },
+  {
+    icon: Building,
+    title: 'Corporate Manager',
+    department: 'Corporate Administration',
+    skills: ['Strategic Planning', 'Policy Implementation', 'Team Leadership'],
+    gradient: 'from-amber-500 to-orange-500',
+  },
+  {
+    icon: Globe,
+    title: 'International Trade Specialist',
+    department: 'International Business',
+    skills: ['Import/Export', 'Compliance', 'Cross-border Operations'],
+    gradient: 'from-cyan-500 to-blue-500',
+  },
+  {
+    icon: Warehouse,
+    title: 'Warehouse Manager',
+    department: 'Logistics',
+    skills: ['Inventory Management', 'Stock Control', 'Team Supervision'],
+    gradient: 'from-slate-500 to-gray-600',
+  },
+]
+
+// Animated background dots
+const backgroundDots = [
+  { left: '28.194%', top: '33.7628%' },
+  { left: '38.3851%', top: '56.6552%' },
+  { left: '40.2894%', top: '52.3404%' },
+  { left: '16.9146%', top: '24.3309%' },
+  { left: '5.50247%', top: '55.7567%' },
+  { left: '98.47%', top: '87.5676%' },
+  { left: '15.7675%', top: '12.0089%' },
+  { left: '91.1476%', top: '50.6483%' },
+  { left: '98.3102%', top: '5.46519%' },
+  { left: '76.2986%', top: '72.3563%' },
+  { left: '40.6412%', top: '4.75989%' },
+  { left: '42.7417%', top: '70.3738%' },
+  { left: '45.1222%', top: '93.5389%' },
+  { left: '88.4659%', top: '78.4211%' },
+  { left: '70.0399%', top: '44.0857%' },
+  { left: '60.7769%', top: '94.0317%' },
+  { left: '59.0192%', top: '29.3125%' },
+  { left: '8.2963%', top: '51.7464%' },
+  { left: '53.0128%', top: '25.2921%' },
+  { left: '93.9046%', top: '16.9862%' },
+]
+
+// Company logos for Tools You'll Master section
+const companyLogos = [
+  'ERP', 'CRM', 'Project Management', 'Ecommerce', 'Supplychain',
+  'Sequoia Capital', 'SAP', 'Oracle', 'Salesforce', 'Workday',
+  'Microsoft Dynamics', 'NetSuite', 'Zoho', 'HubSpot', 'Jira',
+  'Asana', 'Monday', 'Trello', 'Slack', 'Teams',
+  'Zoom', 'Google Workspace', 'Dropbox', 'Box', 'Notion',
+  'Tableau', 'Power BI', 'Excel', 'QuickBooks', 'Xero',
+  'Sage', 'FreshBooks', 'Wave', 'Mailchimp', 'Hootsuite',
+  'Buffer', 'Canva', 'Figma', 'Adobe Creative', 'Sketch',
+  'InVision', 'Miro', 'Lucidchart', 'Framer', 'Webflow',
+  'Shopify', 'WooCommerce', 'Magento', 'BigCommerce', 'Salesforce Commerce',
+  'AWS', 'Azure', 'Google Cloud', 'DigitalOcean', 'Heroku',
+  'Stripe', 'PayPal', 'Square', 'Braintree', 'Adyen',
+  'Zendesk', 'Intercom', 'Freshdesk', 'Drift', 'Help Scout',
+]
+
+// Auto-scrolling logo row component
+interface ToolsScrollRowProps {
+  logos: string[]
+  direction: 'left' | 'right'
+  speed: number
 }
 
-// Gradient animations
-const gradientVariants = {
-  initial: { backgroundPosition: '0% 50%' },
-  animate: {
-    backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-    transition: {
-      duration: 15,
-      repeat: Infinity,
-      ease: 'linear',
-    },
-  },
+function ToolsScrollRow({ logos, direction, speed }: ToolsScrollRowProps) {
+  const duplicatedLogos = [...logos, ...logos, ...logos]
+  
+  // Color mapping for different tools
+  const getColorClass = (logo: string) => {
+    const lower = logo.toLowerCase()
+    if (lower.includes('erp')) return 'text-red-700'
+    if (lower.includes('crm')) return 'text-gray-800'
+    if (lower.includes('project')) return 'text-blue-600'
+    if (lower.includes('ecommerce') || lower.includes('shopify') || lower.includes('woocommerce')) return 'text-sky-500'
+    if (lower.includes('supply') || lower.includes('chain')) return 'text-orange-500'
+    if (lower.includes('sequoia') || lower.includes('capital')) return 'text-green-700'
+    if (lower.includes('sap')) return 'text-blue-700'
+    if (lower.includes('oracle')) return 'text-red-600'
+    if (lower.includes('salesforce')) return 'text-sky-600'
+    if (lower.includes('microsoft')) return 'text-blue-500'
+    if (lower.includes('aws')) return 'text-orange-600'
+    if (lower.includes('azure')) return 'text-blue-800'
+    if (lower.includes('google')) return 'text-red-500'
+    if (lower.includes('stripe')) return 'text-indigo-600'
+    if (lower.includes('paypal')) return 'text-blue-600'
+    return 'text-gray-800'
+  }
+
+  return (
+    <div className="relative overflow-hidden py-3">
+      <div
+        className={`flex flex-wrap justify-center items-center gap-8 lg:gap-12 opacity-60 grayscale hover:grayscale-0 transition-all duration-300 ${
+          direction === 'left'
+            ? 'animate-scroll-left'
+            : 'animate-scroll-right'
+        }`}
+        style={{
+          animationDuration: `${speed}s`,
+        }}
+      >
+        {duplicatedLogos.map((logo, index) => (
+          <div
+            key={`${logo}-${index}`}
+            className={`font-bold text-lg cursor-pointer hover:opacity-100 transition-all ${getColorClass(logo)}`}
+          >
+            {logo}
+          </div>
+        ))}
+      </div>
+      {/* Fade edges */}
+      <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-white via-white/80 to-transparent dark:from-slate-950 dark:via-slate-950/80 dark:to-transparent pointer-events-none" />
+      <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-white via-white/80 to-transparent dark:from-slate-950 dark:via-slate-950/80 dark:to-transparent pointer-events-none" />
+    </div>
+  )
 }
 
 export default function HomePage() {
   const { user } = useAuth()
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [scrollY, setScrollY] = useState(0)
+
+  // Auto-scroll animation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (scrollRef.current) {
+        const cardHeight = 200
+        const newScrollY = (scrollY + cardHeight) % (jobCards.length * cardHeight)
+        setScrollY(newScrollY)
+      }
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [scrollY])
 
   const getDashboardLink = () => {
     if (!user) return '/auth'
@@ -69,104 +267,245 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden min-h-[90vh] flex items-center">
-          {/* Animated gradient background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 dark:from-purple-900 dark:via-pink-800 dark:to-orange-900 opacity-5" />
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-600 dark:from-cyan-900 dark:via-blue-900 dark:to-purple-900 opacity-5" />
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-sky-50 via-white to-blue-50">
+          {/* Animated background dots */}
+          <div className="absolute inset-0">
+            {backgroundDots.map((dot, index) => (
+              <div
+                key={index}
+                className="absolute w-1 h-1 sm:w-2 sm:h-2 bg-sky-300/30 rounded-full"
+                style={{ left: dot.left, top: dot.top }}
+              />
+            ))}
+          </div>
 
-          {/* Animated shapes */}
-          <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+          {/* Radial gradient overlays */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(14,165,233,0.15),transparent_50%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.15),transparent_50%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(125,211,252,0.08),transparent_70%)]" />
 
-          <div className="container mx-auto px-4 py-20 sm:px-6 lg:px-8 relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="text-center max-w-5xl mx-auto"
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-orange-500/10 backdrop-blur-sm border border-purple-200 dark:border-purple-800 px-6 py-3 rounded-full mb-8 shadow-lg"
-              >
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent font-semibold">
-                  Trusted by 500+ Companies Worldwide
-                </span>
-              </motion.div>
-
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-                className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6 leading-tight"
-              >
-                Build Your Professional Portfolio{' '}
-                <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 dark:from-purple-400 dark:via-pink-400 dark:to-orange-400 bg-clip-text text-transparent">
-                  From Day One
-                </span>
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-                className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-10 leading-relaxed"
-              >
-                Connect students, universities, employers, and investors in a unified ecosystem where real-world
-                experience is verified, tracked, and valued.
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.5 }}
-                className="flex justify-center gap-4 flex-wrap mb-12"
-              >
-                <Button
-                  className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 hover:from-purple-700 hover:via-pink-700 hover:to-orange-700 text-white px-10 py-4 rounded-xl font-semibold text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
-                  asChild
+          <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 lg:py-12 mt-8 sm:mt-10 md:mt-12 lg:pb-12 pb-2">
+            <div className="grid lg:grid-cols-2 gap-4 md:gap-6 lg:gap-8 items-center min-h-[600px]">
+              {/* Left Content */}
+              <div className="text-center lg:text-left">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="inline-flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 rounded-full bg-gradient-to-r from-sky-100 to-blue-100 border border-sky-200 mb-2 sm:mb-3 md:mb-4"
                 >
-                  <Link href={getDashboardLink()}>
-                    {user ? 'Go to Dashboard' : 'Get Started'} <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="border-2 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 px-10 py-4 rounded-xl font-semibold text-lg hover:-translate-y-1 transition-all duration-300"
-                  asChild
-                >
-                  <Link href="/about">Learn More</Link>
-                </Button>
-              </motion.div>
+                  <Sparkles className="w-3 h-3 sm:w-3 sm:h-3 md:w-4 md:h-4 text-sky-600" />
+                  <span className="text-sm sm:text-xs md:text-sm font-semibold text-sky-700">
+                    Job Simulation Platform
+                  </span>
+                </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.6 }}
-                className="flex flex-wrap justify-center gap-8"
-              >
-                {[
-                  { icon: Zap, text: 'Free to Start' },
-                  { icon: Shield, text: 'Verified Credentials' },
-                  { icon: Sparkles, text: 'AI-Powered Insights' },
-                ].map((item, index) => (
-                  <motion.div
-                    key={item.text}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5, delay: 0.7 + index * 0.1 }}
-                    className="flex items-center gap-2 text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-gray-900/50 px-4 py-2 rounded-full backdrop-blur-sm"
+                <motion.h1
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  className="text-2xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-black text-slate-800 leading-tight mb-2 sm:mb-3 md:mb-4"
+                >
+                  <span className="bg-gradient-to-r from-sky-600 via-blue-600 to-sky-700 bg-clip-text text-transparent">
+                    Learn by Doing, Not by Watching
+                  </span>
+                </motion.h1>
+
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  className="text-base sm:text-base md:text-lg lg:text-xl text-slate-600 mb-3 sm:mb-4 md:mb-6 leading-relaxed"
+                >
+                  No classrooms. No lectures. Just real work practice. Build HR, finance, product, and sales skills in a safe environment.
+                </motion.p>
+
+                {/* Stats */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                  className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 md:gap-4 lg:gap-6 mb-3 sm:mb-4 md:mb-6"
+                >
+                  <div className="text-center">
+                    <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-sky-600">11%</div>
+                    <div className="text-base text-slate-600">Graduate Unemployment</div>
+                  </div>
+                  <div className="h-3 sm:h-4 md:h-6 lg:h-8 w-px bg-sky-200"></div>
+                  <div className="text-center">
+                    <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-blue-600">2M+</div>
+                    <div className="text-base text-slate-600">Tech Jobs by 2030</div>
+                  </div>
+                  <div className="h-3 sm:h-4 md:h-6 lg:h-8 w-px bg-sky-200 hidden sm:block"></div>
+                  <div className="text-center hidden sm:block">
+                    <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-sky-700">$850M</div>
+                    <div className="text-xs text-slate-600">World Bank Support</div>
+                  </div>
+                </motion.div>
+
+                {/* Mobile stat */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.35 }}
+                  className="flex justify-center lg:hidden mb-3 sm:mb-4"
+                >
+                  <div className="text-center">
+                    <div className="text-lg sm:text-xl font-black text-sky-700">$850M</div>
+                    <div className="text-xs text-slate-600">World Bank Support</div>
+                  </div>
+                </motion.div>
+
+                {/* CTA Button */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                  className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center lg:justify-start"
+                >
+                  <Button
+                    className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white text-sm sm:text-base px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl shadow-lg shadow-sky-200/50 hover:shadow-xl hover:shadow-sky-300/50 transition-all duration-300 w-full sm:w-auto"
+                    asChild
                   >
-                    <item.icon className="w-5 h-5 text-purple-600" />
-                    <span className="font-medium">{item.text}</span>
-                  </motion.div>
-                ))}
-              </motion.div>
-            </motion.div>
+                    <Link href="/signup">
+                      Start Simulating <ArrowRight className="ml-2 w-3 h-3 sm:w-4 sm:h-4" />
+                    </Link>
+                  </Button>
+                </motion.div>
+              </div>
+
+              {/* Right - Job Cards Carousel (Desktop) */}
+              <div className="relative lg:h-[600px] hidden lg:block">
+                <div className="relative w-full h-full">
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    <div className="relative w-full h-full max-w-4xl mx-auto flex gap-5 lg:gap-6 justify-center">
+                      {[0, 1].map((columnIndex) => (
+                        <div
+                          key={columnIndex}
+                          className="relative w-[480px] h-[550px] overflow-hidden"
+                        >
+                          <div
+                            ref={scrollRef}
+                            className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
+                            style={{
+                              transform: `translateY(-${scrollY}px)`,
+                            }}
+                          >
+                            {[...jobCards, ...jobCards].map((job, index) => {
+                              const CardIcon = job.icon
+                              return (
+                                <div
+                                  key={`${columnIndex}-${index}`}
+                                  className="absolute px-2 py-2"
+                                  style={{ top: `${index * 189}px`, left: 0, right: 0 }}
+                                >
+                                  <div className="flex flex-col items-start gap-2 bg-white rounded-2xl shadow-lg p-4 border border-slate-200 hover:shadow-xl hover:border-sky-300 transition-all duration-300 w-[260px] mx-auto">
+                                    <div className="flex items-center gap-2 w-full">
+                                      <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${job.gradient} flex items-center justify-center shadow-sm`}>
+                                        <CardIcon className="w-4 h-4 text-white" />
+                                      </div>
+                                      <div>
+                                        <h4 className="font-semibold text-slate-900 text-sm">{job.title}</h4>
+                                        <p className="text-xs text-slate-600">{job.department}</p>
+                                      </div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      {job.skills.map((skill) => (
+                                        <span
+                                          key={skill}
+                                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-50 text-xs text-sky-800 font-medium border border-sky-200"
+                                        >
+                                          <div className="w-1 h-1 rounded-full bg-sky-500"></div>
+                                          {skill}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right - Job Cards Carousel (Mobile) */}
+              <div className="lg:hidden -mt-12">
+                <div className="relative w-full h-[520px]">
+                  <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-white via-white/80 to-transparent z-10 pointer-events-none"></div>
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    <div className="relative w-full h-full max-w-4xl mx-auto flex gap-5 justify-center">
+                      <div className="relative w-80 h-[520px] overflow-hidden">
+                        <div
+                          ref={scrollRef}
+                          className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
+                          style={{
+                            transform: `translateY(-${scrollY}px)`,
+                          }}
+                        >
+                          {[...jobCards, ...jobCards].map((job, index) => {
+                            const CardIcon = job.icon
+                            return (
+                              <div
+                                key={`mobile-${index}`}
+                                className="absolute px-2 py-2"
+                                style={{ top: `${index * 189}px`, left: 0, right: 0 }}
+                              >
+                                <div className="flex flex-col items-start gap-2 bg-white rounded-2xl shadow-lg p-4 border border-slate-200 hover:shadow-xl hover:border-sky-300 transition-all duration-300 w-[260px] mx-auto">
+                                  <div className="flex items-center gap-2 w-full">
+                                    <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${job.gradient} flex items-center justify-center shadow-sm`}>
+                                      <CardIcon className="w-4 h-4 text-white" />
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold text-slate-900 text-sm">{job.title}</h4>
+                                      <p className="text-xs text-slate-600">{job.department}</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {job.skills.map((skill) => (
+                                      <span
+                                        key={skill}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-50 text-xs text-sky-800 font-medium border border-sky-200"
+                                      >
+                                        <div className="w-1 h-1 rounded-full bg-sky-500"></div>
+                                        {skill}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Tools You'll Master Section */}
+        <section className="border-t border-slate-200 pt-12 pb-12 bg-white/50 dark:bg-gray-900/50">
+          <div className="container mx-auto px-4">
+            <p className="text-center text-sm font-medium text-gray-500 dark:text-gray-400 mb-8 uppercase tracking-wider">
+              Tools You'll Master
+            </p>
+            {/* Auto-scrolling logo rows */}
+            <div className="space-y-6 overflow-hidden">
+              {[0, 1, 2].map((rowIndex) => (
+                <ToolsScrollRow
+                  key={rowIndex}
+                  logos={companyLogos.slice(rowIndex * 16, (rowIndex + 1) * 16)}
+                  direction={rowIndex % 2 === 0 ? 'left' : 'right'}
+                  speed={30}
+                />
+              ))}
+            </div>
           </div>
         </section>
 
@@ -511,6 +850,90 @@ export default function HomePage() {
                 </motion.div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section className="py-20 md:py-32 bg-gradient-to-br from-card via-background to-card relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(139,92,246,0.1),transparent_70%)]" />
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <Badge className="mb-4 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/50 dark:to-pink-900/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 px-6 py-2 rounded-full">
+                Pricing
+              </Badge>
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6">
+                Simple,{' '}
+                <span className="bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
+                  Transparent Pricing
+                </span>
+              </h2>
+              <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
+                Choose the plan that fits your career goals
+              </p>
+            </div>
+            <div className="max-w-4xl mx-auto">
+              <div className="group relative">
+                <div className="absolute -top-5 left-0 right-0 flex justify-center z-10">
+                  <div className="px-6 py-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-bold animate-pulse">
+                    🎉 Limited Time Early Access Offer
+                  </div>
+                </div>
+                <div className="absolute -inset-1 bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl blur-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-700" />
+                <div className="relative bg-card/80 backdrop-blur-xl border-2 border-purple-500 rounded-3xl p-8 md:p-12">
+                  <div className="text-center mb-8">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-6 mx-auto">
+                      <Sparkles className="w-10 h-10 text-white" />
+                    </div>
+                    <h3 className="text-3xl md:text-4xl font-black mb-4">Early Access Special</h3>
+                    <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
+                      Limited time offer - Get 6 months of full access at our special launch price!
+                    </p>
+                    <div className="mb-8">
+                      <div className="flex items-center justify-center gap-4 mb-2">
+                        <span className="text-6xl md:text-7xl font-black bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
+                          ৳2,999
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-center gap-3">
+                        <span className="text-xl text-muted-foreground line-through">৳12,000</span>
+                        <span className="text-lg text-muted-foreground">6 months</span>
+                      </div>
+                      <div className="mt-3 inline-flex items-center px-4 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
+                        Save 58%
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4 mb-8">
+                    {[
+                      'Access to all 20+ professional simulations',
+                      'ERP, CRM, HRMS, Accounting & more tools',
+                      'Progress tracking dashboard',
+                      'Community forum access',
+                      'Priority email support',
+                      'Certificate of completion',
+                      'Job placement assistance',
+                      'Mobile app access',
+                    ].map((feature, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <CheckCircle2 className="w-3 h-3 text-white" />
+                        </div>
+                        <span className="text-sm leading-relaxed">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <Button
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-500/90 hover:to-pink-500/90 text-white text-lg py-6 rounded-xl"
+                    asChild
+                  >
+                    <Link href="/signup">Get Started Now</Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <p className="text-center mt-12 text-muted-foreground">
+              Early Access Limited time offer
+            </p>
           </div>
         </section>
 

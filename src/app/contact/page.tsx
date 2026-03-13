@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select'
 import PublicHeader from '@/components/public-header'
 import PublicFooter from '@/components/public-footer'
-import { Mail, Phone, Building2, Linkedin, X, Facebook, Instagram, Youtube, Send, CheckCircle2, Loader2, MessageSquare, Sparkles, Clock, Globe } from 'lucide-react'
+import { Mail, Phone, Building2, Linkedin, X, Facebook, Instagram, Youtube, CheckCircle2, Loader2, MessageSquare, Sparkles, Clock, Globe, Send } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from '@/hooks/use-toast'
 
@@ -27,8 +27,9 @@ export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    subject: '',
+    phone: '',
     category: '',
+    subject: '',
     message: '',
   })
 
@@ -47,14 +48,36 @@ export default function ContactPage() {
     setLoading(true)
 
     try {
-      // Simulate form submission (in production, this would go to an API)
-      await new Promise(resolve => setTimeout(resolve, 1500))
-
-      toast({
-        title: 'Message Sent',
-        description: 'Thank you for contacting us. We\'ll get back to you within 24-48 hours.',
+      const response = await fetch('https://formsubmit.co/ajax/info@careertodo.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          _captcha: false,
+          _subject: 'New Contact Form Submission - CareerToDo',
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          service: formData.category,
+          subject: formData.subject,
+          message: formData.message,
+        }),
       })
-      setSubmitted(true)
+
+      const data = await response.json()
+
+      if (data.success === 'true') {
+        toast({
+          title: 'Message Sent',
+          description: 'Thank you for contacting us. We\'ll get back to you within 24-48 hours.',
+        })
+        setSubmitted(true)
+        setFormData({ name: '', email: '', phone: '', category: '', subject: '', message: '' })
+      } else {
+        throw new Error(data.message || 'Failed to send message')
+      }
     } catch (error) {
       console.error('Contact form error:', error)
       toast({
@@ -126,10 +149,7 @@ export default function ContactPage() {
                         Thank you for reaching out. We've received your message and will get back to you within 24-48 hours.
                       </p>
                       <Button
-                        onClick={() => {
-                          setSubmitted(false)
-                          setFormData({ name: '', email: '', subject: '', category: '', message: '' })
-                        }}
+                        onClick={() => setSubmitted(false)}
                         className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white"
                       >
                         Send Another Message
@@ -138,10 +158,12 @@ export default function ContactPage() {
                   ) : (
                     <form onSubmit={handleSubmit} className="space-y-5">
                       <div className="space-y-2">
-                        <Label htmlFor="name" className="text-sm font-medium text-slate-700 dark:text-slate-300">Name *</Label>
+                        <Label htmlFor="name" className="text-sm font-medium text-slate-700 dark:text-slate-300">Full Name *</Label>
                         <Input
                           id="name"
-                          placeholder="Your full name"
+                          name="name"
+                          type="text"
+                          placeholder="John Doe"
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                           required
@@ -150,11 +172,12 @@ export default function ContactPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">Email *</Label>
+                        <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">Email Address *</Label>
                         <Input
                           id="email"
+                          name="email"
                           type="email"
-                          placeholder="your.email@example.com"
+                          placeholder="john@example.com"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           required
@@ -162,15 +185,28 @@ export default function ContactPage() {
                         />
                       </div>
 
+                      <div className="space-y-2">
+                        <Label htmlFor="phone" className="text-sm font-medium text-slate-700 dark:text-slate-300">Phone Number</Label>
+                        <Input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          placeholder="+1 (415) 123-4567"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          className="h-11 border-sky-200/50 focus:border-sky-400 transition-colors"
+                        />
+                      </div>
+
                       <div className="space-y-2 relative z-50">
-                        <Label htmlFor="category" className="text-sm font-medium text-slate-700 dark:text-slate-300">Category *</Label>
+                        <Label htmlFor="category" className="text-sm font-medium text-slate-700 dark:text-slate-300">Service Interested In</Label>
                         <Select
+                          name="service"
                           value={formData.category}
                           onValueChange={(value) => setFormData({ ...formData, category: value })}
-                          required
                         >
                           <SelectTrigger className="h-11 bg-white/80 dark:bg-gray-800/80 border-sky-200/50 focus:border-sky-400 transition-colors">
-                            <SelectValue placeholder="Select a category" />
+                            <SelectValue placeholder="Select a service" />
                           </SelectTrigger>
                           <SelectContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-sky-200/50">
                             <SelectItem value="general">General Inquiry</SelectItem>
@@ -178,6 +214,10 @@ export default function ContactPage() {
                             <SelectItem value="technical">Technical Issue</SelectItem>
                             <SelectItem value="feedback">Feedback</SelectItem>
                             <SelectItem value="partnership">Partnership Inquiry</SelectItem>
+                            <SelectItem value="student">Student Support</SelectItem>
+                            <SelectItem value="university">University Partnership</SelectItem>
+                            <SelectItem value="employer">Employer Services</SelectItem>
+                            <SelectItem value="investor">Investor Relations</SelectItem>
                             <SelectItem value="other">Other</SelectItem>
                           </SelectContent>
                         </Select>
@@ -187,6 +227,8 @@ export default function ContactPage() {
                         <Label htmlFor="subject" className="text-sm font-medium text-slate-700 dark:text-slate-300">Subject *</Label>
                         <Input
                           id="subject"
+                          name="subject"
+                          type="text"
                           placeholder="Brief description of your inquiry"
                           value={formData.subject}
                           onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
@@ -199,6 +241,7 @@ export default function ContactPage() {
                         <Label htmlFor="message" className="text-sm font-medium text-slate-700 dark:text-slate-300">Message *</Label>
                         <Textarea
                           id="message"
+                          name="message"
                           placeholder="Please provide as much detail as possible..."
                           rows={6}
                           value={formData.message}
@@ -257,10 +300,10 @@ export default function ContactPage() {
                       <div>
                         <div className="text-sm text-slate-600 dark:text-slate-400">Email Support</div>
                         <a
-                          href="mailto:support@careertodo.com"
+                          href="mailto:info@careertodo.com"
                           className="text-sm font-semibold text-sky-700 dark:text-sky-300 hover:text-sky-800 dark:hover:text-sky-200 transition-colors"
                         >
-                          support@careertodo.com
+                          info@careertodo.com
                         </a>
                         <div className="flex items-center gap-1 mt-1">
                           <Clock className="h-3 w-3 text-slate-500" />

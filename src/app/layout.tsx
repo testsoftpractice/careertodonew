@@ -14,18 +14,56 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = 'https://careertodo.com';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "CareerToDo Platform",
-  description: "A governed ecosystem where students operate real organizations, building verifiable careers from university onward.",
-  keywords: ["CareerToDo", "Student Platform", "University Platform", "Employer Platform", "Investor Platform"],
+  description: "Get hired faster: Bridge the gap from university to corporate with real-world career simulations. Become an Interview Dominator with proven experience and demonstrable skills.",
+  keywords: ["CareerToDo", "Student Platform", "University Platform", "Employer Platform", "Investor Platform", "Job Simulation", "Interview Preparation"],
   authors: [{ name: "CareerToDo Team" }],
+  creator: 'CareerToDo',
+  publisher: 'CareerToDo',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: {
     icon: "/favicon.ico",
+    shortcut: "/favicon-16x16.png",
+    apple: "/apple-touch-icon.png",
   },
   openGraph: {
-    title: "CareerToDo Platform",
-    description: "A governed ecosystem where students operate real organizations, building verifiable careers from university onward.",
     type: "website",
+    url: siteUrl,
+    title: "CareerToDo Platform",
+    description: "Get hired faster: Bridge the gap from university to corporate with real-world career simulations.",
+    siteName: "CareerToDo",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "CareerToDo Platform",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "CareerToDo Platform",
+    description: "Get hired faster: Bridge the gap from university to corporate with real-world career simulations.",
+    images: ["/og-image.png"],
+    creator: "@CareerToDo",
+  },
+  alternates: {
+    canonical: siteUrl,
   },
 };
 

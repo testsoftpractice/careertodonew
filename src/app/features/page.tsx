@@ -147,7 +147,7 @@ export default function Features() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden border-b bg-primary/5">
+        <section className="relative overflow-hidden border-b bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
           <div className="container mx-auto px-4 py-20 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -155,18 +155,18 @@ export default function Features() {
               transition={{ duration: 0.8 }}
               className="text-center"
             >
-              <Badge variant="outline" className="mb-6 inline-flex items-center gap-2">
+              <Badge className="mb-6 inline-flex items-center gap-2 bg-gradient-to-r from-sky-100 to-blue-100 text-sky-700 border-sky-200 dark:from-sky-900/30 dark:to-blue-900/30 dark:text-sky-300 dark:border-sky-700">
                 <Zap className="w-4 h-4" />
                 Platform Features
               </Badge>
               <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-6">
                 Powerful Tools for{' '}
-                <span className="text-primary">Every Stakeholder</span>
+                <span className="bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent">Every Stakeholder</span>
               </h1>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
+              <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto mb-8 leading-relaxed">
                 Comprehensive features designed to accelerate career growth, institutional success, and meaningful connections.
               </p>
-              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground" asChild>
+              <Button className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-lg shadow-sky-500/30 transition-all duration-300" asChild>
                 <Link href="/auth">
                   Get Started Now <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -176,7 +176,7 @@ export default function Features() {
         </section>
 
         {/* Category Tabs */}
-        <section className="border-b bg-background/95 backdrop-blur-sm">
+        <section className="border-b border-slate-200/50 dark:border-slate-700/50 bg-white/60 dark:bg-gray-900/60 backdrop-blur-md">
           <div className="container mx-auto px-4">
             <div className="flex justify-center gap-4 py-4 overflow-x-auto">
               {categories.map((cat) => (
@@ -184,13 +184,13 @@ export default function Features() {
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
                   className={`
-                    flex items-center gap-3 px-6 py-3 rounded-lg border-2 transition-all whitespace-nowrap
+                    flex items-center gap-3 px-6 py-3 rounded-lg border transition-all whitespace-nowrap duration-300
                     ${activeCategory === cat.id
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background text-muted-foreground border-muted hover:border-primary/50'
+                      ? 'bg-gradient-to-r from-sky-600 to-blue-600 text-white border-sky-600 shadow-lg shadow-sky-500/30'
+                      : 'bg-white/60 dark:bg-gray-800/60 text-slate-600 dark:text-slate-400 border-slate-200/50 dark:border-slate-700/50 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-md'
                     }
                   `}
-                  whileHover={{ scale: 1.02 }}
+                  whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <cat.icon className="w-5 h-5" />
@@ -202,7 +202,7 @@ export default function Features() {
         </section>
 
         {/* Features Grid */}
-        <section className="py-20">
+        <section className="py-20 bg-gradient-to-br from-sky-50/50 via-blue-50/30 to-white dark:from-slate-900 dark:via-slate-800/50 dark:to-slate-900">
           <div className="container mx-auto px-4">
             <motion.div
               key={activeCategory}
@@ -218,19 +218,20 @@ export default function Features() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  whileHover={scaleOnHover}
+                  whileHover={{ scale: 1.02, y: -4 }}
                 >
-                  <Card className="border-2 hover:shadow-xl transition-all h-full group">
+                  <Card className="border border-slate-200/50 dark:border-slate-700/50 bg-white/60 dark:bg-gray-900/60 backdrop-blur-md hover:shadow-xl hover:shadow-sky-500/10 transition-all duration-300 h-full group">
                     <CardHeader className="p-8 pb-4">
+                      <div className="w-12 h-1 bg-gradient-to-r from-sky-600 to-blue-600 rounded-full mb-6"></div>
                       <div className="flex items-center gap-4 mb-4">
-                        <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
-                          <feature.icon className="w-7 h-7 text-primary" />
+                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-sky-100 to-blue-100 dark:from-sky-900/30 dark:to-blue-900/30 flex items-center justify-center shadow-lg shadow-sky-500/20">
+                          <feature.icon className="w-7 h-7 bg-gradient-to-br from-sky-600 to-blue-600 bg-clip-text text-transparent" />
                         </div>
-                        <CardTitle className="text-2xl group-hover:text-primary transition-colors">
+                        <CardTitle className="text-2xl group-hover:bg-gradient-to-r group-hover:from-sky-600 group-hover:to-blue-600 group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">
                           {feature.title}
                         </CardTitle>
                       </div>
-                      <CardDescription className="text-lg">
+                      <CardDescription className="text-lg text-slate-600 dark:text-slate-400">
                         {feature.description}
                       </CardDescription>
                     </CardHeader>
@@ -243,8 +244,8 @@ export default function Features() {
                           'AI-powered recommendations',
                         ].map((item, i) => (
                           <li key={i} className="flex items-start gap-3">
-                            <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                            <span className="text-muted-foreground">{item}</span>
+                            <CheckCircle2 className="w-5 h-5 text-sky-600 mt-0.5 flex-shrink-0" />
+                            <span className="text-slate-600 dark:text-slate-400">{item}</span>
                           </li>
                         ))}
                       </ul>
@@ -257,7 +258,7 @@ export default function Features() {
         </section>
 
         {/* Benefits Section */}
-        <section className="py-20 bg-primary/[0.03]">
+        <section className="py-20 bg-gradient-to-br from-blue-50/50 via-cyan-50/30 to-sky-50/50 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -266,11 +267,11 @@ export default function Features() {
               transition={{ duration: 0.6 }}
               className="text-center mb-12"
             >
-              <Badge variant="outline" className="mb-4">Why Choose Us</Badge>
+              <Badge className="mb-4 bg-gradient-to-r from-sky-100 to-blue-100 text-sky-700 border-sky-200 dark:from-sky-900/30 dark:to-blue-900/30 dark:text-sky-300 dark:border-sky-700">Why Choose Us</Badge>
               <h2 className="text-3xl font-bold mb-4">
                 Built Different, Built Better
               </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
                 Every feature is designed with you in mind—students, institutions, employers, and investors.
               </p>
             </motion.div>
@@ -293,13 +294,16 @@ export default function Features() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  whileHover={scaleOnHover}
+                  whileHover={{ scale: 1.02, y: -4 }}
                 >
-                  <Card className="border-2 hover:shadow-xl h-full">
+                  <Card className="border border-slate-200/50 dark:border-slate-700/50 bg-white/60 dark:bg-gray-900/60 backdrop-blur-md hover:shadow-xl hover:shadow-sky-500/10 transition-all duration-300 h-full">
                     <CardContent className="p-8 text-center">
-                      <benefit.icon className="w-12 h-12 text-primary mx-auto mb-4" />
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-100 to-blue-100 dark:from-sky-900/30 dark:to-blue-900/30 flex items-center justify-center shadow-lg shadow-sky-500/20 mx-auto mb-4">
+                        <benefit.icon className="w-6 h-6 bg-gradient-to-br from-sky-600 to-blue-600 bg-clip-text text-transparent" />
+                      </div>
+                      <div className="w-12 h-1 bg-gradient-to-r from-sky-600 to-blue-600 rounded-full mx-auto mb-4"></div>
                       <h3 className="text-xl font-bold mb-2">{benefit.title}</h3>
-                      <p className="text-muted-foreground">{benefit.desc}</p>
+                      <p className="text-slate-600 dark:text-slate-400">{benefit.desc}</p>
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -309,7 +313,7 @@ export default function Features() {
         </section>
 
         {/* Technology Section */}
-        <section className="py-20">
+        <section className="py-20 bg-gradient-to-br from-cyan-50/50 via-sky-50/30 to-blue-50/50 dark:from-slate-900 dark:via-slate-800/50 dark:to-slate-900">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -318,56 +322,58 @@ export default function Features() {
               transition={{ duration: 0.6 }}
               className="text-center mb-12"
             >
-              <Badge variant="outline" className="mb-4">Powered by Innovation</Badge>
+              <Badge className="mb-4 bg-gradient-to-r from-sky-100 to-blue-100 text-sky-700 border-sky-200 dark:from-sky-900/30 dark:to-blue-900/30 dark:text-sky-300 dark:border-sky-700">Powered by Innovation</Badge>
               <h2 className="text-3xl font-bold mb-4">
                 Technology That Works For You
               </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
                 Cutting-edge technology powering every feature on our platform.
               </p>
             </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-              <Card className="border-2 hover:shadow-xl">
+              <Card className="border border-slate-200/50 dark:border-slate-700/50 bg-white/60 dark:bg-gray-900/60 backdrop-blur-md hover:shadow-xl hover:shadow-sky-500/10 transition-all duration-300">
                 <CardContent className="p-8">
+                  <div className="w-12 h-1 bg-gradient-to-r from-sky-600 to-blue-600 rounded-full mb-6"></div>
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Database className="w-7 h-7 text-primary" />
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-sky-100 to-blue-100 dark:from-sky-900/30 dark:to-blue-900/30 flex items-center justify-center shadow-lg shadow-sky-500/20">
+                      <Database className="w-7 h-7 bg-gradient-to-br from-sky-600 to-blue-600 bg-clip-text text-transparent" />
                     </div>
                     <h3 className="text-2xl font-bold">Immutable Ledger</h3>
                   </div>
-                  <p className="text-muted-foreground leading-relaxed mb-6">
+                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
                     Every achievement is cryptographically hashed and permanently recorded, creating a tamper-proof
                     ledger of professional accomplishments that employers can verify.
                   </p>
                   <ul className="space-y-2">
                     {['Blockchain verification', 'Tamper-proof records', 'Instant verification'].map((item) => (
                       <li key={item} className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span className="text-sm text-muted-foreground">{item}</span>
+                        <CheckCircle2 className="w-4 h-4 text-sky-600" />
+                        <span className="text-sm text-slate-600 dark:text-slate-400">{item}</span>
                       </li>
                     ))}
                   </ul>
                 </CardContent>
               </Card>
 
-              <Card className="border-2 hover:shadow-xl">
+              <Card className="border border-slate-200/50 dark:border-slate-700/50 bg-white/60 dark:bg-gray-900/60 backdrop-blur-md hover:shadow-xl hover:shadow-sky-500/10 transition-all duration-300">
                 <CardContent className="p-8">
+                  <div className="w-12 h-1 bg-gradient-to-r from-sky-600 to-blue-600 rounded-full mb-6"></div>
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Shield className="w-7 h-7 text-primary" />
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-sky-100 to-blue-100 dark:from-sky-900/30 dark:to-blue-900/30 flex items-center justify-center shadow-lg shadow-sky-500/20">
+                      <Shield className="w-7 h-7 bg-gradient-to-br from-sky-600 to-blue-600 bg-clip-text text-transparent" />
                     </div>
                     <h3 className="text-2xl font-bold">AI Governance</h3>
                   </div>
-                  <p className="text-muted-foreground leading-relaxed mb-6">
+                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
                     AI-powered quality control ensures fair play, prevents fraud, and maintains professional
                     standards across all platform interactions.
                   </p>
                   <ul className="space-y-2">
                     {['Automated moderation', 'Quality scoring system', 'Fraud detection'].map((item) => (
                       <li key={item} className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        <span className="text-sm text-muted-foreground">{item}</span>
+                        <CheckCircle2 className="w-4 h-4 text-sky-600" />
+                        <span className="text-sm text-slate-600 dark:text-slate-400">{item}</span>
                       </li>
                     ))}
                   </ul>
@@ -378,7 +384,7 @@ export default function Features() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 border-t bg-primary/[0.05]">
+        <section className="py-20 border-t border-slate-200/50 dark:border-slate-700/50 bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -390,10 +396,10 @@ export default function Features() {
               <h2 className="text-3xl font-bold mb-4">
                 Ready to Explore All Features?
               </h2>
-              <p className="text-xl text-muted-foreground mb-8">
+              <p className="text-xl text-slate-600 dark:text-slate-400 mb-8">
                 Join thousands of students, universities, and employers already benefiting from our platform.
               </p>
-              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground text-base px-8" asChild>
+              <Button className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-lg shadow-sky-500/30 transition-all duration-300 text-base px-8" asChild>
                 <Link href="/auth">
                   Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>

@@ -301,7 +301,7 @@ export default function HomePage() {
                   className="text-2xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-black text-slate-800 leading-tight mb-2 sm:mb-3 md:mb-4"
                 >
                   <span className="bg-gradient-to-r from-sky-600 via-blue-600 to-sky-700 bg-clip-text text-transparent">
-                    Learn by Doing, Not by Watching
+                    Get hired faster: Bridge the gap from university to corporate with real-world career simulations.
                   </span>
                 </motion.h1>
 
@@ -311,7 +311,7 @@ export default function HomePage() {
                   transition={{ duration: 0.6, delay: 0.2 }}
                   className="text-base sm:text-base md:text-lg lg:text-xl text-slate-600 mb-3 sm:mb-4 md:mb-6 leading-relaxed"
                 >
-                  No classrooms. No lectures. Just real work practice. Build HR, finance, product, and sales skills in a safe environment.
+                  Become an Interview Dominator with proven experience and demonstrable skills. Build HR, finance, product, and sales skills in a safe environment.
                 </motion.p>
 
                 {/* Stats */}
@@ -360,7 +360,7 @@ export default function HomePage() {
                     <div className="relative w-full h-full flex items-center justify-center">
                       <div className="relative w-full h-full max-w-lg mx-auto flex gap-3 justify-center">
                         {/* Mobile Left Column - Scrolls Up */}
-                        <div className="relative w-[140px] h-[480px] overflow-hidden">
+                        <div className="relative w-[150px] h-[480px] overflow-hidden">
                           <div
                             ref={scrollLeftRef}
                             className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
@@ -376,7 +376,7 @@ export default function HomePage() {
                                   className="absolute px-1 py-1"
                                   style={{ top: `${index * 189}px`, left: 0, right: 0 }}
                                 >
-                                  <div className="flex flex-col items-start gap-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-3 border border-slate-200/50 hover:shadow-lg hover:border-sky-300 transition-all duration-300 w-[120px]">
+                                  <div className="flex flex-col items-start gap-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-3 border border-slate-200/50 hover:shadow-lg hover:border-sky-300 transition-all duration-300 w-[130px]">
                                     <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${job.gradient} flex items-center justify-center shadow-sm mb-1`}>
                                       <CardIcon className="w-3 h-3 text-white" />
                                     </div>
@@ -389,7 +389,7 @@ export default function HomePage() {
                           </div>
                         </div>
                         {/* Mobile Right Column - Scrolls Down */}
-                        <div className="relative w-[140px] h-[480px] overflow-hidden">
+                        <div className="relative w-[150px] h-[480px] overflow-hidden">
                           <div
                             ref={scrollRightRef}
                             className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
@@ -405,7 +405,7 @@ export default function HomePage() {
                                   className="absolute px-1 py-1"
                                   style={{ top: `${index * 189}px`, left: 0, right: 0 }}
                                 >
-                                  <div className="flex flex-col items-start gap-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-3 border border-slate-200/50 hover:shadow-lg hover:border-sky-300 transition-all duration-300 w-[120px]">
+                                  <div className="flex flex-col items-start gap-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-3 border border-slate-200/50 hover:shadow-lg hover:border-sky-300 transition-all duration-300 w-[130px]">
                                     <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${job.gradient} flex items-center justify-center shadow-sm mb-1`}>
                                       <CardIcon className="w-3 h-3 text-white" />
                                     </div>
@@ -561,7 +561,7 @@ export default function HomePage() {
                   See It In Action
                 </Badge>
                 <h2 className="text-3xl md:text-4xl font-bold mb-4 text-slate-800 dark:text-white">
-                  Watch How It Works
+                  Why You Need CareerToDo
                 </h2>
                 <p className="text-lg text-slate-600 dark:text-slate-400">
                   Discover how students, universities, employers, and investors collaborate on our platform
@@ -831,15 +831,8 @@ export default function HomePage() {
                   asChild
                 >
                   <Link href={getDashboardLink()}>
-                    {user ? 'Go to Dashboard' : 'Start Free'} <ArrowRight className="ml-2 h-5 w-5" />
+                    {user ? 'Go to Dashboard' : 'Signup Now'} <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="border-2 border-white/30 text-white hover:bg-white/10 px-10 py-4 rounded-xl font-semibold text-lg hover:-translate-y-1 transition-all duration-300 backdrop-blur-sm"
-                  asChild
-                >
-                  <Link href="/contact">Contact Sales</Link>
                 </Button>
               </div>
             </motion.div>
@@ -973,14 +966,12 @@ export default function HomePage() {
                   </div>
                   <div className="grid md:grid-cols-2 gap-4 mb-8">
                     {[
-                      'Access to all 20+ professional simulations',
+                      'Access to all 40+ professional simulations',
                       'ERP, CRM, HRMS, Accounting & more tools',
                       'Progress tracking dashboard',
                       'Community forum access',
                       'Priority email support',
-                      'Certificate of completion',
                       'Job placement assistance',
-                      'Mobile app access',
                     ].map((feature, index) => (
                       <div key={index} className="flex items-start gap-3">
                         <div className="w-5 h-5 rounded-full bg-gradient-to-br from-sky-500 to-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">

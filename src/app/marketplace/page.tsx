@@ -93,17 +93,19 @@ export default function MarketplacePage() {
   })
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50">
       {/* Header */}
-      <header className="border-b bg-background">
+      <header className="border-b border-sky-200/50 bg-white/80 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
             <div className="flex items-center gap-2">
-              <Target className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
-              <h1 className="text-xl sm:text-2xl font-bold truncate">Investment Marketplace</h1>
+              <div className="bg-gradient-to-br from-sky-500 to-blue-600 p-2 rounded-lg shadow-lg shadow-sky-500/30">
+                <Target className="h-5 w-5 sm:h-6 sm:w-6 text-white flex-shrink-0" />
+              </div>
+              <h1 className="text-xl sm:text-2xl font-bold truncate text-slate-800 dark:text-white">Investment Marketplace</h1>
             </div>
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <Button variant="ghost" size="sm" asChild>
+              <Button variant="outline" className="border-sky-300 text-slate-700 hover:bg-sky-50" size="sm" asChild>
                 <Link href="/">
                   <ArrowRight className="h-4 w-4 mr-2 sm:mr-0 sm:hidden" />
                   <span className="hidden sm:inline">Back to Home</span>
@@ -118,15 +120,16 @@ export default function MarketplacePage() {
       <main className="container mx-auto px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Search and Filters */}
-          <Card>
+          <Card className="border border-slate-200/50 bg-white/60 dark:bg-gray-900/60 backdrop-blur-md">
             <CardHeader>
               <CardTitle className="text-lg sm:text-xl">Filter Projects</CardTitle>
               <CardDescription>Search and filter investment opportunities</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="w-12 h-1 bg-gradient-to-r from-sky-500 via-blue-500 to-cyan-500 rounded-full mb-4"></div>
               {/* Search Input */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                   placeholder="Search projects by name, description, or category..."
                   value={searchQuery}
@@ -190,10 +193,10 @@ export default function MarketplacePage() {
 
                 {/* Results Count */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Results</label>
-                  <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-muted/50">
-                    <Filter className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">{filteredProjects.length} projects</span>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Results</label>
+                  <div className="flex items-center gap-2 px-3 py-2 border border-sky-200/50 rounded-lg bg-white/50">
+                    <Filter className="h-4 w-4 text-sky-600" />
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{filteredProjects.length} projects</span>
                   </div>
                 </div>
               </div>
@@ -209,21 +212,22 @@ export default function MarketplacePage() {
           ) : filteredProjects.length > 0 ? (
             <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {filteredProjects.map((project) => (
-                <Card key={project.id} className="flex flex-col">
-                  <CardHeader>
+                <Card key={project.id} className="flex flex-col border border-slate-200/50 bg-white/60 dark:bg-gray-900/60 backdrop-blur-md hover:shadow-xl hover:border-sky-300 transition-all overflow-hidden">
+                  <div className="w-12 h-1 bg-gradient-to-r from-sky-500 via-blue-500 to-cyan-500"></div>
+                  <CardHeader className="pb-4">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex-1 min-w-0">
-                        <CardTitle className="text-base sm:text-lg truncate">{project.title}</CardTitle>
-                        <CardDescription className="text-xs sm:text-sm line-clamp-2 mt-1">
+                        <CardTitle className="text-base sm:text-lg truncate text-slate-800 dark:text-white">{project.title}</CardTitle>
+                        <CardDescription className="text-xs sm:text-sm line-clamp-2 mt-1 text-slate-600 dark:text-slate-400">
                           {project.description || 'No description provided'}
                         </CardDescription>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
-                      <Badge variant="outline" className="text-xs w-fit">{project.category || 'Uncategorized'}</Badge>
-                      <Badge variant="outline" className="text-xs w-fit">{project.status}</Badge>
+                      <Badge className="text-xs w-fit bg-gradient-to-r from-sky-100 to-blue-100 text-sky-700 border-sky-200">{project.category || 'Uncategorized'}</Badge>
+                      <Badge className="text-xs w-fit bg-gradient-to-r from-violet-100 to-purple-100 text-violet-700 border-violet-200">{project.status}</Badge>
                       {project.seekingInvestment && (
-                        <Badge className="text-xs w-fit bg-green-500">Seeking Investment</Badge>
+                        <Badge className="text-xs w-fit bg-gradient-to-r from-green-500 to-emerald-500 text-white">Seeking Investment</Badge>
                       )}
                     </div>
                   </CardHeader>
@@ -232,18 +236,18 @@ export default function MarketplacePage() {
                     {project.investmentGoal && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Investment Goal</span>
-                          <span className="font-semibold">${(project.investmentGoal).toLocaleString()}</span>
+                          <span className="text-slate-600 dark:text-slate-400">Investment Goal</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">${(project.investmentGoal).toLocaleString()}</span>
                         </div>
                         {project.currentRaised !== undefined && (
                           <>
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
                               <span>Raised</span>
                               <span>{project.currentRaised.toLocaleString()}</span>
                             </div>
                             <Progress
                               value={Math.min((project.currentRaised / project.investmentGoal) * 100, 100)}
-                              className="h-2"
+                              className="h-2 [&>div]:bg-slate-100 [&>.bg-sky-500"
                             />
                           </>
                         )}
@@ -254,30 +258,30 @@ export default function MarketplacePage() {
                     {project.teamReputation !== undefined && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Team Reputation</span>
+                          <span className="text-slate-600 dark:text-slate-400">Team Reputation</span>
                           <div className="flex items-center gap-1">
                             <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                            <span className="font-semibold">{project.teamReputation.toFixed(1)}</span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">{project.teamReputation.toFixed(1)}</span>
                           </div>
                         </div>
-                        <Progress value={(project.teamReputation / 5) * 100} className="h-2" />
+                        <Progress value={(project.teamReputation / 5) * 100} className="h-2 [&>div]:bg-slate-100 [&>.bg-sky-500" />
                       </div>
                     )}
 
                     {/* Project Details */}
-                    <div className="space-y-2 pt-2 border-t">
-                      <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                        <Building2 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <div className="space-y-2 pt-2 border-t border-slate-200/50">
+                      <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                        <Building2 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 text-sky-600" />
                         <span className="truncate">{project.university?.name || 'No university'}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                        <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                      <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                        <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 text-sky-600" />
                         <span className="truncate">{project.teamSize || 0} team members</span>
                       </div>
                     </div>
                   </CardContent>
                   <CardFooter className="flex flex-col sm:flex-row gap-2 pt-3">
-                    <Button variant="outline" className="flex-1 text-sm" asChild>
+                    <Button variant="outline" className="flex-1 text-sm border-sky-300 text-slate-700 hover:bg-sky-50 hover:border-sky-400" asChild>
                       <Link href={`/projects/${project.id}`}>
                         View
                         <span className="hidden sm:inline ml-2">Details</span>
@@ -285,7 +289,7 @@ export default function MarketplacePage() {
                       </Link>
                     </Button>
                     {project.seekingInvestment && (
-                      <Button className="flex-1 text-sm" asChild>
+                      <Button className="flex-1 text-sm bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white" asChild>
                         <Link href={`/marketplace/projects/${project.id}/invest`}>
                           <DollarSign className="h-3 w-3 mr-1 sm:mr-2" />
                           <span className="hidden sm:inline">Invest</span>

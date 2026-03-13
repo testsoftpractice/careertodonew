@@ -91,13 +91,15 @@ export default function JobsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50">
+      <header className="border-b border-slate-200/50 bg-white/80 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
             <div className="flex items-center gap-2">
-              <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
-              <h1 className="text-xl sm:text-2xl font-bold truncate">Job Marketplace</h1>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-lg shadow-sky-200/50">
+                <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 text-white flex-shrink-0" />
+              </div>
+              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent truncate">Job Marketplace</h1>
             </div>
             <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
               <Button variant="outline" size="sm" asChild>
@@ -114,25 +116,30 @@ export default function JobsPage() {
       <main className="container mx-auto px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
           {/* Search and Filter */}
-          <Card>
+          <Card className="border border-slate-200/50 bg-white/70 backdrop-blur-md shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div className="h-1 w-full bg-gradient-to-r from-sky-500 via-blue-500 to-cyan-500" />
             <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">Filter Jobs</CardTitle>
-              <CardDescription>Search and filter job opportunities</CardDescription>
+              <CardTitle className="text-lg sm:text-xl text-slate-900">Filter Jobs</CardTitle>
+              <CardDescription className="text-slate-600">Search and filter job opportunities</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center">
+                  <Search className="h-3.5 w-3.5 text-white" />
+                </div>
                 <Input
                   placeholder="Search jobs by title, company, or keyword..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 border-slate-200/60 bg-white/50 focus:border-sky-300 focus:ring-sky-200"
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger>
-                    <Filter className="h-4 w-4 mr-2" />
+                  <SelectTrigger className="border-slate-200/60 bg-white/50">
+                    <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center mr-2">
+                      <Filter className="h-4 w-4 text-white" />
+                    </div>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -144,8 +151,10 @@ export default function JobsPage() {
                   </SelectContent>
                 </Select>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger>
-                    <Briefcase className="h-4 w-4 mr-2" />
+                  <SelectTrigger className="border-slate-200/60 bg-white/50">
+                    <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center mr-2">
+                      <Briefcase className="h-4 w-4 text-white" />
+                    </div>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -164,8 +173,8 @@ export default function JobsPage() {
 
           {/* Results Count */}
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''} found
+            <p className="text-sm text-slate-600 font-medium">
+              <span className="bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent font-bold">{filteredJobs.length}</span> job{filteredJobs.length !== 1 ? 's' : ''} found
             </p>
           </div>
 
@@ -178,16 +187,17 @@ export default function JobsPage() {
           ) : filteredJobs.length > 0 ? (
             <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {filteredJobs.map((job) => (
-                <Card key={job.id}>
+                <Card key={job.id} className="border border-slate-200/50 bg-white/70 backdrop-blur-md shadow-lg hover:shadow-2xl hover:border-sky-300/50 transition-all duration-300 hover:-translate-y-1 group">
+                  <div className="h-1 w-full bg-gradient-to-r from-sky-500 to-blue-500" />
                   <CardHeader>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <CardTitle className="truncate">{job.title}</CardTitle>
-                        <CardDescription className="line-clamp-1">
+                        <CardTitle className="text-slate-900 truncate">{job.title}</CardTitle>
+                        <CardDescription className="text-slate-600 line-clamp-1">
                           {job.companyName || job.Business?.name || 'Unknown Company'}
                         </CardDescription>
                       </div>
-                      <Badge variant={getTypeVariant(job.type)}>
+                      <Badge className={`bg-gradient-to-r from-sky-500 to-blue-600 text-white border-0 shadow-md ${job.type === 'FULL_TIME' ? '' : job.type === 'PART_TIME' ? 'from-blue-500 to-cyan-600' : 'from-cyan-500 to-teal-600'}`}>
                         {job.type?.replace('_', ' ') || 'Full Time'}
                       </Badge>
                     </div>
@@ -195,51 +205,57 @@ export default function JobsPage() {
                   <CardContent className="space-y-4">
                     <div className="space-y-3">
                       <div>
-                        <div className="text-sm text-muted-foreground">Description</div>
-                        <p className="line-clamp-2 text-sm mt-1">{job.description || 'No description available'}</p>
+                        <div className="text-sm text-slate-600 font-medium">Description</div>
+                        <p className="line-clamp-2 text-sm mt-1 text-slate-700">{job.description || 'No description available'}</p>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                          <span className="text-sm truncate">{job.location || 'Remote'}</span>
+                          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                            <MapPin className="h-3.5 w-3.5 text-white" />
+                          </div>
+                          <span className="text-sm truncate text-slate-700">{job.location || 'Remote'}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                          <span className="text-sm font-semibold truncate">
+                          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center flex-shrink-0">
+                            <DollarSign className="h-3.5 w-3.5 text-white" />
+                          </div>
+                          <span className="text-sm font-semibold truncate text-slate-900">
                             {job.salaryRange || job.salary || 'Competitive'}
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between pt-3 border-t">
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-200/60">
                         <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{job.JobApplication?.length || 0} applicants</span>
+                          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center">
+                            <Users className="h-3.5 w-3.5 text-white" />
+                          </div>
+                          <span className="text-sm text-slate-700 font-medium">{job.JobApplication?.length || 0} applicants</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2 text-sm text-slate-600">
                           <Clock className="h-4 w-4" />
                           <span>Posted: {new Date(job.createdAt).toLocaleDateString()}</span>
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1.5">
                         {(job.requirements || []).slice(0, 3).map((req: string, idx: number) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
+                          <Badge key={idx} className="bg-gradient-to-r from-sky-100 to-blue-100 text-sky-700 border-sky-200 text-xs">
                             {req}
                           </Badge>
                         ))}
                         {(job.requirements || []).length > 3 && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge className="bg-slate-100 text-slate-600 border-slate-200 text-xs">
                             +{(job.requirements || []).length - 3} more
                           </Badge>
                         )}
                       </div>
                     </div>
-                    <Button className="w-full" variant="outline" asChild>
+                    <Button className="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-lg shadow-sky-200/50 hover:shadow-xl hover:shadow-sky-300/50 transition-all duration-300" asChild>
                       <Link href={`/jobs/${job.id}`}>
                         View Details
-                        <ArrowRight className="h-4 w-4 ml-2" />
+                        <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                       </Link>
                     </Button>
                   </CardContent>
@@ -247,11 +263,13 @@ export default function JobsPage() {
               ))}
             </div>
           ) : (
-            <Card>
+            <Card className="border border-slate-200/50 bg-white/70 backdrop-blur-md shadow-lg">
               <CardContent className="p-8 sm:p-12 text-center">
-                <Briefcase className="h-16 w-16 sm:h-20 sm:w-20 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg sm:text-xl font-semibold mb-2">No Jobs Found</h3>
-                <p className="text-sm sm:text-base text-muted-foreground">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center mx-auto mb-4">
+                  <Briefcase className="h-10 w-10 text-sky-600" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-semibold mb-2 text-slate-900">No Jobs Found</h3>
+                <p className="text-sm sm:text-base text-slate-600">
                   {searchQuery || categoryFilter !== 'all' || typeFilter !== 'all'
                     ? 'Try adjusting your filters to find more jobs.'
                     : 'There are no job postings available at this time.'}

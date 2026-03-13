@@ -235,12 +235,12 @@ export default function Solutions() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col">
       <PublicHeader title="Solutions" />
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden border-b bg-primary/5">
+        <section className="relative overflow-hidden bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50 dark:from-slate-950 dark:via-sky-950/20 dark:to-cyan-950/20">
           <div className="container mx-auto px-4 py-20 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -248,19 +248,19 @@ export default function Solutions() {
               transition={{ duration: 0.8 }}
               className="text-center"
             >
-              <Badge variant="outline" className="mb-6 inline-flex items-center gap-2">
+              <Badge className="mb-6 inline-flex items-center gap-2 bg-gradient-to-r from-sky-100 to-blue-100 text-sky-700 border-sky-200 px-4 py-2 rounded-full">
                 <Zap className="w-4 h-4" />
                 Solutions for Everyone
               </Badge>
               <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-6">
                 Tailored Solutions for{' '}
-                <span className="text-primary">Every Stakeholder</span>
+                <span className="bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent">Every Stakeholder</span>
               </h1>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
+              <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto mb-8 leading-relaxed">
                 From students building careers to universities tracking outcomes, from employers finding talent
                 to investors discovering opportunities—we have solutions designed for you.
               </p>
-              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground" asChild>
+              <Button className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-lg shadow-sky-200/50 hover:shadow-xl hover:shadow-sky-300/50 transition-all duration-300" asChild>
                 <Link href="/auth">
                   Find Your Solution <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -270,7 +270,7 @@ export default function Solutions() {
         </section>
 
         {/* Tab Navigation */}
-        <section className="border-b bg-background/95 backdrop-blur-sm">
+        <section className="border-b bg-white/60 dark:bg-slate-950/60 backdrop-blur-md">
           <div className="container mx-auto px-4">
             <div className="flex justify-center gap-4 py-4 overflow-x-auto">
               {tabs.map((tab) => (
@@ -278,10 +278,10 @@ export default function Solutions() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`
-                    flex items-center gap-3 px-6 py-3 rounded-lg border-2 transition-all whitespace-nowrap
+                    flex items-center gap-3 px-6 py-3 rounded-lg border transition-all whitespace-nowrap
                     ${activeTab === tab.id
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background text-muted-foreground border-muted hover:border-primary/50'
+                      ? 'bg-gradient-to-r from-sky-600 to-blue-600 text-white border-transparent shadow-lg shadow-sky-200/50'
+                      : 'bg-white/60 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 border-slate-200/50 hover:border-sky-300 hover:bg-white/80 dark:hover:bg-slate-900/80'
                     }
                   `}
                   whileHover={{ scale: 1.02 }}
@@ -296,7 +296,7 @@ export default function Solutions() {
         </section>
 
         {/* Solutions Grid */}
-        <section className="py-20">
+        <section className="py-20 bg-gradient-to-br from-slate-50 via-sky-50 to-blue-50 dark:from-slate-950 dark:via-sky-950/30 dark:to-blue-950/30">
           <div className="container mx-auto px-4">
             <motion.div
               key={activeTab}
@@ -312,28 +312,30 @@ export default function Solutions() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  whileHover={scaleOnHover}
+                  whileHover={{ scale: 1.03, y: -8 }}
+                  className="group"
                 >
-                  <Card className="border-2 hover:shadow-xl transition-all h-full group">
+                  <Card className="border border-slate-200/50 hover:shadow-xl hover:border-sky-300 transition-all duration-300 h-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-md group-hover:bg-white/80 dark:group-hover:bg-slate-900/80 overflow-hidden">
+                    <div className="h-1.5 bg-gradient-to-r from-sky-500 to-blue-500" />
                     <CardContent className="p-8">
                       <div className="flex items-center gap-4 mb-6">
-                        <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                          <solution.icon className="w-7 h-7 text-primary" />
+                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-md group-hover:scale-110 group-hover:shadow-lg transition-all duration-300">
+                          <solution.icon className="w-7 h-7 text-white" />
                         </div>
-                        <h3 className="text-2xl font-bold group-hover:text-primary transition-colors">
+                        <h3 className="text-2xl font-bold group-hover:bg-gradient-to-r group-hover:from-sky-600 group-hover:to-blue-600 group-hover:bg-clip-text group-hover:text-transparent transition-all">
                           {solution.title}
                         </h3>
                       </div>
-                      <p className="text-muted-foreground text-lg leading-relaxed mb-6">
+                      <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed mb-6">
                         {solution.description}
                       </p>
                       <div className="space-y-3">
-                        <p className="font-semibold text-sm mb-2">Key Benefits:</p>
+                        <p className="font-semibold text-sm mb-2 text-slate-800 dark:text-slate-200">Key Benefits:</p>
                         <ul className="space-y-2">
                           {solution.benefits.map((benefit, i) => (
                             <li key={i} className="flex items-start gap-2">
-                              <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                              <span className="text-sm text-muted-foreground">{benefit}</span>
+                              <CheckCircle2 className="w-4 h-4 text-sky-600 mt-0.5 flex-shrink-0" />
+                              <span className="text-sm text-slate-600 dark:text-slate-400">{benefit}</span>
                             </li>
                           ))}
                         </ul>
@@ -347,7 +349,7 @@ export default function Solutions() {
         </section>
 
         {/* Success Metrics */}
-        <section className="py-20 bg-primary/[0.03]">
+        <section className="py-20 bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50 dark:from-slate-950 dark:via-sky-950/20 dark:to-cyan-950/20">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -356,11 +358,11 @@ export default function Solutions() {
               transition={{ duration: 0.6 }}
               className="text-center mb-12"
             >
-              <Badge variant="outline" className="mb-4">Proven Results</Badge>
+              <Badge className="mb-4 bg-gradient-to-r from-sky-100 to-blue-100 text-sky-700 border-sky-200 px-6 py-2 rounded-full">Proven Results</Badge>
               <h2 className="text-3xl font-bold mb-4">
                 Real Impact, Real Success
               </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
                 See the numbers behind our success across all stakeholder groups.
               </p>
             </motion.div>
@@ -384,11 +386,14 @@ export default function Solutions() {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   className="text-center"
                 >
-                  <Card className="border-2 hover:shadow-xl">
+                  <Card className="border border-slate-200/50 hover:shadow-xl hover:border-sky-300 transition-all duration-300 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md hover:bg-white/80 dark:hover:bg-slate-900/80 overflow-hidden">
+                    <div className="h-1 bg-gradient-to-r from-sky-400 to-blue-500" />
                     <CardContent className="p-8">
-                      <metric.icon className="w-10 h-10 text-primary mx-auto mb-4" />
-                      <div className="text-4xl font-bold text-primary mb-2">{metric.value}</div>
-                      <div className="text-muted-foreground text-sm">{metric.label}</div>
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-md mx-auto mb-4">
+                        <metric.icon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="text-4xl font-bold bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent mb-2">{metric.value}</div>
+                      <div className="text-slate-600 dark:text-slate-400 text-sm font-medium">{metric.label}</div>
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -398,7 +403,7 @@ export default function Solutions() {
         </section>
 
         {/* How We Help Section */}
-        <section className="py-20">
+        <section className="py-20 bg-gradient-to-br from-slate-50 via-sky-50 to-blue-50 dark:from-slate-950 dark:via-sky-950/30 dark:to-blue-950/30">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -408,11 +413,11 @@ export default function Solutions() {
               className="max-w-5xl mx-auto"
             >
               <div className="text-center mb-12">
-                <Badge variant="outline" className="mb-4">How We Help You Succeed</Badge>
+                <Badge className="mb-4 bg-gradient-to-r from-sky-100 to-blue-100 text-sky-700 border-sky-200 px-6 py-2 rounded-full">How We Help You Succeed</Badge>
                 <h2 className="text-3xl font-bold mb-4">
                   Comprehensive Support Every Step of the Way
                 </h2>
-                <p className="text-xl text-muted-foreground">
+                <p className="text-xl text-slate-600 dark:text-slate-400">
                   Our platform provides more than just features—we provide a complete ecosystem for success.
                 </p>
               </div>
@@ -423,31 +428,37 @@ export default function Solutions() {
                     title: 'Onboarding & Setup',
                     icon: Rocket,
                     description: 'Quick setup with guided tutorials and 24/7 support to get you started fast.',
+                    gradient: 'from-sky-500 to-blue-600',
                   },
                   {
                     title: 'Best Practices',
                     icon: Award,
                     description: 'Industry-leading practices and templates proven to drive success.',
+                    gradient: 'from-blue-500 to-cyan-600',
                   },
                   {
                     title: 'Dedicated Support',
                     icon: Users,
                     description: 'Personal support from experts who understand your specific needs and challenges.',
+                    gradient: 'from-cyan-500 to-teal-600',
                   },
                   {
                     title: 'Analytics & Reporting',
                     icon: ChartBar,
                     description: 'Comprehensive dashboards and reports to track progress and ROI.',
+                    gradient: 'from-teal-500 to-emerald-600',
                   },
                   {
                     title: 'Integration & API',
                     icon: Globe,
                     description: 'Seamless integration with your existing tools and full API access.',
+                    gradient: 'from-emerald-500 to-green-600',
                   },
                   {
                     title: 'Training & Resources',
                     icon: Zap,
                     description: 'Extensive documentation, tutorials, and training resources available.',
+                    gradient: 'from-green-500 to-lime-600',
                   },
                 ].map((item, index) => (
                   <motion.div
@@ -456,13 +467,17 @@ export default function Solutions() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: index * 0.1 }}
-                    whileHover={scaleOnHover}
+                    whileHover={{ scale: 1.03, y: -8 }}
+                    className="group"
                   >
-                    <Card className="border-2 hover:shadow-xl h-full">
+                    <Card className="border border-slate-200/50 hover:shadow-xl hover:border-sky-300 transition-all duration-300 h-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-md group-hover:bg-white/80 dark:group-hover:bg-slate-900/80 overflow-hidden">
+                      <div className={`h-1.5 bg-gradient-to-r ${item.gradient}`} />
                       <CardContent className="p-8">
-                        <item.icon className="w-12 h-12 text-primary mx-auto mb-4" />
-                        <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-                        <p className="text-muted-foreground">{item.description}</p>
+                        <div className={`bg-gradient-to-br ${item.gradient} w-12 h-12 rounded-xl flex items-center justify-center shadow-md mx-auto mb-4 group-hover:scale-110 group-hover:shadow-lg transition-all duration-300`}>
+                          <item.icon className="w-6 h-6 text-white" />
+                        </div>
+                        <h3 className="text-xl font-bold mb-2 text-slate-800 dark:text-white">{item.title}</h3>
+                        <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{item.description}</p>
                       </CardContent>
                     </Card>
                   </motion.div>
@@ -473,8 +488,11 @@ export default function Solutions() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 border-t bg-primary/[0.05]">
-          <div className="container mx-auto px-4">
+        <section className="py-20 relative overflow-hidden bg-gradient-to-br from-sky-600 via-blue-600 to-cyan-600 dark:from-sky-900 dark:via-blue-900 dark:to-cyan-900">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIxIi8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
+          <div className="absolute top-10 left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-10 right-10 w-60 h-60 bg-white/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="container mx-auto px-4 relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -482,13 +500,17 @@ export default function Solutions() {
               transition={{ duration: 0.8 }}
               className="max-w-3xl mx-auto text-center"
             >
-              <h2 className="text-3xl font-bold mb-4">
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-6 py-3 rounded-full mb-8">
+                <Zap className="w-5 h-5 text-white" />
+                <span className="text-white font-semibold">Join 15,000+ Students</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">
                 Ready to Transform Your Future?
               </h2>
-              <p className="text-xl text-muted-foreground mb-8">
+              <p className="text-xl text-white/90 mb-8">
                 Join the platform that's revolutionizing education and career development.
               </p>
-              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground text-base px-8" asChild>
+              <Button className="bg-white text-sky-600 hover:bg-white/90 text-base px-8 py-6 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300" asChild>
                 <Link href="/auth">
                   Start Your Journey <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>

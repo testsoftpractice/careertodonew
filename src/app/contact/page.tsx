@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select'
 import PublicHeader from '@/components/public-header'
 import PublicFooter from '@/components/public-footer'
-import { Mail, Phone, Building2, Github, Linkedin, Twitter, Send, CheckCircle2, Loader2, User, MessageSquare } from 'lucide-react'
+import { Mail, Phone, Building2, Linkedin, X, Facebook, Instagram, Youtube, Send, CheckCircle2, Loader2, User, MessageSquare, Video } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from '@/hooks/use-toast'
 
@@ -246,15 +246,69 @@ export default function ContactPage() {
                   <p className="text-sm text-muted-foreground mb-4">
                     Stay updated with the latest news, features, and platform updates.
                   </p>
-                  <div className="flex gap-4">
-                    <a href="#" className="p-3 border rounded-lg hover:bg-accent transition-colors">
-                      <Github className="h-6 w-6 text-muted-foreground" />
+                  <div className="flex gap-3 flex-wrap">
+                    <a
+                      href="https://www.facebook.com/careertodo"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-3 border border-sky-200/50 bg-white/50 rounded-lg hover:bg-sky-500/10 hover:border-sky-300 transition-colors group"
+                      aria-label="Facebook"
+                    >
+                      <Facebook className="h-5 w-5 text-slate-600 group-hover:text-sky-600 transition-colors" />
                     </a>
-                    <a href="#" className="p-3 border rounded-lg hover:bg-accent transition-colors">
-                      <Linkedin className="h-6 w-6 text-muted-foreground" />
+                    <a
+                      href="https://x.com/CareerToDo"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-3 border border-sky-200/50 bg-white/50 rounded-lg hover:bg-sky-500/10 hover:border-sky-300 transition-colors group"
+                      aria-label="X (Twitter)"
+                    >
+                      <X className="h-5 w-5 text-slate-600 group-hover:text-sky-600 transition-colors" />
                     </a>
-                    <a href="#" className="p-3 border rounded-lg hover:bg-accent transition-colors">
-                      <Twitter className="h-6 w-6 text-muted-foreground" />
+                    <a
+                      href="https://www.instagram.com/career.todo/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-3 border border-sky-200/50 bg-white/50 rounded-lg hover:bg-sky-500/10 hover:border-sky-300 transition-colors group"
+                      aria-label="Instagram"
+                    >
+                      <Instagram className="h-5 w-5 text-slate-600 group-hover:text-sky-600 transition-colors" />
+                    </a>
+                    <a
+                      href="https://www.youtube.com/@careertodo"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-3 border border-sky-200/50 bg-white/50 rounded-lg hover:bg-sky-500/10 hover:border-sky-300 transition-colors group"
+                      aria-label="YouTube"
+                    >
+                      <Youtube className="h-5 w-5 text-slate-600 group-hover:text-sky-600 transition-colors" />
+                    </a>
+                    <a
+                      href="https://www.linkedin.com/company/careertodo/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-3 border border-sky-200/50 bg-white/50 rounded-lg hover:bg-sky-500/10 hover:border-sky-300 transition-colors group"
+                      aria-label="LinkedIn"
+                    >
+                      <Linkedin className="h-5 w-5 text-slate-600 group-hover:text-sky-600 transition-colors" />
+                    </a>
+                    <a
+                      href="https://www.tiktok.com/@careertodo"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-3 border border-sky-200/50 bg-white/50 rounded-lg hover:bg-sky-500/10 hover:border-sky-300 transition-colors group"
+                      aria-label="TikTok"
+                    >
+                      <Video className="h-5 w-5 text-slate-600 group-hover:text-sky-600 transition-colors" />
+                    </a>
+                    <a
+                      href="https://www.pinterest.com/careertodo/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-3 border border-sky-200/50 bg-white/50 rounded-lg hover:bg-sky-500/10 hover:border-sky-300 transition-colors group flex items-center justify-center"
+                      aria-label="Pinterest"
+                    >
+                      <span className="text-sm font-bold text-slate-600 group-hover:text-sky-600 transition-colors">P</span>
                     </a>
                   </div>
                 </CardContent>

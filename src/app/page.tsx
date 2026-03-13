@@ -527,11 +527,19 @@ export default function HomePage() {
         </section>
 
         {/* Tools You'll Master Section */}
-        <section className="border-t border-slate-200 pt-12 pb-12 bg-white/50 dark:bg-gray-900/50">
+        <section className="border-t border-slate-200 pt-12 pb-12 bg-gradient-to-br from-sky-50 via-white to-blue-50 dark:from-slate-950 dark:via-sky-950/20 dark:to-blue-950/20">
           <div className="container mx-auto px-4">
-            <p className="text-center text-sm font-medium text-gray-500 dark:text-gray-400 mb-8 uppercase tracking-wider">
-              Tools You'll Master
-            </p>
+            <div className="text-center mb-8">
+              <Badge className="mb-4 bg-gradient-to-r from-sky-100 to-blue-100 dark:from-sky-900/50 dark:to-blue-900/50 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800 px-6 py-2 rounded-full">
+                Professional Tools
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-slate-800 dark:text-white">
+                Tools You'll Master
+              </h2>
+              <p className="text-lg text-slate-600 dark:text-slate-400">
+                Gain hands-on experience with industry-standard software and platforms used by leading companies
+              </p>
+            </div>
             {/* Auto-scrolling logo rows */}
             <div className="space-y-6 overflow-hidden">
               {[0, 1, 2].map((rowIndex) => (

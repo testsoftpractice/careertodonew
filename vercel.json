@@ -120,6 +120,38 @@
     {
       "source": "/core-banking/:path*",
       "destination": "https://core-banking-nine.vercel.app/:path*"
+    },
+    {
+      "source": "/hospital-management/:path*",
+      "destination": "https://hospital-management-eta-one.vercel.app/:path*"
+    },
+    {
+      "source": "/pharmacy-management/:path*",
+      "destination": "https://core-pharmacy.vercel.app/:path*"
+    },
+    {
+      "source": "/fleet-management/:path*",
+      "destination": "https://fleet-management-six-mu.vercel.app/:path*"
+    },
+    {
+      "source": "/procurement-management/:path*",
+      "destination": "https://core-procurement.vercel.app/:path*"
+    },
+    {
+      "source": "/gantt-chart/:path*",
+      "destination": "https://gantt-five.vercel.app/:path*"
+    },
+    {
+      "source": "/email-management/:path*",
+      "destination": "https://email-sepia-beta.vercel.app/:path*"
+    },
+    {
+      "source": "/custom-erp/:path*",
+      "destination": "https://core-erp.app/:path*"
+    },
+    {
+      "source": "/airline-management/:path*",
+      "destination": "https://airline-core.vercel.app/:path*"
     }
   ],
   "headers": [

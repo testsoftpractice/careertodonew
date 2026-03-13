@@ -3,34 +3,47 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
-  Dumbbell,
-  ExternalLink,
-  Lock,
   Search,
-  Filter,
   Zap,
-  ArrowRight,
-  Mail,
-  BookOpen,
+  Clock,
+  ChevronRight,
+  LayoutGrid,
+  Users,
+  Database,
   Workflow,
   Target,
-  PieChart,
-  Users,
-  FileText,
-  Calendar,
+  Mail,
   BarChart3,
-  Database,
-  CheckCircle2,
-  Clock,
-  Star,
+  PieChart,
   Keyboard,
   ShoppingCart,
+  FileText,
+  Calendar,
+  CheckCircle2,
+  Building2,
+  Truck,
+  Package,
+  Shield,
+  Factory,
+  Plane,
+  Pill,
+  Car,
+  Stethoscope,
+  ChevronDown,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import PublicHeader from '@/components/public-header'
 import PublicFooter from '@/components/public-footer'
 
@@ -44,385 +57,523 @@ interface PracticeTool {
   icon: React.ReactNode
   features: string[]
   status: 'available' | 'coming-soon'
+  difficulty?: 'Beginner' | 'Intermediate' | 'Advanced'
+  duration?: string
 }
 
-const departments = [
+const tools: PracticeTool[] = [
+  // HR Tools
   {
-    id: 'human-resource',
-    name: 'Human Resource',
-    icon: <Users className="w-5 h-5" />,
-    color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-    tools: [
-      {
-        id: 'hr-workflow',
-        name: 'HR Workflow',
-        path: '/hr-workflow',
-        url: '/hr-workflow',
-        description: 'HR tasks list for managing human resources processes efficiently.',
-        category: 'HR',
-        icon: <Users className="w-6 h-6" />,
-        features: ['Employee Onboarding', 'Leave Management', 'Performance Reviews', 'Document Management'],
-        status: 'available',
-      },
-      {
-        id: 'hrms',
-        name: 'HRMS',
-        path: '/hrms',
-        url: '/hrms',
-        description: 'Complete Human Resource Management System for employee lifecycle management.',
-        category: 'HR',
-        icon: <Users className="w-6 h-6" />,
-        features: ['Employee Records', 'Payroll Management', 'Leave & Attendance', 'Recruitment'],
-        status: 'available',
-      },
-      {
-        id: 'application-tracking',
-        name: 'Application Tracking',
-        path: '/application-tracking',
-        url: '/application-tracking',
-        description: 'Track and manage job applications throughout the recruitment process.',
-        category: 'HR',
-        icon: <FileText className="w-6 h-6" />,
-        features: ['Application Pipeline', 'Candidate Management', 'Interview Scheduling', 'Status Tracking'],
-        status: 'available',
-      },
-    ],
+    id: 'hr-workflow',
+    name: 'HR Workflow',
+    path: '/hr-workflow',
+    url: '/hr-workflow',
+    description: 'Employee onboarding, leave management, performance reviews.',
+    category: 'HR',
+    icon: <Users className="w-4 h-4" />,
+    features: ['Onboarding', 'Leave', 'Reviews'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '2-3 hours',
   },
   {
-    id: 'accounting-finance',
-    name: 'Accounting & Finance',
-    icon: <PieChart className="w-5 h-5" />,
-    color: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800',
-    tools: [
-      {
-        id: 'core-banking',
-        name: 'Core Banking',
-        path: '/core-banking',
-        url: '/core-banking',
-        description: 'Core banking system for managing customer accounts, transactions, and banking operations.',
-        category: 'Finance',
-        icon: <Database className="w-6 h-6" />,
-        features: ['Account Management', 'Transaction Processing', 'Loan Management', 'Interest Calculation'],
-        status: 'available',
-      },
-      {
-        id: 'af-workflow',
-        name: 'AF Workflow',
-        path: '/af-workflow',
-        url: '/af-workflow',
-        description: 'Accounting & Finance workflow for managing financial processes.',
-        category: 'Finance',
-        icon: <FileText className="w-6 h-6" />,
-        features: ['Financial Reporting', 'Expense Tracking', 'Budget Management', 'Tax Preparation'],
-        status: 'available',
-      },
-      {
-        id: 'accounting',
-        name: 'Accounting',
-        path: '/accounting',
-        url: '/accounting',
-        description: 'Comprehensive accounting software for financial management and bookkeeping.',
-        category: 'Finance',
-        icon: <Database className="w-6 h-6" />,
-        features: ['General Ledger', 'Accounts Payable/Receivable', 'Financial Statements', 'Bank Reconciliation'],
-        status: 'available',
-      },
-      {
-        id: 'tax-submit',
-        name: 'Tax Submit',
-        path: '/tax-submit',
-        url: '/tax-submit',
-        description: 'Tax preparation and submission platform for individuals and businesses.',
-        category: 'Finance',
-        icon: <FileText className="w-6 h-6" />,
-        features: ['Tax Calculation', 'Form Generation', 'E-Filing', 'Tax Compliance'],
-        status: 'available',
-      },
-    ],
+    id: 'hrms',
+    name: 'HRMS',
+    path: '/hrms',
+    url: '/hrms',
+    description: 'Complete human resource management system.',
+    category: 'HR',
+    icon: <Users className="w-4 h-4" />,
+    features: ['Records', 'Payroll', 'Attendance'],
+    status: 'available',
+    difficulty: 'Advanced',
+    duration: '4-5 hours',
   },
   {
-    id: 'operations-management',
-    name: 'Operation & Management',
-    icon: <Workflow className="w-5 h-5" />,
-    color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800',
-    tools: [
-      {
-        id: 'operations-tasks',
-        name: 'Operations Tasks',
-        path: '/operations-tasks',
-        url: '/operations-tasks',
-        description: 'Operations tasks for managing daily business operations.',
-        category: 'Operations',
-        icon: <CheckCircle2 className="w-6 h-6" />,
-        features: ['Task Assignment', 'Priority Management', 'Progress Tracking', 'Team Coordination'],
-        status: 'available',
-      },
-      {
-        id: 'erp',
-        name: 'ERP System',
-        path: '/erp',
-        url: '/erp',
-        description: 'Enterprise Resource Planning system for integrated business management.',
-        category: 'Operations',
-        icon: <Database className="w-6 h-6" />,
-        features: ['Resource Planning', 'Supply Chain', 'Inventory Management', 'Financial Integration'],
-        status: 'available',
-      },
-      {
-        id: 'odoo',
-        name: 'Odoo',
-        path: '/odoo',
-        url: '/odoo',
-        description: 'Comprehensive business management suite with various integrated applications.',
-        category: 'Operations',
-        icon: <Workflow className="w-6 h-6" />,
-        features: ['CRM', 'Sales', 'Accounting', 'Inventory'],
-        status: 'available',
-      },
-      {
-        id: 'project-management',
-        name: 'Project Management',
-        path: '/project-management',
-        url: '/project-management',
-        description: 'Complete project management solution for planning and tracking projects.',
-        category: 'Operations',
-        icon: <BarChart3 className="w-6 h-6" />,
-        features: ['Project Planning', 'Task Management', 'Gantt Charts', 'Resource Allocation'],
-        status: 'available',
-      },
-      {
-        id: 'bpm',
-        name: 'Business Process Management',
-        path: '/bpm',
-        url: '/bpm',
-        description: 'Design, execute, and optimize business processes efficiently.',
-        category: 'Operations',
-        icon: <Workflow className="w-6 h-6" />,
-        features: ['Process Modeling', 'Workflow Automation', 'Process Analytics', 'Compliance'],
-        status: 'available',
-      },
-      {
-        id: 'automation',
-        name: 'Automation',
-        path: '/automation',
-        url: '/automation',
-        description: 'Business automation platform for streamlining workflows and tasks.',
-        category: 'Operations',
-        icon: <Zap className="w-6 h-6" />,
-        features: ['Workflow Automation', 'Task Scheduling', 'Process Orchestration', 'Integration Hub'],
-        status: 'available',
-      },
-      {
-        id: 'document-management',
-        name: 'Document Management',
-        path: '/document-management',
-        url: '/document-management',
-        description: 'Secure document storage and management system for organizations.',
-        category: 'Operations',
-        icon: <FileText className="w-6 h-6" />,
-        features: ['Document Storage', 'Version Control', 'Access Control', 'Search & Retrieval'],
-        status: 'available',
-      },
-      {
-        id: 'business-supply',
-        name: 'Business Supply',
-        path: '/business-supply',
-        url: '/business-supply',
-        description: 'Supply chain management for efficient business operations.',
-        category: 'Operations',
-        icon: <ShoppingCart className="w-6 h-6" />,
-        features: ['Supplier Management', 'Order Processing', 'Inventory Control', 'Logistics'],
-        status: 'available',
-      },
-    ],
+    id: 'application-tracking',
+    name: 'Application Tracking',
+    path: '/application-tracking',
+    url: '/application-tracking',
+    description: 'Track job applications through recruitment.',
+    category: 'HR',
+    icon: <FileText className="w-4 h-4" />,
+    features: ['Pipeline', 'Candidates', 'Scheduling'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '2-3 hours',
+  },
+  // Finance Tools
+  {
+    id: 'core-banking',
+    name: 'Core Banking',
+    path: '/core-banking',
+    url: '/core-banking',
+    description: 'Customer accounts, transactions, banking ops.',
+    category: 'Finance',
+    icon: <Database className="w-4 h-4" />,
+    features: ['Accounts', 'Transactions', 'Loans'],
+    status: 'available',
+    difficulty: 'Advanced',
+    duration: '5-6 hours',
   },
   {
-    id: 'sales-marketing',
-    name: 'Sales & Marketing',
-    icon: <Target className="w-5 h-5" />,
-    color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-    tools: [
-      {
-        id: 'sales-workflow',
-        name: 'Sales Workflow',
-        path: '/sales-workflow',
-        url: '/sales-workflow',
-        description: 'Sales workflow for managing sales processes and customer relationships.',
-        category: 'Sales',
-        icon: <Target className="w-6 h-6" />,
-        features: ['Lead Management', 'Pipeline Tracking', 'Follow-up Reminders', 'Sales Analytics'],
-        status: 'available',
-      },
-      {
-        id: 'email-marketing',
-        name: 'Email Marketing',
-        path: '/email-marketing',
-        url: '/email-marketing',
-        description: 'Create and manage email campaigns with templates, automation, and analytics.',
-        category: 'Marketing',
-        icon: <Mail className="w-6 h-6" />,
-        features: ['Email Templates', 'Automation Workflows', 'Analytics Dashboard', 'A/B Testing'],
-        status: 'available',
-      },
-      {
-        id: 'study-pathways',
-        name: 'Student Consulting Firm CRM',
-        path: '/study-pathways',
-        url: '/study-pathways',
-        description: 'Student consulting firm CRM for managing student relationships and consulting projects.',
-        category: 'Sales',
-        icon: <BookOpen className="w-6 h-6" />,
-        features: ['Student Management', 'Project Tracking', 'Consultation Scheduling', 'Progress Reports'],
-        status: 'available',
-      },
-      {
-        id: 'ghl-crm',
-        name: 'GHL CRM',
-        path: '/ghl-crm',
-        url: '/ghl-crm',
-        description: 'Comprehensive CRM system for managing customer relationships and sales.',
-        category: 'Sales',
-        icon: <Users className="w-6 h-6" />,
-        features: ['Contact Management', 'Lead Tracking', 'Sales Pipeline', 'Marketing Automation'],
-        status: 'available',
-      },
-      {
-        id: 'appointment-booking',
-        name: 'Appointment Booking',
-        path: '/appointment-booking',
-        url: '/appointment-booking',
-        description: 'Schedule and manage appointments with clients and customers.',
-        category: 'Sales',
-        icon: <Calendar className="w-6 h-6" />,
-        features: ['Online Booking', 'Calendar Sync', 'Reminders', 'Client Management'],
-        status: 'available',
-      },
-      {
-        id: 'pos',
-        name: 'Point of Sale',
-        path: '/pos',
-        url: '/pos',
-        description: 'Point of Sale system for retail and restaurant businesses.',
-        category: 'Sales',
-        icon: <ShoppingCart className="w-6 h-6" />,
-        features: ['Sales Processing', 'Inventory Management', 'Payment Integration', 'Receipt Printing'],
-        status: 'available',
-      },
-      {
-        id: 'ecommerce',
-        name: 'E-commerce',
-        path: '/ecommerce',
-        url: '/ecommerce',
-        description: 'Complete e-commerce platform for online selling and store management.',
-        category: 'Sales',
-        icon: <ShoppingCart className="w-6 h-6" />,
-        features: ['Product Catalog', 'Shopping Cart', 'Payment Gateway', 'Order Management'],
-        status: 'available',
-      },
-    ],
+    id: 'af-workflow',
+    name: 'AF Workflow',
+    path: '/af-workflow',
+    url: '/af-workflow',
+    description: 'Financial reporting, expense tracking, budgeting.',
+    category: 'Finance',
+    icon: <FileText className="w-4 h-4" />,
+    features: ['Reporting', 'Expenses', 'Budgeting'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '3-4 hours',
   },
   {
-    id: 'data-analytics',
-    name: 'Data & Analytics',
-    icon: <BarChart3 className="w-5 h-5" />,
-    color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800',
-    tools: [
-      {
-        id: 'excel',
-        name: 'Excel',
-        path: '/excel',
-        url: '/excel',
-        description: 'Spreadsheet application for data organization, analysis, and visualization.',
-        category: 'Data',
-        icon: <BarChart3 className="w-6 h-6" />,
-        features: ['Data Entry', 'Formulas & Functions', 'Charts & Graphs', 'Data Analysis'],
-        status: 'available',
-      },
-      {
-        id: 'powerbi',
-        name: 'Power BI',
-        path: '/powerbi',
-        url: '/powerbi',
-        description: 'Business intelligence and data visualization platform for insights.',
-        category: 'Analytics',
-        icon: <PieChart className="w-6 h-6" />,
-        features: ['Data Visualization', 'Interactive Dashboards', 'Data Modeling', 'Report Sharing'],
-        status: 'available',
-      },
-    ],
+    id: 'accounting',
+    name: 'Accounting',
+    path: '/accounting',
+    url: '/accounting',
+    description: 'Financial management and bookkeeping.',
+    category: 'Finance',
+    icon: <Database className="w-4 h-4" />,
+    features: ['Ledger', 'AP/AR', 'Statements'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '4-5 hours',
   },
   {
-    id: 'productivity-tools',
-    name: 'Productivity & Tools',
-    icon: <Zap className="w-5 h-5" />,
-    color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800',
-    tools: [
-      {
-        id: 'typing',
-        name: 'Typing Practice',
-        path: '/typing',
-        url: '/typing',
-        description: 'Improve your typing speed and accuracy with practice exercises.',
-        category: 'Skills',
-        icon: <Keyboard className="w-6 h-6" />,
-        features: ['Speed Training', 'Accuracy Tests', 'WPM Tracking', 'Progress Reports'],
-        status: 'available',
-      },
-      {
-        id: 'zap',
-        name: 'Zap',
-        path: '/zap',
-        url: '/zap',
-        description: 'Automation tool for connecting apps and streamlining workflows.',
-        category: 'Productivity',
-        icon: <Zap className="w-6 h-6" />,
-        features: ['App Integration', 'Workflow Automation', 'Triggers & Actions', 'Multi-step Workflows'],
-        status: 'available',
-      },
-      {
-        id: 'roadmap',
-        name: 'Roadmap',
-        path: '/roadmap',
-        url: '/roadmap',
-        description: 'Strategic planning tool for creating and managing project roadmaps.',
-        category: 'Planning',
-        icon: <Target className="w-6 h-6" />,
-        features: ['Strategic Planning', 'Milestone Tracking', 'Timeline View', 'Resource Planning'],
-        status: 'available',
-      },
-      {
-        id: 'nexus',
-        name: 'Nexus',
-        path: '/nexus',
-        url: '/nexus',
-        description: 'Centralized hub for managing and integrating business applications.',
-        category: 'Productivity',
-        icon: <Workflow className="w-6 h-6" />,
-        features: ['App Integration', 'Central Management', 'Data Synchronization', 'Workflow Orchestration'],
-        status: 'available',
-      },
-    ],
+    id: 'tax-submit',
+    name: 'Tax Submit',
+    path: '/tax-submit',
+    url: '/tax-submit',
+    description: 'Tax preparation and submission platform.',
+    category: 'Finance',
+    icon: <FileText className="w-4 h-4" />,
+    features: ['Calculation', 'Forms', 'E-Filing'],
+    status: 'available',
+    difficulty: 'Advanced',
+    duration: '3-4 hours',
   },
+  // Operations Tools
+  {
+    id: 'operations-tasks',
+    name: 'Operations Tasks',
+    path: '/operations-tasks',
+    url: '/operations-tasks',
+    description: 'Manage daily business operations.',
+    category: 'Operations',
+    icon: <CheckCircle2 className="w-4 h-4" />,
+    features: ['Tasks', 'Priorities', 'Tracking'],
+    status: 'available',
+    difficulty: 'Beginner',
+    duration: '1-2 hours',
+  },
+  {
+    id: 'erp',
+    name: 'ERP System',
+    path: '/erp',
+    url: '/erp',
+    description: 'Integrated business management system.',
+    category: 'Operations',
+    icon: <LayoutGrid className="w-4 h-4" />,
+    features: ['Planning', 'Supply Chain', 'Inventory'],
+    status: 'available',
+    difficulty: 'Advanced',
+    duration: '6-8 hours',
+  },
+  {
+    id: 'odoo',
+    name: 'Odoo',
+    path: '/odoo',
+    url: '/odoo',
+    description: 'Comprehensive business suite.',
+    category: 'Operations',
+    icon: <Workflow className="w-4 h-4" />,
+    features: ['CRM', 'Sales', 'Accounting'],
+    status: 'available',
+    difficulty: 'Advanced',
+    duration: '5-7 hours',
+  },
+  {
+    id: 'project-management',
+    name: 'Project Management',
+    path: '/project-management',
+    url: '/project-management',
+    description: 'Plan and track projects effectively.',
+    category: 'Operations',
+    icon: <BarChart3 className="w-4 h-4" />,
+    features: ['Planning', 'Tasks', 'Gantt Charts'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '3-4 hours',
+  },
+  {
+    id: 'bpm',
+    name: 'Business Process Management',
+    path: '/bpm',
+    url: '/bpm',
+    description: 'Design and optimize business processes.',
+    category: 'Operations',
+    icon: <Workflow className="w-4 h-4" />,
+    features: ['Modeling', 'Automation', 'Analytics'],
+    status: 'available',
+    difficulty: 'Advanced',
+    duration: '4-5 hours',
+  },
+  {
+    id: 'automation',
+    name: 'Automation',
+    path: '/automation',
+    url: '/automation',
+    description: 'Streamline workflows with automation.',
+    category: 'Operations',
+    icon: <Zap className="w-4 h-4" />,
+    features: ['Workflows', 'Scheduling', 'Integrations'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '3-4 hours',
+  },
+  {
+    id: 'document-management',
+    name: 'Document Management',
+    path: '/document-management',
+    url: '/document-management',
+    description: 'Secure document storage and management.',
+    category: 'Operations',
+    icon: <FileText className="w-4 h-4" />,
+    features: ['Storage', 'Versioning', 'Access Control'],
+    status: 'available',
+    difficulty: 'Beginner',
+    duration: '1-2 hours',
+  },
+  {
+    id: 'business-supply',
+    name: 'Business Supply',
+    path: '/business-supply',
+    url: '/business-supply',
+    description: 'Supply chain and supplier management.',
+    category: 'Operations',
+    icon: <ShoppingCart className="w-4 h-4" />,
+    features: ['Suppliers', 'Orders', 'Inventory'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '3-4 hours',
+  },
+  // Sales & Marketing Tools
+  {
+    id: 'sales-workflow',
+    name: 'Sales Workflow',
+    path: '/sales-workflow',
+    url: '/sales-workflow',
+    description: 'Manage sales processes and pipeline.',
+    category: 'Sales',
+    icon: <Target className="w-4 h-4" />,
+    features: ['Leads', 'Pipeline', 'Analytics'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '2-3 hours',
+  },
+  {
+    id: 'email-marketing',
+    name: 'Email Marketing',
+    path: '/email-marketing',
+    url: '/email-marketing',
+    description: 'Create and manage email campaigns.',
+    category: 'Marketing',
+    icon: <Mail className="w-4 h-4" />,
+    features: ['Campaigns', 'Automation', 'Analytics'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '3-4 hours',
+  },
+  {
+    id: 'email-management',
+    name: 'Email Management',
+    path: '/email-management',
+    url: '/email-management',
+    description: 'Manage and organize emails efficiently.',
+    category: 'Marketing',
+    icon: <Mail className="w-4 h-4" />,
+    features: ['Inbox', 'Filters', 'Templates'],
+    status: 'available',
+    difficulty: 'Beginner',
+    duration: '1-2 hours',
+  },
+  {
+    id: 'study-pathways',
+    name: 'Student Consulting CRM',
+    path: '/study-pathways',
+    url: '/study-pathways',
+    description: 'Manage student relationships and projects.',
+    category: 'Sales',
+    icon: <Users className="w-4 h-4" />,
+    features: ['Students', 'Projects', 'Scheduling'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '2-3 hours',
+  },
+  {
+    id: 'ghl-crm',
+    name: 'GHL CRM',
+    path: '/ghl-crm',
+    url: '/ghl-crm',
+    description: 'Customer relationship management system.',
+    category: 'Sales',
+    icon: <Users className="w-4 h-4" />,
+    features: ['Contacts', 'Leads', 'Marketing'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '3-4 hours',
+  },
+  {
+    id: 'appointment-booking',
+    name: 'Appointment Booking',
+    path: '/appointment-booking',
+    url: '/appointment-booking',
+    description: 'Schedule appointments with reminders.',
+    category: 'Sales',
+    icon: <Calendar className="w-4 h-4" />,
+    features: ['Booking', 'Sync', 'Reminders'],
+    status: 'available',
+    difficulty: 'Beginner',
+    duration: '1-2 hours',
+  },
+  {
+    id: 'pos',
+    name: 'Point of Sale',
+    path: '/pos',
+    url: '/pos',
+    description: 'Retail and restaurant POS system.',
+    category: 'Sales',
+    icon: <ShoppingCart className="w-4 h-4" />,
+    features: ['Sales', 'Inventory', 'Payments'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '2-3 hours',
+  },
+  {
+    id: 'ecommerce',
+    name: 'E-commerce',
+    path: '/ecommerce',
+    url: '/ecommerce',
+    description: 'Online selling platform.',
+    category: 'Sales',
+    icon: <ShoppingCart className="w-4 h-4" />,
+    features: ['Catalog', 'Cart', 'Orders'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '3-4 hours',
+  },
+  // Data & Analytics Tools
+  {
+    id: 'excel',
+    name: 'Excel',
+    path: '/excel',
+    url: '/excel',
+    description: 'Spreadsheet for data and analysis.',
+    category: 'Data',
+    icon: <BarChart3 className="w-4 h-4" />,
+    features: ['Data', 'Formulas', 'Charts'],
+    status: 'available',
+    difficulty: 'Beginner',
+    duration: '2-3 hours',
+  },
+  {
+    id: 'powerbi',
+    name: 'Power BI',
+    path: '/powerbi',
+    url: '/powerbi',
+    description: 'Business intelligence and visualization.',
+    category: 'Analytics',
+    icon: <PieChart className="w-4 h-4" />,
+    features: ['Visualization', 'Dashboards', 'Reports'],
+    status: 'available',
+    difficulty: 'Advanced',
+    duration: '4-5 hours',
+  },
+  {
+    id: 'gantt-chart',
+    name: 'Gantt Chart',
+    path: '/gantt-chart',
+    url: '/gantt-chart',
+    description: 'Project timeline visualization.',
+    category: 'Analytics',
+    icon: <BarChart3 className="w-4 h-4" />,
+    features: ['Timeline', 'Milestones', 'Dependencies'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '2-3 hours',
+  },
+  // Productivity Tools
+  {
+    id: 'typing',
+    name: 'Typing Practice',
+    path: '/typing',
+    url: '/typing',
+    description: 'Improve typing speed and accuracy.',
+    category: 'Skills',
+    icon: <Keyboard className="w-4 h-4" />,
+    features: ['Speed', 'Accuracy', 'WPM'],
+    status: 'available',
+    difficulty: 'Beginner',
+    duration: '1-2 hours',
+  },
+  {
+    id: 'zap',
+    name: 'Zap',
+    path: '/zap',
+    url: '/zap',
+    description: 'Connect apps and automate workflows.',
+    category: 'Productivity',
+    icon: <Zap className="w-4 h-4" />,
+    features: ['Integrations', 'Workflows', 'Automation'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '2-3 hours',
+  },
+  {
+    id: 'roadmap',
+    name: 'Roadmap',
+    path: '/roadmap',
+    url: '/roadmap',
+    description: 'Strategic planning and tracking.',
+    category: 'Planning',
+    icon: <Target className="w-4 h-4" />,
+    features: ['Planning', 'Milestones', 'Timeline'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '2-3 hours',
+  },
+  {
+    id: 'nexus',
+    name: 'Nexus',
+    path: '/nexus',
+    url: '/nexus',
+    description: 'Centralized business app hub.',
+    category: 'Productivity',
+    icon: <Workflow className="w-4 h-4" />,
+    features: ['Integration', 'Management', 'Sync'],
+    status: 'available',
+    difficulty: 'Advanced',
+    duration: '3-4 hours',
+  },
+  // Industry Tools
+  {
+    id: 'hospital-management',
+    name: 'Hospital Management',
+    path: '/hospital-management',
+    url: '/hospital-management',
+    description: 'Healthcare facility management.',
+    category: 'Healthcare',
+    icon: <Stethoscope className="w-4 h-4" />,
+    features: ['Patients', 'Appointments', 'Records'],
+    status: 'available',
+    difficulty: 'Advanced',
+    duration: '5-6 hours',
+  },
+  {
+    id: 'pharmacy-management',
+    name: 'Pharmacy Management',
+    path: '/pharmacy-management',
+    url: '/pharmacy-management',
+    description: 'Pharmacy operations and inventory.',
+    category: 'Healthcare',
+    icon: <Pill className="w-4 h-4" />,
+    features: ['Medicines', 'Inventory', 'Prescriptions'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '3-4 hours',
+  },
+  {
+    id: 'fleet-management',
+    name: 'Fleet Management',
+    path: '/fleet-management',
+    url: '/fleet-management',
+    description: 'Vehicle fleet tracking and management.',
+    category: 'Logistics',
+    icon: <Car className="w-4 h-4" />,
+    features: ['Tracking', 'Maintenance', 'Drivers'],
+    status: 'available',
+    difficulty: 'Advanced',
+    duration: '4-5 hours',
+  },
+  {
+    id: 'procurement-management',
+    name: 'Procurement Management',
+    path: '/procurement-management',
+    url: '/procurement-management',
+    description: 'Procurement and purchasing management.',
+    category: 'Operations',
+    icon: <Package className="w-4 h-4" />,
+    features: ['Purchasing', 'Vendors', 'Approvals'],
+    status: 'available',
+    difficulty: 'Intermediate',
+    duration: '3-4 hours',
+  },
+  {
+    id: 'custom-erp',
+    name: 'Custom ERP',
+    path: '/custom-erp',
+    url: '/custom-erp',
+    description: 'Custom enterprise resource planning.',
+    category: 'Operations',
+    icon: <Building2 className="w-4 h-4" />,
+    features: ['Customization', 'Integration', 'Scalability'],
+    status: 'available',
+    difficulty: 'Advanced',
+    duration: '6-8 hours',
+  },
+  {
+    id: 'airline-management',
+    name: 'Airline Management',
+    path: '/airline-management',
+    url: '/airline-management',
+    description: 'Airline operations and management.',
+    category: 'Aviation',
+    icon: <Plane className="w-4 h-4" />,
+    features: ['Flights', 'Bookings', 'Crew'],
+    status: 'available',
+    difficulty: 'Advanced',
+    duration: '6-8 hours',
+  },
+]
+
+const categories = [
+  { id: 'all', name: 'All Tools' },
+  { id: 'HR', name: 'HR' },
+  { id: 'Finance', name: 'Finance' },
+  { id: 'Operations', name: 'Operations' },
+  { id: 'Sales', name: 'Sales' },
+  { id: 'Marketing', name: 'Marketing' },
+  { id: 'Data', name: 'Data' },
+  { id: 'Analytics', name: 'Analytics' },
+  { id: 'Skills', name: 'Skills' },
+  { id: 'Productivity', name: 'Productivity' },
+  { id: 'Planning', name: 'Planning' },
+  { id: 'Healthcare', name: 'Healthcare' },
+  { id: 'Logistics', name: 'Logistics' },
+  { id: 'Aviation', name: 'Aviation' },
 ]
 
 export default function PracticeLabPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState('all')
 
-  // Redirect if not authenticated - must use useEffect to avoid SSR issues
+  // Redirect if not authenticated
   useEffect(() => {
     if (!loading && !user) {
       router.push('/auth')
     }
   }, [user, loading, router])
 
-  // Show loading state while checking auth
+  // Show loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-sky-600 border-t-transparent"></div>
       </div>
     )
   }
@@ -432,214 +583,297 @@ export default function PracticeLabPage() {
     return null
   }
 
-  const filteredDepartments = departments.map(dept => ({
-    ...dept,
-    tools: dept.tools.filter(tool =>
+  // Filter tools
+  const filteredTools = tools.filter(tool => {
+    const matchesSearch =
+      searchQuery === '' ||
       tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tool.description.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  })).filter(dept => dept.tools.length > 0)
+      tool.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tool.features.some(f => f.toLowerCase().includes(searchQuery.toLowerCase()))
 
-  const selectedDeptData = selectedDepartment
-    ? departments.find(d => d.id === selectedDepartment)
-    : null
+    const matchesCategory = selectedCategory === 'all' || tool.category === selectedCategory
 
-  const allTools = departments.flatMap(dept => dept.tools)
+    return matchesSearch && matchesCategory
+  })
+
+  const getDifficultyColor = (difficulty?: string) => {
+    switch (difficulty) {
+      case 'Beginner': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+      case 'Intermediate': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+      case 'Advanced': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+      default: return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50 dark:from-slate-950 dark:via-sky-950/20 dark:to-blue-950/20 flex flex-col">
       <PublicHeader />
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-primary/5 via-background to-primary/5 border-b">
-          <div className="container mx-auto px-4 py-12 sm:py-16">
-            <div className="max-w-4xl mx-auto text-center">
-              <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
-                <Dumbbell className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-primary">Practice Lab</span>
-              </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-                Master Real-World Skills
-              </h1>
-              <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-                Access professional-grade software tools and practice scenarios to build hands-on experience across multiple departments.
-              </p>
+        <section className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-sky-500/5 via-blue-500/5 to-cyan-500/5"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(14,165,233,0.1),transparent_50%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.1),transparent_50%)]"></div>
 
-              {/* Search Bar */}
-              <div className="relative max-w-xl mx-auto mb-8">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search tools and applications..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 h-12 text-base"
-                />
-              </div>
+          <div className="container mx-auto px-4 py-8 sm:py-10 relative z-10">
+            <div className="max-w-4xl mx-auto text-center">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                <Badge className="mb-3 bg-gradient-to-r from-sky-100 to-blue-100 dark:from-sky-900/50 dark:to-blue-900/50 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800 px-5 py-1.5 rounded-full text-sm">
+                  <Zap className="w-3 h-3 mr-1.5" />
+                  Practice Lab
+                </Badge>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 text-slate-800 dark:text-white">
+                  Master{' '}
+                  <span className="bg-gradient-to-r from-sky-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                    36 Real-World Tools
+                  </span>
+                </h1>
+                <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-6 max-w-2xl mx-auto">
+                  Access professional-grade software tools and practice scenarios to build hands-on experience across multiple departments.
+                </p>
+              </motion.div>
+
+              {/* Search and Filter */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto mb-6"
+              >
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search tools..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 h-10 text-sm border-sky-200/50 focus:border-sky-400 bg-white/60 backdrop-blur-md shadow-sm"
+                  />
+                </div>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-full sm:w-[180px] h-10 bg-white/60 backdrop-blur-md border-sky-200/50 focus:border-sky-400">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </motion.div>
 
               {/* Stats */}
-              <div className="flex flex-wrap justify-center gap-6 sm:gap-8 text-sm">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                  <span className="text-muted-foreground">
-                    <strong className="text-foreground">{allTools.length}</strong> Tools Available
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Star className="w-5 h-5 text-amber-500" />
-                  <span className="text-muted-foreground">
-                    <strong className="text-foreground">{departments.length}</strong> Departments
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-blue-500" />
-                  <span className="text-muted-foreground">
-                    <strong className="text-foreground">24/7</strong> Access
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Department Filter */}
-        <section className="border-b bg-background/50 backdrop-blur-sm sticky top-0 z-10">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center gap-3 overflow-x-auto pb-2">
-              <Filter className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              <Button
-                variant={selectedDepartment === null ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedDepartment(null)}
-                className="flex-shrink-0"
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm"
               >
-                All Tools
-              </Button>
-              {departments.map((dept) => (
-                <Button
-                  key={dept.id}
-                  variant={selectedDepartment === dept.id ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedDepartment(dept.id)}
-                  className="flex-shrink-0"
-                >
-                  <span className="mr-2">{dept.icon}</span>
-                  {dept.name}
-                  <Badge variant="secondary" className="ml-2">
-                    {dept.tools.length}
-                  </Badge>
-                </Button>
-              ))}
+                <div className="flex items-center gap-2">
+                  <div className="bg-gradient-to-br from-green-500 to-emerald-500 p-1 rounded-full">
+                    <CheckCircle2 className="w-3 h-3 text-white" />
+                  </div>
+                  <span className="text-slate-600 dark:text-slate-400">
+                    <strong className="text-slate-800 dark:text-slate-200">{tools.length}</strong> Tools
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="bg-gradient-to-br from-amber-500 to-orange-500 p-1 rounded-full">
+                    <Zap className="w-3 h-3 text-white" />
+                  </div>
+                  <span className="text-slate-600 dark:text-slate-400">
+                    <strong className="text-slate-800 dark:text-slate-200">{categories.length}</strong> Categories
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="bg-gradient-to-br from-sky-500 to-blue-500 p-1 rounded-full">
+                    <Clock className="w-3 h-3 text-white" />
+                  </div>
+                  <span className="text-slate-600 dark:text-slate-400">
+                    <strong className="text-slate-800 dark:text-slate-200">24/7</strong> Access
+                  </span>
+                </div>
+              </motion.div>
             </div>
           </div>
         </section>
 
-        {/* Tools Grid */}
-        <section className="container mx-auto px-4 py-8">
-          {selectedDeptData && (
-            <div className="mb-8">
-              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${selectedDeptData.color} mb-4`}>
-                {selectedDeptData.icon}
-                <h2 className="text-lg font-semibold">{selectedDeptData.name}</h2>
-              </div>
-              <p className="text-muted-foreground">
-                Explore {selectedDeptData.tools.length} {selectedDeptData.tools.length === 1 ? 'tool' : 'tools'} available in this department.
-              </p>
+        {/* Category Filter Pills - Compact */}
+        <section className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 sticky top-16 z-10">
+          <div className="container mx-auto px-4 py-2">
+            <div className="flex flex-wrap gap-2 justify-center">
+              {categories.slice(0, 8).map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    selectedCategory === cat.id
+                      ? 'bg-gradient-to-r from-sky-500 to-blue-500 text-white shadow-md'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              ))}
+              {categories.length > 8 && (
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="h-7 w-[100px] bg-slate-100 dark:bg-slate-800 border-0 text-xs">
+                    <SelectValue placeholder="More" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.slice(8).map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
-          )}
+          </div>
+        </section>
 
-          {searchQuery && filteredDepartments.length === 0 ? (
+        {/* Tools Grid - Smaller Cards */}
+        <section className="container mx-auto px-4 py-6">
+          {searchQuery && filteredTools.length === 0 ? (
             <div className="text-center py-16">
-              <Search className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No tools found</h3>
-              <p className="text-muted-foreground">
-                Try adjusting your search terms or browse all departments.
+              <Search className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold mb-2 text-slate-800 dark:text-white">No tools found</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Try adjusting your search terms or browse all categories.
               </p>
             </div>
           ) : (
-            <div className="grid gap-6">
-              {(selectedDeptData ? [selectedDeptData] : filteredDepartments).map((dept) => (
-                <div key={dept.id} className="space-y-4">
-                  {!selectedDeptData && (
-                    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${dept.color}`}>
-                      {dept.icon}
-                      <h2 className="text-lg font-semibold">{dept.name}</h2>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {dept.tools.map((tool) => (
-                      <Card
-                        key={tool.id}
-                        className="hover:shadow-md transition-all duration-200 border hover:border-primary/30 group"
-                      >
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className={`p-2 rounded-lg ${dept.color.replace('border-', 'bg-').replace('border-', 'text-')} bg-opacity-10`}>
-                              {tool.icon}
-                            </div>
-                            {tool.status === 'coming-soon' && (
-                              <Badge variant="secondary" className="text-xs">Soon</Badge>
-                            )}
-                          </div>
-                          <CardTitle className="text-base line-clamp-1">{tool.name}</CardTitle>
-                          <CardDescription className="text-sm line-clamp-2">
-                            {tool.description}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          {/* Action Button */}
-                          {tool.status === 'available' ? (
-                            <Button
-                              size="sm"
-                              className="w-full"
-                              onClick={() => router.push(tool.path)}
-                            >
-                              Launch
-                              <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
-                          ) : (
-                            <Button size="sm" variant="outline" className="w-full" disabled>
-                              <Lock className="mr-2 h-4 w-4" />
-                              Coming Soon
-                            </Button>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
+            >
+              {filteredTools.map((tool, index) => (
+                <motion.div
+                  key={tool.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.02 }}
+                  whileHover={{ y: -3 }}
+                  className="group"
+                >
+                  <Card className="border border-sky-200/50 bg-white/60 dark:bg-gray-900/60 backdrop-blur-md hover:shadow-lg hover:border-sky-300 transition-all duration-300 h-full overflow-hidden">
+                    <div className="h-0.5 bg-gradient-to-r from-sky-500 via-blue-500 to-cyan-500" />
+                    <CardHeader className="pb-2 pt-3 px-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="p-1.5 rounded-lg bg-gradient-to-br from-sky-500 to-blue-500 text-white shadow-sm group-hover:scale-105 transition-transform duration-300">
+                          {tool.icon}
+                        </div>
+                        {tool.status === 'coming-soon' && (
+                          <Badge variant="secondary" className="text-[10px] bg-slate-100 text-slate-600 h-5 px-1.5">Soon</Badge>
+                        )}
+                      </div>
+                      <CardTitle className="text-xs font-semibold text-slate-800 dark:text-white line-clamp-1 leading-tight">
+                        {tool.name}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0 pb-3 px-3">
+                      <CardDescription className="text-[10px] text-slate-600 dark:text-slate-400 line-clamp-2 mb-2 leading-tight">
+                        {tool.description}
+                      </CardDescription>
+
+                      {/* Features - Compact */}
+                      <div className="flex flex-wrap gap-0.5 mb-2">
+                        {tool.features.slice(0, 2).map((feature, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-[8px] px-1 py-0 bg-sky-50/50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300 border-sky-200/50 leading-tight">
+                            {feature}
+                          </Badge>
+                        ))}
+                      </div>
+
+                      {/* Difficulty & Duration */}
+                      <div className="flex items-center justify-between mb-2">
+                        {tool.difficulty && (
+                          <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${getDifficultyColor(tool.difficulty)}`}>
+                            {tool.difficulty}
+                          </span>
+                        )}
+                        {tool.duration && (
+                          <span className="text-[8px] text-slate-500 dark:text-slate-500 flex items-center gap-0.5">
+                            <Clock className="w-2.5 h-2.5" />
+                            {tool.duration}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Action Button - Compact */}
+                      {tool.status === 'available' ? (
+                        <Button
+                          size="sm"
+                          className="w-full h-7 bg-gradient-to-r from-sky-500 to-blue-500 hover:from-sky-600 hover:to-blue-600 text-white text-xs shadow-md shadow-sky-200/50 hover:shadow-lg hover:shadow-sky-300/50 transition-all duration-300"
+                          onClick={() => router.push(tool.path)}
+                        >
+                          Launch
+                          <ChevronRight className="ml-1 w-3 h-3" />
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="outline" className="w-full h-7 text-xs" disabled>
+                          Coming Soon
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           )}
         </section>
 
         {/* Info Section */}
-        <section className="bg-muted/30 border-t">
+        <section className="bg-gradient-to-br from-sky-50/50 via-white/50 to-blue-50/50 dark:from-slate-900/30 dark:via-sky-950/20 dark:to-blue-950/20 border-t border-slate-200/50 dark:border-slate-800/50">
           <div className="container mx-auto px-4 py-8">
-            <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-              <CardContent className="p-6 text-center">
-                <Zap className="w-12 h-12 text-primary mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Start Practicing Today</h3>
-                <p className="text-muted-foreground max-w-2xl mx-auto mb-4">
-                  These tools provide hands-on experience with real-world software. Practice at your own pace and build skills that employers value.
-                </p>
-                <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    <span>No installation required</span>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <Card className="bg-gradient-to-br from-white/60 to-sky-50/60 dark:from-gray-900/60 dark:to-sky-900/30 backdrop-blur-md border border-sky-200/50 dark:border-sky-800/50">
+                <CardContent className="p-6 text-center">
+                  <div className="bg-gradient-to-br from-sky-500 to-blue-500 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-sky-200/50">
+                    <Zap className="w-6 h-6 text-white" />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    <span>Real software environment</span>
+                  <h3 className="text-lg sm:text-xl font-bold mb-2 text-slate-800 dark:text-white">Start Practicing Today</h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-4">
+                    These tools provide hands-on experience with real-world software. Practice at your own pace and build skills that employers value.
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-4 text-xs text-slate-600 dark:text-slate-400">
+                    <div className="flex items-center gap-1.5">
+                      <div className="bg-gradient-to-br from-green-500 to-emerald-500 p-0.5 rounded-full">
+                        <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+                      </div>
+                      <span>No installation required</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="bg-gradient-to-br from-green-500 to-emerald-500 p-0.5 rounded-full">
+                        <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+                      </div>
+                      <span>Real software environment</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="bg-gradient-to-br from-green-500 to-emerald-500 p-0.5 rounded-full">
+                        <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+                      </div>
+                      <span>Learn by doing</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    <span>Learn by doing</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </section>
       </main>

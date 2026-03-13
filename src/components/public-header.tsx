@@ -43,7 +43,7 @@ export default function PublicHeader({ title }: PublicHeaderProps) {
       style={{ opacity: headerOpacity }}
       className="border-b border-sky-200/50 bg-gradient-to-r from-sky-50 via-blue-50 to-cyan-50 backdrop-blur-xl relative"
     >
-      <div className="container mx-auto px-4 py-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto px-4 py-2 sm:py-3 md:py-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
@@ -116,9 +116,9 @@ export default function PublicHeader({ title }: PublicHeaderProps) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t pt-4 pb-4 overflow-hidden bg-background"
+            className="md:hidden border-t pt-3 pb-3 overflow-hidden bg-background"
           >
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}

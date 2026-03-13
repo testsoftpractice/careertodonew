@@ -261,7 +261,7 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative min-h-[500px] sm:min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-sky-50 via-white to-blue-50">
+        <section className="relative min-h-[400px] sm:min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-sky-50 via-white to-blue-50">
           {/* Animated background dots */}
           <div className="absolute inset-0">
             {backgroundDots.map((dot, index) => (
@@ -278,7 +278,7 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.15),transparent_50%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(125,211,252,0.08),transparent_70%)]" />
 
-          <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-6 md:py-8 lg:py-12 mt-2 sm:mt-10 md:mt-12">
+          <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-1 sm:py-6 md:py-8 lg:py-12 mt-1 sm:mt-10 md:mt-12">
             <div className="grid lg:grid-cols-2 gap-4 md:gap-6 lg:gap-8 items-center min-h-[400px] lg:min-h-[600px]">
               {/* Left Content */}
               <div className="text-center lg:text-left order-2 lg:order-1">

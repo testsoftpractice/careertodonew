@@ -159,18 +159,11 @@ const backgroundDots = [
 // Company logos for Tools You'll Master section
 const companyLogos = [
   'ERP', 'CRM', 'Project Management', 'Ecommerce', 'Supplychain',
-  'Sequoia Capital', 'SAP', 'Oracle', 'Salesforce', 'Workday',
-  'Microsoft Dynamics', 'NetSuite', 'Zoho', 'HubSpot', 'Jira',
-  'Asana', 'Monday', 'Trello', 'Slack', 'Teams',
-  'Zoom', 'Google Workspace', 'Dropbox', 'Box', 'Notion',
-  'Tableau', 'Power BI', 'Excel', 'QuickBooks', 'Xero',
-  'Sage', 'FreshBooks', 'Wave', 'Mailchimp', 'Hootsuite',
-  'Buffer', 'Canva', 'Figma', 'Adobe Creative', 'Sketch',
-  'InVision', 'Miro', 'Lucidchart', 'Framer', 'Webflow',
-  'Shopify', 'WooCommerce', 'Magento', 'BigCommerce', 'Salesforce Commerce',
-  'AWS', 'Azure', 'Google Cloud', 'DigitalOcean', 'Heroku',
-  'Stripe', 'PayPal', 'Square', 'Braintree', 'Adyen',
-  'Zendesk', 'Intercom', 'Freshdesk', 'Drift', 'Help Scout',
+  'SAP', 'Oracle', 'Salesforce', 'Workday', 'Microsoft Dynamics',
+  'Jira', 'Asana', 'Monday', 'Trello', 'Slack',
+  'Teams', 'Zoom', 'Google Workspace', 'Tableau', 'Power BI',
+  'Excel', 'QuickBooks', 'Xero', 'NetSuite', 'Zoho',
+  'HubSpot', 'Mailchimp', 'Hootsuite', 'Canva', 'Figma',
 ]
 
 // Auto-scrolling logo row component
@@ -234,20 +227,21 @@ function ToolsScrollRow({ logos, direction, speed }: ToolsScrollRowProps) {
 
 export default function HomePage() {
   const { user } = useAuth()
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [scrollY, setScrollY] = useState(0)
+  const scrollLeftRef = useRef<HTMLDivElement>(null)
+  const scrollRightRef = useRef<HTMLDivElement>(null)
+  const [scrollLeftY, setScrollLeftY] = useState(0)
+  const [scrollRightY, setScrollRightY] = useState(0)
 
-  // Auto-scroll animation
+  // Auto-scroll animation - left column scrolls up, right column scrolls down
   useEffect(() => {
     const interval = setInterval(() => {
-      if (scrollRef.current) {
-        const cardHeight = 200
-        const newScrollY = (scrollY + cardHeight) % (jobCards.length * cardHeight)
-        setScrollY(newScrollY)
-      }
+      const cardHeight = 189
+      const totalHeight = jobCards.length * cardHeight
+      setScrollLeftY((prev) => (prev + cardHeight) % totalHeight)
+      setScrollRightY((prev) => (prev - cardHeight + totalHeight) % totalHeight)
     }, 3000)
     return () => clearInterval(interval)
-  }, [scrollY])
+  }, [])
 
   const getDashboardLink = () => {
     if (!user) return '/auth'
@@ -262,7 +256,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-cyan-50 dark:from-slate-950 dark:via-purple-950/30 dark:to-cyan-950/30 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50 dark:from-slate-950 dark:via-sky-950/20 dark:to-blue-950/20 flex flex-col">
       <PublicHeader />
 
       <main className="flex-1">
@@ -284,10 +278,10 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.15),transparent_50%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(125,211,252,0.08),transparent_70%)]" />
 
-          <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 lg:py-12 mt-8 sm:mt-10 md:mt-12 lg:pb-12 pb-2">
+          <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 lg:py-12 mt-8 sm:mt-10 md:mt-12">
             <div className="grid lg:grid-cols-2 gap-4 md:gap-6 lg:gap-8 items-center min-h-[600px]">
               {/* Left Content */}
-              <div className="text-center lg:text-left">
+              <div className="text-center lg:text-left order-2 lg:order-1">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -361,7 +355,7 @@ export default function HomePage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.4 }}
-                  className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center lg:justify-start"
+                  className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center lg:justify-start mt-6"
                 >
                   <Button
                     className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white text-sm sm:text-base px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl shadow-lg shadow-sky-200/50 hover:shadow-xl hover:shadow-sky-300/50 transition-all duration-300 w-full sm:w-auto"
@@ -375,82 +369,68 @@ export default function HomePage() {
               </div>
 
               {/* Right - Job Cards Carousel (Desktop) */}
-              <div className="relative lg:h-[600px] hidden lg:block">
+              <div className="relative lg:h-[600px] hidden lg:block order-1 lg:order-2">
                 <div className="relative w-full h-full">
                   <div className="relative w-full h-full flex items-center justify-center">
                     <div className="relative w-full h-full max-w-4xl mx-auto flex gap-5 lg:gap-6 justify-center">
-                      {[0, 1].map((columnIndex) => (
+                      {/* Left Column - Scrolls Up */}
+                      <div className="relative w-[480px] h-[550px] overflow-hidden">
                         <div
-                          key={columnIndex}
-                          className="relative w-[480px] h-[550px] overflow-hidden"
-                        >
-                          <div
-                            ref={scrollRef}
-                            className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
-                            style={{
-                              transform: `translateY(-${scrollY}px)`,
-                            }}
-                          >
-                            {[...jobCards, ...jobCards].map((job, index) => {
-                              const CardIcon = job.icon
-                              return (
-                                <div
-                                  key={`${columnIndex}-${index}`}
-                                  className="absolute px-2 py-2"
-                                  style={{ top: `${index * 189}px`, left: 0, right: 0 }}
-                                >
-                                  <div className="flex flex-col items-start gap-2 bg-white rounded-2xl shadow-lg p-4 border border-slate-200 hover:shadow-xl hover:border-sky-300 transition-all duration-300 w-[260px] mx-auto">
-                                    <div className="flex items-center gap-2 w-full">
-                                      <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${job.gradient} flex items-center justify-center shadow-sm`}>
-                                        <CardIcon className="w-4 h-4 text-white" />
-                                      </div>
-                                      <div>
-                                        <h4 className="font-semibold text-slate-900 text-sm">{job.title}</h4>
-                                        <p className="text-xs text-slate-600">{job.department}</p>
-                                      </div>
-                                    </div>
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {job.skills.map((skill) => (
-                                        <span
-                                          key={skill}
-                                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-50 text-xs text-sky-800 font-medium border border-sky-200"
-                                        >
-                                          <div className="w-1 h-1 rounded-full bg-sky-500"></div>
-                                          {skill}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right - Job Cards Carousel (Mobile) */}
-              <div className="lg:hidden -mt-12">
-                <div className="relative w-full h-[520px]">
-                  <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-white via-white/80 to-transparent z-10 pointer-events-none"></div>
-                  <div className="relative w-full h-full flex items-center justify-center">
-                    <div className="relative w-full h-full max-w-4xl mx-auto flex gap-5 justify-center">
-                      <div className="relative w-80 h-[520px] overflow-hidden">
-                        <div
-                          ref={scrollRef}
+                          ref={scrollLeftRef}
                           className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
                           style={{
-                            transform: `translateY(-${scrollY}px)`,
+                            transform: `translateY(-${scrollLeftY}px)`,
                           }}
                         >
                           {[...jobCards, ...jobCards].map((job, index) => {
                             const CardIcon = job.icon
                             return (
                               <div
-                                key={`mobile-${index}`}
+                                key={`left-${index}`}
+                                className="absolute px-2 py-2"
+                                style={{ top: `${index * 189}px`, left: 0, right: 0 }}
+                              >
+                                <div className="flex flex-col items-start gap-2 bg-white rounded-2xl shadow-lg p-4 border border-slate-200 hover:shadow-xl hover:border-sky-300 transition-all duration-300 w-[260px] mx-auto">
+                                  <div className="flex items-center gap-2 w-full">
+                                    <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${job.gradient} flex items-center justify-center shadow-sm`}>
+                                      <CardIcon className="w-4 h-4 text-white" />
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold text-slate-900 text-sm">{job.title}</h4>
+                                      <p className="text-xs text-slate-600">{job.department}</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {job.skills.map((skill) => (
+                                      <span
+                                        key={skill}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-50 text-xs text-sky-800 font-medium border border-sky-200"
+                                      >
+                                        <div className="w-1 h-1 rounded-full bg-sky-500"></div>
+                                        {skill}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                      {/* Right Column - Scrolls Down */}
+                      <div className="relative w-[480px] h-[550px] overflow-hidden">
+                        <div
+                          ref={scrollRightRef}
+                          className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
+                          style={{
+                            transform: `translateY(-${scrollRightY}px)`,
+                          }}
+                        >
+                          {[...jobCards, ...jobCards].map((job, index) => {
+                            const CardIcon = job.icon
+                            return (
+                              <div
+                                key={`right-${index}`}
                                 className="absolute px-2 py-2"
                                 style={{ top: `${index * 189}px`, left: 0, right: 0 }}
                               >
@@ -485,6 +465,75 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
+
+              {/* Job Cards Carousel (Mobile) - Two columns, opposite directions */}
+              <div className="lg:hidden -mt-12 order-1">
+                <div className="relative w-full h-[500px]">
+                  <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-sky-50 via-sky-50/80 to-transparent z-10 pointer-events-none"></div>
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    <div className="relative w-full h-full max-w-lg mx-auto flex gap-3 justify-center">
+                      {/* Mobile Left Column - Scrolls Up */}
+                      <div className="relative w-[140px] h-[480px] overflow-hidden">
+                        <div
+                          ref={scrollLeftRef}
+                          className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
+                          style={{
+                            transform: `translateY(-${scrollLeftY}px)`,
+                          }}
+                        >
+                          {[...jobCards, ...jobCards].map((job, index) => {
+                            const CardIcon = job.icon
+                            return (
+                              <div
+                                key={`mobile-left-${index}`}
+                                className="absolute px-1 py-1"
+                                style={{ top: `${index * 189}px`, left: 0, right: 0 }}
+                              >
+                                <div className="flex flex-col items-start gap-1 bg-white rounded-xl shadow-md p-3 border border-slate-200 hover:shadow-lg hover:border-sky-300 transition-all duration-300 w-[120px]">
+                                  <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${job.gradient} flex items-center justify-center shadow-sm mb-1`}>
+                                    <CardIcon className="w-3 h-3 text-white" />
+                                  </div>
+                                  <h4 className="font-semibold text-slate-900 text-xs leading-tight">{job.title}</h4>
+                                  <p className="text-[10px] text-slate-600">{job.department}</p>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                      {/* Mobile Right Column - Scrolls Down */}
+                      <div className="relative w-[140px] h-[480px] overflow-hidden">
+                        <div
+                          ref={scrollRightRef}
+                          className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
+                          style={{
+                            transform: `translateY(-${scrollRightY}px)`,
+                          }}
+                        >
+                          {[...jobCards, ...jobCards].map((job, index) => {
+                            const CardIcon = job.icon
+                            return (
+                              <div
+                                key={`mobile-right-${index}`}
+                                className="absolute px-1 py-1"
+                                style={{ top: `${index * 189}px`, left: 0, right: 0 }}
+                              >
+                                <div className="flex flex-col items-start gap-1 bg-white rounded-xl shadow-md p-3 border border-slate-200 hover:shadow-lg hover:border-sky-300 transition-all duration-300 w-[120px]">
+                                  <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${job.gradient} flex items-center justify-center shadow-sm mb-1`}>
+                                    <CardIcon className="w-3 h-3 text-white" />
+                                  </div>
+                                  <h4 className="font-semibold text-slate-900 text-xs leading-tight">{job.title}</h4>
+                                  <p className="text-[10px] text-slate-600">{job.department}</p>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -500,7 +549,7 @@ export default function HomePage() {
               {[0, 1, 2].map((rowIndex) => (
                 <ToolsScrollRow
                   key={rowIndex}
-                  logos={companyLogos.slice(rowIndex * 16, (rowIndex + 1) * 16)}
+                  logos={companyLogos.slice(rowIndex * 10, (rowIndex + 1) * 10)}
                   direction={rowIndex % 2 === 0 ? 'left' : 'right'}
                   speed={30}
                 />
@@ -509,34 +558,106 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className="py-20 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 dark:from-purple-900 dark:via-pink-900 dark:to-orange-900 relative overflow-hidden">
-          {/* Animated overlay */}
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
-
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {[
-                { value: '10K+', label: 'Students', desc: 'Building careers', color: 'from-white/20 to-white/10' },
-                { value: '500+', label: 'Universities', desc: 'Partner institutions', color: 'from-cyan-500/20 to-cyan-500/10' },
-                { value: '2,500+', label: 'Projects', desc: 'Real opportunities', color: 'from-purple-500/20 to-purple-500/10' },
-                { value: '98%', label: 'Satisfaction', desc: 'From our partners', color: 'from-pink-500/20 to-pink-500/10' },
-              ].map((stat, index) => (
+        {/* How It Works Section */}
+        <section className="py-24 bg-gradient-to-br from-slate-50 via-sky-50 to-blue-50 dark:from-slate-950 dark:via-sky-950/30 dark:to-blue-950/30">
+          <div className="container mx-auto px-4">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Left Content - Steps */}
+              <div>
                 <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="text-center"
+                  transition={{ duration: 0.6 }}
+                  className="mb-12"
                 >
-                  <div className={`bg-gradient-to-br ${stat.color} backdrop-blur-sm rounded-2xl p-6 md:p-8 hover:scale-105 transition-transform duration-300`}>
-                    <div className="text-4xl md:text-5xl font-bold text-white mb-2">{stat.value}</div>
-                    <div className="text-white/90 font-semibold text-lg">{stat.label}</div>
-                    <div className="text-white/70 text-sm">{stat.desc}</div>
-                  </div>
+                  <Badge className="mb-4 bg-gradient-to-r from-sky-100 to-blue-100 dark:from-sky-900/50 dark:to-blue-900/50 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800 px-6 py-2 rounded-full">
+                    How It Works
+                  </Badge>
+                  <h2 className="text-4xl md:text-5xl font-bold mb-4">
+                    Simple Steps to{' '}
+                    <span className="bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent">
+                      Success
+                    </span>
+                  </h2>
+                  <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl">
+                    Getting started is easy. Create your account and start building your professional journey.
+                  </p>
                 </motion.div>
-              ))}
+
+                {/* Steps List */}
+                <div className="space-y-6">
+                  {[
+                    {
+                      step: '1',
+                      title: 'Create Your Account',
+                      desc: 'Sign up as a student, university, employer, or investor.',
+                      icon: Sparkles,
+                      gradient: 'from-sky-500 to-blue-600',
+                    },
+                    {
+                      step: '2',
+                      title: 'Discover Opportunities',
+                      desc: 'Browse projects, jobs, or investment opportunities.',
+                      icon: Target,
+                      gradient: 'from-blue-500 to-cyan-600',
+                    },
+                    {
+                      step: '3',
+                      title: 'Execute & Verify',
+                      desc: 'Complete tasks and earn verified credentials.',
+                      icon: CheckCircle2,
+                      gradient: 'from-cyan-500 to-teal-600',
+                    },
+                    {
+                      step: '4',
+                      title: 'Grow Your Career',
+                      desc: 'Track progress and unlock new opportunities.',
+                      icon: TrendingUp,
+                      gradient: 'from-teal-500 to-cyan-600',
+                    },
+                  ].map((item, index) => (
+                    <motion.div
+                      key={item.step}
+                      initial={{ opacity: 0, x: -30 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: index * 0.1 }}
+                      className="flex items-start gap-4"
+                    >
+                      <div className={`flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${item.gradient} text-white flex items-center justify-center font-bold text-lg shadow-lg`}>
+                        {item.step}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-lg mb-1 text-gray-900 dark:text-white">{item.title}</h3>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">{item.desc}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Content - Image */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="relative"
+              >
+                <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-sky-500 via-blue-500 to-cyan-500 p-1">
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden">
+                    <img
+                      src="https://images.unsplash.com/photo-1551434678-e076c223a692?w=600&h=700&fit=crop"
+                      alt="Career Growth Journey"
+                      className="w-full h-auto object-cover"
+                    />
+                  </div>
+                </div>
+                {/* Decorative elements */}
+                <div className="absolute -top-4 -right-4 w-24 h-24 bg-sky-200 dark:bg-sky-800 rounded-full blur-2xl opacity-50" />
+                <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-blue-200 dark:bg-blue-800 rounded-full blur-2xl opacity-50" />
+              </motion.div>
             </div>
           </div>
         </section>
@@ -551,12 +672,12 @@ export default function HomePage() {
               transition={{ duration: 0.6 }}
               className="text-center mb-16"
             >
-              <Badge className="mb-4 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/50 dark:to-pink-900/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 px-6 py-2 rounded-full">
+              <Badge className="mb-4 bg-gradient-to-r from-sky-100 to-blue-100 dark:from-sky-900/50 dark:to-blue-900/50 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800 px-6 py-2 rounded-full">
                 Key Features
               </Badge>
               <h2 className="text-4xl md:text-5xl font-bold mb-4">
                 Everything You Need for{' '}
-                <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-sky-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
                   Career Success
                 </span>
               </h2>
@@ -572,16 +693,16 @@ export default function HomePage() {
                   title: 'For Students',
                   desc: 'Build your professional portfolio with real projects, earn verifiable credentials, and showcase your skills to employers.',
                   link: '/solutions#students',
-                  gradient: 'from-purple-500 to-purple-600',
-                  bgGradient: 'from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30',
+                  gradient: 'from-sky-500 to-blue-600',
+                  bgGradient: 'from-sky-50 to-blue-50 dark:from-sky-950/30 dark:to-blue-950/30',
                 },
                 {
                   icon: Building2,
                   title: 'For Universities',
                   desc: 'Track student progress, manage projects, and connect students with industry opportunities.',
                   link: '/solutions#universities',
-                  gradient: 'from-cyan-500 to-blue-600',
-                  bgGradient: 'from-cyan-50 to-blue-50 dark:from-cyan-950/30 dark:to-blue-950/30',
+                  gradient: 'from-blue-500 to-cyan-600',
+                  bgGradient: 'from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30',
                 },
                 {
                   icon: Briefcase,
@@ -647,91 +768,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* How It Works Section */}
-        <section className="py-24 bg-gradient-to-br from-slate-50 via-purple-50 to-cyan-50 dark:from-slate-950 dark:via-purple-950/30 dark:to-cyan-950/30">
-          <div className="container mx-auto px-4">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <Badge className="mb-4 bg-gradient-to-r from-purple-100 to-cyan-100 dark:from-purple-900/50 dark:to-cyan-900/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 px-6 py-2 rounded-full">
-                How It Works
-              </Badge>
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">
-                Simple Steps to{' '}
-                <span className="bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
-                  Success
-                </span>
-              </h2>
-              <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-                Getting started is easy. Create your account and start building your professional journey.
-              </p>
-            </motion.div>
-
-            <div className="max-w-5xl mx-auto">
-              <div className="relative">
-                {/* Connecting line */}
-                <div className="absolute left-8 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-500 via-pink-500 to-orange-500 rounded-full hidden md:block" />
-
-                {[
-                  {
-                    step: '1',
-                    title: 'Create Your Account',
-                    desc: 'Sign up as a student, university, employer, or investor. Complete your profile to get personalized recommendations.',
-                    icon: Sparkles,
-                    gradient: 'from-purple-500 to-purple-600',
-                  },
-                  {
-                    step: '2',
-                    title: 'Discover Opportunities',
-                    desc: 'Browse projects, jobs, or investment opportunities that match your goals and expertise.',
-                    icon: Target,
-                    gradient: 'from-pink-500 to-pink-600',
-                  },
-                  {
-                    step: '3',
-                    title: 'Execute & Verify',
-                    desc: 'Complete tasks, deliver results, and earn verified credentials that build your professional reputation.',
-                    icon: CheckCircle2,
-                    gradient: 'from-orange-500 to-orange-600',
-                  },
-                  {
-                    step: '4',
-                    title: 'Grow Your Career',
-                    desc: 'Track your progress, showcase your achievements, and unlock new opportunities as your reputation grows.',
-                    icon: TrendingUp,
-                    gradient: 'from-cyan-500 to-cyan-600',
-                  },
-                ].map((item, index) => (
-                  <motion.div
-                    key={item.step}
-                    initial={{ opacity: 0, x: -30 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className="relative flex items-start gap-6 mb-12 last:mb-0"
-                  >
-                    <div className={`flex-shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br ${item.gradient} text-white flex items-center justify-center font-bold text-2xl shadow-xl hover:scale-110 transition-transform duration-300 z-10`}>
-                      <item.icon className="w-8 h-8" />
-                    </div>
-                    <div className="flex-1 bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow border border-gray-100 dark:border-gray-800">
-                      <h3 className="font-bold text-2xl mb-3 text-gray-900 dark:text-white">{item.title}</h3>
-                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{item.desc}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* CTA Section */}
         <section className="py-24 relative overflow-hidden">
           {/* Animated gradient background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-600 dark:from-purple-900 dark:via-pink-900 dark:to-orange-900" />
+          <div className="absolute inset-0 bg-gradient-to-br from-sky-600 via-blue-600 to-cyan-600 dark:from-sky-900 dark:via-blue-900 dark:to-cyan-900" />
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIxIi8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
 
           {/* Animated shapes */}
@@ -759,7 +799,7 @@ export default function HomePage() {
               </p>
               <div className="flex justify-center gap-4 flex-wrap">
                 <Button
-                  className="bg-white text-purple-600 hover:bg-white/90 px-10 py-4 rounded-xl font-semibold text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+                  className="bg-white text-sky-600 hover:bg-white/90 px-10 py-4 rounded-xl font-semibold text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
                   asChild
                 >
                   <Link href={getDashboardLink()}>
@@ -788,12 +828,12 @@ export default function HomePage() {
               transition={{ duration: 0.6 }}
               className="text-center mb-16"
             >
-              <Badge className="mb-4 bg-gradient-to-r from-purple-100 to-cyan-100 dark:from-purple-900/50 dark:to-cyan-900/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 px-6 py-2 rounded-full">
+              <Badge className="mb-4 bg-gradient-to-r from-sky-100 to-blue-100 dark:from-sky-900/50 dark:to-blue-900/50 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800 px-6 py-2 rounded-full">
                 Platform Benefits
               </Badge>
               <h2 className="text-4xl md:text-5xl font-bold mb-4">
                 Why Choose{' '}
-                <span className="bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent">
                   CareerToDo?
                 </span>
               </h2>
@@ -805,8 +845,8 @@ export default function HomePage() {
                   icon: Award,
                   title: 'Verified Credentials',
                   desc: 'Every achievement is cryptographically verified and permanently recorded, creating a tamper-proof ledger of your professional accomplishments.',
-                  gradient: 'from-purple-500 to-violet-600',
-                  bgGradient: 'from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30',
+                  gradient: 'from-sky-500 to-indigo-600',
+                  bgGradient: 'from-sky-50 to-indigo-50 dark:from-sky-950/30 dark:to-indigo-950/30',
                 },
                 {
                   icon: Shield,
@@ -819,8 +859,8 @@ export default function HomePage() {
                   icon: Star,
                   title: 'Reputation System',
                   desc: 'Build a comprehensive reputation based on execution, collaboration, leadership, ethics, and reliability.',
-                  gradient: 'from-amber-500 to-orange-600',
-                  bgGradient: 'from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30',
+                  gradient: 'from-teal-500 to-cyan-600',
+                  bgGradient: 'from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30',
                 },
                 {
                   icon: Target,
@@ -899,7 +939,7 @@ export default function HomePage() {
                         <span className="text-lg text-muted-foreground">6 months</span>
                       </div>
                       <div className="mt-3 inline-flex items-center px-4 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
-                        Save 58%
+                        Save 75%
                       </div>
                     </div>
                   </div>
@@ -934,37 +974,6 @@ export default function HomePage() {
             <p className="text-center mt-12 text-muted-foreground">
               Early Access Limited time offer
             </p>
-          </div>
-        </section>
-
-        {/* Demo Task Management */}
-        <section className="py-16 bg-gradient-to-br from-slate-50 via-purple-50 to-cyan-50 dark:from-slate-950 dark:via-purple-950/30 dark:to-cyan-950/30 border-t border-purple-100 dark:border-purple-900/30">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-8 border-2 border-purple-200 dark:border-purple-800 rounded-3xl bg-gradient-to-br from-white to-purple-50 dark:from-gray-900 dark:to-purple-950/30 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-2 rounded-xl">
-                      <Flame className="w-6 h-6 text-white" />
-                    </div>
-                    <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                      Enterprise Task Management Demo
-                    </h3>
-                  </div>
-                  <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                    Explore a comprehensive task management system with Kanban board, dependencies, time tracking, and more.
-                  </p>
-                </div>
-                <Button
-                  className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 hover:from-purple-700 hover:via-pink-700 hover:to-orange-700 text-white px-8 py-4 rounded-xl font-semibold shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 whitespace-nowrap"
-                  asChild
-                >
-                  <Link href="/projects/demo-task-management">
-                    View Demo <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                </Button>
-              </div>
-            </div>
           </div>
         </section>
 

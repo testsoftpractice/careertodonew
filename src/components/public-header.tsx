@@ -41,7 +41,7 @@ export default function PublicHeader({ title }: PublicHeaderProps) {
   return (
     <motion.header
       style={{ opacity: headerOpacity }}
-      className="border-b bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 relative"
+      className="border-b border-sky-200/50 bg-gradient-to-r from-sky-50 via-blue-50 to-cyan-50 backdrop-blur-xl relative"
     >
       <div className="container mx-auto px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
@@ -50,11 +50,13 @@ export default function PublicHeader({ title }: PublicHeaderProps) {
             <motion.div
               whileHover={{ rotate: 360 }}
               transition={{ duration: 0.6 }}
-              className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center"
+              className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-lg shadow-sky-500/30"
             >
-              <Zap className="w-6 h-6 text-primary-foreground" />
+              <Zap className="w-6 h-6 text-white" />
             </motion.div>
-            <span className="font-bold text-lg sm:text-xl text-primary">CareerToDo</span>
+            <span className="font-bold text-lg sm:text-xl bg-gradient-to-r from-sky-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
+              CareerToDo
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -76,7 +78,7 @@ export default function PublicHeader({ title }: PublicHeaderProps) {
           <div className="flex items-center gap-3">
             {user ? (
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground" size="sm" asChild>
+                <Button className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white size="sm" asChild>
                   <Link href={getDashboardLink(user.role)}>
                     <Sparkles className="mr-2 h-4 w-4" />
                     Dashboard
@@ -89,7 +91,7 @@ export default function PublicHeader({ title }: PublicHeaderProps) {
                   <Link href="/auth">Sign In</Link>
                 </Button>
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground" size="sm" asChild>
+                  <Button className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white size="sm" asChild>
                     <Link href="/auth">
                       Get Started <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>

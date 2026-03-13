@@ -200,7 +200,7 @@ function ToolsScrollRow({ logos, direction, speed }: ToolsScrollRowProps) {
   return (
     <div className="relative overflow-hidden py-3">
       <div
-        className={`flex flex-wrap justify-center items-center gap-8 lg:gap-12 opacity-60 grayscale hover:grayscale-0 transition-all duration-300 ${
+        className={`flex flex-nowrap justify-center items-center gap-6 lg:gap-10 opacity-60 grayscale hover:grayscale-0 transition-all duration-300 ${
           direction === 'left'
             ? 'animate-scroll-left'
             : 'animate-scroll-right'
@@ -212,7 +212,7 @@ function ToolsScrollRow({ logos, direction, speed }: ToolsScrollRowProps) {
         {duplicatedLogos.map((logo, index) => (
           <div
             key={`${logo}-${index}`}
-            className={`font-bold text-lg cursor-pointer hover:opacity-100 transition-all ${getColorClass(logo)}`}
+            className={`font-bold text-base sm:text-lg cursor-pointer hover:opacity-100 transition-all whitespace-nowrap ${getColorClass(logo)}`}
           >
             {logo}
           </div>
@@ -256,7 +256,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50 dark:from-slate-950 dark:via-sky-950/20 dark:to-blue-950/20 flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col">
       <PublicHeader />
 
       <main className="flex-1">
@@ -322,31 +322,13 @@ export default function HomePage() {
                   className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 md:gap-4 lg:gap-6 mb-3 sm:mb-4 md:mb-6"
                 >
                   <div className="text-center">
-                    <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-sky-600">11%</div>
-                    <div className="text-base text-slate-600">Graduate Unemployment</div>
+                    <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-sky-600">45%</div>
+                    <div className="text-xs sm:text-sm md:text-base text-slate-600">Not reaching interview</div>
                   </div>
                   <div className="h-3 sm:h-4 md:h-6 lg:h-8 w-px bg-sky-200"></div>
                   <div className="text-center">
-                    <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-blue-600">2M+</div>
-                    <div className="text-base text-slate-600">Tech Jobs by 2030</div>
-                  </div>
-                  <div className="h-3 sm:h-4 md:h-6 lg:h-8 w-px bg-sky-200 hidden sm:block"></div>
-                  <div className="text-center hidden sm:block">
-                    <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-sky-700">$850M</div>
-                    <div className="text-xs text-slate-600">World Bank Support</div>
-                  </div>
-                </motion.div>
-
-                {/* Mobile stat */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.35 }}
-                  className="flex justify-center lg:hidden mb-3 sm:mb-4"
-                >
-                  <div className="text-center">
-                    <div className="text-lg sm:text-xl font-black text-sky-700">$850M</div>
-                    <div className="text-xs text-slate-600">World Bank Support</div>
+                    <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-blue-600">30%</div>
+                    <div className="text-xs sm:text-sm md:text-base text-slate-600">Unemployed 2+ years</div>
                   </div>
                 </motion.div>
 
@@ -466,70 +448,74 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Job Cards Carousel (Mobile) - Two columns, opposite directions */}
-              <div className="lg:hidden -mt-12 order-1">
-                <div className="relative w-full h-[500px]">
-                  <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-sky-50 via-sky-50/80 to-transparent z-10 pointer-events-none"></div>
-                  <div className="relative w-full h-full flex items-center justify-center">
-                    <div className="relative w-full h-full max-w-lg mx-auto flex gap-3 justify-center">
-                      {/* Mobile Left Column - Scrolls Up */}
-                      <div className="relative w-[140px] h-[480px] overflow-hidden">
-                        <div
-                          ref={scrollLeftRef}
-                          className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
-                          style={{
-                            transform: `translateY(-${scrollLeftY}px)`,
-                          }}
-                        >
-                          {[...jobCards, ...jobCards].map((job, index) => {
-                            const CardIcon = job.icon
-                            return (
-                              <div
-                                key={`mobile-left-${index}`}
-                                className="absolute px-1 py-1"
-                                style={{ top: `${index * 189}px`, left: 0, right: 0 }}
-                              >
-                                <div className="flex flex-col items-start gap-1 bg-white rounded-xl shadow-md p-3 border border-slate-200 hover:shadow-lg hover:border-sky-300 transition-all duration-300 w-[120px]">
-                                  <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${job.gradient} flex items-center justify-center shadow-sm mb-1`}>
-                                    <CardIcon className="w-3 h-3 text-white" />
-                                  </div>
-                                  <h4 className="font-semibold text-slate-900 text-xs leading-tight">{job.title}</h4>
-                                  <p className="text-[10px] text-slate-600">{job.department}</p>
-                                </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* Job Cards Carousel (Mobile) - Between CTA and Tools */}
+        <section className="lg:hidden py-8 bg-gradient-to-br from-sky-50 via-white to-blue-50">
+          <div className="container mx-auto px-4">
+            <div className="relative w-full h-[400px]">
+              <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-sky-50 via-sky-50/80 to-transparent z-10 pointer-events-none"></div>
+              <div className="relative w-full h-full flex items-center justify-center">
+                <div className="relative w-full h-full max-w-lg mx-auto flex gap-3 justify-center">
+                  {/* Mobile Left Column - Scrolls Up */}
+                  <div className="relative w-[140px] h-[480px] overflow-hidden">
+                    <div
+                      ref={scrollLeftRef}
+                      className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
+                      style={{
+                        transform: `translateY(-${scrollLeftY}px)`,
+                      }}
+                    >
+                      {[...jobCards, ...jobCards].map((job, index) => {
+                        const CardIcon = job.icon
+                        return (
+                          <div
+                            key={`mobile-left-${index}`}
+                            className="absolute px-1 py-1"
+                            style={{ top: `${index * 189}px`, left: 0, right: 0 }}
+                          >
+                            <div className="flex flex-col items-start gap-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-3 border border-slate-200/50 hover:shadow-lg hover:border-sky-300 transition-all duration-300 w-[120px]">
+                              <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${job.gradient} flex items-center justify-center shadow-sm mb-1`}>
+                                <CardIcon className="w-3 h-3 text-white" />
                               </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                      {/* Mobile Right Column - Scrolls Down */}
-                      <div className="relative w-[140px] h-[480px] overflow-hidden">
-                        <div
-                          ref={scrollRightRef}
-                          className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
-                          style={{
-                            transform: `translateY(-${scrollRightY}px)`,
-                          }}
-                        >
-                          {[...jobCards, ...jobCards].map((job, index) => {
-                            const CardIcon = job.icon
-                            return (
-                              <div
-                                key={`mobile-right-${index}`}
-                                className="absolute px-1 py-1"
-                                style={{ top: `${index * 189}px`, left: 0, right: 0 }}
-                              >
-                                <div className="flex flex-col items-start gap-1 bg-white rounded-xl shadow-md p-3 border border-slate-200 hover:shadow-lg hover:border-sky-300 transition-all duration-300 w-[120px]">
-                                  <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${job.gradient} flex items-center justify-center shadow-sm mb-1`}>
-                                    <CardIcon className="w-3 h-3 text-white" />
-                                  </div>
-                                  <h4 className="font-semibold text-slate-900 text-xs leading-tight">{job.title}</h4>
-                                  <p className="text-[10px] text-slate-600">{job.department}</p>
-                                </div>
+                              <h4 className="font-semibold text-slate-900 text-xs leading-tight">{job.title}</h4>
+                              <p className="text-[10px] text-slate-600">{job.department}</p>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  {/* Mobile Right Column - Scrolls Down */}
+                  <div className="relative w-[140px] h-[480px] overflow-hidden">
+                    <div
+                      ref={scrollRightRef}
+                      className="absolute inset-x-0 transition-transform duration-[3000ms] ease-in-out"
+                      style={{
+                        transform: `translateY(-${scrollRightY}px)`,
+                      }}
+                    >
+                      {[...jobCards, ...jobCards].map((job, index) => {
+                        const CardIcon = job.icon
+                        return (
+                          <div
+                            key={`mobile-right-${index}`}
+                            className="absolute px-1 py-1"
+                            style={{ top: `${index * 189}px`, left: 0, right: 0 }}
+                          >
+                            <div className="flex flex-col items-start gap-1 bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-3 border border-slate-200/50 hover:shadow-lg hover:border-sky-300 transition-all duration-300 w-[120px]">
+                              <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${job.gradient} flex items-center justify-center shadow-sm mb-1`}>
+                                <CardIcon className="w-3 h-3 text-white" />
                               </div>
-                            )
-                          })}
-                        </div>
-                      </div>
+                              <h4 className="font-semibold text-slate-900 text-xs leading-tight">{job.title}</h4>
+                              <p className="text-[10px] text-slate-600">{job.department}</p>
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
@@ -746,19 +732,19 @@ export default function HomePage() {
                   whileHover={{ scale: 1.03, y: -8 }}
                   className="group"
                 >
-                  <Card className={`border-2 hover:shadow-2xl transition-all duration-300 h-full overflow-hidden bg-gradient-to-br ${feature.bgGradient}`}>
-                    <div className={`h-2 bg-gradient-to-r ${feature.gradient}`} />
-                    <CardContent className="p-8">
-                      <div className={`bg-gradient-to-br ${feature.gradient} w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                        <feature.icon className="w-7 h-7 text-white" />
+                  <Card className={`border border-white/10 hover:shadow-xl transition-all duration-300 h-full overflow-hidden bg-white/60 dark:bg-gray-900/60 backdrop-blur-md group-hover:bg-white/80 dark:group-hover:bg-gray-900/80`}>
+                    <div className={`h-1.5 bg-gradient-to-r ${feature.gradient}`} />
+                    <CardContent className="p-4">
+                      <div className={`bg-gradient-to-br ${feature.gradient} w-10 h-10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300 shadow-md`}>
+                        <feature.icon className="w-4 h-4 text-white" />
                       </div>
-                      <h3 className="font-bold text-2xl mb-4 text-gray-900 dark:text-white">{feature.title}</h3>
-                      <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">{feature.desc}</p>
+                      <h3 className="font-bold text-lg mb-2 text-gray-900 dark:text-white">{feature.title}</h3>
+                      <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed text-xs">{feature.desc}</p>
                       <Link
                         href={feature.link}
-                        className={`bg-gradient-to-r ${feature.gradient} bg-clip-text text-transparent font-semibold hover:underline flex items-center gap-2 text-lg`}
+                        className={`bg-gradient-to-r ${feature.gradient} bg-clip-text text-transparent font-semibold hover:underline flex items-center gap-2 text-xs`}
                       >
-                        Learn More <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+                        Learn More <ArrowRight className="w-3 h-3 group-hover:translate-x-2 transition-transform" />
                       </Link>
                     </CardContent>
                   </Card>
@@ -878,13 +864,13 @@ export default function HomePage() {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   whileHover={{ scale: 1.02, y: -4 }}
                 >
-                  <Card className={`border-2 hover:shadow-2xl transition-all duration-300 h-full overflow-hidden bg-gradient-to-br ${benefit.bgGradient}`}>
-                    <CardContent className="p-8">
-                      <div className={`bg-gradient-to-br ${benefit.gradient} w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg`}>
-                        <benefit.icon className="w-7 h-7 text-white" />
+                  <Card className={`border border-white/10 hover:shadow-xl transition-all duration-300 h-full overflow-hidden bg-white/60 dark:bg-gray-900/60 backdrop-blur-md group-hover:bg-white/80 dark:group-hover:bg-gray-900/80`}>
+                    <CardContent className="p-4">
+                      <div className={`bg-gradient-to-br ${benefit.gradient} w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-md`}>
+                        <benefit.icon className="w-4 h-4 text-white" />
                       </div>
-                      <h3 className="font-bold text-2xl mb-4 text-gray-900 dark:text-white">{benefit.title}</h3>
-                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{benefit.desc}</p>
+                      <h3 className="font-bold text-lg mb-2 text-gray-900 dark:text-white">{benefit.title}</h3>
+                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-xs">{benefit.desc}</p>
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -898,12 +884,12 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(139,92,246,0.1),transparent_70%)]" />
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <Badge className="mb-4 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/50 dark:to-pink-900/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 px-6 py-2 rounded-full">
+              <Badge className="mb-4 bg-gradient-to-r from-sky-100 to-blue-100 dark:from-sky-900/50 dark:to-blue-900/50 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800 px-6 py-2 rounded-full">
                 Pricing
               </Badge>
               <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6">
                 Simple,{' '}
-                <span className="bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-sky-500 to-blue-500 bg-clip-text text-transparent">
                   Transparent Pricing
                 </span>
               </h2>
@@ -914,14 +900,14 @@ export default function HomePage() {
             <div className="max-w-4xl mx-auto">
               <div className="group relative">
                 <div className="absolute -top-5 left-0 right-0 flex justify-center z-10">
-                  <div className="px-6 py-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-bold animate-pulse">
+                  <div className="px-6 py-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-500 text-white text-sm font-bold animate-pulse">
                     🎉 Limited Time Early Access Offer
                   </div>
                 </div>
-                <div className="absolute -inset-1 bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl blur-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-700" />
-                <div className="relative bg-card/80 backdrop-blur-xl border-2 border-purple-500 rounded-3xl p-8 md:p-12">
+                <div className="absolute -inset-1 bg-gradient-to-br from-sky-500 to-blue-500 rounded-3xl blur-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-700" />
+                <div className="relative bg-card/80 backdrop-blur-xl border-2 border-sky-500 rounded-3xl p-8 md:p-12">
                   <div className="text-center mb-8">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-6 mx-auto">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-500 flex items-center justify-center mb-6 mx-auto">
                       <Sparkles className="w-10 h-10 text-white" />
                     </div>
                     <h3 className="text-3xl md:text-4xl font-black mb-4">Early Access Special</h3>
@@ -930,7 +916,7 @@ export default function HomePage() {
                     </p>
                     <div className="mb-8">
                       <div className="flex items-center justify-center gap-4 mb-2">
-                        <span className="text-6xl md:text-7xl font-black bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
+                        <span className="text-6xl md:text-7xl font-black bg-gradient-to-r from-sky-500 to-blue-500 bg-clip-text text-transparent">
                           ৳2,999
                         </span>
                       </div>
@@ -955,7 +941,7 @@ export default function HomePage() {
                       'Mobile app access',
                     ].map((feature, index) => (
                       <div key={index} className="flex items-start gap-3">
-                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-sky-500 to-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
                           <CheckCircle2 className="w-3 h-3 text-white" />
                         </div>
                         <span className="text-sm leading-relaxed">{feature}</span>
@@ -963,7 +949,7 @@ export default function HomePage() {
                     ))}
                   </div>
                   <Button
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-500/90 hover:to-pink-500/90 text-white text-lg py-6 rounded-xl"
+                    className="w-full bg-gradient-to-r from-sky-500 to-blue-500 hover:from-sky-500/90 hover:to-blue-500/90 text-white text-lg py-6 rounded-xl"
                     asChild
                   >
                     <Link href="/signup">Get Started Now</Link>

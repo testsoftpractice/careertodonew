@@ -131,7 +131,7 @@
     },
     {
       "source": "/fleet-management/:path*",
-      "destination": "https://fleet-management-six-mu.vercel.app/:path*"
+      "destination": "https://fleet-management-six-mu.vercel.app/fleet-management/:path*"
     },
     {
       "source": "/procurement-management/:path*",

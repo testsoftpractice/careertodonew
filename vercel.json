@@ -134,6 +134,10 @@
       "destination": "https://fleet-management-six-mu.vercel.app/_next/:path*"
     },
     {
+      "source": "/fleet-management",
+      "destination": "https://fleet-management-six-mu.vercel.app"
+    },
+    {
       "source": "/fleet-management/:path*",
       "destination": "https://fleet-management-six-mu.vercel.app/:path*"
     },
@@ -142,12 +146,20 @@
       "destination": "https://inspection-snowy.vercel.app/_next/:path*"
     },
     {
+      "source": "/procurement-management",
+      "destination": "https://inspection-snowy.vercel.app"
+    },
+    {
       "source": "/procurement-management/:path*",
       "destination": "https://inspection-snowy.vercel.app/:path*"
     },
     {
       "source": "/gantt-chart/_next/:path*",
       "destination": "https://gantt-five.vercel.app/_next/:path*"
+    },
+    {
+      "source": "/gantt-chart",
+      "destination": "https://gantt-five.vercel.app"
     },
     {
       "source": "/gantt-chart/:path*",
@@ -164,6 +176,10 @@
     {
       "source": "/airline-management/_next/:path*",
       "destination": "https://airline-manager-inky.vercel.app/_next/:path*"
+    },
+    {
+      "source": "/airline-management",
+      "destination": "https://airline-manager-inky.vercel.app"
     },
     {
       "source": "/airline-management/:path*",

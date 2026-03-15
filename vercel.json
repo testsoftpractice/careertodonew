@@ -127,7 +127,7 @@
     },
     {
       "source": "/pharmacy-management/:path*",
-      "destination": "https://core-pharmacy.vercel.app/:path*"
+      "destination": "https://pharmacy-management-flax.vercel.app/:path*"
     },
     {
       "source": "/fleet-management/:path*",

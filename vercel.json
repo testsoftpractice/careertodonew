@@ -130,8 +130,12 @@
       "destination": "https://pharmacy-management-flax.vercel.app/:path*"
     },
     {
+      "source": "/fleet-management",
+      "destination": "https://fleet-management-six-mu.vercel.app"
+    },
+    {
       "source": "/fleet-management/:path*",
-      "destination": "https://fleet-management-six-mu.vercel.app/fleet-management/:path*"
+      "destination": "https://fleet-management-six-mu.vercel.app/:path*"
     },
     {
       "source": "/procurement-management/:path*",

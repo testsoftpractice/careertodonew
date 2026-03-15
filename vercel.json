@@ -139,7 +139,7 @@
     },
     {
       "source": "/procurement-management/:path*",
-      "destination": "https://core-procurement.vercel.app/:path*"
+      "destination": "https://inspection-snowy.vercel.app/:path*"
     },
     {
       "source": "/gantt-chart/:path*",
@@ -155,7 +155,7 @@
     },
     {
       "source": "/airline-management/:path*",
-      "destination": "https://airline-core.vercel.app/:path*"
+      "destination": "https://airline-manager-inky.vercel.app/:path*"
     }
   ],
   "headers": [

@@ -154,14 +154,6 @@
       "destination": "https://inspection-snowy.vercel.app/:path*"
     },
     {
-      "source": "/gantt-chart/_next/:path*",
-      "destination": "https://gantt-five.vercel.app/_next/:path*"
-    },
-    {
-      "source": "/gantt-chart",
-      "destination": "https://gantt-five.vercel.app"
-    },
-    {
       "source": "/gantt-chart/:path*",
       "destination": "https://gantt-five.vercel.app/:path*"
     },

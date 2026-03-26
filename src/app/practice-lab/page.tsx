@@ -184,7 +184,7 @@ const tools: PracticeTool[] = [
   },
   {
     id: 'odoo',
-    name: 'Odoo',
+    name: 'BOS ERP',
     path: '/odoo',
     url: '/odoo',
     description: 'Comprehensive business suite.',

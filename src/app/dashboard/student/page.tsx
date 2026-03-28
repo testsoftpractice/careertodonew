@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -70,9 +70,9 @@ import { Badge } from '@/components/ui/badge'
 import { LeaderboardPreview } from '@/components/student/leaderboard-preview'
 import { NeedsPreview } from '@/components/student/needs-preview'
 import { PracticeGround } from '@/components/student/practice-ground'
-import { VerificationGate } from '@/components/verification-gate'
 
 function DashboardContent({ user }: { user: any }) {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const tabFromUrl = searchParams.get('tab')
 
@@ -1900,9 +1900,7 @@ export default function StudentDashboard() {
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-primary border-r-transparent"></div>
       </div>
     }>
-      <VerificationGate user={user} restrictActions={true} showBadge={true}>
-        <DashboardContent user={user} />
-      </VerificationGate>
+      <DashboardContent user={user} />
     </Suspense>
   )
 }

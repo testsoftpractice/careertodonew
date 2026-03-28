@@ -87,7 +87,8 @@ export default function AuthPage() {
 
         setTimeout(() => {
           if (selectedRole === UserRole.STUDENT) {
-            router.push('/dashboard/student')
+            // Students go to payment verification page first
+            router.push('/payment-verification')
           } else if (selectedRole === UserRole.UNIVERSITY_ADMIN) {
             router.push('/dashboard/university')
           } else if (selectedRole === UserRole.EMPLOYER) {
@@ -134,13 +135,19 @@ export default function AuthPage() {
         console.log('[Auth] Login successful. User role:', data.user.role)
 
         setTimeout(() => {
-          // If there's a redirect URL, use it. Otherwise, redirect based on role.
+          // If there's a redirect URL, use it. Otherwise, redirect based on role and verification status.
           if (currentRedirect) {
             console.log('[Auth] Redirecting to:', currentRedirect)
             window.location.href = currentRedirect
           } else if (data.user.role === 'STUDENT') {
-            console.log('[Auth] Redirecting to student dashboard')
-            window.location.href = '/dashboard/student'
+            // Students need to complete payment verification
+            if (data.user.verificationStatus === 'VERIFIED') {
+              console.log('[Auth] Redirecting to student dashboard')
+              window.location.href = '/dashboard/student'
+            } else {
+              console.log('[Auth] Redirecting to payment verification')
+              window.location.href = '/payment-verification'
+            }
           } else if (data.user.role === 'UNIVERSITY_ADMIN' || data.user.role === 'UNIVERSITY') {
             console.log('[Auth] Redirecting to university dashboard')
             window.location.href = '/dashboard/university'
@@ -343,7 +350,7 @@ export default function AuthPage() {
                             className="w-full px-4 py-2 border rounded-md"
                           >
                             <option value="">Select year</option>
-                            {Array.from({ length: 8 }, (_, i) => new Date().getFullYear() + i).map(year => (
+                            {Array.from({ length: 2040 - 1980 + 1 }, (_, i) => 1980 + i).map(year => (
                               <option key={year} value={year}>{year}</option>
                             ))}
                           </select>

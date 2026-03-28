@@ -1,0 +1,306 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { toast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/auth-context'
+import { authFetch } from '@/lib/api-response'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Clock, CheckCircle2, Loader2, Phone, ArrowRight } from 'lucide-react'
+
+export default function PaymentVerificationPage() {
+  const router = useRouter()
+  const { user, loading } = useAuth()
+  const [transactionId, setTransactionId] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isVerified, setIsVerified] = useState(false)
+  const [showWaitingMessage, setShowWaitingMessage] = useState(false)
+
+  // Redirect to dashboard if user is verified
+  useEffect(() => {
+    if (!loading && user && user.verificationStatus === 'VERIFIED') {
+      router.push('/dashboard/student')
+    }
+  }, [user, loading, router])
+
+  // Redirect if user is already in UNDER_REVIEW status
+  useEffect(() => {
+    if (!loading && user && user.verificationStatus === 'UNDER_REVIEW') {
+      // Already submitted, show waiting message
+      setShowWaitingMessage(true)
+    }
+  }, [user, loading])
+
+  // Redirect if not a student
+  useEffect(() => {
+    if (!loading && user && user.role !== 'STUDENT') {
+      router.push('/')
+    }
+  }, [user, loading, router])
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
+
+  // If already verified, show redirecting message
+  if (isVerified) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center space-y-4">
+            <CheckCircle2 className="h-16 w-16 mx-auto text-green-500" />
+            <h2 className="text-2xl font-bold">Payment Verified!</h2>
+            <p className="text-muted-foreground">
+              আপনার পেমেন্ট সফলত করা হয়েছে। ড্যাশবোর্ডে রিডাইরেক্ট হচ্ছে...
+            </p>
+            <Loader2 className="h-6 w-6 mx-auto animate-spin text-muted-foreground" />
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  const handleVerify = async () => {
+    if (!transactionId.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter your Transaction ID',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      // Submit transaction ID for verification
+      const response = await authFetch('/api/student/early-access/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transactionId: transactionId.trim(),
+          userId: user.id,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(errorText || 'Failed to verify transaction')
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        setShowWaitingMessage(true)
+        toast({
+          title: 'Transaction Submitted',
+          description: 'আপনার ট্রান্স্যাকশন আইড জমা হয়েছে। কিছুটি কিছুনি আইড যাচাই করছি...',
+        })
+
+        // Poll for verification status every 5 seconds
+        const pollInterval = setInterval(async () => {
+          try {
+            const checkResponse = await authFetch(`/api/student/early-access/status?userId=${user.id}`)
+            const checkData = await checkResponse.json()
+
+            if (checkData.success && checkData.data.verificationStatus === 'VERIFIED') {
+              clearInterval(pollInterval)
+              setIsVerified(true)
+              toast({
+                title: 'Success',
+                description: 'আপনার পেমেন্ট ভেরিফাই হয়েছে!',
+              })
+
+              // Redirect to dashboard after 2 seconds
+              setTimeout(() => {
+                router.push('/dashboard/student')
+              }, 2000)
+            }
+          } catch (error) {
+            console.error('Poll error:', error)
+          }
+        }, 5000)
+
+        // Stop polling after 10 minutes
+        setTimeout(() => {
+          clearInterval(pollInterval)
+        }, 600000)
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to verify transaction',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      console.error('Verification error:', error)
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to verify transaction. Please try again.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 dark:from-slate-950 dark:via-purple-950/20 dark:to-indigo-950/20 p-4">
+      <div className="max-w-2xl mx-auto py-12">
+        {/* Back to Dashboard Link */}
+        {!showWaitingMessage && !isVerified && (
+          <div className="mb-6">
+            <Button
+              variant="ghost"
+              onClick={() => router.back()}
+              className="text-purple-600 hover:text-purple-700"
+            >
+              <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
+              Back to Dashboard
+            </Button>
+          </div>
+        )}
+
+        {/* Waiting State */}
+        {showWaitingMessage ? (
+          <Card className="border-2 border-purple-200 dark:border-purple-800 overflow-hidden shadow-2xl">
+            <CardContent className="p-8 text-center space-y-6">
+              <div className="flex justify-center">
+                <Clock className="h-16 w-16 text-purple-600 animate-pulse" />
+              </div>
+              
+              <div>
+                <h2 className="text-3xl font-bold text-purple-900 dark:text-purple-100 mb-4">
+                  ধন্যবাদ। পেমেন্ট ভেরিফিকেশন হচ্ছে...
+                </h2>
+                <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+                  অনুগ্রহ করে অপেক্ষা করুন।
+                </p>
+              </div>
+
+              <Alert className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800">
+                <Phone className="h-5 w-5 text-purple-600 mb-2" />
+                <AlertTitle className="text-purple-900 dark:text-purple-100 text-lg">
+                  সহায়তার জন্য এই নাম্বারে কল করুন
+                </AlertTitle>
+                <AlertDescription className="text-purple-800 dark:text-purple-200 text-base">
+                  পেমেন্ট ভেরিফিকেশন বা সহায়তার জন্য যোগাযোগ করুন:
+                  <div className="font-bold text-purple-900 dark:text-purple-100 text-xl mt-2">
+                    <a href="tel:01306655069" className="hover:underline">01306655069</a>
+                  </div>
+                </AlertDescription>
+              </Alert>
+
+              <div className="flex items-center justify-center text-sm text-gray-600 dark:text-gray-400">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                পেমেন্ট যাচাই করছি...
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="w-full max-w-lg mx-auto overflow-hidden shadow-2xl border-2 border-purple-200 dark:border-purple-800">
+            {/* Card Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-8 text-center">
+              <h1 className="text3xl font-bold mb-2">Early Access Special</h1>
+              <p className="text-sm opacity-95">
+                Limited time offer - Get 6 months of full access at our special launch price!
+              </p>
+            </div>
+
+            {/* Card Body */}
+            <div className="p-8">
+              {/* Pricing Section */}
+              <div className="text-center mb-8 pb-8 border-b-2 border-gray-100 dark:border-gray-800">
+                <div className="inline-flex gap-3 mb-3">
+                  <span className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold bg-purple-600 text-white">
+                    6 months
+                  </span>
+                  <span className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold bg-pink-500 text-white">
+                    Save 75%
+                  </span>
+                </div>
+                <div className="flex items-center justify-center gap-4">
+                  <span className="text-2xl text-gray-400 line-through">৳12,000</span>
+                  <span className="text-5xl font-bold text-purple-600">৳2,999</span>
+                </div>
+              </div>
+
+              {/* Features List */}
+              <ul className="space-y-4 mb-8">
+                {[
+                  { icon: '📈', text: '40+ প্রফেশনাল সিমুলেশেনে অ্যাক্সেস' },
+                  { icon: '🛠️', text: 'ERP, CRM, HRMS, অ্যাকাউন্টিং ও আরও টুলস' },
+                  { icon: '👥', text: 'কমিউনিটি ফোরাম অ্যাক্সেস' },
+                  { icon: '✉️', text: 'প্রায়োরিটি সাপোর্ট' },
+                  { icon: '📄', text: 'সিভি তৈরিতে সহায়তা' },
+                  { icon: '💼', text: 'জব প্লেসমেন্ট সহায়তা' },
+                ].map((feature, index) => (
+                  <li key={index} className="flex items-center gap-4 pb-4 border-b border-gray-50 dark:border-gray-800 last:border-0">
+                    <span className="text-2xl">{feature.icon}</span>
+                    <span className="text-base">{feature.text}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Payment Section */}
+              <div className="bg-gray-50 dark:bg-slate-800 p-6 rounded-xl">
+                <div className="flex items-center gap-4 mb-5 flex-wrap justify-center">
+                  <div className="text-3xl font-bold text-pink-600">bKash</div>
+                  <div className="text-center flex-1">
+                    <span className="text-base text-gray-700 dark:text-gray-300">
+                      এই নম্বরে bKash সেন্ড মানি করুন:{' '}
+                      <span className="font-bold text-pink-600">01306655069</span>
+                    </span>
+                  </div>
+                </div>
+                <div className="text-center mb-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    হেল্পলাইন: <a href="tel:01306655069" className="text-purple-600 hover:underline font-semibold">01306655069</a>
+                  </p>
+                </div>
+                <Input
+                  type="text"
+                  placeholder="Enter your Transaction ID"
+                  value={transactionId}
+                  onChange={(e) => setTransactionId(e.target.value)}
+                  disabled={isSubmitting}
+                  className="w-full mb-4 h-12 text-base border-2 focus:ring-2 focus:ring-purple-500"
+                />
+                <Button
+                  onClick={handleVerify}
+                  disabled={isSubmitting}
+                  className="w-full h-12 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold text-base"
+                >
+                  {isSubmitting ? 'Verifying...' : 'Verify'}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Contact Information */}
+        {!showWaitingMessage && !isVerified && (
+          <Alert className="mt-6 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+            <Phone className="h-5 w-5 text-blue-600 mb-2" />
+            <AlertTitle className="text-blue-900 dark:text-blue-100 text-lg">
+              সহায়তার জন্য যোগাযোগ করুন
+            </AlertTitle>
+            <AlertDescription className="text-blue-800 dark:text-blue-200 text-base">
+              পেমেন্ট সংক্রান্ত যেকোনো সহায়তার জন্য:
+              <div className="font-bold text-blue-900 dark:text-blue-100 text-xl mt-2">
+                হেল্পলাইন: <a href="tel:01306655069" className="hover:underline">01306655069</a>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+      </div>
+    </div>
+  )
+}

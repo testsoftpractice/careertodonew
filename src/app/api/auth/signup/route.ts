@@ -9,6 +9,10 @@ import { validateRequest, userSignupSchema } from '@/lib/validation'
 export async function POST(request: NextRequest) {
   try {
     console.log('[SIGNUP] =============== START ===============')
+    console.log('[SIGNUP] Environment check:')
+    console.log('[SIGNUP] - DATABASE_URL exists:', !!process.env.DATABASE_URL)
+    console.log('[SIGNUP] - DIRECT_URL exists:', !!process.env.DIRECT_URL)
+    console.log('[SIGNUP] - JWT_SECRET exists:', !!process.env.JWT_SECRET)
 
     // Apply rate limiting
     const rateLimitResult = await authRateLimit(request)
@@ -170,23 +174,67 @@ export async function POST(request: NextRequest) {
     console.error('[SIGNUP] Error type:', error?.constructor?.name)
     console.error('[SIGNUP] Error message:', error instanceof Error ? error.message : String(error))
     console.error('[SIGNUP] Error stack:', error instanceof Error ? error.stack : 'No stack')
-    console.error('[SIGNUP] =============== ERROR ===============')
-    // Check for unique constraint error
-    if (error instanceof Error && error.message.includes('Unique constraint')) {
-      console.log('[SIGNUP] ERROR: Unique constraint violation')
-      return NextResponse.json(
-        { success: false, error: 'User with this email already exists' },
-        { status: 400 }
-      )
+
+    // Check for Prisma connection errors
+    if (error instanceof Error) {
+      if (error.message.includes('Can\'t reach database server') || 
+          error.message.includes('Connection refused') ||
+          error.message.includes('ECONNREFUSED')) {
+        console.log('[SIGNUP] ERROR: Database connection failed')
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Database connection failed. Please try again later.',
+            details: 'The database is currently unreachable. This is a temporary issue.'
+          },
+          { status: 503 }
+        )
+      }
+
+      if (error.message.includes('authentication failed') || 
+          error.message.includes('password authentication failed')) {
+        console.log('[SIGNUP] ERROR: Database authentication failed')
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Database configuration error',
+            details: 'Database credentials are incorrect. Please contact support.'
+          },
+          { status: 500 }
+        )
+      }
+
+      if (error.message.includes('relation') && error.message.includes('does not exist')) {
+        console.log('[SIGNUP] ERROR: Database tables not created')
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Database schema not initialized',
+            details: 'Required database tables are missing. Please contact support.'
+          },
+          { status: 500 }
+        )
+      }
+
+      // Check for unique constraint error
+      if (error.message.includes('Unique constraint')) {
+        console.log('[SIGNUP] ERROR: Unique constraint violation')
+        return NextResponse.json(
+          { success: false, error: 'User with this email already exists' },
+          { status: 400 }
+        )
+      }
+
+      // Check for Prisma validation error
+      if (error.message.includes('Argument')) {
+        console.log('[SIGNUP] ERROR: Prisma validation error')
+        return NextResponse.json(
+          { success: false, error: 'Validation error: ' + error.message },
+          { status: 400 }
+        )
+      }
     }
-    // Check for Prisma validation error
-    if (error instanceof Error && error.message.includes('Argument')) {
-      console.log('[SIGNUP] ERROR: Prisma validation error')
-      return NextResponse.json(
-        { success: false, error: 'Validation error: ' + error.message },
-        { status: 400 }
-      )
-    }
+
     console.log('[SIGNUP] ERROR: Returning 500 error')
     return NextResponse.json(
       {

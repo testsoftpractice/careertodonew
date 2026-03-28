@@ -29,6 +29,8 @@ const PUBLIC_PATH_PREFIXES = [
   '/terms',      // Terms of service
   '/privacy',    // Privacy policy
   '/auth',       // Auth pages (login, signup, forgot-password)
+  '/payment-verification', // Payment verification page for students
+  '/support',    // Support page
 ]
 
 function isPublicPath(pathname: string): boolean {
@@ -113,6 +115,32 @@ export async function gatewayAuthMiddleware(request: NextRequest) {
       { success: false, error: 'Authentication required' },
       { status: 401 }
     )
+  }
+
+  // 🎓 Student verification check
+  // Students must be verified to access protected routes
+  if (user.role === 'STUDENT') {
+    // Get verification status from token
+    let token: string | null = null
+    const authHeader = request.headers.get('authorization')
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.slice(7)
+    }
+    if (!token) {
+      token = request.cookies.get('token')?.value || null
+    }
+
+    if (token) {
+      const decoded = await verifyEdgeToken(token)
+
+      // If student is not verified, redirect to payment verification
+      if (decoded && decoded.verificationStatus !== 'VERIFIED') {
+        // Only redirect if not already on payment verification page
+        if (!pathname.startsWith('/payment-verification')) {
+          return NextResponse.redirect(new URL('/payment-verification', request.url))
+        }
+      }
+    }
   }
 
   // Forward user context headers (optional, for downstream use)

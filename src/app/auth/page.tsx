@@ -95,15 +95,22 @@ export default function AuthPage() {
         setMessage('Account created successfully! Redirecting...')
 
         setTimeout(() => {
+          let redirectPath = ''
+
           if (selectedRole === UserRole.STUDENT) {
             // Students go to payment verification page first
-            router.push('/payment-verification')
+            redirectPath = '/payment-verification'
           } else if (selectedRole === UserRole.UNIVERSITY_ADMIN) {
-            router.push('/dashboard/university')
+            redirectPath = '/dashboard/university'
           } else if (selectedRole === UserRole.EMPLOYER) {
-            router.push('/dashboard/employer')
+            redirectPath = '/dashboard/employer'
           } else if (selectedRole === UserRole.INVESTOR) {
-            router.push('/dashboard/investor')
+            redirectPath = '/dashboard/investor'
+          }
+
+          // Use window.location.href for consistency with login flow
+          if (redirectPath) {
+            window.location.href = redirectPath
           }
         }, 1000)
       } else {

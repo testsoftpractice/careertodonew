@@ -61,6 +61,12 @@ export function middleware(request: NextRequest) {
     // Verify token to check if user has an account
     const decoded = verifyToken(token)
 
+    // Check if token verification failed
+    if (!decoded) {
+      // Invalid token - redirect to auth page
+      return NextResponse.redirect(new URL('/auth?redirect=' + encodeURIComponent(pathname), request.url))
+    }
+
     // User has an account (token is valid)
     // Check if student is verified
     if (decoded.role === 'STUDENT' && decoded.verificationStatus !== 'VERIFIED') {
@@ -72,6 +78,7 @@ export function middleware(request: NextRequest) {
     // User is authenticated and verified (or not a student), allow access
     return NextResponse.next()
   } catch (error) {
+    console.error('[Middleware] Token verification error:', error)
     // Invalid token - redirect to auth page
     return NextResponse.redirect(new URL('/auth?redirect=' + encodeURIComponent(pathname), request.url))
   }

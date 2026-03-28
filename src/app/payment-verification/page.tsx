@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/hooks/use-toast'
@@ -18,6 +18,39 @@ export default function PaymentVerificationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isVerified, setIsVerified] = useState(false)
   const [showWaitingMessage, setShowWaitingMessage] = useState(false)
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  })
+
+  // Countdown timer for early access offer
+  useEffect(() => {
+    const targetDate = new Date('2025-04-10T23:59:59')
+
+    const updateTimer = () => {
+      const now = new Date()
+      const difference = targetDate.getTime() - now.getTime()
+
+      if (difference > 0) {
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24))
+        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60))
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000)
+
+        setTimeLeft({ days, hours, minutes, seconds })
+      } else {
+        // Offer has ended
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+      }
+    }
+
+    updateTimer()
+    const interval = setInterval(updateTimer, 1000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   // Redirect to dashboard if user is verified
   useEffect(() => {
@@ -208,10 +241,39 @@ export default function PaymentVerificationPage() {
           <Card className="w-full max-w-lg mx-auto overflow-hidden shadow-2xl border-2 border-purple-200 dark:border-purple-800">
             {/* Card Header */}
             <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-8 text-center">
-              <h1 className="text3xl font-bold mb-2">Early Access Special</h1>
+              <h1 className="text-3xl font-bold mb-2">Early Access Special</h1>
               <p className="text-sm opacity-95">
                 Limited time offer - Get 6 months of full access at our special launch price!
               </p>
+            </div>
+
+            {/* Countdown Timer */}
+            <div className="bg-gradient-to-r from-red-500 via-pink-500 to-purple-500 p-6">
+              <div className="text-center">
+                <p className="text-white font-semibold mb-3 text-sm uppercase tracking-wider">
+                  অফার শেষ! Early Access Offer Ends:
+                </p>
+                <div className="flex justify-center gap-3">
+                  {[
+                    { value: timeLeft.days, label: 'Days' },
+                  { value: timeLeft.hours, label: 'Hours' },
+                  { value: timeLeft.minutes, label: 'Minutes' },
+                  { value: timeLeft.seconds, label: 'Seconds' },
+                ].map((item) => (
+                  <div key={item.label} className="bg-white/20 backdrop-blur-sm rounded-lg p-3 min-w-[70px]">
+                    <div className="text-2xl md:text-3xl font-bold text-white">
+                      {String(item.value).padStart(2, '0')}
+                    </div>
+                    <div className="text-xs text-white/80 uppercase mt-1">
+                      {item.label}
+                    </div>
+                  </div>
+                ))}
+                </div>
+                <p className="text-white/90 text-xs mt-3">
+                  অফার শেষ: April 10, 2025
+                </p>
+              </div>
             </div>
 
             {/* Card Body */}

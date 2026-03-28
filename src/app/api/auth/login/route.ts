@@ -186,6 +186,10 @@ export async function POST(request: NextRequest) {
       path: '/',
     })
 
+    console.log('[LOGIN] Cookie set with token length:', token.length)
+    console.log('[LOGIN] SameSite policy:', process.env.NODE_ENV === 'production' ? 'lax (production)' : 'lax (development)')
+    console.log('[LOGIN] =============== SUCCESS ===============')
+
     return response
   } catch (error) {
     console.error('[LOGIN] =============== ERROR ===============')

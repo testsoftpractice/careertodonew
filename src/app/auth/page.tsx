@@ -9,7 +9,7 @@ import { UserRole } from '@/lib/constants'
 
 export default function AuthPage() {
   const router = useRouter()
-  const { login, logout } = useAuth()
+  const { login, logout, user } = useAuth()
   const [activeTab, setActiveTab] = useState('signup')
   const [selectedRole, setSelectedRole] = useState<UserRole>(UserRole.STUDENT)
   const [loading, setLoading] = useState(false)
@@ -24,7 +24,16 @@ export default function AuthPage() {
     const redirect = params.get('redirect')
     console.log('[Auth] Redirect URL from params:', redirect)
     setRedirectUrl(redirect)
-  }, [])
+
+    // If user is already logged in and has a redirect, handle redirect
+    if (user && redirect) {
+      console.log('[Auth] User already logged in, redirecting to:', redirect)
+      // Give a small delay for the UI to render
+      setTimeout(() => {
+        window.location.href = redirect
+      }, 100)
+    }
+  }, [user])
 
   const [signupData, setSignupData] = useState({
     firstName: '',
@@ -137,32 +146,40 @@ export default function AuthPage() {
         setTimeout(() => {
           // If there's a redirect URL and user is verified (or not a student), use it
           // Otherwise, redirect based on role and verification status
+          let redirectPath = ''
+
           if (currentRedirect && (data.user.role !== 'STUDENT' || data.user.verificationStatus === 'VERIFIED')) {
             console.log('[Auth] Redirecting to:', currentRedirect)
-            router.push(currentRedirect)
+            redirectPath = currentRedirect
           } else if (data.user.role === 'STUDENT') {
             // Students need to complete payment verification
             if (data.user.verificationStatus === 'VERIFIED') {
               console.log('[Auth] Redirecting to student dashboard')
-              router.push('/dashboard/student')
+              redirectPath = '/dashboard/student'
             } else {
               console.log('[Auth] Redirecting to payment verification')
-              router.push('/payment-verification')
+              redirectPath = '/payment-verification'
             }
           } else if (data.user.role === 'UNIVERSITY_ADMIN' || data.user.role === 'UNIVERSITY') {
             console.log('[Auth] Redirecting to university dashboard')
-            router.push('/dashboard/university')
+            redirectPath = '/dashboard/university'
           } else if (data.user.role === 'EMPLOYER') {
             console.log('[Auth] Redirecting to employer dashboard')
-            router.push('/dashboard/employer')
+            redirectPath = '/dashboard/employer'
           } else if (data.user.role === 'INVESTOR') {
             console.log('[Auth] Redirecting to investor dashboard')
-            router.push('/dashboard/investor')
+            redirectPath = '/dashboard/investor'
           } else if (data.user.role === 'PLATFORM_ADMIN') {
             console.log('[Auth] Redirecting to admin dashboard')
-            router.push('/admin')
+            redirectPath = '/admin'
           }
-        }, 300) // Increased delay to 300ms to ensure cookie is set
+
+          // Use window.location.href to trigger a full page load
+          // This ensures the cookie is sent with the request to the middleware
+          if (redirectPath) {
+            window.location.href = redirectPath
+          }
+        }, 500) // Increased delay to 500ms to ensure cookie is fully set
       } else {
         setError(data.error || 'Invalid email or password')
       }

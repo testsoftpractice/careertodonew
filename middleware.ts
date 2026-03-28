@@ -51,9 +51,13 @@ export function middleware(request: NextRequest) {
   // Get token from cookie
   const token = request.cookies.get('token')?.value
 
+  console.log('[Middleware] Path:', pathname)
+  console.log('[Middleware] Token exists:', !!token)
+
   if (!token) {
     // User has no account (no token) - redirect to auth page
     // Save the intended destination for after login
+    console.log('[Middleware] No token, redirecting to auth')
     return NextResponse.redirect(new URL('/auth?redirect=' + encodeURIComponent(pathname), request.url))
   }
 
@@ -61,9 +65,12 @@ export function middleware(request: NextRequest) {
     // Verify token to check if user has an account
     const decoded = verifyToken(token)
 
+    console.log('[Middleware] Token decoded:', !!decoded)
+
     // Check if token verification failed
     if (!decoded) {
       // Invalid token - redirect to auth page
+      console.log('[Middleware] Invalid token, redirecting to auth')
       return NextResponse.redirect(new URL('/auth?redirect=' + encodeURIComponent(pathname), request.url))
     }
 
@@ -72,10 +79,12 @@ export function middleware(request: NextRequest) {
     if (decoded.role === 'STUDENT' && decoded.verificationStatus !== 'VERIFIED') {
       // Student has account but is not verified - redirect to payment verification
       // Don't pass redirect param - they should go to dashboard after verification
+      console.log('[Middleware] Unverified student, redirecting to payment verification')
       return NextResponse.redirect(new URL('/payment-verification', request.url))
     }
 
     // User is authenticated and verified (or not a student), allow access
+    console.log('[Middleware] Access granted to:', pathname)
     return NextResponse.next()
   } catch (error) {
     console.error('[Middleware] Token verification error:', error)

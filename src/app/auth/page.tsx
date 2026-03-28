@@ -135,33 +135,34 @@ export default function AuthPage() {
         console.log('[Auth] Login successful. User role:', data.user.role)
 
         setTimeout(() => {
-          // If there's a redirect URL, use it. Otherwise, redirect based on role and verification status.
-          if (currentRedirect) {
+          // If there's a redirect URL and user is verified (or not a student), use it
+          // Otherwise, redirect based on role and verification status
+          if (currentRedirect && (data.user.role !== 'STUDENT' || data.user.verificationStatus === 'VERIFIED')) {
             console.log('[Auth] Redirecting to:', currentRedirect)
-            window.location.href = currentRedirect
+            router.push(currentRedirect)
           } else if (data.user.role === 'STUDENT') {
             // Students need to complete payment verification
             if (data.user.verificationStatus === 'VERIFIED') {
               console.log('[Auth] Redirecting to student dashboard')
-              window.location.href = '/dashboard/student'
+              router.push('/dashboard/student')
             } else {
               console.log('[Auth] Redirecting to payment verification')
-              window.location.href = '/payment-verification'
+              router.push('/payment-verification')
             }
           } else if (data.user.role === 'UNIVERSITY_ADMIN' || data.user.role === 'UNIVERSITY') {
             console.log('[Auth] Redirecting to university dashboard')
-            window.location.href = '/dashboard/university'
+            router.push('/dashboard/university')
           } else if (data.user.role === 'EMPLOYER') {
             console.log('[Auth] Redirecting to employer dashboard')
-            window.location.href = '/dashboard/employer'
+            router.push('/dashboard/employer')
           } else if (data.user.role === 'INVESTOR') {
             console.log('[Auth] Redirecting to investor dashboard')
-            window.location.href = '/dashboard/investor'
+            router.push('/dashboard/investor')
           } else if (data.user.role === 'PLATFORM_ADMIN') {
             console.log('[Auth] Redirecting to admin dashboard')
-            window.location.href = '/admin'
+            router.push('/admin')
           }
-        }, 500)
+        }, 300) // Increased delay to 300ms to ensure cookie is set
       } else {
         setError(data.error || 'Invalid email or password')
       }

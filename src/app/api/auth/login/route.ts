@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
       value: token,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax', // Changed from 'strict' to 'lax' to allow redirects after login
       maxAge: 60 * 60 * 24 * 7, // 7 days in seconds
       path: '/',
     })

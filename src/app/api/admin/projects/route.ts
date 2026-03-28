@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
     const validationResult = createProjectSchema.safeParse(body)
     if (!validationResult.success) {
       return NextResponse.json(
-        { success: false, error: 'Invalid input', details: validationResult.error.errors },
+        { success: false, error: 'Invalid input', details: validationResult.error.issues },
         { status: 400 }
       )
     }

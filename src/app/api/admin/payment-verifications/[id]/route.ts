@@ -5,7 +5,7 @@ import { authRateLimit } from '@/lib/rate-limiter'
 // GET /api/admin/payment-verifications/[id] - Get payment verification details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     console.log('[PAYMENT_VERIFICATION_GET] =============== START ===============')
@@ -16,7 +16,7 @@ export async function GET(
       return rateLimitResult
     }
 
-    const userId = params.id
+    const { id: userId } = await params
 
     // Get user with payment details
     const user = await db.user.findUnique({
@@ -31,7 +31,7 @@ export async function GET(
         paymentVerifiedBy: true,
         verificationStatus: true,
         role: true,
-        university: {
+        University: {
           select: {
             name: true,
           },
@@ -79,7 +79,7 @@ export async function GET(
 // PATCH /api/admin/payment-verifications/[id] - Approve or reject payment
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     console.log('[PAYMENT_VERIFICATION_PATCH] =============== START ===============')
@@ -94,7 +94,7 @@ export async function PATCH(
     console.log('[PAYMENT_VERIFICATION_PATCH] Received body:', JSON.stringify(body, null, 2))
 
     const { action, adminId } = body
-    const userId = params.id
+    const { id: userId } = await params
 
     // Validate action
     if (!action || !['approve', 'reject'].includes(action)) {

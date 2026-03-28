@@ -11,7 +11,7 @@ export default function AuthPage() {
   const router = useRouter()
   const { login, logout } = useAuth()
   const [activeTab, setActiveTab] = useState('signup')
-  const [selectedRole, setSelectedRole] = useState(UserRole.STUDENT)
+  const [selectedRole, setSelectedRole] = useState<UserRole>(UserRole.STUDENT)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')

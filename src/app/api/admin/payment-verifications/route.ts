@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         paymentVerifiedBy: true,
         verificationStatus: true,
         role: true,
-        university: {
+        University: {
           select: {
             name: true,
           },

@@ -5,10 +5,10 @@ import { db } from '@/lib/db'
 // GET /api/admin/users/[id]/ip-history - Get IP history for a user
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = params.id
+    const { id: userId } = await params
     const { searchParams } = new URL(request.url)
 
     // Get query parameters

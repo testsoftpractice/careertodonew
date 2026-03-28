@@ -11,7 +11,7 @@ export default function AuthPage() {
   const router = useRouter()
   const { login, logout } = useAuth()
   const [activeTab, setActiveTab] = useState('signup')
-  const [selectedRole, setSelectedRole] = useState('')
+  const [selectedRole, setSelectedRole] = useState(UserRole.STUDENT)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -33,7 +33,7 @@ export default function AuthPage() {
     mobileNumber: '',
     password: '',
     confirmPassword: '',
-    role: '',
+    role: UserRole.STUDENT,
     bio: '',
     agreeTerms: false,
     // Student specific
@@ -61,9 +61,10 @@ export default function AuthPage() {
 
   const roles = [
     { id: UserRole.STUDENT, title: 'Student', color: 'bg-blue-500/10' },
-    { id: UserRole.UNIVERSITY_ADMIN, title: 'University', color: 'bg-purple-500/10' },
-    { id: UserRole.EMPLOYER, title: 'Employer', color: 'bg-green-500/10' },
-    { id: UserRole.INVESTOR, title: 'Investor', color: 'bg-orange-500/10' },
+    // Temporarily hidden role options (commented out as requested)
+    // { id: UserRole.UNIVERSITY_ADMIN, title: 'University', color: 'bg-purple-500/10' },
+    // { id: UserRole.EMPLOYER, title: 'Employer', color: 'bg-green-500/10' },
+    // { id: UserRole.INVESTOR, title: 'Investor', color: 'bg-orange-500/10' },
   ]
 
   const handleSignup = async (e: any) => {

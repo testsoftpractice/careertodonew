@@ -478,3 +478,89 @@ export async function PATCH(
     )
   }
 }
+
+// DELETE /api/admin/users/[id] - Delete a user
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const tokenCookie = request.cookies.get('token')
+    const token = tokenCookie?.value
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const decoded = verifyToken(token)
+
+    if (!decoded || decoded.role !== 'PLATFORM_ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized - Admin access required' },
+        { status: 401 }
+      )
+    }
+
+    const { id: userId } = await params
+
+    // Prevent deleting yourself
+    if (userId === decoded.userId) {
+      return NextResponse.json(
+        { success: false, error: 'Cannot delete your own account' },
+        { status: 400 }
+      )
+    }
+
+    // Check if user exists
+    const existingUser = await db.user.findUnique({
+      where: { id: userId },
+      include: {
+        _count: {
+          select: {
+            Project: true,
+            ProjectMember: true,
+            Job: true,
+            Business: true,
+          }
+        }
+      }
+    })
+
+    if (!existingUser) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check if user owns projects or businesses (warning)
+    if ((existingUser._count?.Project || 0) > 0 || (existingUser._count?.Business || 0) > 0) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Cannot delete user. User owns projects or businesses. Please transfer ownership first.' 
+        },
+        { status: 400 }
+      )
+    }
+
+    // Delete user (cascade will handle related records)
+    await db.user.delete({
+      where: { id: userId }
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'User deleted successfully'
+    })
+  } catch (error: any) {
+    console.error('Delete user error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete user' },
+      { status: 500 }
+    )
+  }
+}

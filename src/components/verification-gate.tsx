@@ -3,12 +3,15 @@
 import React from 'react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Shield, CheckCircle2, Clock, XCircle } from 'lucide-react'
+import { EarlyAccessPaymentCard } from '@/components/student/early-access-payment-card'
 
 export type VerificationStatus = 'PENDING' | 'UNDER_REVIEW' | 'VERIFIED' | 'REJECTED'
 
 interface VerificationGateProps {
   user: {
     verificationStatus?: VerificationStatus | string
+    role?: string
+    id?: string
   } | null
   children: React.ReactNode
   fallback?: React.ReactNode
@@ -89,6 +92,47 @@ export function VerificationGate({
 
   // If restrictActions is true and user is not verified, show dashboard with opacity + alert on top
   if (restrictActions && !isVerified) {
+    // Show payment card for pending students who haven't submitted transaction ID yet
+    if (user?.verificationStatus === 'PENDING' && user?.role === 'STUDENT') {
+      return (
+        <div className="space-y-6">
+          <div className="flex justify-center py-8">
+            <EarlyAccessPaymentCard userId={user.id} />
+          </div>
+          <Alert className={statusConfig.bgColor}>
+            {StatusIcon && <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />}
+            <AlertTitle className={statusConfig.color}>{statusConfig.title}</AlertTitle>
+            <AlertDescription>
+              Complete your payment verification to unlock full access to the platform.
+            </AlertDescription>
+          </Alert>
+          <div className={`transition-opacity duration-300 opacity-50 pointer-events-none`}>
+            {children}
+          </div>
+        </div>
+      )
+    }
+
+    // Show review status for students with UNDER_REVIEW status (transaction ID submitted)
+    if (user?.verificationStatus === 'UNDER_REVIEW' && user?.role === 'STUDENT') {
+      return (
+        <div className="space-y-6">
+          <div className="max-w-lg mx-auto">
+            <Alert className={statusConfig.bgColor}>
+              {StatusIcon && <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />}
+              <AlertTitle className={statusConfig.color}>{statusConfig.title}</AlertTitle>
+              <AlertDescription>
+                Your payment is being reviewed by our team. Once verified, you'll have full access to the platform. This process typically takes 1-3 business days.
+              </AlertDescription>
+            </Alert>
+          </div>
+          <div className={`transition-opacity duration-300 opacity-50 pointer-events-none`}>
+            {children}
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="space-y-4">
         <Alert className={statusConfig.bgColor}>
@@ -105,6 +149,55 @@ export function VerificationGate({
 
   // If restrictActions is false and user is not verified, show status + children normally
   if (!restrictActions && !isVerified) {
+    // Show payment card for pending students who haven't submitted transaction ID yet
+    if (user?.verificationStatus === 'PENDING' && user?.role === 'STUDENT') {
+      return (
+        <div className="space-y-6">
+          <div className="flex justify-center py-8">
+            <EarlyAccessPaymentCard userId={user.id} />
+          </div>
+          {showBadge && (
+            <div className="flex items-center gap-2">
+              {StatusIcon && <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />}
+              <span className="text-sm font-medium text-muted-foreground">{statusConfig.title}</span>
+            </div>
+          )}
+          <Alert className={statusConfig.bgColor}>
+            {StatusIcon && <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />}
+            <AlertTitle>{statusConfig.title}</AlertTitle>
+            <AlertDescription>
+              Complete your payment verification to unlock full access to the platform.
+            </AlertDescription>
+          </Alert>
+          {children}
+        </div>
+      )
+    }
+
+    // Show review status for students with UNDER_REVIEW status (transaction ID submitted)
+    if (user?.verificationStatus === 'UNDER_REVIEW' && user?.role === 'STUDENT') {
+      return (
+        <div className="space-y-6">
+          <div className="max-w-lg mx-auto">
+            {showBadge && (
+              <div className="flex items-center gap-2">
+                {StatusIcon && <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />}
+                <span className="text-sm font-medium text-muted-foreground">{statusConfig.title}</span>
+              </div>
+            )}
+            <Alert className={statusConfig.bgColor}>
+              {StatusIcon && <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />}
+              <AlertTitle>{statusConfig.title}</AlertTitle>
+              <AlertDescription>
+                Your payment is being reviewed by our team. Once verified, you'll have full access to the platform. This process typically takes 1-3 business days.
+              </AlertDescription>
+            </Alert>
+          </div>
+          {children}
+        </div>
+      )
+    }
+
     return (
       <div className="space-y-4">
         {showBadge && (

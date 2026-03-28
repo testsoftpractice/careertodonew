@@ -702,6 +702,10 @@ model User {
   major                                                  String?
   graduationYear                                         Int?
   bio                                                    String?
+  transactionId                                          String?
+  paymentVerified                                        Boolean                @default(false)
+  paymentVerifiedAt                                      DateTime?
+  paymentVerifiedBy                                      String?
   location                                               String?
   linkedinUrl                                            String?
   portfolioUrl                                           String?

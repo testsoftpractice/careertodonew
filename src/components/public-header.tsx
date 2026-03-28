@@ -77,14 +77,27 @@ export default function PublicHeader({ title }: PublicHeaderProps) {
           {/* Auth Buttons & Mobile Menu Toggle */}
           <div className="flex items-center gap-3">
             {user ? (
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white" size="sm" asChild>
-                  <Link href={getDashboardLink(user.role)}>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </Link>
-                </Button>
-              </motion.div>
+              <>
+                {user.role === 'STUDENT' && user.verificationStatus !== 'VERIFIED' ? (
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white" size="sm" asChild>
+                      <Link href="/payment-verification">
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Verify Payment
+                      </Link>
+                    </Button>
+                  </motion.div>
+                ) : (
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white" size="sm" asChild>
+                      <Link href={getDashboardLink(user.role)}>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </Button>
+                  </motion.div>
+                )}
+              </>
             ) : (
               <>
                 <Button variant="ghost" size="sm" className="hidden md:flex" asChild>

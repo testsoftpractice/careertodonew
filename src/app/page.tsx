@@ -245,6 +245,10 @@ export default function HomePage() {
 
   const getDashboardLink = () => {
     if (!user) return '/auth'
+    // Students need to verify payment before accessing dashboard
+    if (user.role === 'STUDENT' && user.verificationStatus !== 'VERIFIED') {
+      return '/payment-verification'
+    }
     const roleDashboards: Record<string, string> = {
       'STUDENT': '/dashboard/student',
       'UNIVERSITY_ADMIN': '/dashboard/university',
@@ -253,6 +257,14 @@ export default function HomePage() {
       'PLATFORM_ADMIN': '/admin',
     }
     return roleDashboards[user.role] || '/auth'
+  }
+
+  const getButtonText = () => {
+    if (!user) return 'Signup Now'
+    if (user.role === 'STUDENT' && user.verificationStatus !== 'VERIFIED') {
+      return 'Verify Payment'
+    }
+    return 'Go to Dashboard'
   }
 
   return (
@@ -839,7 +851,7 @@ export default function HomePage() {
                   asChild
                 >
                   <Link href={getDashboardLink()}>
-                    {user ? 'Go to Dashboard' : 'Signup Now'} <ArrowRight className="ml-2 h-5 w-5" />
+                    {getButtonText()} <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
               </div>

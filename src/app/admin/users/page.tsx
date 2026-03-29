@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { ArrowLeft, Shield, Mail, Lock, Eye, UserPlus, RefreshCw, Loader2, Search, CheckCircle2, X, Globe } from 'lucide-react'
+import { ArrowLeft, Shield, Mail, Lock, Eye, UserPlus, RefreshCw, Loader2, Search, CheckCircle2, X, Globe, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from '@/hooks/use-toast'
 import { IPHistoryDialog } from '@/components/admin/ip-history-dialog'
@@ -169,6 +169,41 @@ export default function AdminUsersPage() {
   const handleViewIPHistory = (user: User) => {
     setSelectedUser({ id: user.id, name: user.name })
     setIpDialogOpen(true)
+  }
+
+  const handleDelete = async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast({
+          title: 'Success',
+          description: 'User deleted successfully',
+        })
+        // Refresh the users list
+        window.location.reload()
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to delete user',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete user',
+        variant: 'destructive'
+      })
+    }
   }
 
   return (
@@ -383,6 +418,15 @@ export default function AdminUsersPage() {
                           <Link href={`/admin/users/${user.id}`}>
                             <Eye className="h-4 w-4" />
                           </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleDelete(user.id, user.name)}
+                          title="Delete User"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>

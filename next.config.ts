@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Optimize for Vercel deployment
-  output: process.env.VERCEL ? undefined : "standalone",
+  output: process.env.VERCEL ? "standalone" : undefined,
 
   // React strict mode (recommended for production)
   reactStrictMode: process.env.NODE_ENV === "production",

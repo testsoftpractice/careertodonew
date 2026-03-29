@@ -99,9 +99,14 @@ export async function getGeolocationData(ip: string): Promise<GeolocationData> {
   try {
     // Using ip-api.com (free, no API key required for non-commercial use)
     // Note: For production, you should use a paid service with better reliability
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+
     const response = await fetch(`http://ip-api.com/json/${ip}`, {
-      signal: AbortSignal.timeout(5000), // 5 second timeout
+      signal: controller.signal,
     })
+
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       return { threatLevel: 'UNKNOWN' }

@@ -26,6 +26,7 @@ import {
   RefreshCw,
   Loader2,
   Eye,
+  Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from '@/hooks/use-toast'
@@ -136,6 +137,41 @@ export default function AdminProjectsPage() {
         return <Badge className="bg-red-500/10 text-red-500">High Risk</Badge>
       default:
         return <Badge variant="outline">Unknown</Badge>
+    }
+  }
+
+  const handleDelete = async (projectId: string, projectTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${projectTitle}"? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/admin/projects/${projectId}`, {
+        method: 'DELETE',
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast({
+          title: 'Success',
+          description: 'Project deleted successfully',
+        })
+        // Refresh the projects list
+        window.location.reload()
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to delete project',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete project',
+        variant: 'destructive'
+      })
     }
   }
 
@@ -304,6 +340,15 @@ export default function AdminProjectsPage() {
                           <Eye className="h-4 w-4 mr-2" />
                           View
                         </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleDelete(project.id, project.title)}
+                        title="Delete Project"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>

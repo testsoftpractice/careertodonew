@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   Activity,
   Briefcase,
+  CreditCard,
 } from 'lucide-react'
 import Link from 'next/link'
 import { logoutAndRedirect, adminLogoutAndRedirect } from '@/lib/utils/logout'
@@ -93,6 +94,13 @@ function AdminDashboard() {
       icon: Database,
       href: '/admin/projects',
       color: 'from-cyan-500 to-cyan-600',
+    },
+    {
+      title: 'Payment Verifications',
+      description: 'Review and verify student payment transactions',
+      icon: CreditCard,
+      href: '/admin/payment-verifications',
+      color: 'from-rose-500 to-rose-600',
     },
     {
       title: 'Analytics',

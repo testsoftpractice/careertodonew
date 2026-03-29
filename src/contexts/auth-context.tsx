@@ -22,6 +22,11 @@ interface User {
   reputationScores?: any
   createdAt?: Date
   updatedAt?: Date
+  // Payment verification fields
+  transactionId?: string
+  paymentVerified?: boolean
+  paymentVerifiedAt?: Date
+  paymentVerifiedBy?: string
   // Score fields
   executionScore?: number
   collaborationScore?: number

@@ -53,45 +53,17 @@ export default function PaymentVerificationPage() {
     return () => clearInterval(interval)
   }, [])
 
-  // Redirect to dashboard if user is verified
-  useEffect(() => {
-    if (!loading && user && user.verificationStatus === 'VERIFIED') {
-      router.push('/dashboard/student')
-    }
-  }, [user, loading, router])
-
-  // Redirect if user is already in UNDER_REVIEW status
-  useEffect(() => {
-    if (!loading && user) {
-      console.log('[PAYMENT_VERIFICATION] User loaded:', {
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-        verificationStatus: user.verificationStatus,
-        hasTransactionId: !!user.transactionId
-      })
-
-      if (user.verificationStatus === 'UNDER_REVIEW') {
-        console.log('[PAYMENT_VERIFICATION] User already in UNDER_REVIEW, showing waiting message and starting poll')
-        // Already submitted, show waiting message
-        setShowWaitingMessage(true)
-        // Start polling immediately
-        startPolling()
-      }
-    }
-  }, [user, loading, startPolling])
-
   // Start polling function
   const startPolling = useCallback(() => {
     console.log('[PAYMENT_VERIFICATION] Starting polling for user:', user?.id)
-    
+
     if (!user?.id) return null
-    
+
     // Clear any existing interval
     if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current)
     }
-    
+
     // Poll for verification status every 5 seconds
     pollIntervalRef.current = setInterval(async () => {
       try {
@@ -138,6 +110,34 @@ export default function PaymentVerificationPage() {
 
     return pollIntervalRef.current
   }, [user?.id, router, toast])
+
+  // Redirect to dashboard if user is verified
+  useEffect(() => {
+    if (!loading && user && user.verificationStatus === 'VERIFIED') {
+      router.push('/dashboard/student')
+    }
+  }, [user, loading, router])
+
+  // Redirect if user is already in UNDER_REVIEW status
+  useEffect(() => {
+    if (!loading && user) {
+      console.log('[PAYMENT_VERIFICATION] User loaded:', {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        verificationStatus: user.verificationStatus,
+        hasTransactionId: !!user.transactionId
+      })
+
+      if (user.verificationStatus === 'UNDER_REVIEW') {
+        console.log('[PAYMENT_VERIFICATION] User already in UNDER_REVIEW, showing waiting message and starting poll')
+        // Already submitted, show waiting message
+        setShowWaitingMessage(true)
+        // Start polling immediately
+        startPolling()
+      }
+    }
+  }, [user, loading, startPolling])
 
   // Redirect if not a student
   useEffect(() => {
@@ -304,7 +304,7 @@ export default function PaymentVerificationPage() {
                 পেমেন্ট যাচাই করছি...
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                Debug: Status = {user?.verificationStatus} | 'Unknown'}
+                Debug: Status = {user?.verificationStatus || 'Unknown'}
               </div>
             </CardContent>
           </Card>

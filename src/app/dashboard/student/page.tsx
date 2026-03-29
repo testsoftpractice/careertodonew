@@ -15,6 +15,7 @@ import { logoutAndRedirect } from '@/lib/utils/logout'
 import { useAuth } from '@/contexts/auth-context'
 import { useRoleAccess } from '@/hooks/use-role-access'
 import { authFetch } from '@/lib/api-response'
+import { trackDashboardVisit } from '@/lib/analytics/facebook-pixel-events'
 import {
   StatsCard,
   ActivityList,
@@ -77,6 +78,17 @@ function DashboardContent({ user }: { user: any }) {
   const tabFromUrl = searchParams.get('tab')
 
   useRoleAccess(['STUDENT', 'PLATFORM_ADMIN'])
+
+  // Track Facebook Pixel dashboard visit event
+  useEffect(() => {
+    if (user) {
+      trackDashboardVisit({
+        userId: user.id,
+        userRole: user.role,
+        dashboardType: 'student',
+      })
+    }
+  }, [user])
 
   const [activeTab, setActiveTab] = useState(tabFromUrl || 'overview')
   const [isEditMode, setIsEditMode] = useState(false)

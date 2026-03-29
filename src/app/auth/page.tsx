@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/auth-context'
 import PublicHeader from '@/components/public-header'
 import { UniversitySelector } from '@/components/student/university-selector'
 import { UserRole } from '@/lib/constants'
+import { trackUserSignup, trackCompleteRegistration, trackLogin } from '@/lib/analytics/facebook-pixel-events'
 
 export default function AuthPage() {
   const router = useRouter()
@@ -94,6 +95,13 @@ export default function AuthPage() {
         login(data.user, data.token)
         setMessage('Account created successfully! Redirecting...')
 
+        // Track Facebook Pixel events
+        trackUserSignup(selectedRole)
+        trackCompleteRegistration({
+          content_name: 'User Registration',
+          status: 'completed',
+        })
+
         setTimeout(() => {
           let redirectPath = ''
 
@@ -149,6 +157,9 @@ export default function AuthPage() {
         login(data.user, data.token)
         setMessage('Login successful! Redirecting...')
         console.log('[Auth] Login successful. User role:', data.user.role)
+
+        // Track Facebook Pixel login event
+        trackLogin()
 
         setTimeout(() => {
           // If there's a redirect URL and user is verified (or not a student), use it

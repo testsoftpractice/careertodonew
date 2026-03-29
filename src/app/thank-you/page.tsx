@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CheckCircle2, ArrowRight, Sparkles, Gift, ShieldCheck, Users } from 'lucide-react'
 import { useEffect } from 'react'
+import { trackViewContent } from '@/lib/analytics/facebook-pixel-events'
 
 export default function ThankYouPage() {
   const router = useRouter()
@@ -12,6 +13,14 @@ export default function ThankYouPage() {
   useEffect(() => {
     // Scroll to top when page loads
     window.scrollTo(0, 0)
+
+    // Track Facebook Pixel ViewContent event
+    trackViewContent({
+      content_name: 'Payment Success Page',
+      content_category: 'Conversion',
+      value: 2999,
+      currency: 'BDT',
+    })
   }, [])
 
   return (

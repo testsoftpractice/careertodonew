@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { authFetch } from '@/lib/api-response'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Clock, CheckCircle2, Loader2, Phone, ArrowRight } from 'lucide-react'
+import { trackPaymentSubmitted, trackInitiateCheckout, trackPaymentVerified, trackPurchase } from '@/lib/analytics/facebook-pixel-events'
 
 export default function PaymentVerificationPage() {
   const router = useRouter()
@@ -85,6 +86,22 @@ export default function PaymentVerificationPage() {
             clearInterval(pollIntervalRef.current)
             pollIntervalRef.current = null
           }
+
+          // Track Facebook Pixel events for purchase/conversion
+          trackPaymentVerified({
+            userId: user.id,
+            transactionId: user?.transactionId || '',
+            value: 2999,
+            currency: 'BDT',
+          })
+
+          trackPurchase({
+            value: 2999,
+            currency: 'BDT',
+            content_name: 'Early Access Package',
+            content_ids: [user?.transactionId || ''],
+            num_items: 1,
+          })
 
           // Refresh token with updated verification status
           try {
@@ -245,6 +262,22 @@ export default function PaymentVerificationPage() {
 
         // Refresh user data from server to get updated verification status
         await refreshUser()
+
+        // Track Facebook Pixel events for payment submission
+        trackPaymentSubmitted({
+          userId: user.id,
+          transactionId: transactionId.trim(),
+          value: 2999,
+          currency: 'BDT',
+        })
+
+        trackInitiateCheckout({
+          content_name: 'Early Access Package',
+          content_category: 'Subscription',
+          value: 2999,
+          currency: 'BDT',
+          num_items: 1,
+        })
 
         console.log('[PAYMENT_VERIFICATION] Transaction submitted, user refreshed:', {
           userId: user.id,

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/auth-context";
+import FacebookPixel from "@/components/analytics/facebook-pixel";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -80,6 +81,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <Toaster />
+          <FacebookPixel />
         </AuthProvider>
       </body>
     </html>

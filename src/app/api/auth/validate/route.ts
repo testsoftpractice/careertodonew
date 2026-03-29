@@ -38,6 +38,8 @@ export async function POST(request: NextRequest) {
         name: true,
         role: true,
         verificationStatus: true,
+        transactionId: true,
+        paymentVerified: true,
         avatar: true,
         universityId: true,
         major: true,

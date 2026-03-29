@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,7 @@ import { Clock, CheckCircle2, Loader2, Phone, ArrowRight } from 'lucide-react'
 
 export default function PaymentVerificationPage() {
   const router = useRouter()
-  const { user, loading } = useAuth()
+  const { user, loading, refreshUser } = useAuth()
   const [transactionId, setTransactionId] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isVerified, setIsVerified] = useState(false)
@@ -24,6 +24,7 @@ export default function PaymentVerificationPage() {
     minutes: 0,
     seconds: 0,
   })
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Countdown timer for early access offer
   useEffect(() => {
@@ -61,11 +62,82 @@ export default function PaymentVerificationPage() {
 
   // Redirect if user is already in UNDER_REVIEW status
   useEffect(() => {
-    if (!loading && user && user.verificationStatus === 'UNDER_REVIEW') {
-      // Already submitted, show waiting message
-      setShowWaitingMessage(true)
+    if (!loading && user) {
+      console.log('[PAYMENT_VERIFICATION] User loaded:', {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        verificationStatus: user.verificationStatus,
+        hasTransactionId: !!user.transactionId
+      })
+
+      if (user.verificationStatus === 'UNDER_REVIEW') {
+        console.log('[PAYMENT_VERIFICATION] User already in UNDER_REVIEW, showing waiting message and starting poll')
+        // Already submitted, show waiting message
+        setShowWaitingMessage(true)
+        // Start polling immediately
+        startPolling()
+      }
     }
-  }, [user, loading])
+  }, [user, loading, startPolling])
+
+  // Start polling function
+  const startPolling = useCallback(() => {
+    console.log('[PAYMENT_VERIFICATION] Starting polling for user:', user?.id)
+    
+    if (!user?.id) return null
+    
+    // Clear any existing interval
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current)
+    }
+    
+    // Poll for verification status every 5 seconds
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        console.log('[PAYMENT_VERIFICATION] Polling verification status...')
+        const checkResponse = await authFetch(`/api/student/early-access/status?userId=${user.id}`)
+        const checkData = await checkResponse.json()
+
+        console.log('[PAYMENT_VERIFICATION] Poll result:', {
+          success: checkData.success,
+          status: checkData.data?.verificationStatus,
+          hasTransactionId: !!checkData.data?.transactionId
+        })
+
+        if (checkData.success && checkData.data.verificationStatus === 'VERIFIED') {
+          console.log('[PAYMENT_VERIFICATION] Payment verified! Stopping polling.')
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current)
+            pollIntervalRef.current = null
+          }
+          setIsVerified(true)
+          toast({
+            title: 'Success',
+            description: 'আপনার পেমেন্ট ভেরিফাই হয়েছে!',
+          })
+
+          // Redirect to dashboard after 2 seconds
+          setTimeout(() => {
+            router.push('/dashboard/student')
+          }, 2000)
+        }
+      } catch (error) {
+        console.error('[PAYMENT_VERIFICATION] Poll error:', error)
+      }
+    }, 5000)
+
+    // Stop polling after 10 minutes
+    setTimeout(() => {
+      console.log('[PAYMENT_VERIFICATION] Polling stopped after 10 minutes')
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
+      }
+    }, 600000)
+
+    return pollIntervalRef.current
+  }, [user?.id, router, toast])
 
   // Redirect if not a student
   useEffect(() => {
@@ -73,6 +145,17 @@ export default function PaymentVerificationPage() {
       router.push('/')
     }
   }, [user, loading, router])
+
+  // Cleanup: Clear poll interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        console.log('[PAYMENT_VERIFICATION] Cleaning up poll interval on unmount')
+        clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
+      }
+    }
+  }, [pollIntervalRef])
 
   if (loading || !user) {
     return (
@@ -132,40 +215,25 @@ export default function PaymentVerificationPage() {
 
       if (data.success) {
         setShowWaitingMessage(true)
+
+        // Refresh user data from server to get updated verification status
+        await refreshUser()
+
+        console.log('[PAYMENT_VERIFICATION] Transaction submitted, user refreshed:', {
+          userId: user.id,
+          transactionId: transactionId.trim(),
+          statusAfterRefresh: user.verificationStatus
+        })
+
         toast({
           title: 'Transaction Submitted',
           description: 'আপনার ট্রান্স্যাকশন আইড জমা হয়েছে। কিছুটি কিছুনি আইড যাচাই করছি...',
         })
 
-        // Poll for verification status every 5 seconds
-        const pollInterval = setInterval(async () => {
-          try {
-            const checkResponse = await authFetch(`/api/student/early-access/status?userId=${user.id}`)
-            const checkData = await checkResponse.json()
-
-            if (checkData.success && checkData.data.verificationStatus === 'VERIFIED') {
-              clearInterval(pollInterval)
-              setIsVerified(true)
-              toast({
-                title: 'Success',
-                description: 'আপনার পেমেন্ট ভেরিফাই হয়েছে!',
-              })
-
-              // Redirect to dashboard after 2 seconds
-              setTimeout(() => {
-                router.push('/dashboard/student')
-              }, 2000)
-            }
-          } catch (error) {
-            console.error('Poll error:', error)
-          }
-        }, 5000)
-
-        // Stop polling after 10 minutes
-        setTimeout(() => {
-          clearInterval(pollInterval)
-        }, 600000)
+        // Start polling for verification status
+        startPolling()
       } else {
+        console.error('[PAYMENT_VERIFICATION] Submit failed:', data.error)
         toast({
           title: 'Error',
           description: data.error || 'Failed to verify transaction',
@@ -234,6 +302,9 @@ export default function PaymentVerificationPage() {
               <div className="flex items-center justify-center text-sm text-gray-600 dark:text-gray-400">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 পেমেন্ট যাচাই করছি...
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                Debug: Status = {user?.verificationStatus} | 'Unknown'}
               </div>
             </CardContent>
           </Card>

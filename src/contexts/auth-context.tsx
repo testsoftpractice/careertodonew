@@ -44,6 +44,7 @@ interface AuthContextType {
   login: (userData: User, authToken: string) => void
   logout: () => void
   loading: boolean
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -237,8 +238,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem('user', JSON.stringify(userData))
       localStorage.setItem('token', authToken)
+      console.log('[Auth] User logged in and saved to localStorage:', {
+        id: userData.id,
+        email: userData.email,
+        role: userData.role,
+        verificationStatus: userData.verificationStatus,
+        hasTransactionId: !!userData.transactionId
+      })
     } catch (error) {
       console.error('[Auth] Error saving auth state:', error)
+    }
+  }
+
+  const refreshUser = async () => {
+    if (!token) {
+      console.log('[Auth] No token to refresh user')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/auth/validate', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.valid && data.user) {
+          setUser(data.user)
+          // Update localStorage with fresh user data
+          localStorage.setItem('user', JSON.stringify(data.user))
+          console.log('[Auth] User refreshed successfully:', {
+            id: data.user.id,
+            email: data.user.email,
+            role: data.user.role,
+            verificationStatus: data.user.verificationStatus,
+            hasTransactionId: !!data.user.transactionId,
+            paymentVerified: data.user.paymentVerified
+          })
+        }
+      }
+    } catch (error) {
+      console.error('[Auth] Error refreshing user:', error)
     }
   }
 
@@ -271,7 +314,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

@@ -29,7 +29,7 @@ export default function PaymentVerificationPage() {
 
   // Countdown timer for early access offer
   useEffect(() => {
-    const targetDate = new Date('2025-04-10T23:59:59')
+    const targetDate = new Date('2026-04-10T23:59:59')
 
     const updateTimer = () => {
       const now = new Date()

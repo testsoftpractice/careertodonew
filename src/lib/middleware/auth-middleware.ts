@@ -30,6 +30,7 @@ const PUBLIC_PATH_PREFIXES = [
   '/privacy',    // Privacy policy
   '/auth',       // Auth pages (login, signup, forgot-password)
   '/payment-verification', // Payment verification page for students
+  '/thank-you',  // Thank you page after payment verification
   '/support',    // Support page
 ]
 

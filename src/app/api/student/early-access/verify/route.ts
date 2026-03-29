@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { authRateLimit } from '@/lib/rate-limiter'
+import { paymentVerificationRateLimit } from '@/lib/rate-limiter'
 
 // POST /api/student/early-access/verify - Verify bKash transaction ID
 export async function POST(request: NextRequest) {
   try {
     console.log('[EARLY_ACCESS_VERIFY] =============== START ===============')
 
-    // Apply rate limiting
-    const rateLimitResult = await authRateLimit(request)
+    // Apply rate limiting (more lenient than auth rate limit)
+    const rateLimitResult = await paymentVerificationRateLimit(request)
     if (rateLimitResult) {
       return rateLimitResult
     }

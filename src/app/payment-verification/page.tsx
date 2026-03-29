@@ -13,7 +13,7 @@ import { Clock, CheckCircle2, Loader2, Phone, ArrowRight } from 'lucide-react'
 
 export default function PaymentVerificationPage() {
   const router = useRouter()
-  const { user, loading, refreshUser } = useAuth()
+  const { user, loading, refreshUser, login } = useAuth()
   const [transactionId, setTransactionId] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isVerified, setIsVerified] = useState(false)
@@ -79,19 +79,46 @@ export default function PaymentVerificationPage() {
 
         if (checkData.success && checkData.data.verificationStatus === 'VERIFIED') {
           console.log('[PAYMENT_VERIFICATION] Payment verified! Stopping polling.')
+
+          // Stop polling
           if (pollIntervalRef.current) {
             clearInterval(pollIntervalRef.current)
             pollIntervalRef.current = null
           }
+
+          // Refresh token with updated verification status
+          try {
+            console.log('[PAYMENT_VERIFICATION] Refreshing token...')
+            const refreshResponse = await authFetch('/api/auth/refresh-token', {
+              method: 'POST',
+            })
+
+            if (refreshResponse.ok) {
+              const refreshData = await refreshResponse.json()
+              console.log('[PAYMENT_VERIFICATION] Token refreshed successfully')
+              console.log('[PAYMENT_VERIFICATION] New token status:', refreshData.user?.verificationStatus)
+
+              // Update auth context with fresh data
+              if (refreshData.success && refreshData.user) {
+                login(refreshData.user, refreshData.token)
+              }
+            } else {
+              console.error('[PAYMENT_VERIFICATION] Failed to refresh token:', refreshResponse.status)
+            }
+          } catch (error) {
+            console.error('[PAYMENT_VERIFICATION] Error refreshing token:', error)
+          }
+
           setIsVerified(true)
           toast({
             title: 'Success',
             description: 'আপনার পেমেন্ট ভেরিফাই হয়েছে!',
           })
 
-          // Redirect to dashboard after 2 seconds
+          // Redirect to thank you page after 2 seconds
           setTimeout(() => {
-            router.push('/dashboard/student')
+            console.log('[PAYMENT_VERIFICATION] Redirecting to thank you page...')
+            router.push('/thank-you')
           }, 2000)
         }
       } catch (error) {
@@ -109,12 +136,12 @@ export default function PaymentVerificationPage() {
     }, 600000)
 
     return pollIntervalRef.current
-  }, [user?.id, router, toast])
+  }, [user?.id, router, toast, login])
 
-  // Redirect to dashboard if user is verified
+  // Redirect to thank you page if user is verified
   useEffect(() => {
     if (!loading && user && user.verificationStatus === 'VERIFIED') {
-      router.push('/dashboard/student')
+      router.push('/thank-you')
     }
   }, [user, loading, router])
 
@@ -174,7 +201,7 @@ export default function PaymentVerificationPage() {
             <CheckCircle2 className="h-16 w-16 mx-auto text-green-500" />
             <h2 className="text-2xl font-bold">Payment Verified!</h2>
             <p className="text-muted-foreground">
-              আপনার পেমেন্ট সফলত করা হয়েছে। ড্যাশবোর্ডে রিডাইরেক্ট হচ্ছে...
+              আপনার পেমেন্ট সফলত করা হয়েছে। ধন্যবাদ পেজে রিডাইরেক্ট হচ্ছে...
             </p>
             <Loader2 className="h-6 w-6 mx-auto animate-spin text-muted-foreground" />
           </CardContent>
@@ -276,20 +303,32 @@ export default function PaymentVerificationPage() {
               <div className="flex justify-center">
                 <Clock className="h-16 w-16 text-purple-600 animate-pulse" />
               </div>
-              
+
               <div>
                 <h2 className="text-3xl font-bold text-purple-900 dark:text-purple-100 mb-4">
-                  ধন্যবাদ। পেমেন্ট ভেরিফিকেশন হচ্ছে...
+                  ট্রান্স্যাকশন আইড জমা হয়েছে!
                 </h2>
-                <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
-                  অনুগ্রহ করে অপেক্ষা করুন।
+                <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
+                  আপনার পেমেন্ট যাচাই করা হচ্ছে। অনুগ্রহ করে অপেক্ষা করুন।
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  যাচাই সম্পন্ন হলে আপনাকে ধন্যবাদ পেজে রিডাইরেক্ট করা হবে।
                 </p>
               </div>
+
+              <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                <AlertTitle className="text-blue-900 dark:text-blue-100 text-base font-semibold">
+                  ⏱️ প্রক্রিয়াকরণের সময়
+                </AlertTitle>
+                <AlertDescription className="text-blue-800 dark:text-blue-200 text-sm">
+                  সাধারণত ৫-১০ মিনিটের মধ্যে যাচাই সম্পন্ন হয়। যদি দীর্ঘ সময় লাগে, তবে নিচের নম্বরে যোগাযোগ করুন।
+                </AlertDescription>
+              </Alert>
 
               <Alert className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800">
                 <Phone className="h-5 w-5 text-purple-600 mb-2" />
                 <AlertTitle className="text-purple-900 dark:text-purple-100 text-lg">
-                  সহায়তার জন্য এই নাম্বারে কল করুন
+                  সহায়তার জন্য এই নম্বারে কল করুন
                 </AlertTitle>
                 <AlertDescription className="text-purple-800 dark:text-purple-200 text-base">
                   পেমেন্ট ভেরিফিকেশন বা সহায়তার জন্য যোগাযোগ করুন:
@@ -301,10 +340,10 @@ export default function PaymentVerificationPage() {
 
               <div className="flex items-center justify-center text-sm text-gray-600 dark:text-gray-400">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                পেমেন্ট যাচাই করছি...
+                যাচাই অবস্থা পরীক্ষা করা হচ্ছে...
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                Debug: Status = {user?.verificationStatus || 'Unknown'}
+                আপনার ট্রান্স্যাকশন আইড: <span className="font-mono font-semibold">{user?.transactionId || 'N/A'}</span>
               </div>
             </CardContent>
           </Card>

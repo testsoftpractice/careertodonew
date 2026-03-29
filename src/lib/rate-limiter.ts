@@ -112,3 +112,9 @@ export const strictRateLimit = rateLimit({
   maxRequests: 10, // 10 requests per minute
   message: 'Too many requests, please slow down'
 })
+
+export const paymentVerificationRateLimit = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  maxRequests: 3, // 3 attempts per minute
+  message: 'Too many verification attempts, please try again later'
+})

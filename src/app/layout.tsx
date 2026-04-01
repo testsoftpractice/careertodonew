@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/auth-context";
 import FacebookPixel from "@/components/analytics/facebook-pixel";
+import GoogleTagManager from "@/components/google-tag-manager";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -78,6 +79,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
+        <GoogleTagManager />
         <AuthProvider>
           {children}
           <Toaster />
